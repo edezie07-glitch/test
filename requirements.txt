@@ -5,7 +5,8 @@ Flask-CORS==5.0.0
 python-socketio==5.11.4
 python-engineio==4.9.1
 gunicorn==23.0.0
-eventlet==0.37.0
+gevent==24.11.1
+gevent-websocket==0.10.1
 SQLAlchemy==2.0.36
 psycopg2-binary==2.9.10
 Werkzeug==3.1.3
