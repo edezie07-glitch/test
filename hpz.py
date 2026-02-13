@@ -86,14 +86,9 @@ CORS(app, supports_credentials=True)
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
-    logger=False,  # Disable in production
-    engineio_logger=False,
-    async_mode='eventlet',  # Changed from 'threading' to 'eventlet' for better performance
-    ping_timeout=60,
-    ping_interval=25,
-    max_http_buffer_size=10_000_000,
-    manage_session=False,
-    cookie=False  # Better for production
+    async_mode='gevent',
+    logger=True,
+    engineio_logger=True
 )
 
 # ========== DATABASE MODELS ==========
@@ -1379,4 +1374,5 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         allow_unsafe_werkzeug=True
+
     )
