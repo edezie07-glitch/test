@@ -22,7 +22,6 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'hpz-secret-key-2024')
     BASEDIR = os.path.abspath(os.path.dirname(__file__))
     
-    # Database
     database_url = os.environ.get('DATABASE_URL')
     if database_url and database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
@@ -35,12 +34,10 @@ class Config:
     }
     SQLALCHEMY_EXPIRE_ON_COMMIT = False
     
-    # Upload
     UPLOAD_FOLDER = os.path.join(BASEDIR, 'static', 'uploads')
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mp3', 'wav'}
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'pdf', 'doc', 'docx'}
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024
     
-    # Session
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
@@ -53,7 +50,6 @@ CORS(app, supports_credentials=True)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
 
 # ========== DATABASE MODELS ==========
-
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -99,6 +95,8 @@ class ChatMessage(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), index=True)
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')
+    filename = db.Column(db.String(200))
+    file_url = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     
     sender = db.relationship('User', back_populates='sent_messages', lazy='joined')
@@ -116,6 +114,8 @@ class ChatMessage(db.Model):
             'sender_avatar': profile.avatar_url if profile else None,
             'content': self.content,
             'message_type': self.message_type,
+            'filename': self.filename,
+            'file_url': self.file_url,
             'created_at': self.created_at.isoformat()
         }
 
@@ -137,9 +137,7 @@ class FriendRequest(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 # ========== AUTO-INITIALIZE DATABASE ==========
-
 def ensure_database():
-    """Ensure database tables exist"""
     try:
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
@@ -151,10 +149,8 @@ def ensure_database():
             print("✅ Database tables created")
         else:
             print(f"✅ Database ready with {len(tables)} tables")
-            
     except Exception as e:
         print(f"❌ Database initialization error: {e}")
-        # Try to create anyway
         try:
             with app.app_context():
                 db.create_all()
@@ -162,11 +158,9 @@ def ensure_database():
         except:
             pass
 
-# Call on startup
 ensure_database()
 
 # ========== HELPER FUNCTIONS ==========
-
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -178,8 +172,26 @@ def login_required(f):
 def get_chat_id(user1_id, user2_id):
     return f"{min(user1_id, user2_id)}-{max(user1_id, user2_id)}"
 
-# ========== ERROR HANDLERS ==========
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+def get_time_ago(dt):
+    if not dt:
+        return 'Never'
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    seconds = diff.total_seconds()
+    
+    if seconds < 60:
+        return 'Just now'
+    elif seconds < 3600:
+        return f'{int(seconds / 60)}m ago'
+    elif seconds < 86400:
+        return f'{int(seconds / 3600)}h ago'
+    else:
+        return f'{int(seconds / 86400)}d ago'
+
+# ========== ERROR HANDLERS ==========
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'success': False, 'error': 'Not found'}), 404
@@ -190,7 +202,6 @@ def server_error(error):
     return jsonify({'success': False, 'error': 'Server error'}), 500
 
 # ========== PAGE ROUTES ==========
-
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -217,10 +228,9 @@ def chat_page():
         db.session.commit()
         db.session.refresh(user)
     
-    return render_template('chat.html', user=user, profile=user.profile)
+    return render_template('chat.html', user=user, profile=user.profile, user_id=user.id)
 
 # ========== AUTHENTICATION ==========
-
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     try:
@@ -267,7 +277,6 @@ def register():
             'redirect': '/chat',
             'user': user.to_dict()
         })
-        
     except Exception as e:
         db.session.rollback()
         print(f"❌ Registration error: {e}")
@@ -303,7 +312,6 @@ def login():
             'redirect': '/chat',
             'user': user.to_dict()
         })
-        
     except Exception as e:
         print(f"❌ Login error: {e}")
         return jsonify({'success': False, 'error': 'Login failed'}), 500
@@ -315,161 +323,497 @@ def logout():
     return jsonify({'success': True})
 
 # ========== USER SEARCH ==========
-
 @app.route('/api/users/search', methods=['GET'])
 @login_required
 def search_users():
-    query = request.args.get('q', '').strip()
-    user_id = session['user_id']
-    
-    if not query:
-        return jsonify({'success': True, 'results': []})
-    
-    users = User.query.options(joinedload(User.profile)).filter(
-        User.id != user_id,
-        User.username.ilike(f'%{query}%')
-    ).limit(20).all()
-    
-    results = []
-    for user in users:
-        is_friend = Friendship.query.filter(
-            ((Friendship.user1_id == user_id) & (Friendship.user2_id == user.id)) |
-            ((Friendship.user1_id == user.id) & (Friendship.user2_id == user_id))
-        ).first() is not None
+    try:
+        query = request.args.get('q', '').strip()
+        user_id = session['user_id']
         
-        results.append({
-            'id': user.id,
-            'username': user.username,
-            'avatar': user.profile.avatar_url if user.profile else None,
-            'status': user.profile.status if user.profile else 'Available',
-            'is_friend': is_friend
+        print(f"🔍 Search: '{query}' by user {user_id}")
+        
+        if not query:
+            return jsonify({'success': True, 'results': [], 'count': 0})
+        
+        users = User.query.options(joinedload(User.profile)).filter(
+            User.id != user_id,
+            User.username.ilike(f'%{query}%')
+        ).limit(20).all()
+        
+        print(f"📊 Found {len(users)} users")
+        
+        results = []
+        for user in users:
+            is_friend = Friendship.query.filter(
+                or_(
+                    and_(Friendship.user1_id == user_id, Friendship.user2_id == user.id),
+                    and_(Friendship.user1_id == user.id, Friendship.user2_id == user_id)
+                )
+            ).first() is not None
+            
+            request_sent = FriendRequest.query.filter_by(
+                from_user_id=user_id, 
+                to_user_id=user.id, 
+                status='pending'
+            ).first() is not None
+            
+            request_received = FriendRequest.query.filter_by(
+                from_user_id=user.id, 
+                to_user_id=user_id, 
+                status='pending'
+            ).first() is not None
+            
+            avatar = user.profile.avatar_url if user.profile and user.profile.avatar_url else \
+                     f"https://ui-avatars.com/api/?name={user.username}&background=0088cc&color=fff&size=128"
+            
+            if is_friend:
+                relationship = 'friend'
+            elif request_sent:
+                relationship = 'request_sent'
+            elif request_received:
+                relationship = 'request_received'
+            else:
+                relationship = 'none'
+            
+            results.append({
+                'id': user.id,
+                'username': user.username,
+                'avatar': avatar,
+                'status': user.profile.status if user.profile else 'Available',
+                'bio': user.profile.bio if user.profile else '',
+                'is_friend': is_friend,
+                'is_online': False,
+                'last_seen': get_time_ago(user.profile.last_seen) if user.profile else 'Offline',
+                'relationship': relationship
+            })
+        
+        return jsonify({'success': True, 'results': results, 'count': len(results)})
+    except Exception as e:
+        print(f"❌ Search error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== PROFILE ==========
+@app.route('/api/profile', methods=['GET'])
+@login_required
+def get_profile():
+    try:
+        user = User.query.options(joinedload(User.profile)).get(session['user_id'])
+        profile = user.profile if user else None
+        
+        if not profile:
+            profile = UserProfile(user_id=user.id)
+            db.session.add(profile)
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'user': user.to_dict(),
+            'profile': {
+                'bio': profile.bio,
+                'status': profile.status,
+                'avatar_url': profile.avatar_url
+            }
         })
-    
-    return jsonify({'success': True, 'results': results})
+    except Exception as e:
+        print(f"❌ Get profile error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    try:
+        data = request.get_json()
+        user = User.query.get(session['user_id'])
+        profile = UserProfile.query.filter_by(user_id=user.id).first()
+        
+        if not profile:
+            profile = UserProfile(user_id=user.id)
+            db.session.add(profile)
+        
+        if 'username' in data and data['username'] != user.username:
+            if User.query.filter_by(username=data['username']).first():
+                return jsonify({'success': False, 'error': 'Username taken'}), 400
+            user.username = data['username']
+            session['username'] = data['username']
+        
+        if 'bio' in data:
+            profile.bio = data['bio'][:500]
+        
+        if 'status' in data:
+            profile.status = data['status'][:100]
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Update profile error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/profile/avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    try:
+        if 'avatar' not in request.files:
+            return jsonify({'success': False, 'error': 'No file'}), 400
+        
+        file = request.files['avatar']
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            
+            upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'avatars')
+            os.makedirs(upload_path, exist_ok=True)
+            
+            file_path = os.path.join(upload_path, unique_filename)
+            file.save(file_path)
+            
+            url = f"/static/uploads/avatars/{unique_filename}"
+            
+            profile = UserProfile.query.filter_by(user_id=session['user_id']).first()
+            if profile:
+                profile.avatar_url = url
+                db.session.commit()
+            
+            return jsonify({'success': True, 'url': url})
+        
+        return jsonify({'success': False, 'error': 'Invalid file'}), 400
+    except Exception as e:
+        print(f"❌ Avatar upload error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== FILE UPLOAD ==========
+@app.route('/api/upload', methods=['POST'])
+@login_required
+def upload_file():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file'}), 400
+        
+        file = request.files['file']
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            
+            ext = filename.rsplit('.', 1)[1].lower()
+            if ext in ['png', 'jpg', 'jpeg', 'gif']:
+                folder = 'images'
+                file_type = 'image'
+            elif ext in ['mp4', 'webm']:
+                folder = 'videos'
+                file_type = 'video'
+            elif ext in ['mp3', 'wav']:
+                folder = 'audio'
+                file_type = 'audio'
+            else:
+                folder = 'files'
+                file_type = 'file'
+            
+            upload_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
+            os.makedirs(upload_path, exist_ok=True)
+            
+            file_path = os.path.join(upload_path, unique_filename)
+            file.save(file_path)
+            
+            file_size = os.path.getsize(file_path)
+            url = f"/static/uploads/{folder}/{unique_filename}"
+            
+            return jsonify({
+                'success': True,
+                'url': url,
+                'filename': filename,
+                'size': file_size,
+                'type': file_type
+            })
+        
+        return jsonify({'success': False, 'error': 'Invalid file'}), 400
+    except Exception as e:
+        print(f"❌ File upload error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ========== FRIENDS ==========
-
 @app.route('/api/friends', methods=['GET'])
 @login_required
 def get_friends():
-    user_id = session['user_id']
-    
-    friendships = Friendship.query.filter(
-        (Friendship.user1_id == user_id) | (Friendship.user2_id == user_id)
-    ).all()
-    
-    friends = []
-    for f in friendships:
-        friend_id = f.user2_id if f.user1_id == user_id else f.user1_id
-        friend = User.query.options(joinedload(User.profile)).get(friend_id)
+    try:
+        user_id = session['user_id']
         
-        if friend:
-            friends.append({
-                'id': friend.id,
-                'username': friend.username,
-                'avatarUrl': friend.profile.avatar_url if friend.profile else None,
-                'status': friend.profile.status if friend.profile else 'Available',
-                'chat_id': get_chat_id(user_id, friend_id)
+        friendships = Friendship.query.filter(
+            or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
+        ).all()
+        
+        friends = []
+        for f in friendships:
+            friend_id = f.user2_id if f.user1_id == user_id else f.user1_id
+            friend = User.query.options(joinedload(User.profile)).get(friend_id)
+            
+            if friend:
+                avatar_url = friend.profile.avatar_url if friend.profile and friend.profile.avatar_url else \
+                             f"https://ui-avatars.com/api/?name={friend.username}&background=0088cc&color=fff&size=96"
+                
+                friends.append({
+                    'id': friend.id,
+                    'username': friend.username,
+                    'avatar_url': avatar_url,
+                    'avatarUrl': avatar_url,
+                    'status': friend.profile.status if friend.profile else 'Available',
+                    'is_online': False,
+                    'chat_id': get_chat_id(user_id, friend_id)
+                })
+        
+        return jsonify({'success': True, 'friends': friends, 'contacts': friends})
+    except Exception as e:
+        print(f"❌ Get friends error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/friends/requests', methods=['GET'])
+@login_required
+def get_friend_requests():
+    try:
+        user_id = session['user_id']
+        
+        received = FriendRequest.query.filter_by(
+            to_user_id=user_id, status='pending'
+        ).order_by(FriendRequest.created_at.desc()).all()
+        
+        sent = FriendRequest.query.filter_by(
+            from_user_id=user_id, status='pending'
+        ).order_by(FriendRequest.created_at.desc()).all()
+        
+        received_list = []
+        for req in received:
+            user = User.query.get(req.from_user_id)
+            profile = UserProfile.query.filter_by(user_id=user.id).first()
+            
+            avatar_url = profile.avatar_url if profile and profile.avatar_url else \
+                         f"https://ui-avatars.com/api/?name={user.username}&background=0088cc&color=fff&size=96"
+            
+            received_list.append({
+                'request_id': req.id,
+                'user_id': user.id,
+                'username': user.username,
+                'avatar_url': avatar_url,
+                'created_at': req.created_at.isoformat(),
+                'time_ago': get_time_ago(req.created_at)
             })
-    
-    return jsonify({'success': True, 'contacts': friends})
+        
+        sent_list = []
+        for req in sent:
+            user = User.query.get(req.to_user_id)
+            sent_list.append({
+                'id': req.id,
+                'user_id': user.id,
+                'username': user.username,
+                'created_at': req.created_at.isoformat()
+            })
+        
+        return jsonify({
+            'success': True,
+            'received': received_list,
+            'sent': sent_list
+        })
+    except Exception as e:
+        print(f"❌ Get requests error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/friends/request', methods=['POST'])
 @login_required
 def send_friend_request():
-    data = request.get_json()
-    user_id = session['user_id']
-    to_user_id = data.get('to_user_id')
-    
-    if not to_user_id or user_id == to_user_id:
-        return jsonify({'success': False, 'error': 'Invalid user'}), 400
-    
-    existing = Friendship.query.filter(
-        ((Friendship.user1_id == user_id) & (Friendship.user2_id == to_user_id)) |
-        ((Friendship.user1_id == to_user_id) & (Friendship.user2_id == user_id))
-    ).first()
-    
-    if existing:
-        return jsonify({'success': False, 'error': 'Already friends'}), 400
-    
-    req = FriendRequest(from_user_id=user_id, to_user_id=to_user_id)
-    db.session.add(req)
-    db.session.commit()
-    
-    return jsonify({'success': True})
+    try:
+        data = request.get_json()
+        user_id = session['user_id']
+        to_user_id = data.get('to_user_id')
+        
+        if not to_user_id or user_id == to_user_id:
+            return jsonify({'success': False, 'error': 'Invalid user'}), 400
+        
+        existing = Friendship.query.filter(
+            or_(
+                and_(Friendship.user1_id == user_id, Friendship.user2_id == to_user_id),
+                and_(Friendship.user1_id == to_user_id, Friendship.user2_id == user_id)
+            )
+        ).first()
+        
+        if existing:
+            return jsonify({'success': False, 'error': 'Already friends'}), 400
+        
+        existing_request = FriendRequest.query.filter_by(
+            from_user_id=user_id, to_user_id=to_user_id, status='pending'
+        ).first()
+        
+        if existing_request:
+            return jsonify({'success': False, 'error': 'Request already sent'}), 400
+        
+        req = FriendRequest(from_user_id=user_id, to_user_id=to_user_id)
+        db.session.add(req)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Send request error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/friends/accept', methods=['POST'])
 @login_required
 def accept_friend():
-    data = request.get_json()
-    request_id = data.get('request_id')
-    
-    req = FriendRequest.query.get(request_id)
-    if not req or req.to_user_id != session['user_id']:
-        return jsonify({'success': False, 'error': 'Invalid request'}), 400
-    
-    friendship = Friendship(
-        user1_id=min(req.from_user_id, req.to_user_id),
-        user2_id=max(req.from_user_id, req.to_user_id)
-    )
-    db.session.add(friendship)
-    db.session.delete(req)
-    db.session.commit()
-    
-    return jsonify({'success': True})
+    try:
+        data = request.get_json()
+        request_id = data.get('request_id')
+        
+        req = FriendRequest.query.get(request_id)
+        if not req or req.to_user_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'Invalid request'}), 400
+        
+        friendship = Friendship(
+            user1_id=min(req.from_user_id, req.to_user_id),
+            user2_id=max(req.from_user_id, req.to_user_id)
+        )
+        db.session.add(friendship)
+        db.session.delete(req)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Accept friend error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/friends/reject', methods=['POST'])
+@login_required
+def reject_friend():
+    try:
+        data = request.get_json()
+        request_id = data.get('request_id')
+        
+        req = FriendRequest.query.get(request_id)
+        if not req or req.to_user_id != session['user_id']:
+            return jsonify({'success': False, 'error': 'Invalid request'}), 400
+        
+        db.session.delete(req)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Reject friend error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ========== MESSAGES ==========
-
 @app.route('/api/messages/<chat_id>', methods=['GET'])
 @login_required
 def get_messages(chat_id):
-    messages = ChatMessage.query.options(
-        joinedload(ChatMessage.sender)
-    ).filter_by(chat_id=chat_id).order_by(
-        ChatMessage.created_at.desc()
-    ).limit(50).all()
-    
-    messages.reverse()
-    message_dicts = [m.to_dict() for m in messages]
-    
-    return jsonify({
-        'success': True,
-        'messages': message_dicts
-    })
+    try:
+        messages = ChatMessage.query.options(
+            joinedload(ChatMessage.sender)
+        ).filter_by(chat_id=chat_id).order_by(
+            ChatMessage.created_at.desc()
+        ).limit(50).all()
+        
+        messages.reverse()
+        message_dicts = [m.to_dict() for m in messages]
+        
+        return jsonify({
+            'success': True,
+            'messages': message_dicts
+        })
+    except Exception as e:
+        print(f"❌ Get messages error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ========== SOCKET.IO ==========
-
 @socketio.on('connect')
 def handle_connect():
     user_id = session.get('user_id')
+    username = session.get('username')
+    
     if user_id:
         join_room(f'user_{user_id}')
-        print(f"✅ User {user_id} connected")
+        join_room('global')
+        print(f"✅ User {username} ({user_id}) connected")
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print("❌ User disconnected")
+    user_id = session.get('user_id')
+    if user_id:
+        print(f"❌ User {user_id} disconnected")
+
+@socketio.on('join')
+def handle_join(data):
+    chat_id = data.get('chatId')
+    if chat_id:
+        join_room(chat_id)
+        print(f"👥 User joined chat: {chat_id}")
 
 @socketio.on('send_message')
 def handle_message(data):
     user_id = session.get('user_id')
+    username = session.get('username')
+    
     if not user_id:
         return
     
-    message = ChatMessage(
-        chat_id=data['chatId'],
-        sender_id=user_id,
-        content=data['content'],
-        message_type=data.get('type', 'text')
-    )
-    db.session.add(message)
-    db.session.commit()
-    db.session.refresh(message)
+    try:
+        chat_id = data.get('chatId')
+        
+        message = ChatMessage(
+            chat_id=chat_id,
+            sender_id=user_id,
+            content=data.get('content', ''),
+            message_type=data.get('type', 'text'),
+            filename=data.get('filename'),
+            file_url=data.get('fileUrl')
+        )
+        db.session.add(message)
+        db.session.commit()
+        db.session.refresh(message)
+        
+        message_dict = message.to_dict()
+        
+        # Emit to chat room
+        if chat_id == 'global':
+            socketio.emit('new_message', message_dict, room='global')
+        else:
+            socketio.emit('new_message', message_dict, room=chat_id)
+            
+            # Also emit to individual users
+            if '-' in chat_id:
+                user_ids = chat_id.split('-')
+                for uid in user_ids:
+                    socketio.emit('new_message', message_dict, room=f'user_{uid}')
+        
+        print(f"📨 Message from {username}: {data.get('content', '')[:50]}")
+    except Exception as e:
+        print(f"❌ Send message error: {e}")
+        import traceback
+        traceback.print_exc()
+
+@socketio.on('typing_start')
+def handle_typing_start(data):
+    username = session.get('username')
+    chat_id = data.get('chatId')
     
-    socketio.emit('new_message', message.to_dict(), room=f"chat_{data['chatId']}")
+    if username and chat_id:
+        socketio.emit('typing_start', {
+            'username': username,
+            'chatId': chat_id
+        }, room=chat_id, include_self=False)
+
+@socketio.on('typing_stop')
+def handle_typing_stop(data):
+    username = session.get('username')
+    chat_id = data.get('chatId')
+    
+    if username and chat_id:
+        socketio.emit('typing_stop', {
+            'username': username,
+            'chatId': chat_id
+        }, room=chat_id, include_self=False)
 
 # ========== DEBUG ==========
-
 @app.route('/health')
 def health():
     try:
@@ -486,7 +830,6 @@ def health():
 
 @app.route('/debug/init-db')
 def init_db_route():
-    """Manually initialize database"""
     try:
         db.create_all()
         inspector = inspect(db.engine)
@@ -499,19 +842,32 @@ def init_db_route():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ========== TEARDOWN ==========
+@app.route('/debug/users')
+def debug_users():
+    try:
+        users = User.query.all()
+        return jsonify({
+            'success': True,
+            'count': len(users),
+            'users': [u.to_dict() for u in users]
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
+# ========== TEARDOWN ==========
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
 
 # ========== START ==========
-
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'avatars'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'images'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'files'), exist_ok=True)
     
     port = int(os.environ.get('PORT', 5000))
-    print(f"🚀 Starting server on port {port}")
+    print(f"🚀 Starting HPZ Messenger on port {port}")
     
     socketio.run(
         app, 
