@@ -41,13 +41,23 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = False  # Set to True if using HTTPS
 
 app.config.from_object(Config)
 
 # ========== INITIALIZE EXTENSIONS ==========
 db = SQLAlchemy(app)
 CORS(app, supports_credentials=True)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent')
+socketio = SocketIO(
+    app, 
+    cors_allowed_origins="*", 
+    async_mode='threading',
+    manage_session=False,
+    logger=True,
+    engineio_logger=True,
+    ping_timeout=60,
+    ping_interval=25
+)
 
 # ========== DATABASE MODELS ==========
 class User(db.Model):
@@ -788,16 +798,29 @@ def handle_message(data):
     user_id = session.get('user_id')
     username = session.get('username')
     
+    print(f"📥 Received message data: {data}")
+    print(f"👤 Session user_id: {user_id}, username: {username}")
+    
     if not user_id:
+        print("❌ No user_id in session")
+        emit('error', {'message': 'Not authenticated'})
         return
     
     try:
         chat_id = data.get('chatId')
+        content = data.get('content', '')
+        
+        if not chat_id:
+            print("❌ No chat_id provided")
+            emit('error', {'message': 'No chat_id provided'})
+            return
+        
+        print(f"💬 Creating message in chat {chat_id}")
         
         message = ChatMessage(
             chat_id=chat_id,
             sender_id=user_id,
-            content=data.get('content', ''),
+            content=content,
             message_type=data.get('type', 'text'),
             filename=data.get('filename'),
             file_url=data.get('fileUrl')
@@ -808,23 +831,29 @@ def handle_message(data):
         
         message_dict = message.to_dict()
         
+        print(f"✅ Message saved: {message.id}")
+        
         # Emit to chat room
         if chat_id == 'global':
             socketio.emit('new_message', message_dict, room='global')
+            print(f"📤 Emitted to global room")
         else:
             socketio.emit('new_message', message_dict, room=chat_id)
+            print(f"📤 Emitted to room {chat_id}")
             
             # Also emit to individual users
             if '-' in chat_id:
                 user_ids = chat_id.split('-')
                 for uid in user_ids:
                     socketio.emit('new_message', message_dict, room=f'user_{uid}')
+                    print(f"📤 Emitted to user_{uid}")
         
-        print(f"📨 Message from {username}: {data.get('content', '')[:50]}")
+        print(f"📨 Message from {username}: {content[:50]}")
     except Exception as e:
         print(f"❌ Send message error: {e}")
         import traceback
         traceback.print_exc()
+        emit('error', {'message': str(e)})
 
 @socketio.on('typing_start')
 def handle_typing_start(data):
@@ -929,10 +958,10 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Starting HPZ Messenger on port {port}")
     
+    # For local development
     socketio.run(
         app, 
         host='0.0.0.0', 
         port=port, 
-        debug=False, 
-        allow_unsafe_werkzeug=True
+        debug=False
     )
