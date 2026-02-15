@@ -47,16 +47,24 @@ app.config.from_object(Config)
 
 # ========== INITIALIZE EXTENSIONS ==========
 db = SQLAlchemy(app)
-CORS(app, supports_credentials=True)
+CORS(app, 
+     supports_credentials=True, 
+     origins=["*"], 
+     allow_headers=["*"],
+     expose_headers=["*"])
+     
 socketio = SocketIO(
     app, 
-    cors_allowed_origins="*", 
+    cors_allowed_origins="*",
     async_mode='threading',
     manage_session=False,
     logger=True,
     engineio_logger=True,
     ping_timeout=60,
-    ping_interval=25
+    ping_interval=25,
+    cookie='io',
+    always_connect=True,
+    cors_credentials=True
 )
 
 # ========== DATABASE MODELS ==========
@@ -772,13 +780,21 @@ def get_messages(chat_id):
 # ========== SOCKET.IO ==========
 @socketio.on('connect')
 def handle_connect():
+    print("🔌 Socket.IO connection attempt")
     user_id = session.get('user_id')
     username = session.get('username')
+    
+    print(f"   Session data: user_id={user_id}, username={username}")
+    print(f"   Session keys: {list(session.keys())}")
     
     if user_id:
         join_room(f'user_{user_id}')
         join_room('global')
-        print(f"✅ User {username} ({user_id}) connected")
+        print(f"✅ User {username} ({user_id}) connected and joined rooms")
+        emit('connected', {'user_id': user_id, 'username': username})
+    else:
+        print("⚠️ Connection without user_id in session")
+        emit('error', {'message': 'Not authenticated'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -942,6 +958,19 @@ def debug_users():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/debug/session')
+def debug_session():
+    """Check current session data"""
+    return jsonify({
+        'success': True,
+        'session_data': {
+            'user_id': session.get('user_id'),
+            'username': session.get('username'),
+            'all_keys': list(session.keys()),
+            'session_id': request.cookies.get('session')
+        }
+    })
 
 # ========== TEARDOWN ==========
 @app.teardown_appcontext
