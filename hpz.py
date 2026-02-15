@@ -47,18 +47,24 @@ app.config.from_object(Config)
 
 # ========== INITIALIZE EXTENSIONS ==========
 db = SQLAlchemy(app)
-CORS(app, supports_credentials=True, origins=["*"], allow_headers=["*"])
+CORS(app, supports_credentials=True, origins=["*"], allow_headers=["*"], expose_headers=["*"])
 socketio = SocketIO(
     app, 
     cors_allowed_origins="*",
+    cors_credentials=True,
     async_mode='threading',
     manage_session=False,
     logger=True,
     engineio_logger=True,
-    ping_timeout=60,
+    ping_timeout=120,  # Increased timeout
     ping_interval=25,
-    cookie='socket.io',
-    path='/socket.io'
+    max_http_buffer_size=1e8,
+    allow_upgrades=True,
+    http_compression=True,
+    compression_threshold=1024,
+    cookie='io',
+    path='/socket.io',
+    transports=['polling', 'websocket']
 )
 
 # ========== DATABASE MODELS ==========
