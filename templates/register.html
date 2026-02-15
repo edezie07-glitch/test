@@ -45,17 +45,6 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        .step {
-            display: none;
-        }
-        .step.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         .step-title {
             font-size: 32px;
             font-weight: 700;
@@ -175,32 +164,12 @@
             margin-bottom: 15px;
             font-size: 14px;
             display: none;
+            animation: shake 0.3s;
         }
-        .link {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-        .link a {
-            color: #ff5900;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .verification-display {
-            background: #fff5f0;
-            border: 2px dashed #ff5900;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .verification-code {
-            font-size: 28px;
-            font-weight: 700;
-            color: #ff5900;
-            letter-spacing: 5px;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
         
         /* Modal */
@@ -220,6 +189,10 @@
         .modal.show {
             display: flex;
             animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         .modal-content {
             background: white;
@@ -314,13 +287,12 @@
             <img src="{{ url_for('static', filename='uploads/hepozy_logo.jpg') }}" alt="HPZ Logo" class="logo-image">
         </div>
 
-        <!-- Step 1: Phone Number -->
-        <div class="step active" id="step1">
-            <div class="step-title">country</div>
-            <div class="step-subtitle">select country</div>
-            
-            <div id="errorPhone" class="error-message"></div>
-            
+        <div class="step-title">country</div>
+        <div class="step-subtitle">select country</div>
+        
+        <div id="errorMessage" class="error-message"></div>
+        
+        <form id="registerForm">
             <div class="form-group">
                 <button type="button" class="country-selector-btn" onclick="openCountryModal()">
                     <span class="selected-flag" id="selectedFlag">🌍</span>
@@ -333,52 +305,27 @@
             <div class="step-subtitle">enter phone number</div>
             
             <div class="form-group">
-                <input type="tel" id="phoneNumber" placeholder="912 345 6789" style="text-align: center; font-size: 18px;">
-            </div>
-
-            <button class="btn btn-primary" onclick="sendVerification()" id="sendBtn">
-                create account
-            </button>
-            
-            <button class="btn btn-secondary" onclick="goToLogin()">
-                Back
-            </button>
-        </div>
-
-        <!-- Step 2: Verification Code -->
-        <div class="step" id="step2">
-            <div class="step-title">verification</div>
-            <div class="step-subtitle" id="verifySubtitle">enter code sent to your phone</div>
-            
-            <div id="codeDisplay" class="verification-display">
-                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">dev code:</div>
-                <div class="verification-code" id="displayedCode">------</div>
-            </div>
-
-            <div id="errorVerify" class="error-message"></div>
-            
-            <div class="form-group">
-                <input type="text" id="verificationCode" placeholder="000000" maxlength="6" 
-                       style="text-align: center; font-size: 32px; letter-spacing: 10px;">
+                <input type="tel" id="phoneNumber" placeholder="912 345 6789" style="text-align: center; font-size: 18px;" required>
             </div>
 
             <div class="step-title">username</div>
             <div class="form-group">
-                <input type="text" id="username" placeholder="choose username">
+                <input type="text" id="username" placeholder="choose username" required>
             </div>
 
             <div class="step-title">password</div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="create password">
+                <input type="password" id="password" placeholder="create password" required>
             </div>
 
-            <button class="btn btn-primary" onclick="completeRegistration()">
+            <button type="submit" class="btn btn-primary" id="registerBtn">
                 create account
             </button>
-            <button class="btn btn-secondary" onclick="showStep('step1')">
+            
+            <button type="button" class="btn btn-secondary" onclick="goToLogin()">
                 Back
             </button>
-        </div>
+        </form>
     </div>
 
     <!-- Country Modal -->
@@ -397,7 +344,6 @@
 
     <script>
         let selectedCountry = null;
-        let currentIdentifier = null;
 
         const countries = [
             { code: 'US', name: 'United States', dial_code: '+1', flag: '🇺🇸' },
@@ -484,20 +430,21 @@
             if (e.target === this) closeCountryModal();
         });
 
-        function showStep(stepId) {
-            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-            document.getElementById(stepId).classList.add('active');
-        }
-
         function goToLogin() {
             window.location.href = '/';
         }
 
-        async function sendVerification() {
-            const phone = document.getElementById('phoneNumber').value.trim();
-            const errorDiv = document.getElementById('errorPhone');
-            const btn = document.getElementById('sendBtn');
+        // DIRECT REGISTRATION - NO VERIFICATION
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            const btn = document.getElementById('registerBtn');
+            
+            // Validation
             if (!selectedCountry) {
                 errorDiv.textContent = 'please select a country';
                 errorDiv.style.display = 'block';
@@ -506,58 +453,6 @@
             
             if (!phone) {
                 errorDiv.textContent = 'please enter phone number';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            errorDiv.style.display = 'none';
-            btn.disabled = true;
-            btn.textContent = 'sending...';
-            
-            try {
-                const response = await fetch('/api/verification/send-phone', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        phone_number: phone,
-                        dial_code: selectedCountry.dial_code
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentIdentifier = data.phone;
-                    
-                    if (data.dev_code) {
-                        document.getElementById('displayedCode').textContent = data.dev_code;
-                        document.getElementById('codeDisplay').style.display = 'block';
-                    }
-                    
-                    document.getElementById('verifySubtitle').textContent = 
-                        `code sent to ${selectedCountry.dial_code} ${phone}`;
-                    showStep('step2');
-                } else {
-                    errorDiv.textContent = data.error;
-                    errorDiv.style.display = 'block';
-                }
-            } catch (error) {
-                errorDiv.textContent = 'connection error';
-                errorDiv.style.display = 'block';
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'create account';
-            }
-        }
-
-        async function completeRegistration() {
-            const code = document.getElementById('verificationCode').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('errorVerify');
-            
-            if (!code) {
-                errorDiv.textContent = 'please enter code';
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -574,60 +469,47 @@
                 return;
             }
             
+            // Clear error
             errorDiv.style.display = 'none';
-            const btn = event.target;
-            btn.textContent = 'creating...';
             btn.disabled = true;
+            btn.textContent = 'creating account...';
             
             try {
-                // Verify code
-                const verifyRes = await fetch('/api/verification/verify-code', {
+                // Format full phone number
+                const fullPhone = selectedCountry.dial_code + phone;
+                
+                // Direct registration - NO verification
+                const response = await fetch('/api/auth/register', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ identifier: currentIdentifier, code: code })
-                });
-                
-                const verifyData = await verifyRes.json();
-                
-                if (!verifyData.success) {
-                    errorDiv.textContent = verifyData.error;
-                    errorDiv.style.display = 'block';
-                    btn.textContent = 'create account';
-                    btn.disabled = false;
-                    return;
-                }
-                
-                // Complete registration
-                const regRes = await fetch('/api/verification/complete-registration', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        identifier: currentIdentifier,
                         username: username,
+                        phone: fullPhone,
                         password: password
                     })
                 });
                 
-                const regData = await regRes.json();
+                const data = await response.json();
                 
-                if (regData.success) {
-                    btn.textContent = 'success!';
-                    setTimeout(() => window.location.href = regData.redirect || '/chat', 500);
+                if (data.success) {
+                    btn.textContent = 'success! redirecting...';
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/chat';
+                    }, 500);
                 } else {
-                    errorDiv.textContent = regData.error;
+                    errorDiv.textContent = data.error || 'registration failed';
                     errorDiv.style.display = 'block';
-                    btn.textContent = 'create account';
                     btn.disabled = false;
+                    btn.textContent = 'create account';
                 }
             } catch (error) {
-                errorDiv.textContent = 'connection error';
+                console.error('Registration error:', error);
+                errorDiv.textContent = 'connection error. please try again.';
                 errorDiv.style.display = 'block';
-                btn.textContent = 'create account';
                 btn.disabled = false;
+                btn.textContent = 'create account';
             }
-        }
+        });
     </script>
 </body>
 </html>
-
-
