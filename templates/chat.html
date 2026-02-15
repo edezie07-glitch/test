@@ -1778,15 +1778,15 @@
         
         socket = io({
             withCredentials: true,  // ← CRITICAL FIX FOR SESSIONS!
-            transports: ['websocket', 'polling'],
+            transports: ['polling', 'websocket'],  // Try polling first, then upgrade
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: 10,
-            timeout: 20000,
+            timeout: 60000,  // Increased to 60 seconds
             autoConnect: true,
-            upgrade: true,
-            rememberUpgrade: true
+            forceNew: false,
+            multiplex: true
         });
 
         socket.on('connect', function() {
@@ -1804,7 +1804,18 @@
 
         socket.on('connect_error', function(error) {
             console.error('❌ Connection error:', error);
-            showToast('Connection error: ' + error.message, 'error');
+            console.error('   Error type:', error.type);
+            console.error('   Error message:', error.message);
+            
+            // Don't show toast for every retry
+            if (socket.io.engine.transport.name === 'websocket') {
+                showToast('Trying alternative connection...', 'info');
+            }
+        });
+
+        socket.on('connect_timeout', function() {
+            console.error('⏱️ Connection timeout');
+            showToast('Connection taking too long. Retrying...', 'warning');
         });
 
         socket.on('disconnect', function(reason) {
@@ -1827,9 +1838,21 @@
             }
         });
 
+        socket.on('reconnect_attempt', function(attemptNumber) {
+            console.log('🔄 Reconnection attempt ' + attemptNumber);
+        });
+
+        socket.on('reconnect_error', function(error) {
+            console.error('❌ Reconnection error:', error);
+        });
+
+        socket.on('reconnect_failed', function() {
+            console.error('❌ Reconnection failed');
+            showToast('Cannot connect. Please refresh the page.', 'error');
+        });
+
         socket.on('error', function(error) {
             console.error('❌ Socket error:', error);
-            showToast('Socket error: ' + (error.message || error), 'error');
         });
 
         socket.on('new_message', function(message) {
