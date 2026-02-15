@@ -84,7 +84,7 @@ class UserProfile(db.Model):
     bio = db.Column(db.String(500), default='')
     avatar_url = db.Column(db.String(500))
     status = db.Column(db.String(100), default='Available')
-    last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # Already correct
+    last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = db.relationship('User', back_populates='profile')
     
@@ -188,112 +188,34 @@ def get_chat_id(user1_id, user2_id):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-@app.route('/api/users/search', methods=['GET'])
-@login_required
-def search_users():
+def get_time_ago(dt):
+    """Helper function to calculate time ago text"""
+    if not dt:
+        return 'Offline'
+    
     try:
-        query = request.args.get('q', '').strip()
-        user_id = session['user_id']
+        # Make timezone-aware if needed
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         
-        print(f"🔍 Search: '{query}' by user {user_id}")
+        now = datetime.now(timezone.utc)
+        diff = now - dt
+        seconds = diff.total_seconds()
         
-        if not query:
-            return jsonify({'success': True, 'results': [], 'count': 0})
-        
-        users = User.query.options(joinedload(User.profile)).filter(
-            User.id != user_id,
-            User.username.ilike(f'%{query}%')
-        ).limit(20).all()
-        
-        print(f"📊 Found {len(users)} users")
-        
-        results = []
-        for user in users:
-            # Check friendship
-            is_friend = Friendship.query.filter(
-                or_(
-                    and_(Friendship.user1_id == user_id, Friendship.user2_id == user.id),
-                    and_(Friendship.user1_id == user.id, Friendship.user2_id == user_id)
-                )
-            ).first() is not None
-            
-            # Check pending requests
-            request_sent = FriendRequest.query.filter_by(
-                from_user_id=user_id, 
-                to_user_id=user.id, 
-                status='pending'
-            ).first() is not None
-            
-            request_received = FriendRequest.query.filter_by(
-                from_user_id=user.id, 
-                to_user_id=user_id, 
-                status='pending'
-            ).first() is not None
-            
-            # Avatar
-            avatar = user.profile.avatar_url if user.profile and user.profile.avatar_url else \
-                     f"https://ui-avatars.com/api/?name={user.username}&background=0088cc&color=fff&size=128"
-            
-            # Determine relationship
-            if is_friend:
-                relationship = 'friend'
-            elif request_sent:
-                relationship = 'request_sent'
-            elif request_received:
-                relationship = 'request_received'
-            else:
-                relationship = 'none'
-            
-            # Calculate last seen - FIX FOR DATETIME ERROR
-            last_seen_text = 'Offline'
-            if user.profile and user.profile.last_seen:
-                try:
-                    last_seen_dt = user.profile.last_seen
-                    # Make timezone-aware if needed
-                    if last_seen_dt.tzinfo is None:
-                        last_seen_dt = last_seen_dt.replace(tzinfo=timezone.utc)
-                    
-                    now = datetime.now(timezone.utc)
-                    diff = now - last_seen_dt
-                    seconds = diff.total_seconds()
-                    
-                    # Consider online if last seen within 5 minutes
-                    is_online = seconds < 300
-                    
-                    if is_online:
-                        last_seen_text = 'Online'
-                    elif seconds < 60:
-                        last_seen_text = 'Just now'
-                    elif seconds < 3600:
-                        last_seen_text = f'{int(seconds / 60)}m ago'
-                    elif seconds < 86400:
-                        last_seen_text = f'{int(seconds / 3600)}h ago'
-                    else:
-                        last_seen_text = f'{int(seconds / 86400)}d ago'
-                except Exception as e:
-                    print(f"⚠️ Error calculating last_seen for {user.username}: {e}")
-                    last_seen_text = 'Offline'
-            
-            results.append({
-                'id': user.id,
-                'username': user.username,
-                'avatar': avatar,
-                'status': user.profile.status if user.profile else 'Available',
-                'bio': user.profile.bio if user.profile else '',
-                'is_friend': is_friend,
-                'is_online': last_seen_text == 'Online',
-                'last_seen': last_seen_text,
-                'relationship': relationship
-            })
-            
-            print(f"   ✅ {user.username} - {relationship}")
-        
-        return jsonify({'success': True, 'results': results, 'count': len(results)})
+        # Consider online if last seen within 5 minutes
+        if seconds < 300:
+            return 'Online'
+        elif seconds < 60:
+            return 'Just now'
+        elif seconds < 3600:
+            return f'{int(seconds / 60)}m ago'
+        elif seconds < 86400:
+            return f'{int(seconds / 3600)}h ago'
+        else:
+            return f'{int(seconds / 86400)}d ago'
     except Exception as e:
-        print(f"❌ Search error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"⚠️ Error calculating time ago: {e}")
+        return 'Offline'
 
 # ========== ERROR HANDLERS ==========
 @app.errorhandler(404)
@@ -448,6 +370,7 @@ def search_users():
         
         results = []
         for user in users:
+            # Check friendship
             is_friend = Friendship.query.filter(
                 or_(
                     and_(Friendship.user1_id == user_id, Friendship.user2_id == user.id),
@@ -455,6 +378,7 @@ def search_users():
                 )
             ).first() is not None
             
+            # Check pending requests
             request_sent = FriendRequest.query.filter_by(
                 from_user_id=user_id, 
                 to_user_id=user.id, 
@@ -467,9 +391,11 @@ def search_users():
                 status='pending'
             ).first() is not None
             
+            # Avatar
             avatar = user.profile.avatar_url if user.profile and user.profile.avatar_url else \
                      f"https://ui-avatars.com/api/?name={user.username}&background=0088cc&color=fff&size=128"
             
+            # Determine relationship
             if is_friend:
                 relationship = 'friend'
             elif request_sent:
@@ -479,6 +405,9 @@ def search_users():
             else:
                 relationship = 'none'
             
+            # Calculate last seen using helper function
+            last_seen_text = get_time_ago(user.profile.last_seen if user.profile else None)
+            
             results.append({
                 'id': user.id,
                 'username': user.username,
@@ -486,10 +415,12 @@ def search_users():
                 'status': user.profile.status if user.profile else 'Available',
                 'bio': user.profile.bio if user.profile else '',
                 'is_friend': is_friend,
-                'is_online': False,
-                'last_seen': get_time_ago(user.profile.last_seen) if user.profile else 'Offline',
+                'is_online': last_seen_text == 'Online',
+                'last_seen': last_seen_text,
                 'relationship': relationship
             })
+            
+            print(f"   ✅ {user.username} - {relationship}")
         
         return jsonify({'success': True, 'results': results, 'count': len(results)})
     except Exception as e:
@@ -945,6 +876,7 @@ def init_db_route():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/debug/test-search')
 def test_search():
     """Test search functionality"""
@@ -969,6 +901,7 @@ def test_search():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/debug/users')
 def debug_users():
     try:
@@ -1003,4 +936,3 @@ if __name__ == '__main__':
         debug=False, 
         allow_unsafe_werkzeug=True
     )
-
