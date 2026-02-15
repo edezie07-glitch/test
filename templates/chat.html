@@ -1364,7 +1364,6 @@
         </div>
 
         <div class="search-section">
-            <img src="{{ url_for('static', filename='uploads/hepozy_logo.jpg') }}" alt="Hepozy Logo" height="50" width="50" style="border-radius: 50%; margin-bottom: 8px;">
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
                 <input type="text" class="search-input" 
@@ -1607,26 +1606,12 @@
     
     // ========== INITIALIZATION ==========
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 HPZ Messenger - Telegram Style');
+        console.log('🚀 HPZ Messenger - Telegram Style - FIXED VERSION');
         
         initSocket();
         loadContacts();
         loadFriendRequests();
         loadUserProfile();
-        
-        // 🔍 DEBUG: Test search API on startup
-        setTimeout(() => {
-            console.log('🔍 Testing search API...');
-            fetch('/api/users/search?q=a')
-                .then(res => res.json())
-                .then(data => {
-                    console.log('📦 Search test results:', data);
-                    if (data.success) {
-                        console.log(`✅ Found ${data.count} users with 'a'`);
-                    }
-                })
-                .catch(err => console.error('❌ Search test failed:', err));
-        }, 1000);
         
         // Check saved theme
         const darkMode = localStorage.getItem('darkMode') === 'true';
@@ -1643,7 +1628,7 @@
         }, 500);
     });
 
-    // ========== 🔥 FIXED TELEGRAM-STYLE SEARCH ==========
+    // ========== SEARCH ==========
     function handleSearchInput(query) {
         const searchResults = document.getElementById('searchResults');
         const trimmedQuery = query.trim();
@@ -1651,11 +1636,6 @@
         clearTimeout(searchTimeout);
         
         if (!trimmedQuery) {
-            searchResults.style.display = 'none';
-            return;
-        }
-        
-        if (trimmedQuery.length < 1) {
             searchResults.style.display = 'none';
             return;
         }
@@ -1697,8 +1677,6 @@
         const container = document.getElementById('searchResults');
         container.innerHTML = '';
         
-        console.log('👥 Displaying users:', users);
-        
         // Header with count
         const header = document.createElement('div');
         header.className = 'search-results-header';
@@ -1713,7 +1691,6 @@
                 <div style="padding: 40px 20px; text-align: center; color: var(--tg-text-secondary);">
                     <i class="fas fa-user-slash" style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;"></i>
                     <p style="margin-bottom: 8px; font-size: 16px;">No users found</p>
-                    <p style="font-size: 13px;">Try searching for: admin, alice, bob</p>
                 </div>
             `;
             return;
@@ -1723,7 +1700,6 @@
             const item = document.createElement('div');
             item.className = 'search-result-item';
             
-            // Use 'avatar' field from backend
             const avatarUrl = user.avatar || 
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=0088cc&color=fff&size=96`;
             
@@ -1731,7 +1707,6 @@
             const statusText = user.is_online ? 'Online' : (user.last_seen || 'Offline');
             const statusColor = user.is_online ? 'var(--tg-online)' : 'var(--tg-text-secondary)';
             
-            // Determine action button based on relationship
             let actionButton = '';
             
             if (user.is_friend) {
@@ -1797,35 +1772,75 @@
         `;
     }
 
-    // ========== SOCKET.IO ==========
+    // ========== SOCKET.IO - FIXED WITH withCredentials ========== 
     function initSocket() {
-    socket = io({
-        withCredentials: true,  
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: Infinity
-    });
+        console.log('🔌 Initializing Socket.IO with credentials...');
+        
+        socket = io({
+            withCredentials: true,  // ← CRITICAL FIX FOR SESSIONS!
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 10,
+            timeout: 20000,
+            autoConnect: true,
+            upgrade: true,
+            rememberUpgrade: true
+        });
 
         socket.on('connect', function() {
-            console.log('✅ Socket connected');
+            console.log('✅ Socket connected:', socket.id);
+            console.log('   Transport:', socket.io.engine.transport.name);
+            
             socket.emit('join', { chatId: `user_${currentUserId}` });
+            socket.emit('join', { chatId: currentChatId });
             
             document.getElementById('userOnlineStatus').style.background = 'var(--tg-online)';
             document.getElementById('userStatusText').textContent = 'Online';
+            
+            showToast('Connected to chat', 'success');
         });
 
-        socket.on('disconnect', function() {
-            console.log('❌ Socket disconnected');
+        socket.on('connect_error', function(error) {
+            console.error('❌ Connection error:', error);
+            showToast('Connection error: ' + error.message, 'error');
+        });
+
+        socket.on('disconnect', function(reason) {
+            console.log('❌ Socket disconnected:', reason);
             document.getElementById('userOnlineStatus').style.background = 'var(--tg-offline)';
             document.getElementById('userStatusText').textContent = 'Offline';
+            
+            if (reason === 'io server disconnect') {
+                socket.connect();
+            }
+        });
+
+        socket.on('reconnect', function(attemptNumber) {
+            console.log('🔄 Reconnected after ' + attemptNumber + ' attempts');
+            showToast('Reconnected to chat', 'success');
+            
+            socket.emit('join', { chatId: `user_${currentUserId}` });
+            if (currentChatId) {
+                socket.emit('join', { chatId: currentChatId });
+            }
+        });
+
+        socket.on('error', function(error) {
+            console.error('❌ Socket error:', error);
+            showToast('Socket error: ' + (error.message || error), 'error');
         });
 
         socket.on('new_message', function(message) {
-            if (message.chatId === currentChatId) {
+            console.log('📨 Received message:', message);
+            
+            const msgChatId = message.chatId || message.chat_id;
+            
+            if (msgChatId === currentChatId) {
                 displayMessage(message);
             }
+            
             updateContactLastMessage(message);
             
             if (document.hidden) {
@@ -1861,6 +1876,8 @@
             loadContacts();
             loadFriendRequests();
         });
+
+        console.log('✅ Socket.IO initialized with withCredentials');
     }
 
     // ========== MESSAGING ==========
@@ -1868,10 +1885,16 @@
         const input = document.getElementById('messageInput');
         const content = input.value.trim();
         
-        if (!content || !socket || !socket.connected) {
-            showToast('Cannot send message', 'error');
+        if (!content) {
             return;
         }
+        
+        if (!socket || !socket.connected) {
+            showToast('Not connected to chat server', 'error');
+            return;
+        }
+        
+        console.log('📤 Sending message:', content);
         
         const messageData = {
             chatId: currentChatId,
@@ -1984,7 +2007,6 @@
             socket.emit('join', { chatId: chatId });
         }
         
-        // Close sidebar on mobile after selecting chat
         if (window.innerWidth <= 767) {
             document.getElementById('sidebar').classList.remove('active');
         }
@@ -2020,7 +2042,7 @@
         }
     }
 
-    // ========== CONTACTS - FIXED ==========
+    // ========== CONTACTS ==========
     async function loadContacts() {
         try {
             const response = await fetch('/api/friends');
@@ -2030,7 +2052,6 @@
             
             const contactList = document.getElementById('contactList');
             
-            // Keep Global Lobby
             contactList.innerHTML = `
                 <div class="contact-item ${currentChatId === 'global' ? 'active' : ''}" onclick="switchChat('global', 'Global Lobby')">
                     <div class="contact-avatar">
@@ -2082,7 +2103,7 @@
         }
     }
 
-    // ========== FRIEND REQUESTS - FIXED ==========
+    // ========== FRIEND REQUESTS ==========
     async function loadFriendRequests() {
         try {
             const response = await fetch('/api/friends/requests');
@@ -2187,7 +2208,7 @@
 
     async function acceptFriendRequest(userId) {
         try {
-            const response = await fetch('/api/friends/pending');
+            const response = await fetch('/api/friends/requests');
             const data = await response.json();
             
             const request = data.received.find(req => req.user_id === userId);
@@ -2595,7 +2616,6 @@
             event.target.style.display = 'none';
         }
         
-        // Close search results when clicking outside
         const searchResults = document.getElementById('searchResults');
         const searchSection = document.querySelector('.search-section');
         if (!searchSection.contains(event.target) && searchResults) {
@@ -2610,7 +2630,6 @@
             });
             document.getElementById('searchResults').style.display = 'none';
             
-            // Close sidebar on mobile when pressing Escape
             if (window.innerWidth <= 767) {
                 document.getElementById('sidebar').classList.remove('active');
             }
@@ -2624,7 +2643,7 @@
     function startVoiceCall() { showToast('Voice calls coming soon!', 'info'); }
     function startVideoCall() { showToast('Video calls coming soon!', 'info'); }
 
-    console.log('✅ HPZ Messenger - Fully Responsive & Renovated!');
+    console.log('✅ HPZ Messenger - COMPLETE & FIXED!');
 </script>
 
 </body>
