@@ -17,10 +17,6 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_, func, desc
 from sqlalchemy.orm import joinedload
 
-# ========== TWILIO FOR SMS ==========
-from twilio.rest import Client
-from twilio.base.exceptions import TwilioRestException
-
 print("=" * 50)
 print("🔍 DIAGNOSTIC MODE")
 print(f"Current directory: {os.getcwd()}")
@@ -32,7 +28,6 @@ if os.path.exists('runtime.txt'):
         print(f"✅ runtime.txt found! Content: '{content}'")
 else:
     print("❌ runtime.txt NOT found in current directory")
-    print("Files in parent directory:", os.listdir('..') if os.path.exists('..') else "No parent")
 
 print(f"Python version: {sys.version}")
 print(f"Python executable: {sys.executable}")
@@ -45,10 +40,9 @@ app = Flask(__name__)
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'hpz-production-secret-key-2024')
     
-    # Database - FIXED for Render PostgreSQL
+    # Database
     BASEDIR = os.path.abspath(os.path.dirname(__file__))
     
-    # Handle Render's PostgreSQL URL (starts with postgres:// instead of postgresql://)
     database_url = os.environ.get('DATABASE_URL')
     if database_url and database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
@@ -68,9 +62,9 @@ class Config:
                           'webm', 'mp3', 'wav', 'ogg', 'pdf', 'doc', 'docx', 'txt'}
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
     
-    # Session - FIXED for production
+    # Session
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
-    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'  # True in production
+    SESSION_COOKIE_SECURE = False  # Set to True when using HTTPS
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_REFRESH_EACH_REQUEST = True
@@ -87,7 +81,6 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 CORS(app, supports_credentials=True)
 
-# SocketIO - FIXED for production
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -95,18 +88,6 @@ socketio = SocketIO(
     logger=True,
     engineio_logger=True
 )
-
-# ========== TWILIO CLIENT INITIALIZATION ==========
-def get_twilio_client():
-    """Initialize and return Twilio client"""
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    
-    if not account_sid or not auth_token:
-        print("⚠️ WARNING: Twilio credentials not configured")
-        return None
-    
-    return Client(account_sid, auth_token)
 
 # ========== DATABASE MODELS ==========
 class User(db.Model):
@@ -356,24 +337,6 @@ def is_online(user_id):
         return diff.total_seconds() < app.config['ONLINE_TIMEOUT']
     return False
 
-# ========== VERIFICATION HELPERS ==========
-
-# Store verification codes temporarily (use Redis in production)
-verification_codes = {}
-
-def generate_verification_code():
-    """Generate a 6-digit verification code"""
-    return ''.join([str(random.randint(0, 9)) for _ in range(6)])
-
-def cleanup_expired_codes():
-    """Remove expired verification codes (older than 10 minutes)"""
-    current_time = time.time()
-    expired = [k for k, v in verification_codes.items() 
-               if current_time - v['timestamp'] > 600]
-    for key in expired:
-        del verification_codes[key]
-        print(f"🗑️ Cleaned up expired code for: {key}")
-
 # ========== ERROR HANDLERS ==========
 
 @app.errorhandler(404)
@@ -425,6 +388,9 @@ def chat_page():
 def login():
     try:
         data = request.get_json()
+        
+        print(f"📝 Login attempt: {data}")
+        
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
             
@@ -455,6 +421,8 @@ def login():
             profile.last_seen = datetime.now(timezone.utc)
             db.session.commit()
         
+        print(f"✅ Login successful: {username}")
+        
         return jsonify({
             'success': True,
             'redirect': '/chat',
@@ -463,13 +431,18 @@ def login():
         })
         
     except Exception as e:
-        print(f"Login error: {e}")
+        print(f"❌ Login error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': 'Login failed. Please try again.'}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     try:
         data = request.get_json()
+        
+        print(f"📝 Registration attempt: {data}")
+        
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
             
@@ -478,6 +451,7 @@ def register():
         email = data.get('email', '').strip() or None
         phone = data.get('phone', '').strip() or None
         
+        # Validation
         if not username or not password:
             return jsonify({'success': False, 'error': 'Username and password required'}), 400
         
@@ -487,6 +461,7 @@ def register():
         if len(password) < 6:
             return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
         
+        # Check duplicates
         if User.query.filter_by(username=username).first():
             return jsonify({'success': False, 'error': 'Username already taken'}), 400
         
@@ -496,6 +471,7 @@ def register():
         if phone and User.query.filter_by(phone=phone).first():
             return jsonify({'success': False, 'error': 'Phone number already registered'}), 400
         
+        # Create user
         user = User(
             username=username,
             email=email,
@@ -505,6 +481,9 @@ def register():
         db.session.add(user)
         db.session.flush()
         
+        print(f"✅ User created: {username} (ID: {user.id})")
+        
+        # Create profile
         profile = UserProfile(
             user_id=user.id,
             status='Available',
@@ -513,9 +492,14 @@ def register():
         db.session.add(profile)
         db.session.commit()
         
+        print(f"✅ Profile created for: {username}")
+        
+        # Auto-login
         session.permanent = True
         session['user_id'] = user.id
         session['username'] = user.username
+        
+        print(f"✅ Registration complete: {username}")
         
         return jsonify({
             'success': True,
@@ -526,8 +510,10 @@ def register():
         
     except Exception as e:
         db.session.rollback()
-        print(f"Registration error: {e}")
-        return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 500
+        print(f"❌ Registration error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Registration failed: {str(e)}'}), 500
 
 @app.route('/api/auth/logout', methods=['POST'])
 @login_required
@@ -565,377 +551,11 @@ def check_auth():
         'authenticated': False
     })
 
-# ========== 📱 PHONE/EMAIL VERIFICATION ROUTES ==========
-
-@app.route('/api/verification/send-phone', methods=['POST'])
-def send_phone_verification():
-    """Send verification code via SMS using Twilio"""
-    try:
-        data = request.get_json()
-        phone_number = data.get('phone_number', '').strip()
-        dial_code = data.get('dial_code', '').strip()
-        
-        if not phone_number:
-            return jsonify({'success': False, 'error': 'Phone number required'}), 400
-        
-        # Format phone number to E.164 format
-        full_phone = f"{dial_code}{phone_number}"
-        
-        # Validate format (basic check)
-        if not full_phone.startswith('+'):
-            return jsonify({'success': False, 'error': 'Invalid phone format. Must include country code'}), 400
-        
-        # Check if phone already registered
-        if User.query.filter_by(phone=full_phone).first():
-            return jsonify({'success': False, 'error': 'Phone number already registered'}), 400
-        
-        # Generate verification code
-        code = generate_verification_code()
-        
-        # Get Twilio client
-        twilio_client = get_twilio_client()
-        
-        if twilio_client:
-            # Send SMS via Twilio
-            try:
-                twilio_phone = os.environ.get('TWILIO_PHONE_NUMBER')
-                
-                if not twilio_phone:
-                    return jsonify({'success': False, 'error': 'SMS service not configured'}), 500
-                
-                message = twilio_client.messages.create(
-                    body=f"Your HPZ verification code is: {code}\n\nThis code will expire in 10 minutes.",
-                    from_=twilio_phone,
-                    to=full_phone
-                )
-                
-                print(f"✅ SMS sent to {full_phone} (SID: {message.sid})")
-                
-                # Store code with timestamp
-                cleanup_expired_codes()
-                verification_codes[full_phone] = {
-                    'code': code,
-                    'timestamp': time.time(),
-                    'method': 'phone',
-                    'attempts': 0
-                }
-                
-                return jsonify({
-                    'success': True,
-                    'message': 'Verification code sent to your phone',
-                    'phone': full_phone  # Return formatted phone for frontend
-                })
-                
-            except TwilioRestException as e:
-                print(f"❌ Twilio error: {e}")
-                
-                # Handle specific Twilio errors
-                if e.code == 21408:  # Permission to send to this number
-                    return jsonify({'success': False, 'error': 'Cannot send to this number. If using trial account, verify number first.'}), 400
-                elif e.code == 21211:  # Invalid phone number
-                    return jsonify({'success': False, 'error': 'Invalid phone number format'}), 400
-                else:
-                    return jsonify({'success': False, 'error': f'SMS service error: {str(e)}'}), 500
-        
-        else:
-            # Fallback for development (no Twilio credentials)
-            print(f"📱 DEVELOPMENT MODE - Verification code for {full_phone}: {code}")
-            
-            verification_codes[full_phone] = {
-                'code': code,
-                'timestamp': time.time(),
-                'method': 'phone',
-                'attempts': 0
-            }
-            
-            # Return code in development mode only
-            return jsonify({
-                'success': True,
-                'message': 'Verification code sent (dev mode)',
-                'phone': full_phone,
-                'dev_code': code  # Only in development!
-            })
-            
-    except Exception as e:
-        print(f"❌ Phone verification error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': 'Failed to send verification code'}), 500
-
-@app.route('/api/verification/send-email', methods=['POST'])
-def send_email_verification():
-    """Send verification code via email (placeholder - implement with SendGrid/AWS SES)"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip()
-        
-        if not email:
-            return jsonify({'success': False, 'error': 'Email required'}), 400
-        
-        # Basic email validation
-        if '@' not in email or '.' not in email:
-            return jsonify({'success': False, 'error': 'Invalid email format'}), 400
-        
-        # Check if email already registered
-        if User.query.filter_by(email=email).first():
-            return jsonify({'success': False, 'error': 'Email already registered'}), 400
-        
-        # Generate code
-        code = generate_verification_code()
-        
-        # TODO: Implement actual email sending with SendGrid/AWS SES
-        # For now, just log it
-        print(f"📧 Verification code for {email}: {code}")
-        
-        cleanup_expired_codes()
-        verification_codes[email] = {
-            'code': code,
-            'timestamp': time.time(),
-            'method': 'email',
-            'attempts': 0
-        }
-        
-        return jsonify({
-            'success': True,
-            'message': 'Verification code sent to your email',
-            'email': email,
-            'dev_code': code  # Remove in production!
-        })
-        
-    except Exception as e:
-        print(f"❌ Email verification error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to send verification code'}), 500
-
-@app.route('/api/verification/verify-code', methods=['POST'])
-def verify_code():
-    """Verify the code entered by user"""
-    try:
-        data = request.get_json()
-        identifier = data.get('identifier', '').strip()  # phone or email
-        code = data.get('code', '').strip()
-        
-        if not identifier or not code:
-            return jsonify({'success': False, 'error': 'Code and identifier required'}), 400
-        
-        cleanup_expired_codes()
-        
-        # Check if code exists
-        if identifier not in verification_codes:
-            return jsonify({'success': False, 'error': 'Verification code expired or not found'}), 400
-        
-        stored_data = verification_codes[identifier]
-        
-        # Check expiration (10 minutes)
-        if time.time() - stored_data['timestamp'] > 600:
-            del verification_codes[identifier]
-            return jsonify({'success': False, 'error': 'Verification code expired'}), 400
-        
-        # Rate limiting - max 5 attempts
-        if stored_data['attempts'] >= 5:
-            del verification_codes[identifier]
-            return jsonify({'success': False, 'error': 'Too many failed attempts. Request a new code.'}), 429
-        
-        # Verify code
-        if stored_data['code'] == code:
-            # Code is valid - mark as verified but don't delete yet
-            # We'll delete it after successful registration
-            verification_codes[identifier]['verified'] = True
-            
-            return jsonify({
-                'success': True,
-                'message': 'Code verified successfully',
-                'verified': True
-            })
-        else:
-            # Increment attempts
-            stored_data['attempts'] += 1
-            remaining = 5 - stored_data['attempts']
-            
-            return jsonify({
-                'success': False,
-                'error': f'Invalid code. {remaining} attempts remaining',
-                'attempts_remaining': remaining
-            }), 400
-            
-    except Exception as e:
-        print(f"❌ Verify code error: {e}")
-        return jsonify({'success': False, 'error': 'Verification failed'}), 500
-
-@app.route('/api/verification/complete-registration', methods=['POST'])
-def complete_registration():
-    """Complete registration after verification"""
-    try:
-        data = request.get_json()
-        identifier = data.get('identifier', '').strip()  # phone or email
-        username = data.get('username', '').strip()
-        password = data.get('password', '')
-        
-        if not all([identifier, username, password]):
-            return jsonify({'success': False, 'error': 'All fields required'}), 400
-        
-        # Validation
-        if len(username) < 3:
-            return jsonify({'success': False, 'error': 'Username must be at least 3 characters'}), 400
-        
-        if len(password) < 6:
-            return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
-        
-        # Check if code was verified
-        if identifier not in verification_codes:
-            return jsonify({'success': False, 'error': 'Please verify your code first'}), 400
-        
-        stored_data = verification_codes[identifier]
-        
-        if not stored_data.get('verified'):
-            return jsonify({'success': False, 'error': 'Please verify your code first'}), 400
-        
-        # Check username availability
-        if User.query.filter_by(username=username).first():
-            return jsonify({'success': False, 'error': 'Username already taken'}), 400
-        
-        # Create user
-        if stored_data['method'] == 'phone':
-            new_user = User(username=username, phone=identifier)
-        else:
-            new_user = User(username=username, email=identifier)
-        
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.flush()
-        
-        # Create profile
-        profile = UserProfile(
-            user_id=new_user.id,
-            status='Available',
-            bio=''
-        )
-        db.session.add(profile)
-        db.session.commit()
-        
-        # Clean up verification code
-        del verification_codes[identifier]
-        
-        # Auto-login
-        session.permanent = True
-        session['user_id'] = new_user.id
-        session['username'] = new_user.username
-        
-        print(f"✅ New user registered: {username} ({identifier})")
-        
-        return jsonify({
-            'success': True,
-            'redirect': '/chat',
-            'message': 'Registration successful!',
-            'user': new_user.to_dict()
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"❌ Complete registration error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': 'Registration failed'}), 500
-
-@app.route('/api/verification/resend', methods=['POST'])
-def resend_verification():
-    """Resend verification code"""
-    try:
-        data = request.get_json()
-        identifier = data.get('identifier', '').strip()
-        method = data.get('method', 'phone')  # 'phone' or 'email'
-        
-        if not identifier:
-            return jsonify({'success': False, 'error': 'Identifier required'}), 400
-        
-        # Rate limiting - allow resend only after 60 seconds
-        if identifier in verification_codes:
-            time_since = time.time() - verification_codes[identifier]['timestamp']
-            if time_since < 60:
-                wait_time = int(60 - time_since)
-                return jsonify({
-                    'success': False,
-                    'error': f'Please wait {wait_time} seconds before requesting a new code'
-                }), 429
-        
-        # Resend based on method
-        if method == 'phone':
-            # Extract parts from full phone number
-            if identifier.startswith('+'):
-                # Assume dial code is first 1-4 characters after +
-                dial_code = identifier[:4] if len(identifier) > 4 else identifier[:2]
-                phone_number = identifier[len(dial_code):]
-                
-                # Create new request data
-                new_data = {
-                    'phone_number': phone_number,
-                    'dial_code': dial_code
-                }
-                
-                # Manually call send_phone_verification logic
-                return send_phone_verification()
-        else:
-            # Create new request data
-            new_data = {'email': identifier}
-            return send_email_verification()
-            
-    except Exception as e:
-        print(f"❌ Resend error: {e}")
-        return jsonify({'success': False, 'error': 'Failed to resend code'}), 500
-
-# ========== LEGACY VERIFICATION ROUTES (KEEP FOR BACKWARD COMPATIBILITY) ==========
-
-@app.route('/register_phone', methods=['POST'])
-def register_phone():
-    """Legacy endpoint - redirects to new verification system"""
-    return send_phone_verification()
-
-@app.route('/register_email', methods=['POST'])
-def register_email():
-    """Legacy endpoint - redirects to new verification system"""
-    return send_email_verification()
-
-@app.route('/complete_registration', methods=['POST'])
-def legacy_complete_registration():
-    """Legacy endpoint - redirects to new verification system"""
-    try:
-        data = request.get_json()
-        code = data.get('code')
-        username = data.get('username')
-        password = data.get('password')
-        
-        if not all([code, username, password]):
-            return jsonify({'success': False, 'error': 'All fields required'}), 400
-        
-        # Find identifier by code
-        found = None
-        identifier = None
-        
-        for key, value in verification_codes.items():
-            if value['code'] == code:
-                if time.time() - value['timestamp'] < 600:
-                    found = value
-                    identifier = key
-                break
-        
-        if not found:
-            return jsonify({'success': False, 'error': 'Invalid or expired code'}), 400
-        
-        # Mark as verified
-        verification_codes[identifier]['verified'] = True
-        
-        # Call complete registration
-        return complete_registration()
-        
-    except Exception as e:
-        print(f"❌ Legacy complete registration error: {e}")
-        return jsonify({'success': False, 'error': 'Registration failed'}), 500
-
-# ========== 🔍 FIXED TELEGRAM-STYLE USER SEARCH ==========
+# ========== 🔍 USER SEARCH ==========
 
 @app.route('/api/users/search', methods=['GET'])
 @login_required
 def search_users():
-    """🔍 FIXED: Search ALL users - Shows EVERYONE except yourself"""
     current_user_id = session.get('user_id')
     query = request.args.get('q', '').strip()
     
@@ -945,7 +565,6 @@ def search_users():
         return jsonify({'success': True, 'results': [], 'count': 0})
     
     try:
-        # Get ALL users except current user - SIMPLE AND FAST!
         users = User.query.filter(
             User.id != current_user_id,
             User.username.ilike(f'%{query}%')
@@ -957,13 +576,11 @@ def search_users():
         for user in users:
             profile = UserProfile.query.filter_by(user_id=user.id).first()
             
-            # Check if friends
             is_friend = Friendship.query.filter(
                 ((Friendship.user1_id == current_user_id) & (Friendship.user2_id == user.id)) |
                 ((Friendship.user1_id == user.id) & (Friendship.user2_id == current_user_id))
             ).first() is not None
             
-            # Check pending requests
             request_sent = FriendRequest.query.filter_by(
                 from_user_id=current_user_id, to_user_id=user.id, status='pending'
             ).first() is not None
@@ -972,15 +589,12 @@ def search_users():
                 from_user_id=user.id, to_user_id=current_user_id, status='pending'
             ).first() is not None
             
-            # Online status
             online_status = is_online(user.id)
             last_seen = 'Online' if online_status else get_time_ago(profile.last_seen) if profile and profile.last_seen else 'Offline'
             
-            # Avatar
             avatar = profile.avatar_url if profile and profile.avatar_url else \
                      f"https://ui-avatars.com/api/?name={user.username}&background=0088cc&color=fff&size=128"
             
-            # Relationship status
             if is_friend:
                 relationship = 'friend'
                 action_text = 'Message'
@@ -1411,7 +1025,7 @@ def upload_file():
     
     return jsonify({'success': False, 'error': 'Upload failed'}), 500
 
-# ========== 🔌 SOCKET.IO EVENTS - REAL-TIME ==========
+# ========== 🔌 SOCKET.IO EVENTS ==========
 
 connected_users = {}
 user_sockets = {}
@@ -1566,53 +1180,13 @@ def create_upload_folders():
 
 def init_database():
     with app.app_context():
-        db.create_all()
-        
-        # Only create test users in development
-        if os.environ.get('FLASK_ENV') != 'production' and User.query.count() == 0:
-            print("👤 Creating test users...")
-            
-            test_users = [
-                {'username': 'admin', 'email': 'admin@hpz.com', 'password': 'admin123', 'status': 'Administrator'},
-                {'username': 'alice', 'email': 'alice@hpz.com', 'password': 'password123', 'status': '🌸 Coding'},
-                {'username': 'bob', 'email': 'bob@hpz.com', 'password': 'password123', 'status': '🎮 Gaming'},
-                {'username': 'charlie', 'email': 'charlie@hpz.com', 'password': 'password123', 'status': '📚 Reading'},
-                {'username': 'diana', 'email': 'diana@hpz.com', 'password': 'password123', 'status': '🎵 Music'}
-            ]
-            
-            for u in test_users:
-                user = User(username=u['username'], email=u['email'])
-                user.set_password(u['password'])
-                db.session.add(user)
-                db.session.flush()
-                
-                profile = UserProfile(user_id=user.id, status=u['status'])
-                db.session.add(profile)
-            
-            db.session.commit()
-            print(f"✅ Created {len(test_users)} users")
-            
-            admin = User.query.filter_by(username='admin').first()
-            alice = User.query.filter_by(username='alice').first()
-            bob = User.query.filter_by(username='bob').first()
-            
-            if admin and alice:
-                f1 = Friendship(user1_id=min(admin.id, alice.id), user2_id=max(admin.id, alice.id))
-                db.session.add(f1)
-            
-            if admin and bob:
-                f2 = Friendship(user1_id=min(admin.id, bob.id), user2_id=max(admin.id, bob.id))
-                db.session.add(f2)
-            
-            if alice and bob:
-                req = FriendRequest(from_user_id=alice.id, to_user_id=bob.id)
-                db.session.add(req)
-            
-            db.session.commit()
-            print("✅ Created test friendships")
+        try:
+            db.create_all()
+            print("✅ Database tables created")
+        except Exception as e:
+            print(f"❌ Database error: {e}")
 
 # ========== 🔧 DEBUG ROUTES ==========
-# Only enable debug routes in development
 if os.environ.get('FLASK_ENV') != 'production':
     @app.route('/debug/users')
     def debug_users():
@@ -1633,29 +1207,27 @@ if os.environ.get('FLASK_ENV') != 'production':
             'sessions': len(user_sockets)
         })
     
-    @app.route('/debug/verification-codes')
-    def debug_verification_codes():
-        """Debug endpoint to see current verification codes"""
-        codes_info = {}
-        for identifier, data in verification_codes.items():
-            codes_info[identifier] = {
-                'code': data['code'],
-                'method': data['method'],
-                'age_seconds': int(time.time() - data['timestamp']),
-                'attempts': data.get('attempts', 0),
-                'verified': data.get('verified', False)
-            }
-        return jsonify({
-            'active_codes': len(verification_codes),
-            'codes': codes_info
-        })
+    @app.route('/debug/db-test')
+    def test_database():
+        try:
+            user_count = User.query.count()
+            return jsonify({
+                'success': True,
+                'database': 'connected',
+                'users': user_count
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'database': 'disconnected'
+            }), 500
 
 # ========== 🎯 MAIN ==========
 if __name__ == '__main__':
     create_upload_folders()
     init_database()
     
-    # Get port from environment variable (for Render) or use default
     port = int(os.environ.get('PORT', 5000))
     
     socketio.run(
