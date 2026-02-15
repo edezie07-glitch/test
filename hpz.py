@@ -851,20 +851,20 @@ def handle_message(data):
         
         print(f"✅ Message saved: {message.id}")
         
-        # Emit to chat room
+        # Emit to chat room WITH BROADCAST
         if chat_id == 'global':
-            socketio.emit('new_message', message_dict, room='global')
-            print(f"📤 Emitted to global room")
+            socketio.emit('new_message', message_dict, room='global', namespace='/', broadcast=True)
+            print(f"📤 Broadcast to global room")
         else:
-            socketio.emit('new_message', message_dict, room=chat_id)
-            print(f"📤 Emitted to room {chat_id}")
+            socketio.emit('new_message', message_dict, room=chat_id, namespace='/', broadcast=True)
+            print(f"📤 Broadcast to room {chat_id}")
             
             # Also emit to individual users
             if '-' in chat_id:
                 user_ids = chat_id.split('-')
                 for uid in user_ids:
-                    socketio.emit('new_message', message_dict, room=f'user_{uid}')
-                    print(f"📤 Emitted to user_{uid}")
+                    socketio.emit('new_message', message_dict, room=f'user_{uid}', namespace='/', broadcast=True)
+                    print(f"📤 Broadcast to user_{uid}")
         
         print(f"📨 Message from {username}: {content[:50]}")
     except Exception as e:
