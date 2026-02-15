@@ -2,22 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Register - HPZ Messenger</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            -webkit-font-smoothing: antialiased;
         }
         .container {
             background: white;
@@ -36,71 +37,135 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        .logo img {
-            width: 60px;
+        .logo-image {
+            max-width: 60px;
             height: 60px;
+            margin: 0 auto 15px;
+            display: block;
             border-radius: 50%;
-            margin-bottom: 15px;
+            object-fit: cover;
         }
-        .logo h1 {
-            color: #ff5900;
-            font-size: 28px;
-            margin-bottom: 5px;
+        .step {
+            display: none;
         }
-        .logo p {
-            color: #666;
+        .step.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+            text-transform: lowercase;
+        }
+        .step-subtitle {
             font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+            text-transform: lowercase;
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             color: #333;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 14px;
+            text-transform: lowercase;
         }
         .form-group input {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 15px;
+            border-radius: 12px;
+            font-size: 16px;
             transition: all 0.3s;
+            background: white;
         }
         .form-group input:focus {
             outline: none;
             border-color: #ff5900;
             box-shadow: 0 0 0 4px rgba(255, 89, 0, 0.1);
         }
-        .helper-text {
-            font-size: 12px;
-            color: #999;
-            margin-top: 5px;
+        .country-selector-btn {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: lowercase;
+        }
+        .country-selector-btn:hover {
+            border-color: #ff5900;
+            background: #fff5f0;
+        }
+        .country-selector-btn:focus {
+            outline: none;
+            border-color: #ff5900;
+            box-shadow: 0 0 0 4px rgba(255, 89, 0, 0.1);
+        }
+        .selected-flag {
+            font-size: 24px;
+            min-width: 30px;
+        }
+        .selected-name {
+            font-weight: 500;
+            color: #666;
+            flex: 1;
+        }
+        .selected-dial {
+            color: #ff5900;
+            font-weight: 600;
         }
         .btn {
             width: 100%;
-            padding: 16px;
+            padding: 18px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            text-transform: lowercase;
+        }
+        .btn-primary {
             background: #ff5900;
             color: white;
             box-shadow: 0 4px 12px rgba(255, 89, 0, 0.4);
         }
-        .btn:hover {
+        .btn-primary:hover {
             background: #e64f00;
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(255, 89, 0, 0.5);
         }
-        .btn:disabled {
+        .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #666;
+            margin-top: 10px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .btn-secondary:hover {
+            color: #333;
         }
         .error-message {
             background: #fee;
@@ -122,154 +187,447 @@
             text-decoration: none;
             font-weight: 600;
         }
-        .link a:hover {
-            text-decoration: underline;
+        .verification-display {
+            background: #fff5f0;
+            border: 2px dashed #ff5900;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .verification-code {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ff5900;
+            letter-spacing: 5px;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal.show {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-transform: lowercase;
+        }
+        .country-search {
+            position: relative;
+        }
+        .country-search input {
+            width: 100%;
+            padding: 12px 40px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #999;
+        }
+        .country-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            max-height: calc(80vh - 150px);
+        }
+        .country-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 10px;
+            margin-bottom: 4px;
+        }
+        .country-item:hover {
+            background: #fff5f0;
+        }
+        .country-flag {
+            font-size: 28px;
+        }
+        .country-info {
+            flex: 1;
+        }
+        .country-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .country-dial {
+            color: #999;
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 767px) {
+            body { padding: 16px; }
+            .container { padding: 32px 24px; }
+            .step-title { font-size: 28px; }
+            .btn { padding: 16px; }
+        }
+        @media (max-width: 480px) {
+            .container { padding: 28px 20px; }
+            .step-title { font-size: 24px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Logo -->
         <div class="logo">
-            <img src="{{ url_for('static', filename='uploads/hepozy_logo.jpg') }}" alt="Logo">
-            <h1>Create Account</h1>
-            <p>Join HPZ Messenger</p>
+            <img src="{{ url_for('static', filename='uploads/hepozy_logo.jpg') }}" alt="HPZ Logo" class="logo-image">
         </div>
 
-        <div id="errorMessage" class="error-message"></div>
-
-        <form id="registerForm">
+        <!-- Step 1: Phone Number -->
+        <div class="step active" id="step1">
+            <div class="step-title">country</div>
+            <div class="step-subtitle">select country</div>
+            
+            <div id="errorPhone" class="error-message"></div>
+            
             <div class="form-group">
-                <label>Username *</label>
-                <input type="text" id="username" placeholder="Choose a username" required>
-                <div class="helper-text">Minimum 3 characters</div>
+                <button type="button" class="country-selector-btn" onclick="openCountryModal()">
+                    <span class="selected-flag" id="selectedFlag">🌍</span>
+                    <span class="selected-name" id="selectedName">select country</span>
+                    <span class="selected-dial" id="selectedDial">+00</span>
+                </button>
             </div>
 
+            <div class="step-title" style="margin-top: 30px;">phone number</div>
+            <div class="step-subtitle">enter phone number</div>
+            
             <div class="form-group">
-                <label>Email (Optional)</label>
-                <input type="email" id="email" placeholder="your.email@example.com">
-                <div class="helper-text">For account recovery</div>
+                <input type="tel" id="phoneNumber" placeholder="912 345 6789" style="text-align: center; font-size: 18px;">
             </div>
 
-            <div class="form-group">
-                <label>Phone (Optional)</label>
-                <input type="tel" id="phone" placeholder="+1234567890">
-                <div class="helper-text">For account recovery</div>
+            <button class="btn btn-primary" onclick="sendVerification()" id="sendBtn">
+                create account
+            </button>
+            
+            <button class="btn btn-secondary" onclick="goToLogin()">
+                Back
+            </button>
+        </div>
+
+        <!-- Step 2: Verification Code -->
+        <div class="step" id="step2">
+            <div class="step-title">verification</div>
+            <div class="step-subtitle" id="verifySubtitle">enter code sent to your phone</div>
+            
+            <div id="codeDisplay" class="verification-display">
+                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">dev code:</div>
+                <div class="verification-code" id="displayedCode">------</div>
             </div>
 
+            <div id="errorVerify" class="error-message"></div>
+            
             <div class="form-group">
-                <label>Password *</label>
-                <input type="password" id="password" placeholder="Create a password" required>
-                <div class="helper-text">Minimum 6 characters</div>
+                <input type="text" id="verificationCode" placeholder="000000" maxlength="6" 
+                       style="text-align: center; font-size: 32px; letter-spacing: 10px;">
             </div>
 
+            <div class="step-title">username</div>
             <div class="form-group">
-                <label>Confirm Password *</label>
-                <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                <input type="text" id="username" placeholder="choose username">
             </div>
 
-            <button type="submit" class="btn" id="registerBtn">Create Account</button>
-        </form>
+            <div class="step-title">password</div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="create password">
+            </div>
 
-        <div class="link">
-            Already have an account? <a href="/">Login</a>
+            <button class="btn btn-primary" onclick="completeRegistration()">
+                create account
+            </button>
+            <button class="btn btn-secondary" onclick="showStep('step1')">
+                Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Country Modal -->
+    <div class="modal" id="countryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">select country</div>
+                <div class="country-search">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="countrySearch" placeholder="search..." oninput="filterCountries()">
+                </div>
+            </div>
+            <div class="country-list" id="countryList"></div>
         </div>
     </div>
 
     <script>
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        let selectedCountry = null;
+        let currentIdentifier = null;
 
-            const username = document.getElementById('username').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const phone = document.getElementById('phone').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const errorDiv = document.getElementById('errorMessage');
-            const btn = document.getElementById('registerBtn');
+        const countries = [
+            { code: 'US', name: 'United States', dial_code: '+1', flag: '🇺🇸' },
+            { code: 'GB', name: 'United Kingdom', dial_code: '+44', flag: '🇬🇧' },
+            { code: 'CA', name: 'Canada', dial_code: '+1', flag: '🇨🇦' },
+            { code: 'AU', name: 'Australia', dial_code: '+61', flag: '🇦🇺' },
+            { code: 'PH', name: 'Philippines', dial_code: '+63', flag: '🇵🇭' },
+            { code: 'IN', name: 'India', dial_code: '+91', flag: '🇮🇳' },
+            { code: 'JP', name: 'Japan', dial_code: '+81', flag: '🇯🇵' },
+            { code: 'CN', name: 'China', dial_code: '+86', flag: '🇨🇳' },
+            { code: 'KR', name: 'South Korea', dial_code: '+82', flag: '🇰🇷' },
+            { code: 'DE', name: 'Germany', dial_code: '+49', flag: '🇩🇪' },
+            { code: 'FR', name: 'France', dial_code: '+33', flag: '🇫🇷' },
+            { code: 'IT', name: 'Italy', dial_code: '+39', flag: '🇮🇹' },
+            { code: 'ES', name: 'Spain', dial_code: '+34', flag: '🇪🇸' },
+            { code: 'BR', name: 'Brazil', dial_code: '+55', flag: '🇧🇷' },
+            { code: 'MX', name: 'Mexico', dial_code: '+52', flag: '🇲🇽' },
+            { code: 'RU', name: 'Russia', dial_code: '+7', flag: '🇷🇺' },
+            { code: 'SA', name: 'Saudi Arabia', dial_code: '+966', flag: '🇸🇦' },
+            { code: 'AE', name: 'UAE', dial_code: '+971', flag: '🇦🇪' },
+            { code: 'SG', name: 'Singapore', dial_code: '+65', flag: '🇸🇬' },
+            { code: 'MY', name: 'Malaysia', dial_code: '+60', flag: '🇲🇾' },
+            { code: 'TH', name: 'Thailand', dial_code: '+66', flag: '🇹🇭' },
+            { code: 'VN', name: 'Vietnam', dial_code: '+84', flag: '🇻🇳' },
+            { code: 'ID', name: 'Indonesia', dial_code: '+62', flag: '🇮🇩' },
+            { code: 'PK', name: 'Pakistan', dial_code: '+92', flag: '🇵🇰' },
+            { code: 'BD', name: 'Bangladesh', dial_code: '+880', flag: '🇧🇩' },
+            { code: 'NG', name: 'Nigeria', dial_code: '+234', flag: '🇳🇬' },
+            { code: 'KE', name: 'Kenya', dial_code: '+254', flag: '🇰🇪' },
+            { code: 'EG', name: 'Egypt', dial_code: '+20', flag: '🇪🇬' },
+            { code: 'ZA', name: 'South Africa', dial_code: '+27', flag: '🇿🇦' },
+            { code: 'TR', name: 'Turkey', dial_code: '+90', flag: '🇹🇷' }
+        ];
 
-            // Validation
-            if (!username) {
-                errorDiv.textContent = 'Username is required';
+        document.addEventListener('DOMContentLoaded', populateCountryList);
+
+        function populateCountryList() {
+            const list = document.getElementById('countryList');
+            list.innerHTML = '';
+            countries.forEach(country => {
+                const item = document.createElement('div');
+                item.className = 'country-item';
+                item.innerHTML = `
+                    <span class="country-flag">${country.flag}</span>
+                    <div class="country-info">
+                        <div class="country-name">${country.name}</div>
+                        <div class="country-dial">${country.dial_code}</div>
+                    </div>
+                `;
+                item.onclick = () => selectCountry(country);
+                list.appendChild(item);
+            });
+        }
+
+        function filterCountries() {
+            const query = document.getElementById('countrySearch').value.toLowerCase();
+            const items = document.querySelectorAll('.country-item');
+            items.forEach(item => {
+                const name = item.querySelector('.country-name').textContent.toLowerCase();
+                const dial = item.querySelector('.country-dial').textContent.toLowerCase();
+                item.style.display = (name.includes(query) || dial.includes(query)) ? 'flex' : 'none';
+            });
+        }
+
+        function selectCountry(country) {
+            selectedCountry = country;
+            document.getElementById('selectedFlag').textContent = country.flag;
+            document.getElementById('selectedName').textContent = country.name;
+            document.getElementById('selectedDial').textContent = country.dial_code;
+            closeCountryModal();
+            setTimeout(() => document.getElementById('phoneNumber').focus(), 300);
+        }
+
+        function openCountryModal() {
+            document.getElementById('countryModal').classList.add('show');
+            document.getElementById('countrySearch').focus();
+        }
+
+        function closeCountryModal() {
+            document.getElementById('countryModal').classList.remove('show');
+        }
+
+        document.getElementById('countryModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCountryModal();
+        });
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function goToLogin() {
+            window.location.href = '/';
+        }
+
+        async function sendVerification() {
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const errorDiv = document.getElementById('errorPhone');
+            const btn = document.getElementById('sendBtn');
+            
+            if (!selectedCountry) {
+                errorDiv.textContent = 'please select a country';
                 errorDiv.style.display = 'block';
                 return;
             }
-
-            if (username.length < 3) {
-                errorDiv.textContent = 'Username must be at least 3 characters';
+            
+            if (!phone) {
+                errorDiv.textContent = 'please enter phone number';
                 errorDiv.style.display = 'block';
                 return;
             }
-
-            if (!password) {
-                errorDiv.textContent = 'Password is required';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            if (password.length < 6) {
-                errorDiv.textContent = 'Password must be at least 6 characters';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                errorDiv.textContent = 'Passwords do not match';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            // Clear error
+            
             errorDiv.style.display = 'none';
             btn.disabled = true;
-            btn.textContent = 'Creating account...';
-
+            btn.textContent = 'sending...';
+            
             try {
-                const response = await fetch('/api/auth/register', {
+                const response = await fetch('/api/verification/send-phone', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
+                        phone_number: phone,
+                        dial_code: selectedCountry.dial_code
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentIdentifier = data.phone;
+                    
+                    if (data.dev_code) {
+                        document.getElementById('displayedCode').textContent = data.dev_code;
+                        document.getElementById('codeDisplay').style.display = 'block';
+                    }
+                    
+                    document.getElementById('verifySubtitle').textContent = 
+                        `code sent to ${selectedCountry.dial_code} ${phone}`;
+                    showStep('step2');
+                } else {
+                    errorDiv.textContent = data.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'connection error';
+                errorDiv.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'create account';
+            }
+        }
+
+        async function completeRegistration() {
+            const code = document.getElementById('verificationCode').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorVerify');
+            
+            if (!code) {
+                errorDiv.textContent = 'please enter code';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (!username || username.length < 3) {
+                errorDiv.textContent = 'username must be at least 3 characters';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (!password || password.length < 6) {
+                errorDiv.textContent = 'password must be at least 6 characters';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            errorDiv.style.display = 'none';
+            const btn = event.target;
+            btn.textContent = 'creating...';
+            btn.disabled = true;
+            
+            try {
+                // Verify code
+                const verifyRes = await fetch('/api/verification/verify-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ identifier: currentIdentifier, code: code })
+                });
+                
+                const verifyData = await verifyRes.json();
+                
+                if (!verifyData.success) {
+                    errorDiv.textContent = verifyData.error;
+                    errorDiv.style.display = 'block';
+                    btn.textContent = 'create account';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Complete registration
+                const regRes = await fetch('/api/verification/complete-registration', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        identifier: currentIdentifier,
                         username: username,
-                        email: email || null,
-                        phone: phone || null,
                         password: password
                     })
                 });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    btn.textContent = 'Success! Redirecting...';
-                    setTimeout(() => {
-                        window.location.href = data.redirect || '/chat';
-                    }, 500);
+                
+                const regData = await regRes.json();
+                
+                if (regData.success) {
+                    btn.textContent = 'success!';
+                    setTimeout(() => window.location.href = regData.redirect || '/chat', 500);
                 } else {
-                    errorDiv.textContent = data.error || 'Registration failed';
+                    errorDiv.textContent = regData.error;
                     errorDiv.style.display = 'block';
+                    btn.textContent = 'create account';
                     btn.disabled = false;
-                    btn.textContent = 'Create Account';
                 }
             } catch (error) {
-                console.error('Registration error:', error);
-                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.textContent = 'connection error';
                 errorDiv.style.display = 'block';
+                btn.textContent = 'create account';
                 btn.disabled = false;
-                btn.textContent = 'Create Account';
             }
-        });
-
-        // Real-time password match indicator
-        document.getElementById('confirmPassword').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
-            const confirm = this.value;
-            
-            if (confirm && password !== confirm) {
-                this.style.borderColor = '#c33';
-            } else if (confirm && password === confirm) {
-                this.style.borderColor = '#4CAF50';
-            } else {
-                this.style.borderColor = '#e0e0e0';
-            }
-        });
+        }
     </script>
 </body>
 </html>
+
+
