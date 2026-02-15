@@ -11,7 +11,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from sqlalchemy import or_, and_, func, desc
+from sqlalchemy import or_, and_, func, desc, inspect
 from sqlalchemy.orm import joinedload
 
 # ========== INITIALIZE APP ==========
@@ -32,10 +32,7 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
-        'echo': False,
     }
-    
-    # FIX: Prevent session detachment
     SQLALCHEMY_EXPIRE_ON_COMMIT = False
     
     # Upload
@@ -66,7 +63,6 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
-    # Relationships with lazy loading
     profile = db.relationship('UserProfile', back_populates='user', uselist=False, 
                             cascade='all, delete-orphan', lazy='joined')
     sent_messages = db.relationship('ChatMessage', back_populates='sender', lazy='dynamic')
@@ -95,13 +91,6 @@ class UserProfile(db.Model):
     last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     user = db.relationship('User', back_populates='profile')
-    
-    def to_dict(self):
-        return {
-            'bio': self.bio,
-            'avatar_url': self.avatar_url,
-            'status': self.status
-        }
 
 class ChatMessage(db.Model):
     __tablename__ = 'chat_messages'
@@ -112,24 +101,19 @@ class ChatMessage(db.Model):
     message_type = db.Column(db.String(20), default='text')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     
-    # Eager load sender to prevent detachment
     sender = db.relationship('User', back_populates='sent_messages', lazy='joined')
     
     def to_dict(self):
-        # Access all data within session context
         sender_username = self.sender.username if self.sender else 'Unknown'
         sender_id = self.sender_id
-        
-        # Get profile separately to avoid detachment
         profile = UserProfile.query.filter_by(user_id=sender_id).first()
-        sender_avatar = profile.avatar_url if profile else None
         
         return {
             'id': self.id,
             'chat_id': self.chat_id,
             'sender_id': sender_id,
             'sender_username': sender_username,
-            'sender_avatar': sender_avatar,
+            'sender_avatar': profile.avatar_url if profile else None,
             'content': self.content,
             'message_type': self.message_type,
             'created_at': self.created_at.isoformat()
@@ -142,9 +126,7 @@ class Friendship(db.Model):
     user2_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
-    __table_args__ = (
-        db.UniqueConstraint('user1_id', 'user2_id'),
-    )
+    __table_args__ = (db.UniqueConstraint('user1_id', 'user2_id'),)
 
 class FriendRequest(db.Model):
     __tablename__ = 'friend_requests'
@@ -153,6 +135,35 @@ class FriendRequest(db.Model):
     to_user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), index=True)
     status = db.Column(db.String(20), default='pending', index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+# ========== AUTO-INITIALIZE DATABASE ==========
+
+def ensure_database():
+    """Ensure database tables exist"""
+    try:
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        if not tables:
+            print("⚠️ No tables found, creating database...")
+            with app.app_context():
+                db.create_all()
+            print("✅ Database tables created")
+        else:
+            print(f"✅ Database ready with {len(tables)} tables")
+            
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
+        # Try to create anyway
+        try:
+            with app.app_context():
+                db.create_all()
+            print("✅ Database tables created (recovery)")
+        except:
+            pass
+
+# Call on startup
+ensure_database()
 
 # ========== HELPER FUNCTIONS ==========
 
@@ -243,8 +254,6 @@ def register():
         profile = UserProfile(user_id=user.id)
         db.session.add(profile)
         db.session.commit()
-        
-        # Refresh to load relationships
         db.session.refresh(user)
         
         session.permanent = True
@@ -414,7 +423,6 @@ def accept_friend():
 @app.route('/api/messages/<chat_id>', methods=['GET'])
 @login_required
 def get_messages(chat_id):
-    # Use joinedload to prevent detachment
     messages = ChatMessage.query.options(
         joinedload(ChatMessage.sender)
     ).filter_by(chat_id=chat_id).order_by(
@@ -422,8 +430,6 @@ def get_messages(chat_id):
     ).limit(50).all()
     
     messages.reverse()
-    
-    # Convert to dict within session context
     message_dicts = [m.to_dict() for m in messages]
     
     return jsonify({
@@ -458,8 +464,6 @@ def handle_message(data):
     )
     db.session.add(message)
     db.session.commit()
-    
-    # Refresh to load relationships
     db.session.refresh(message)
     
     socketio.emit('new_message', message.to_dict(), room=f"chat_{data['chatId']}")
@@ -470,25 +474,49 @@ def handle_message(data):
 def health():
     try:
         count = User.query.count()
-        return jsonify({'status': 'ok', 'users': count})
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        return jsonify({
+            'status': 'ok', 
+            'users': count,
+            'tables': tables
+        })
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
-# ========== INIT ==========
-
-def init_db():
-    with app.app_context():
+@app.route('/debug/init-db')
+def init_db_route():
+    """Manually initialize database"""
+    try:
         db.create_all()
-        print("✅ Database initialized")
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        return jsonify({
+            'success': True,
+            'message': 'Database initialized',
+            'tables': tables
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# FIX: Add teardown to properly close sessions
+# ========== TEARDOWN ==========
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
 
+# ========== START ==========
+
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    init_db()
     
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+    print(f"🚀 Starting server on port {port}")
+    
+    socketio.run(
+        app, 
+        host='0.0.0.0', 
+        port=port, 
+        debug=False, 
+        allow_unsafe_werkzeug=True
+    )
