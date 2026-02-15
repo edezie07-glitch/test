@@ -1608,6 +1608,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 HPZ Messenger - Telegram Style - FIXED VERSION');
         
+        // Add connection status indicator
+        addConnectionIndicator();
+        
         initSocket();
         loadContacts();
         loadFriendRequests();
@@ -1627,6 +1630,52 @@
             if (msgInput) msgInput.focus();
         }, 500);
     });
+
+    function addConnectionIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'connectionStatus';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 10000;
+            display: none;
+            background: #ff9800;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        `;
+        indicator.innerHTML = '<i class="fas fa-circle"></i> Connecting...';
+        document.body.appendChild(indicator);
+    }
+
+    function updateConnectionStatus(status, message) {
+        const indicator = document.getElementById('connectionStatus');
+        if (!indicator) return;
+        
+        if (status === 'connected') {
+            indicator.style.background = '#00b373';
+            indicator.innerHTML = '<i class="fas fa-circle"></i> Connected';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        } else if (status === 'connecting') {
+            indicator.style.background = '#ff9800';
+            indicator.innerHTML = '<i class="fas fa-circle"></i> ' + (message || 'Connecting...');
+            indicator.style.display = 'block';
+        } else if (status === 'disconnected') {
+            indicator.style.background = '#e74c3c';
+            indicator.innerHTML = '<i class="fas fa-circle"></i> ' + (message || 'Disconnected');
+            indicator.style.display = 'block';
+        } else if (status === 'error') {
+            indicator.style.background = '#e74c3c';
+            indicator.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (message || 'Connection Error');
+            indicator.style.display = 'block';
+        }
+    }
 
     // ========== SEARCH ==========
     function handleSearchInput(query) {
@@ -1775,6 +1824,7 @@
     // ========== SOCKET.IO - FIXED WITH withCredentials ========== 
     function initSocket() {
         console.log('🔌 Initializing Socket.IO with credentials...');
+        updateConnectionStatus('connecting', 'Connecting...');
         
         socket = io({
             withCredentials: true,  // ← CRITICAL FIX FOR SESSIONS!
@@ -1793,6 +1843,8 @@
             console.log('✅ Socket connected:', socket.id);
             console.log('   Transport:', socket.io.engine.transport.name);
             
+            updateConnectionStatus('connected', 'Connected');
+            
             socket.emit('join', { chatId: `user_${currentUserId}` });
             socket.emit('join', { chatId: currentChatId });
             
@@ -1807,29 +1859,36 @@
             console.error('   Error type:', error.type);
             console.error('   Error message:', error.message);
             
+            updateConnectionStatus('error', 'Connection failed');
+            
             // Don't show toast for every retry
-            if (socket.io.engine.transport.name === 'websocket') {
-                showToast('Trying alternative connection...', 'info');
+            if (socket.io.backoff.attempts === 1) {
+                showToast('Trying to connect...', 'info');
             }
         });
 
         socket.on('connect_timeout', function() {
             console.error('⏱️ Connection timeout');
+            updateConnectionStatus('error', 'Connection timeout');
             showToast('Connection taking too long. Retrying...', 'warning');
         });
 
         socket.on('disconnect', function(reason) {
             console.log('❌ Socket disconnected:', reason);
+            updateConnectionStatus('disconnected', 'Disconnected');
+            
             document.getElementById('userOnlineStatus').style.background = 'var(--tg-offline)';
             document.getElementById('userStatusText').textContent = 'Offline';
             
             if (reason === 'io server disconnect') {
+                // Server disconnected us, try to reconnect
                 socket.connect();
             }
         });
 
         socket.on('reconnect', function(attemptNumber) {
             console.log('🔄 Reconnected after ' + attemptNumber + ' attempts');
+            updateConnectionStatus('connected', 'Reconnected');
             showToast('Reconnected to chat', 'success');
             
             socket.emit('join', { chatId: `user_${currentUserId}` });
@@ -1840,6 +1899,7 @@
 
         socket.on('reconnect_attempt', function(attemptNumber) {
             console.log('🔄 Reconnection attempt ' + attemptNumber);
+            updateConnectionStatus('connecting', 'Reconnecting... (' + attemptNumber + ')');
         });
 
         socket.on('reconnect_error', function(error) {
@@ -1848,6 +1908,7 @@
 
         socket.on('reconnect_failed', function() {
             console.error('❌ Reconnection failed');
+            updateConnectionStatus('error', 'Cannot connect');
             showToast('Cannot connect. Please refresh the page.', 'error');
         });
 
@@ -1912,11 +1973,42 @@
             return;
         }
         
-        if (!socket || !socket.connected) {
-            showToast('Not connected to chat server', 'error');
+        // Check socket connection with detailed logging
+        console.log('📤 Attempting to send message...');
+        console.log('   Socket exists:', !!socket);
+        console.log('   Socket connected:', socket ? socket.connected : 'no socket');
+        console.log('   Socket id:', socket ? socket.id : 'no socket');
+        
+        if (!socket) {
+            console.error('❌ Socket not initialized');
+            showToast('Chat not initialized. Refreshing...', 'error');
+            setTimeout(() => location.reload(), 1000);
             return;
         }
         
+        if (!socket.connected) {
+            console.error('❌ Socket not connected. Attempting to reconnect...');
+            showToast('Connecting to chat...', 'info');
+            
+            // Try to reconnect
+            socket.connect();
+            
+            // Wait a moment and try again
+            setTimeout(() => {
+                if (socket.connected) {
+                    console.log('✅ Reconnected! Sending message...');
+                    actualSendMessage(content, input);
+                } else {
+                    showToast('Cannot connect. Please refresh the page.', 'error');
+                }
+            }, 2000);
+            return;
+        }
+        
+        actualSendMessage(content, input);
+    }
+    
+    function actualSendMessage(content, input) {
         console.log('📤 Sending message:', content);
         
         const messageData = {
@@ -1926,20 +2018,27 @@
             timestamp: new Date().toISOString()
         };
         
-        socket.emit('send_message', messageData);
-        
-        // Optimistic UI update
-        const optimisticMessage = {
-            ...messageData,
-            id: Date.now(),
-            sender_id: currentUserId,
-            sender_username: currentUsername,
-            created_at: new Date().toISOString()
-        };
-        displayMessage(optimisticMessage);
-        
-        input.value = '';
-        socket.emit('typing_stop', { chatId: currentChatId });
+        try {
+            socket.emit('send_message', messageData);
+            
+            // Optimistic UI update
+            const optimisticMessage = {
+                ...messageData,
+                id: Date.now(),
+                sender_id: currentUserId,
+                sender_username: currentUsername,
+                created_at: new Date().toISOString()
+            };
+            displayMessage(optimisticMessage);
+            
+            input.value = '';
+            socket.emit('typing_stop', { chatId: currentChatId });
+            
+            console.log('✅ Message sent successfully');
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+            showToast('Failed to send message: ' + error.message, 'error');
+        }
     }
 
     function displayMessage(message) {
