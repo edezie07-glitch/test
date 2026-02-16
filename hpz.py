@@ -26,12 +26,12 @@ socketio = SocketIO(
     app,
     cors_allowed_origins="*",
     cors_credentials=True,
-    async_mode='eventlet',  # Using eventlet - most reliable
+    async_mode='gevent',  # Changed to gevent - works with Python 3.14
     logger=True,
     engineio_logger=True
 )
 
-print("✅ Using async_mode='eventlet'")
+print("✅ Using async_mode='gevent'")
 
 # ========== MODELS ==========
 class User(db.Model):
@@ -204,8 +204,13 @@ def handle_send_message(data):
     print(f"💾 Saved to database: Message #{msg.id}")
     print(f"📤 Broadcasting to 'global_chat' room...")
     
-    # Send to EVERYONE in global_chat (including sender)
-    socketio.emit('new_message', message_data, to='global_chat')
+    # CRITICAL: With gevent, use skip_sid to avoid sending to sender twice
+    socketio.emit('new_message', message_data, 
+                  to='global_chat',
+                  skip_sid=request.sid)  # Don't send to sender (they already have it)
+    
+    # Send to sender separately to ensure they get it
+    socketio.emit('new_message', message_data, to=request.sid)
     
     print(f"✅ Message broadcast complete!")
     print(f"{'='*50}\n")
