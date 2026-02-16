@@ -3,124 +3,382 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Messenger</title>
+    <title>Enhanced Messenger</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: Arial, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: #f0f2f5;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 90%;
-            max-width: 600px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 100vh;
             overflow: hidden;
         }
-        .header {
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 15px;
             background: #ff5900;
             color: white;
-            padding: 20px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .status {
+        .sidebar-header h3 {
+            font-size: 18px;
+        }
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Search */
+        .search-box {
             padding: 10px;
-            background: #f8f9fa;
-            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
             font-size: 14px;
         }
-        .status.connected { background: #d4edda; color: #155724; }
-        .status.disconnected { background: #f8d7da; color: #721c24; }
-        .messages {
-            height: 400px;
+        .search-input:focus {
+            outline: none;
+            border-color: #ff5900;
+        }
+
+        /* Search Results */
+        .search-results {
+            max-height: 200px;
             overflow-y: auto;
-            padding: 20px;
+            border-bottom: 1px solid #eee;
         }
-        .message {
-            margin-bottom: 15px;
+        .search-result-item {
             padding: 10px;
-            border-radius: 8px;
-            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
         }
-        .message.me {
+        .search-result-item:hover {
+            background: #f9f9f9;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             background: #ff5900;
             color: white;
-            margin-left: 50px;
-        }
-        .message.other {
-            background: #e9ecef;
-            margin-right: 50px;
-        }
-        .sender {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-        .content {
-            font-size: 15px;
-        }
-        .time {
-            font-size: 11px;
-            opacity: 0.7;
-            margin-top: 5px;
-        }
-        .input-area {
             display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn-add, .btn-message, .btn-pending, .btn-accept {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .btn-add {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .btn-add:hover {
+            background: #bbdefb;
+        }
+        .btn-message {
+            background: #ff5900;
+            color: white;
+        }
+        .btn-message:hover {
+            background: #e64e00;
+        }
+        .btn-pending {
+            background: #ffa726;
+            color: white;
+            opacity: 0.7;
+            cursor: default;
+        }
+        .btn-accept {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-accept:hover {
+            background: #45a049;
+        }
+
+        /* Chat List */
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .chat-item {
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .chat-item:hover {
+            background: #f9f9f9;
+        }
+        .chat-item.active {
+            background: #e8f5e9;
+            border-left: 3px solid #ff5900;
+        }
+        .chat-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .chat-preview {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Main Chat */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e5ddd5;
+        }
+        .chat-header {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-header h4 {
+            font-size: 16px;
+        }
+        .status {
+            font-size: 12px;
+            color: #666;
+        }
+        .status.online {
+            color: #4caf50;
+        }
+
+        /* Messages */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
             padding: 20px;
-            border-top: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            max-width: 65%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+        .message.sent {
+            align-self: flex-end;
+            background: #dcf8c6;
+        }
+        .message.received {
+            align-self: flex-start;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .message-sender {
+            font-size: 12px;
+            font-weight: 600;
+            color: #ff5900;
+            margin-bottom: 3px;
+        }
+        .message-content {
+            margin-bottom: 3px;
+        }
+        .message-image {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .message-time {
+            font-size: 10px;
+            color: #999;
+            text-align: right;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .btn-image:hover {
+            background: #e0e0e0;
         }
         #messageInput {
             flex: 1;
-            padding: 12px;
-            border: 1px solid #ced4da;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
             border-radius: 20px;
-            font-size: 15px;
-            outline: none;
+            font-size: 14px;
         }
-        #sendBtn {
-            margin-left: 10px;
-            padding: 12px 25px;
+        #messageInput:focus {
+            outline: none;
+            border-color: #ff5900;
+        }
+        .btn-send {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
             background: #ff5900;
             color: white;
-            border: none;
-            border-radius: 20px;
             cursor: pointer;
-            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-        #sendBtn:hover {
+        .btn-send:hover {
             background: #e64e00;
         }
-        #sendBtn:disabled {
-            background: #ccc;
+        .btn-send:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        /* Notifications */
+        .friend-requests-badge {
+            background: #f44336;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>💬 Simple Messenger</h1>
-            <p>Logged in as: {{ user.username }}</p>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>💬 {{ user.username }}</h3>
+            <button class="btn-logout" onclick="logout()">Logout</button>
         </div>
-        
-        <div class="status" id="status">Connecting...</div>
-        
-        <div class="messages" id="messages">
-            <p style="text-align: center; color: #999; padding: 40px;">Loading messages...</p>
+
+        <!-- Search -->
+        <div class="search-box">
+            <input type="text" 
+                   class="search-input" 
+                   id="searchInput" 
+                   placeholder="🔍 Search users..."
+                   oninput="handleSearch(this.value)">
         </div>
-        
+
+        <!-- Search Results -->
+        <div id="searchResults" class="search-results hidden"></div>
+
+        <!-- Chat List -->
+        <div class="chat-list" id="chatList">
+            <div class="loading">Search for friends to start chatting...</div>
+        </div>
+    </div>
+
+    <!-- Main Chat -->
+    <div class="main-chat">
+        <div class="chat-header">
+            <div class="avatar" id="chatAvatar">💬</div>
+            <div>
+                <h4 id="chatName">Select a chat</h4>
+                <div class="status" id="chatStatus">No chat selected</div>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="loading">👈 Select a friend to start chatting</div>
+        </div>
+
         <div class="input-area">
+            <input type="file" 
+                   id="imageInput" 
+                   accept="image/*" 
+                   style="display: none;" 
+                   onchange="handleImageUpload(this)">
+            <button class="btn-image" onclick="document.getElementById('imageInput').click()">
+                📷
+            </button>
             <input type="text" 
                    id="messageInput" 
                    placeholder="Type a message..." 
                    onkeypress="if(event.key==='Enter') sendMessage()">
-            <button id="sendBtn" onclick="sendMessage()">Send</button>
+            <button class="btn-send" onclick="sendMessage()" id="sendBtn">
+                ➤
+            </button>
         </div>
     </div>
 
@@ -128,12 +386,23 @@
         const currentUserId = {{ user_id }};
         const currentUsername = '{{ user.username }}';
         let socket = null;
+        let currentChatId = null; // Start with no chat selected
+        let currentChatName = null;
+        let searchTimeout = null;
+        let friends = [];
 
-        console.log('👤 Current user:', currentUsername, '(ID:', currentUserId, ')');
+        console.log('👤 User:', currentUsername, '(ID:', currentUserId, ')');
 
-        // Initialize Socket.IO
+        // Initialize
+        function init() {
+            initSocket();
+            loadFriends();
+            loadFriendRequests();
+        }
+
+        // Socket.IO
         function initSocket() {
-            console.log('🔌 Connecting to Socket.IO...');
+            console.log('🔌 Connecting...');
             
             socket = io({
                 withCredentials: true,
@@ -141,100 +410,325 @@
             });
 
             socket.on('connect', function() {
-                console.log('✅ CONNECTED! Socket ID:', socket.id);
-                updateStatus('connected', '🟢 Connected');
-                loadMessages();
+                console.log('✅ Connected:', socket.id);
+                // Don't load messages until chat is selected
             });
 
             socket.on('disconnect', function() {
-                console.log('❌ DISCONNECTED');
-                updateStatus('disconnected', '🔴 Disconnected');
+                console.log('❌ Disconnected');
             });
 
             socket.on('new_message', function(message) {
-                console.log('📨 NEW MESSAGE RECEIVED:', message);
-                displayMessage(message);
-            });
-
-            socket.on('user_joined', function(data) {
-                console.log('👋 User joined:', data.username);
+                console.log('📨 New message:', message);
+                if (currentChatId && message.chat_id === currentChatId) {
+                    displayMessage(message);
+                }
+                updateChatPreview(message);
             });
 
             socket.on('error', function(error) {
-                console.error('❌ Socket error:', error);
+                console.error('❌ Error:', error);
                 alert('Error: ' + error.message);
             });
         }
 
-        function updateStatus(status, text) {
-            const statusEl = document.getElementById('status');
-            statusEl.className = 'status ' + status;
-            statusEl.textContent = text;
+        // Load Messages
+        async function loadMessages(chatId) {
+            try {
+                const res = await fetch(`/api/messages/${chatId}`);
+                const data = await res.json();
+                
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+                
+                if (data.success && data.messages.length > 0) {
+                    data.messages.forEach(msg => displayMessage(msg));
+                } else {
+                    container.innerHTML = '<div class="loading">No messages yet. Start chatting!</div>';
+                }
+                
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                console.error('Error loading messages:', err);
+            }
         }
 
-        function loadMessages() {
-            console.log('📥 Loading messages...');
-            fetch('/messages')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const container = document.getElementById('messages');
-                        container.innerHTML = '';
-                        
-                        if (data.messages.length === 0) {
-                            container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">No messages yet. Start chatting!</p>';
-                        } else {
-                            data.messages.forEach(msg => displayMessage(msg));
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error('❌ Error loading messages:', err);
-                });
-        }
-
+        // Display Message
         function displayMessage(message) {
-            const container = document.getElementById('messages');
+            const container = document.getElementById('messagesContainer');
             
-            // Remove "no messages" text if present
-            if (container.querySelector('p')) {
+            if (container.querySelector('.loading')) {
                 container.innerHTML = '';
             }
             
             const msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (message.sender_id === currentUserId ? 'me' : 'other');
+            msgDiv.className = 'message ' + (message.sender_id === currentUserId ? 'sent' : 'received');
             
             const time = new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
+            let content = '';
+            if (message.message_type === 'image') {
+                content = `<img src="${message.content}" class="message-image" onclick="window.open('${message.content}', '_blank')">`;
+            } else {
+                content = `<div class="message-content">${escapeHtml(message.content)}</div>`;
+            }
+            
             msgDiv.innerHTML = `
-                ${message.sender_id !== currentUserId ? '<div class="sender">' + message.sender_username + '</div>' : ''}
-                <div class="content">${escapeHtml(message.content)}</div>
-                <div class="time">${time}</div>
+                ${message.sender_id !== currentUserId ? '<div class="message-sender">' + escapeHtml(message.sender_username) + '</div>' : ''}
+                ${content}
+                <div class="message-time">${time}</div>
             `;
             
             container.appendChild(msgDiv);
             container.scrollTop = container.scrollHeight;
         }
 
+        // Send Message
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             
-            if (!content) return;
+            if (!content || !socket || !socket.connected) return;
             
-            if (!socket || !socket.connected) {
-                alert('Not connected! Please wait...');
+            if (!currentChatId) {
+                alert('Please select a friend to chat with');
                 return;
             }
 
-            console.log('📤 SENDING MESSAGE:', content);
-
             socket.emit('send_message', {
-                content: content
+                chat_id: currentChatId,
+                content: content,
+                message_type: 'text'
             });
 
             input.value = '';
-            console.log('✅ Message sent to server');
+        }
+
+        // Handle Image Upload
+        async function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            if (!currentChatId) {
+                alert('Please select a friend to chat with');
+                input.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const res = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    socket.emit('send_message', {
+                        chat_id: currentChatId,
+                        content: data.url,
+                        message_type: 'image'
+                    });
+                } else {
+                    alert('Failed to upload image: ' + data.error);
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                alert('Failed to upload image');
+            }
+
+            input.value = '';
+        }
+
+        // Search Users
+        function handleSearch(query) {
+            clearTimeout(searchTimeout);
+            
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (!query.trim()) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+            resultsDiv.classList.remove('hidden');
+            
+            searchTimeout = setTimeout(() => performSearch(query), 300);
+        }
+
+        async function performSearch(query) {
+            try {
+                const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                
+                const resultsDiv = document.getElementById('searchResults');
+                
+                if (data.success && data.results.length > 0) {
+                    resultsDiv.innerHTML = data.results.map(user => `
+                        <div class="search-result-item">
+                            <div class="user-info">
+                                <div class="avatar">${user.username[0].toUpperCase()}</div>
+                                <div>${escapeHtml(user.username)}</div>
+                            </div>
+                            ${getActionButton(user)}
+                        </div>
+                    `).join('');
+                } else {
+                    resultsDiv.innerHTML = '<div class="loading">No users found</div>';
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+            }
+        }
+
+        function getActionButton(user) {
+            if (user.is_friend) {
+                return `<button class="btn-message" onclick="openPrivateChat(${user.id}, '${escapeHtml(user.username)}')">Message</button>`;
+            } else if (user.request_sent) {
+                return `<button class="btn-pending">Pending</button>`;
+            } else if (user.request_received) {
+                return `<button class="btn-accept" onclick="acceptFriendRequest(${user.id})">Accept</button>`;
+            } else {
+                return `<button class="btn-add" onclick="sendFriendRequest(${user.id})">Add Friend</button>`;
+            }
+        }
+
+        // Friend System
+        async function sendFriendRequest(userId) {
+            try {
+                const res = await fetch('/api/friends/request', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({to_user_id: userId})
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert('Friend request sent!');
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('searchResults').classList.add('hidden');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        }
+
+        async function acceptFriendRequest(userId) {
+            try {
+                const res = await fetch('/api/friends/requests');
+                const data = await res.json();
+                
+                const request = data.received.find(r => r.user_id === userId);
+                if (!request) return;
+                
+                const acceptRes = await fetch('/api/friends/accept', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({request_id: request.request_id})
+                });
+                
+                const acceptData = await acceptRes.json();
+                
+                if (acceptData.success) {
+                    alert('Friend request accepted!');
+                    loadFriends();
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('searchResults').classList.add('hidden');
+                }
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        }
+
+        async function loadFriends() {
+            try {
+                const res = await fetch('/api/friends');
+                const data = await res.json();
+                
+                if (data.success) {
+                    friends = data.friends;
+                    renderChatList();
+                }
+            } catch (err) {
+                console.error('Error loading friends:', err);
+            }
+        }
+
+        async function loadFriendRequests() {
+            try {
+                const res = await fetch('/api/friends/requests');
+                const data = await res.json();
+                
+                if (data.success && data.received.length > 0) {
+                    // Show badge
+                    console.log('Friend requests:', data.received.length);
+                }
+            } catch (err) {
+                console.error('Error loading requests:', err);
+            }
+        }
+
+        function renderChatList() {
+            const chatList = document.getElementById('chatList');
+            
+            if (friends.length === 0) {
+                chatList.innerHTML = '<div class="loading">Search for friends to start chatting...</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            friends.forEach(friend => {
+                const isActive = currentChatId === friend.chat_id;
+                html += `
+                    <div class="chat-item ${isActive ? 'active' : ''}" onclick="switchChat('${friend.chat_id}', '${escapeHtml(friend.username)}')">
+                        <div class="avatar">${friend.username[0].toUpperCase()}</div>
+                        <div class="chat-info">
+                            <div class="chat-name">${escapeHtml(friend.username)}</div>
+                            <div class="chat-preview">${friend.last_message ? escapeHtml(friend.last_message.substring(0, 30)) : 'No messages yet'}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            chatList.innerHTML = html;
+        }
+
+        function switchChat(chatId, chatName) {
+            currentChatId = chatId;
+            currentChatName = chatName;
+            
+            document.getElementById('chatName').textContent = chatName;
+            document.getElementById('chatAvatar').textContent = chatName[0].toUpperCase();
+            document.getElementById('chatStatus').textContent = '● Online';
+            document.getElementById('chatStatus').className = 'status online';
+            
+            renderChatList();
+            loadMessages(chatId);
+            
+            // Join room
+            if (socket && socket.connected) {
+                socket.emit('join_chat', {chat_id: chatId});
+            }
+        }
+
+        function openPrivateChat(userId, username) {
+            const chatId = userId < currentUserId ? `${userId}-${currentUserId}` : `${currentUserId}-${userId}`;
+            switchChat(chatId, username);
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').classList.add('hidden');
+        }
+
+        function updateChatPreview(message) {
+            // Update chat preview in sidebar
+            loadFriends();
         }
 
         function escapeHtml(text) {
@@ -243,8 +737,13 @@
             return div.innerHTML;
         }
 
+        async function logout() {
+            await fetch('/api/auth/logout', {method: 'POST'});
+            window.location.href = '/';
+        }
+
         // Start
-        initSocket();
+        init();
     </script>
 </body>
 </html>
