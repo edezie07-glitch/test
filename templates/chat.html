@@ -34,6 +34,36 @@
         .sidebar-header h3 {
             font-size: 18px;
         }
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn-requests {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            position: relative;
+        }
+        .btn-requests:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .requests-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f44336;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
         .btn-logout {
             background: rgba(255,255,255,0.2);
             border: none;
@@ -45,6 +75,51 @@
         }
         .btn-logout:hover {
             background: rgba(255,255,255,0.3);
+        }
+
+        /* Friend Requests Panel */
+        .friend-requests-panel {
+            max-height: 250px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+        }
+        .request-item {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #eee;
+        }
+        .request-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-accept-small {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            background: #4caf50;
+            color: white;
+        }
+        .btn-accept-small:hover {
+            background: #45a049;
+        }
+        .btn-reject {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            background: #f44336;
+            color: white;
+        }
+        .btn-reject:hover {
+            background: #da190b;
         }
 
         /* Search */
@@ -300,16 +375,6 @@
             cursor: not-allowed;
         }
 
-        /* Notifications */
-        .friend-requests-badge {
-            background: #f44336;
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-left: 5px;
-        }
-
         /* Hidden */
         .hidden {
             display: none !important;
@@ -328,8 +393,17 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h3>💬 {{ user.username }}</h3>
-            <button class="btn-logout" onclick="logout()">Logout</button>
+            <div class="header-right">
+                <button class="btn-requests" onclick="toggleFriendRequests()">
+                    Requests
+                    <span class="requests-badge hidden" id="requestsBadge">0</span>
+                </button>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
         </div>
+
+        <!-- Friend Requests Panel -->
+        <div id="friendRequestsPanel" class="friend-requests-panel hidden"></div>
 
         <!-- Search -->
         <div class="search-box">
@@ -669,9 +743,98 @@
                 if (data.success && data.received.length > 0) {
                     // Show badge
                     console.log('Friend requests:', data.received.length);
+                    const badge = document.getElementById('requestsBadge');
+                    badge.textContent = data.received.length;
+                    badge.classList.remove('hidden');
+                    
+                    // Store requests for rendering
+                    window.friendRequests = data.received;
+                } else {
+                    document.getElementById('requestsBadge').classList.add('hidden');
+                    window.friendRequests = [];
                 }
             } catch (err) {
                 console.error('Error loading requests:', err);
+            }
+        }
+
+        function toggleFriendRequests() {
+            const panel = document.getElementById('friendRequestsPanel');
+            const searchResults = document.getElementById('searchResults');
+            
+            // Hide search results if open
+            searchResults.classList.add('hidden');
+            
+            // Toggle requests panel
+            if (panel.classList.contains('hidden')) {
+                renderFriendRequests();
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function renderFriendRequests() {
+            const panel = document.getElementById('friendRequestsPanel');
+            const requests = window.friendRequests || [];
+            
+            if (requests.length === 0) {
+                panel.innerHTML = '<div class="loading">No pending requests</div>';
+                return;
+            }
+            
+            panel.innerHTML = requests.map(req => `
+                <div class="request-item">
+                    <div class="user-info">
+                        <div class="avatar">${req.username[0].toUpperCase()}</div>
+                        <div>${escapeHtml(req.username)}</div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn-accept-small" onclick="acceptRequest(${req.request_id})">Accept</button>
+                        <button class="btn-reject" onclick="rejectRequest(${req.request_id})">Reject</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function acceptRequest(requestId) {
+            try {
+                const res = await fetch('/api/friends/accept', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({request_id: requestId})
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert('Friend request accepted!');
+                    await loadFriends();
+                    await loadFriendRequests();
+                    renderFriendRequests();
+                }
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        }
+
+        async function rejectRequest(requestId) {
+            try {
+                const res = await fetch('/api/friends/reject', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({request_id: requestId})
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert('Friend request rejected');
+                    await loadFriendRequests();
+                    renderFriendRequests();
+                }
+            } catch (err) {
+                console.error('Error:', err);
             }
         }
 
