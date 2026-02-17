@@ -1,515 +1,154 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Register - HPZ Messenger</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            -webkit-font-smoothing: antialiased;
-        }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 450px;
-            animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo-image {
-            max-width: 60px;
-            height: 60px;
-            margin: 0 auto 15px;
-            display: block;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .step-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #333;
-            text-transform: lowercase;
-        }
-        .step-subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 30px;
-            text-transform: lowercase;
-        }
-        .form-group {
-            margin-bottom: 25px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 10px;
-            color: #333;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: lowercase;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s;
-            background: white;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #ff5900;
-            box-shadow: 0 0 0 4px rgba(255, 89, 0, 0.1);
-        }
-        .country-selector-btn {
-            width: 100%;
-            padding: 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            background: white;
-            font-size: 16px;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-transform: lowercase;
-        }
-        .country-selector-btn:hover {
-            border-color: #ff5900;
-            background: #fff5f0;
-        }
-        .country-selector-btn:focus {
-            outline: none;
-            border-color: #ff5900;
-            box-shadow: 0 0 0 4px rgba(255, 89, 0, 0.1);
-        }
-        .selected-flag {
-            font-size: 24px;
-            min-width: 30px;
-        }
-        .selected-name {
-            font-weight: 500;
-            color: #666;
-            flex: 1;
-        }
-        .selected-dial {
-            color: #ff5900;
-            font-weight: 600;
-        }
-        .btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: lowercase;
-        }
-        .btn-primary {
-            background: #ff5900;
-            color: white;
-            box-shadow: 0 4px 12px rgba(255, 89, 0, 0.4);
-        }
-        .btn-primary:hover {
-            background: #e64f00;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 89, 0, 0.5);
-        }
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-secondary {
-            background: transparent;
-            color: #666;
-            margin-top: 10px;
-            font-size: 18px;
-            text-align: center;
-        }
-        .btn-secondary:hover {
-            color: #333;
-        }
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            display: none;
-            animation: shake 0.3s;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .modal.show {
-            display: flex;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        .modal-header {
-            padding: 25px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-            text-transform: lowercase;
-        }
-        .country-search {
-            position: relative;
-        }
-        .country-search input {
-            width: 100%;
-            padding: 12px 40px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 15px;
-        }
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 18px;
-            color: #999;
-        }
-        .country-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            max-height: calc(80vh - 150px);
-        }
-        .country-item {
-            padding: 14px 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-radius: 10px;
-            margin-bottom: 4px;
-        }
-        .country-item:hover {
-            background: #fff5f0;
-        }
-        .country-flag {
-            font-size: 28px;
-        }
-        .country-info {
-            flex: 1;
-        }
-        .country-name {
-            font-weight: 600;
-            font-size: 15px;
-        }
-        .country-dial {
-            color: #999;
-            font-size: 13px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPZ Messenger — Register</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{--brand:#7c6aff;--brand-dk:#6254e0;--font-h:'Syne',sans-serif;--font-b:'Manrope',sans-serif;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:var(--font-b);
+  background:#0f0f17;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;position:relative;
+}
+body::before{
+  content:'';position:fixed;top:-30%;left:-20%;
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(124,106,255,.18) 0%,transparent 70%);
+  animation:float1 8s ease-in-out infinite;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;bottom:-20%;right:-15%;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(99,84,224,.14) 0%,transparent 70%);
+  animation:float2 10s ease-in-out infinite;pointer-events:none;
+}
+@keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,-40px);}}
+@keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,30px);}}
 
-        /* Responsive */
-        @media (max-width: 767px) {
-            body { padding: 16px; }
-            .container { padding: 32px 24px; }
-            .step-title { font-size: 28px; }
-            .btn { padding: 16px; }
-        }
-        @media (max-width: 480px) {
-            .container { padding: 28px 20px; }
-            .step-title { font-size: 24px; }
-        }
-    </style>
+.card{
+  background:rgba(22,22,31,.85);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  padding:44px 40px 40px;
+  width:100%;max-width:400px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  position:relative;z-index:1;
+  animation:slideUp .45s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+
+.logo-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:28px;}
+.logo-img{
+  width:52px;height:52px;border-radius:14px;
+  object-fit:cover;
+  box-shadow:0 0 0 2px rgba(124,106,255,.3),0 8px 24px rgba(124,106,255,.25);
+}
+.logo-text{
+  font-family:var(--font-h);font-size:26px;font-weight:800;
+  color:#fff;letter-spacing:-.5px;
+}
+h1{font-family:var(--font-h);font-size:22px;font-weight:700;color:#e8e8f4;text-align:center;margin-bottom:6px;}
+.sub{font-size:13.5px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:28px;}
+
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.field label{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;}
+.field input{
+  padding:11px 14px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:11px;
+  color:#e8e8f4;font-size:14px;font-family:var(--font-b);
+  transition:border-color .18s,background .18s;outline:none;
+}
+.field input:focus{border-color:var(--brand);background:rgba(124,106,255,.08);}
+.field input::placeholder{color:rgba(255,255,255,.2);}
+
+.hint{font-size:11px;color:rgba(255,255,255,.25);margin-top:3px;}
+
+.btn{
+  width:100%;padding:13px;margin-top:6px;
+  background:var(--brand);color:#fff;
+  border:none;border-radius:12px;
+  font-size:14.5px;font-weight:700;font-family:var(--font-b);
+  cursor:pointer;
+  transition:background .18s,transform .12s,box-shadow .18s;
+  box-shadow:0 4px 20px rgba(124,106,255,.35);
+}
+.btn:hover{background:var(--brand-dk);box-shadow:0 6px 28px rgba(124,106,255,.45);}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+
+.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;font-size:13px;padding:9px 13px;border-radius:9px;margin-bottom:12px;display:none;}
+.err.show{display:block;}
+
+.divider{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.2);font-size:12px;margin:18px 0;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08);}
+.link-row{text-align:center;font-size:13.5px;color:rgba(255,255,255,.4);}
+.link-row a{color:var(--brand);text-decoration:none;font-weight:600;}
+.link-row a:hover{text-decoration:underline;}
+</style>
 </head>
 <body>
-    <div class="container">
-        <!-- Logo -->
-        <div class="logo">
-            <img src="{{ url_for('static', filename='uploads/hepozy_logo.jpg') }}" alt="HPZ Logo" class="logo-image">
-        </div>
+<div class="card">
+  <div class="logo-wrap">
+    <img class="logo-img" src="/logo" alt="HPZ Logo" onerror="this.style.display='none'">
+    <span class="logo-text">HPZ</span>
+  </div>
+  <h1>Create account</h1>
+  <p class="sub">Join HPZ Messenger today</p>
 
-        <div class="step-title">country</div>
-        <div class="step-subtitle">select country</div>
-        
-        <div id="errorMessage" class="error-message"></div>
-        
-        <form id="registerForm">
-            <div class="form-group">
-                <button type="button" class="country-selector-btn" onclick="openCountryModal()">
-                    <span class="selected-flag" id="selectedFlag">🌍</span>
-                    <span class="selected-name" id="selectedName">select country</span>
-                    <span class="selected-dial" id="selectedDial">+00</span>
-                </button>
-            </div>
+  <div class="err" id="err"></div>
 
-            <div class="step-title" style="margin-top: 30px;">phone number</div>
-            <div class="step-subtitle">enter phone number</div>
-            
-            <div class="form-group">
-                <input type="tel" id="phoneNumber" placeholder="912 345 6789" style="text-align: center; font-size: 18px;" required>
-            </div>
+  <div class="field">
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Choose a username" autocomplete="username">
+    <span class="hint">Minimum 3 characters</span>
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Create a password" autocomplete="new-password">
+    <span class="hint">Minimum 6 characters</span>
+  </div>
+  <div class="field">
+    <label>Confirm Password</label>
+    <input type="password" id="confirm" placeholder="Repeat your password" autocomplete="new-password"
+      onkeydown="if(event.key==='Enter')doRegister()">
+  </div>
 
-            <div class="step-title">username</div>
-            <div class="form-group">
-                <input type="text" id="username" placeholder="choose username" required>
-            </div>
+  <button class="btn" id="regBtn" onclick="doRegister()">Create Account</button>
 
-            <div class="step-title">password</div>
-            <div class="form-group">
-                <input type="password" id="password" placeholder="create password" required>
-            </div>
+  <div class="divider">or</div>
+  <div class="link-row">Already have an account? <a href="/">Sign in</a></div>
+</div>
 
-            <button type="submit" class="btn btn-primary" id="registerBtn">
-                create account
-            </button>
-            
-            <button type="button" class="btn btn-secondary" onclick="goToLogin()">
-                Back
-            </button>
-        </form>
-    </div>
-
-    <!-- Country Modal -->
-    <div class="modal" id="countryModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">select country</div>
-                <div class="country-search">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="countrySearch" placeholder="search..." oninput="filterCountries()">
-                </div>
-            </div>
-            <div class="country-list" id="countryList"></div>
-        </div>
-    </div>
-
-    <script>
-        let selectedCountry = null;
-
-        const countries = [
-            { code: 'US', name: 'United States', dial_code: '+1', flag: '🇺🇸' },
-            { code: 'GB', name: 'United Kingdom', dial_code: '+44', flag: '🇬🇧' },
-            { code: 'CA', name: 'Canada', dial_code: '+1', flag: '🇨🇦' },
-            { code: 'AU', name: 'Australia', dial_code: '+61', flag: '🇦🇺' },
-            { code: 'PH', name: 'Philippines', dial_code: '+63', flag: '🇵🇭' },
-            { code: 'IN', name: 'India', dial_code: '+91', flag: '🇮🇳' },
-            { code: 'JP', name: 'Japan', dial_code: '+81', flag: '🇯🇵' },
-            { code: 'CN', name: 'China', dial_code: '+86', flag: '🇨🇳' },
-            { code: 'KR', name: 'South Korea', dial_code: '+82', flag: '🇰🇷' },
-            { code: 'DE', name: 'Germany', dial_code: '+49', flag: '🇩🇪' },
-            { code: 'FR', name: 'France', dial_code: '+33', flag: '🇫🇷' },
-            { code: 'IT', name: 'Italy', dial_code: '+39', flag: '🇮🇹' },
-            { code: 'ES', name: 'Spain', dial_code: '+34', flag: '🇪🇸' },
-            { code: 'BR', name: 'Brazil', dial_code: '+55', flag: '🇧🇷' },
-            { code: 'MX', name: 'Mexico', dial_code: '+52', flag: '🇲🇽' },
-            { code: 'RU', name: 'Russia', dial_code: '+7', flag: '🇷🇺' },
-            { code: 'SA', name: 'Saudi Arabia', dial_code: '+966', flag: '🇸🇦' },
-            { code: 'AE', name: 'UAE', dial_code: '+971', flag: '🇦🇪' },
-            { code: 'SG', name: 'Singapore', dial_code: '+65', flag: '🇸🇬' },
-            { code: 'MY', name: 'Malaysia', dial_code: '+60', flag: '🇲🇾' },
-            { code: 'TH', name: 'Thailand', dial_code: '+66', flag: '🇹🇭' },
-            { code: 'VN', name: 'Vietnam', dial_code: '+84', flag: '🇻🇳' },
-            { code: 'ID', name: 'Indonesia', dial_code: '+62', flag: '🇮🇩' },
-            { code: 'PK', name: 'Pakistan', dial_code: '+92', flag: '🇵🇰' },
-            { code: 'BD', name: 'Bangladesh', dial_code: '+880', flag: '🇧🇩' },
-            { code: 'NG', name: 'Nigeria', dial_code: '+234', flag: '🇳🇬' },
-            { code: 'KE', name: 'Kenya', dial_code: '+254', flag: '🇰🇪' },
-            { code: 'EG', name: 'Egypt', dial_code: '+20', flag: '🇪🇬' },
-            { code: 'ZA', name: 'South Africa', dial_code: '+27', flag: '🇿🇦' },
-            { code: 'TR', name: 'Turkey', dial_code: '+90', flag: '🇹🇷' }
-        ];
-
-        document.addEventListener('DOMContentLoaded', populateCountryList);
-
-        function populateCountryList() {
-            const list = document.getElementById('countryList');
-            list.innerHTML = '';
-            countries.forEach(country => {
-                const item = document.createElement('div');
-                item.className = 'country-item';
-                item.innerHTML = `
-                    <span class="country-flag">${country.flag}</span>
-                    <div class="country-info">
-                        <div class="country-name">${country.name}</div>
-                        <div class="country-dial">${country.dial_code}</div>
-                    </div>
-                `;
-                item.onclick = () => selectCountry(country);
-                list.appendChild(item);
-            });
-        }
-
-        function filterCountries() {
-            const query = document.getElementById('countrySearch').value.toLowerCase();
-            const items = document.querySelectorAll('.country-item');
-            items.forEach(item => {
-                const name = item.querySelector('.country-name').textContent.toLowerCase();
-                const dial = item.querySelector('.country-dial').textContent.toLowerCase();
-                item.style.display = (name.includes(query) || dial.includes(query)) ? 'flex' : 'none';
-            });
-        }
-
-        function selectCountry(country) {
-            selectedCountry = country;
-            document.getElementById('selectedFlag').textContent = country.flag;
-            document.getElementById('selectedName').textContent = country.name;
-            document.getElementById('selectedDial').textContent = country.dial_code;
-            closeCountryModal();
-            setTimeout(() => document.getElementById('phoneNumber').focus(), 300);
-        }
-
-        function openCountryModal() {
-            document.getElementById('countryModal').classList.add('show');
-            document.getElementById('countrySearch').focus();
-        }
-
-        function closeCountryModal() {
-            document.getElementById('countryModal').classList.remove('show');
-        }
-
-        document.getElementById('countryModal').addEventListener('click', function(e) {
-            if (e.target === this) closeCountryModal();
-        });
-
-        function goToLogin() {
-            window.location.href = '/';
-        }
-
-        // DIRECT REGISTRATION - NO VERIFICATION
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const phone = document.getElementById('phoneNumber').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('errorMessage');
-            const btn = document.getElementById('registerBtn');
-            
-            // Validation
-            if (!selectedCountry) {
-                errorDiv.textContent = 'please select a country';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            if (!phone) {
-                errorDiv.textContent = 'please enter phone number';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            if (!username || username.length < 3) {
-                errorDiv.textContent = 'username must be at least 3 characters';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            if (!password || password.length < 6) {
-                errorDiv.textContent = 'password must be at least 6 characters';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            // Clear error
-            errorDiv.style.display = 'none';
-            btn.disabled = true;
-            btn.textContent = 'creating account...';
-            
-            try {
-                // Format full phone number
-                const fullPhone = selectedCountry.dial_code + phone;
-                
-                // Direct registration - NO verification
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: username,
-                        phone: fullPhone,
-                        password: password
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    btn.textContent = 'success! redirecting...';
-                    setTimeout(() => {
-                        window.location.href = data.redirect || '/chat';
-                    }, 500);
-                } else {
-                    errorDiv.textContent = data.error || 'registration failed';
-                    errorDiv.style.display = 'block';
-                    btn.disabled = false;
-                    btn.textContent = 'create account';
-                }
-            } catch (error) {
-                console.error('Registration error:', error);
-                errorDiv.textContent = 'connection error. please try again.';
-                errorDiv.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'create account';
-            }
-        });
-    </script>
+<script>
+async function doRegister(){
+  const un=document.getElementById('username').value.trim();
+  const pw=document.getElementById('password').value;
+  const cf=document.getElementById('confirm').value;
+  const btn=document.getElementById('regBtn');
+  const err=document.getElementById('err');
+  err.classList.remove('show');
+  if(!un||!pw||!cf){showErr('Please fill in all fields.');return;}
+  if(un.length<3){showErr('Username must be at least 3 characters.');return;}
+  if(pw.length<6){showErr('Password must be at least 6 characters.');return;}
+  if(pw!==cf){showErr('Passwords do not match.');return;}
+  btn.disabled=true;btn.textContent='Creating account…';
+  try{
+    const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:un,password:pw})});
+    const d=await r.json();
+    if(d.success){window.location.href=d.redirect||'/chat';}
+    else{showErr(d.error||'Registration failed.');}
+  }catch(e){showErr('Connection error. Try again.');}
+  btn.disabled=false;btn.textContent='Create Account';
+}
+function showErr(msg){const e=document.getElementById('err');e.textContent=msg;e.classList.add('show');}
+</script>
 </body>
 </html>
