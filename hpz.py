@@ -187,10 +187,10 @@ def chat():
         session.clear()
         return redirect('/')
 
-# ✅ FIXED: BASE_DIR = same folder as hpz.py = repo root on Render
 @app.route('/logo')
 def serve_logo():
-    return send_from_directory(BASE_DIR, 'hepozy_logo.jpg')
+    templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+    return send_from_directory(templates_dir, 'hepozy_logo.jpg')
 
 # ============================================================
 # AUTH
@@ -592,3 +592,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 HPZ Messenger on port {port}")
     socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+
