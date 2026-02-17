@@ -493,10 +493,21 @@
             });
 
             socket.on('new_message', function(message) {
-                console.log('📨 New message:', message);
+                console.log('📨 NEW MESSAGE EVENT RECEIVED!');
+                console.log('   Message:', message);
+                console.log('   Current chat:', currentChatId);
+                console.log('   Message chat:', message.chat_id);
+                console.log('   Match?', currentChatId === message.chat_id);
+                
+                // ALWAYS display if it's for current chat
                 if (currentChatId && message.chat_id === currentChatId) {
+                    console.log('✅ Displaying message in current chat');
                     displayMessage(message);
+                } else {
+                    console.log('⚠️ Message not for current chat, skipping display');
                 }
+                
+                // Update sidebar preview
                 updateChatPreview(message);
             });
 
@@ -562,20 +573,39 @@
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             
-            if (!content || !socket || !socket.connected) return;
+            console.log('📤 SEND MESSAGE CALLED');
+            console.log('   Content:', content);
+            console.log('   Socket connected?', socket?.connected);
+            console.log('   Current chat:', currentChatId);
+            
+            if (!content) {
+                console.log('❌ No content');
+                return;
+            }
+            
+            if (!socket || !socket.connected) {
+                console.log('❌ Socket not connected');
+                alert('Not connected to server. Please refresh.');
+                return;
+            }
             
             if (!currentChatId) {
+                console.log('❌ No chat selected');
                 alert('Please select a friend to chat with');
                 return;
             }
 
-            socket.emit('send_message', {
+            const messageData = {
                 chat_id: currentChatId,
                 content: content,
                 message_type: 'text'
-            });
+            };
+            
+            console.log('✅ Emitting send_message:', messageData);
+            socket.emit('send_message', messageData);
 
             input.value = '';
+            console.log('✅ Message sent, input cleared');
         }
 
         // Handle Image Upload
