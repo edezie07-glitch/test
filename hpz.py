@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 from sqlalchemy import or_, and_
 from functools import wraps
-
+from flask import send_from_directory
 # ============================================================
 # APP CONFIG
 # ============================================================
@@ -34,7 +34,9 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
     'pool_recycle': 300,
 }
-
+@app.route('/logo')
+def serve_logo():
+    return send_from_directory('templates', 'hepozy_logo.jpg')
 # ============================================================
 # UPLOADS
 # ============================================================
@@ -615,3 +617,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 HPZ Messenger on port {port}")
     socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+
