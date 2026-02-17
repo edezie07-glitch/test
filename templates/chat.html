@@ -1,1166 +1,1102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Messenger</title>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: #f0f2f5;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPZ Messenger</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RESET & ROOT
+============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* Sidebar */
-        .sidebar {
-            width: 320px;
-            background: white;
-            border-right: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-        }
-        .sidebar-header {
-            padding: 15px;
-            background: #ff5900;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .sidebar-header h3 {
-            font-size: 18px;
-        }
-        .header-right {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .btn-requests {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            position: relative;
-        }
-        .btn-requests:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .requests-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #f44336;
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
-            text-align: center;
-        }
-        .btn-logout {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .btn-logout:hover {
-            background: rgba(255,255,255,0.3);
-        }
+:root {
+  --brand:     #6c63ff;
+  --brand-dk:  #5a52d5;
+  --brand-lt:  #ede9ff;
+  --sent-bg:   #6c63ff;
+  --recv-bg:   #ffffff;
+  --sidebar-bg:#1e1e2e;
+  --sidebar-lt:#2a2a3e;
+  --sidebar-bd:#3a3a52;
+  --chat-bg:   #f4f4f8;
+  --text-main: #1a1a2e;
+  --text-mute: #888;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --radius:    14px;
+  --trans:     0.18s ease;
+}
 
-        /* Friend Requests Panel */
-        .friend-requests-panel {
-            max-height: 250px;
-            overflow-y: auto;
-            border-bottom: 1px solid #eee;
-            background: #f9f9f9;
-        }
-        .request-item {
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #eee;
-        }
-        .request-actions {
-            display: flex;
-            gap: 5px;
-        }
-        .btn-accept-small {
-            padding: 4px 10px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            background: #4caf50;
-            color: white;
-        }
-        .btn-accept-small:hover {
-            background: #45a049;
-        }
-        .btn-reject {
-            padding: 4px 10px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            background: #f44336;
-            color: white;
-        }
-        .btn-reject:hover {
-            background: #da190b;
-        }
+html, body { height: 100%; overflow: hidden; }
 
-        /* Search */
-        .search-box {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .search-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        .search-input:focus {
-            outline: none;
-            border-color: #ff5900;
-        }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--chat-bg);
+  display: flex;
+  height: 100vh;
+  color: var(--text-main);
+}
 
-        /* Search Results */
-        .search-results {
-            max-height: 200px;
-            overflow-y: auto;
-            border-bottom: 1px solid #eee;
-        }
-        .search-result-item {
-            padding: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            border-bottom: 1px solid #f5f5f5;
-        }
-        .search-result-item:hover {
-            background: #f9f9f9;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ff5900;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .btn-add, .btn-message, .btn-pending, .btn-accept {
-            padding: 5px 12px;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .btn-add {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-        .btn-add:hover {
-            background: #bbdefb;
-        }
-        .btn-message {
-            background: #ff5900;
-            color: white;
-        }
-        .btn-message:hover {
-            background: #e64e00;
-        }
-        .btn-pending {
-            background: #ffa726;
-            color: white;
-            opacity: 0.7;
-            cursor: default;
-        }
-        .btn-accept {
-            background: #4caf50;
-            color: white;
-        }
-        .btn-accept:hover {
-            background: #45a049;
-        }
+/* ============================================================
+   SCROLLBAR
+============================================================ */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(108,99,255,.3); border-radius: 4px; }
 
-        /* Chat List */
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-        .chat-item {
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #f5f5f5;
-        }
-        .chat-item:hover {
-            background: #f9f9f9;
-        }
-        .chat-item.active {
-            background: #e8f5e9;
-            border-left: 3px solid #ff5900;
-        }
-        .chat-info {
-            flex: 1;
-            min-width: 0;
-        }
-        .chat-name {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 3px;
-        }
-        .chat-preview {
-            font-size: 12px;
-            color: #666;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+/* ============================================================
+   SIDEBAR
+============================================================ */
+.sidebar {
+  width: 300px;
+  min-width: 300px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
 
-        /* Main Chat */
-        .main-chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #e5ddd5;
-        }
-        .chat-header {
-            padding: 15px 20px;
-            background: white;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .chat-header h4 {
-            font-size: 16px;
-        }
-        .status {
-            font-size: 12px;
-            color: #666;
-        }
-        .status.online {
-            color: #4caf50;
-        }
+/* --- Header --- */
+.sidebar-header {
+  padding: 18px 16px 14px;
+  background: var(--sidebar-lt);
+  border-bottom: 1px solid var(--sidebar-bd);
+}
 
-        /* Messages */
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .message {
-            max-width: 65%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            word-wrap: break-word;
-        }
-        .message.sent {
-            align-self: flex-end;
-            background: #dcf8c6;
-        }
-        .message.received {
-            align-self: flex-start;
-            background: white;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
-        .message-sender {
-            font-size: 12px;
-            font-weight: 600;
-            color: #ff5900;
-            margin-bottom: 3px;
-        }
-        .message-content {
-            margin-bottom: 3px;
-        }
-        .message-image {
-            max-width: 300px;
-            max-height: 300px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .message-time {
-            font-size: 10px;
-            color: #999;
-            text-align: right;
-        }
+.sidebar-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
 
-        /* Input Area */
-        .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #ddd;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .btn-image {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: #f0f0f0;
-            color: #666;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .btn-image:hover {
-            background: #e0e0e0;
-        }
-        #messageInput {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-        #messageInput:focus {
-            outline: none;
-            border-color: #ff5900;
-        }
-        .btn-send {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background: #ff5900;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .btn-send:hover {
-            background: #e64e00;
-        }
-        .btn-send:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+.app-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-        /* Hidden */
-        .hidden {
-            display: none !important;
-        }
+.app-title span.dot {
+  width: 9px; height: 9px;
+  background: var(--brand);
+  border-radius: 50%;
+  display: inline-block;
+}
 
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #999;
-        }
-    
-        /* ========== MOBILE RESPONSIVE ========== */
-        
-        /* Mobile Menu Button */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 4px;
-            left: 300px;
-            z-index: 1001;
-            width: 45px;
-            height: 45px;
-            background: #ff5900;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+.header-actions {
+  display: flex;
+  gap: 6px;
+}
 
-        }
-        @media (max-width: 768px) {
-            .mobile-menu-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-        }
+.icon-btn {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.8);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: background var(--trans);
+  position: relative;
+}
+.icon-btn:hover { background: rgba(255,255,255,.15); }
 
-        /* Sidebar Overlay */
-        .sidebar-overlay {
-            display: none;
-        }
-        @media (max-width: 768px) {
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 999;
-            }
-            .sidebar-overlay.show {
-                display: block;
-            }
-        }
+.badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: var(--red);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 16px; height: 16px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+}
+.badge.hidden { display: none; }
 
-        /* Sidebar Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100vh;
-                width: 280px;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-                z-index: 1000;
-            }
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            .sidebar-header {
-                padding: 12px;
-            }
-            .sidebar-header h3 {
-                font-size: 16px;
-            }
-            .header-right {
-                gap: 5px;
-            }
-            .btn-requests, .btn-logout {
-                padding: 5px 8px;
-                font-size: 11px;
-            }
-            .search-box {
-                padding: 8px;
-            }
-            .search-input {
-                font-size: 13px;
-                padding: 7px 10px;
-            }
-            .search-result-item, .request-item {
-                padding: 8px;
-            }
-            .avatar {
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
-            }
-            .btn-add, .btn-message, .btn-pending, .btn-accept {
-                padding: 4px 8px;
-                font-size: 11px;
-            }
-            .chat-item {
-                padding: 10px 8px;
-            }
-            .chat-name {
-                font-size: 13px;
-            }
-            .chat-preview {
-                font-size: 11px;
-            }
-            .friend-requests-panel {
-                max-height: 200px;
-            }
-        }
+/* --- Search --- */
+.search-wrap {
+  position: relative;
+}
+.search-wrap svg {
+  position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,.35);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13.5px;
+  font-family: inherit;
+  transition: border-color var(--trans), background var(--trans);
+}
+.search-input::placeholder { color: rgba(255,255,255,.3); }
+.search-input:focus { outline: none; border-color: var(--brand); background: rgba(255,255,255,.1); }
 
-        /* Main Chat Responsive */
-        @media (max-width: 768px) {
-            .main-chat {
-                width: 100%;
-            }
-            .chat-header {
-                padding: 12px 15px;
-            }
-            .chat-header h4 {
-                font-size: 14px;
-            }
-            .status {
-                font-size: 11px;
-            }
-            .messages-container {
-                padding: 15px 10px;
-                gap: 6px;
-            }
-            .message {
-                max-width: 75%;
-                font-size: 13px;
-                padding: 7px 10px;
-            }
-            .message-sender {
-                font-size: 11px;
-            }
-            .message-time {
-                font-size: 9px;
-            }
-            .message-image {
-                max-width: 200px;
-                max-height: 200px;
-            }
-            .input-area {
-                padding: 10px;
-                gap: 8px;
-            }
-            .btn-image, .btn-send {
-                width: 35px;
-                height: 35px;
-                font-size: 16px;
-            }
-            #messageInput {
-                padding: 8px 12px;
-                font-size: 13px;
-            }
-            .loading {
-                padding: 15px;
-                font-size: 13px;
-            }
-        }
+/* --- Requests Panel --- */
+.requests-panel {
+  background: var(--sidebar-lt);
+  border-bottom: 1px solid var(--sidebar-bd);
+  max-height: 240px;
+  overflow-y: auto;
+  display: none;
+}
+.requests-panel.open { display: block; }
+.requests-panel-title {
+  padding: 10px 14px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.req-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.req-user { display: flex; align-items: center; gap: 9px; }
+.req-name { font-size: 13.5px; color: rgba(255,255,255,.85); font-weight: 500; }
+.req-time { font-size: 11px; color: rgba(255,255,255,.35); }
+.req-btns { display: flex; gap: 5px; }
 
-    </style>
+.pill-btn {
+  padding: 4px 11px;
+  border: none; border-radius: 20px;
+  font-size: 11.5px; font-weight: 600; cursor: pointer;
+  transition: opacity var(--trans);
+}
+.pill-btn:hover { opacity: .85; }
+.pill-accept  { background: var(--green);  color: #fff; }
+.pill-reject  { background: rgba(255,255,255,.1); color: rgba(255,255,255,.6); }
+.pill-pending { background: rgba(255,255,255,.1); color: rgba(255,255,255,.4); cursor: default; }
+
+/* --- Search Results --- */
+.search-results {
+  background: var(--sidebar-lt);
+  border-bottom: 1px solid var(--sidebar-bd);
+  max-height: 210px;
+  overflow-y: auto;
+  display: none;
+}
+.search-results.open { display: block; }
+.sr-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  cursor: pointer;
+  transition: background var(--trans);
+}
+.sr-item:hover { background: rgba(255,255,255,.04); }
+.sr-user { display: flex; align-items: center; gap: 9px; }
+.sr-name { font-size: 13.5px; color: rgba(255,255,255,.85); font-weight: 500; }
+.sr-status { font-size: 11px; color: rgba(255,255,255,.35); }
+
+.pill-add     { background: var(--brand);  color: #fff; }
+.pill-message { background: rgba(108,99,255,.3); color: var(--brand); }
+
+/* --- Chat List --- */
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.chat-list-label {
+  padding: 10px 16px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,.3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.chat-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 10px;
+  margin: 1px 6px;
+  transition: background var(--trans);
+  position: relative;
+}
+.chat-item:hover   { background: rgba(255,255,255,.05); }
+.chat-item.active  { background: rgba(108,99,255,.2); }
+.chat-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; height: 60%;
+  width: 3px; border-radius: 3px;
+  background: var(--brand);
+}
+.chat-meta { flex: 1; min-width: 0; }
+.chat-name-row { display: flex; justify-content: space-between; align-items: center; }
+.chat-name { font-size: 13.5px; color: #fff; font-weight: 500; }
+.chat-time { font-size: 10.5px; color: rgba(255,255,255,.3); }
+.chat-preview { font-size: 12px; color: rgba(255,255,255,.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
+.empty-list {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 120px; gap: 6px;
+  color: rgba(255,255,255,.25);
+  font-size: 13px;
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* --- Avatar --- */
+.av {
+  width: 38px; height: 38px; border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.av img { width: 100%; height: 100%; object-fit: cover; }
+.av.sm { width: 32px; height: 32px; border-radius: 9px; font-size: 12px; }
+.av.lg { width: 42px; height: 42px; border-radius: 13px; font-size: 17px; }
+
+/* ============================================================
+   MAIN CHAT AREA
+============================================================ */
+.main-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--chat-bg);
+}
+
+/* --- Chat Header --- */
+.chat-header {
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8f0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+}
+.chat-header-info { flex: 1; min-width: 0; }
+.chat-header-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--text-main); }
+.chat-header-sub  { font-size: 12px; color: var(--text-mute); margin-top: 1px; }
+.chat-header-sub.online { color: var(--green); }
+
+/* --- Messages --- */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msg-day-divider {
+  text-align: center;
+  margin: 10px 0 6px;
+}
+.msg-day-divider span {
+  background: rgba(0,0,0,.08);
+  color: var(--text-mute);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.msg-group { display: flex; flex-direction: column; }
+.msg-group.sent  { align-items: flex-end; }
+.msg-group.recv  { align-items: flex-start; }
+
+.msg-sender-name {
+  font-size: 11.5px; font-weight: 600;
+  color: var(--brand);
+  margin-bottom: 3px;
+  margin-left: 2px;
+}
+
+.msg-bubble {
+  max-width: 65%;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+  position: relative;
+}
+.msg-group.sent .msg-bubble {
+  background: var(--sent-bg);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.msg-group.recv .msg-bubble {
+  background: var(--recv-bg);
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.msg-bubble img {
+  max-width: 260px; max-height: 260px;
+  border-radius: 8px; display: block;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+.msg-time {
+  font-size: 10px;
+  margin-top: 4px;
+  display: block;
+}
+.msg-group.sent  .msg-time { color: rgba(255,255,255,.6); text-align: right; }
+.msg-group.recv  .msg-time { color: var(--text-mute); }
+
+.chat-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; color: var(--text-mute); text-align: center;
+}
+.chat-empty .emoji { font-size: 48px; margin-bottom: 4px; }
+.chat-empty h3 { font-size: 17px; color: var(--text-main); }
+.chat-empty p  { font-size: 13px; }
+
+/* --- Typing indicator --- */
+.typing-indicator {
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 14px;
+  font-size: 12px; color: var(--text-mute);
+  min-height: 28px;
+}
+.typing-dot {
+  width: 6px; height: 6px;
+  background: var(--text-mute);
+  border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce {
+  0%,60%,100% { transform: translateY(0); }
+  30%          { transform: translateY(-5px); }
+}
+
+/* --- Input Area --- */
+.input-area {
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e8e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.attach-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%; border: none;
+  background: var(--brand-lt);
+  color: var(--brand);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--trans);
+}
+.attach-btn:hover { background: #d9d4ff; }
+
+#msgInput {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--chat-bg);
+  border: 1px solid #e0e0ee;
+  border-radius: 22px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--trans);
+  resize: none;
+  line-height: 1.4;
+  max-height: 120px;
+}
+#msgInput:focus { border-color: var(--brand); }
+#msgInput::placeholder { color: #aaa; }
+
+.send-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%; border: none;
+  background: var(--brand);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--trans), transform var(--trans);
+}
+.send-btn:hover   { background: var(--brand-dk); transform: scale(1.05); }
+.send-btn:active  { transform: scale(.95); }
+.send-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast-wrap {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  pointer-events: none;
+}
+.toast {
+  background: #1e1e2e;
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 24px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+
+/* ============================================================
+   OVERLAY (mobile)
+============================================================ */
+.overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 900;
+}
+.overlay.show { display: block; }
+
+.mobile-toggle {
+  display: none;
+  position: fixed; top: 10px; left: 10px; z-index: 1001;
+  width: 40px; height: 40px;
+  border-radius: 12px; border: none;
+  background: var(--brand); color: #fff;
+  font-size: 20px; cursor: pointer;
+  align-items: center; justify-content: center;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 720px) {
+  .mobile-toggle { display: flex; }
+
+  .sidebar {
+    position: fixed; left: 0; top: 0; height: 100%;
+    z-index: 950; width: 280px;
+    transform: translateX(-100%);
+    transition: transform .28s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  .main-chat { width: 100%; }
+
+  .chat-header { padding-left: 58px; }
+
+  .msg-bubble { max-width: 80%; }
+}
+</style>
 </head>
 <body>
-    <!-- Mobile Menu Button -->
-    <button class="mobile-menu-btn" onclick="toggleSidebar()" id="mobileMenuBtn">☰</button>
 
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<!-- Mobile overlay & toggle -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
 
-    
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h3>💬 {{ user.username }}</h3>
-            <div class="header-right">
-                <button class="btn-requests" onclick="toggleFriendRequests()">
-                    Requests
-                    <span class="requests-badge hidden" id="requestsBadge">0</span>
-                </button>
-                <button class="btn-logout" onclick="logout()">Logout</button>
-            </div>
-        </div>
+<!-- ============================================================
+     SIDEBAR
+============================================================ -->
+<aside class="sidebar" id="sidebar">
 
-        <!-- Friend Requests Panel -->
-        <div id="friendRequestsPanel" class="friend-requests-panel hidden"></div>
-
-        <!-- Search -->
-        <div class="search-box">
-            <input type="text" 
-                   class="search-input" 
-                   id="searchInput" 
-                   placeholder="🔍 Search users..."
-                   oninput="handleSearch(this.value)">
-        </div>
-
-        <!-- Search Results -->
-        <div id="searchResults" class="search-results hidden"></div>
-
-        <!-- Chat List -->
-        <div class="chat-list" id="chatList">
-            <div class="loading">Search for friends to start chatting...</div>
-        </div>
+  <!-- Header -->
+  <div class="sidebar-header">
+    <div class="sidebar-header-top">
+      <div class="app-title">
+        <span class="dot"></span>
+        {{ user.username }}
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="reqBtn" onclick="toggleRequests()" title="Friend requests">
+          🔔
+          <span class="badge hidden" id="reqBadge">0</span>
+        </button>
+        <button class="icon-btn" onclick="logout()" title="Logout">🚪</button>
+      </div>
     </div>
-
-    <!-- Main Chat -->
-    <div class="main-chat">
-        <div class="chat-header">
-            <div class="avatar" id="chatAvatar">💬</div>
-            <div>
-                <h4 id="chatName">Select a chat</h4>
-                <div class="status" id="chatStatus">No chat selected</div>
-            </div>
-        </div>
-
-        <div class="messages-container" id="messagesContainer">
-            <div class="loading">👈 Select a friend to start chatting</div>
-        </div>
-
-        <div class="input-area">
-            <input type="file" 
-                   id="imageInput" 
-                   accept="image/*" 
-                   style="display: none;" 
-                   onchange="handleImageUpload(this)">
-            <button class="btn-image" onclick="document.getElementById('imageInput').click()">
-                📷
-            </button>
-            <input type="text" 
-                   id="messageInput" 
-                   placeholder="Type a message..." 
-                   onkeypress="if(event.key==='Enter') sendMessage()">
-            <button class="btn-send" onclick="sendMessage()" id="sendBtn">
-                ➤
-            </button>
-        </div>
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search users…" oninput="handleSearch(this.value)" autocomplete="off">
     </div>
+  </div>
 
-    <script>
-        const currentUserId = {{ user_id }};
-        const currentUsername = '{{ user.username }}';
-        let socket = null;
-        let currentChatId = null; // Start with no chat selected
-        let currentChatName = null;
-        let searchTimeout = null;
-        let friends = [];
+  <!-- Friend Requests Panel -->
+  <div class="requests-panel" id="requestsPanel">
+    <div class="requests-panel-title">Friend Requests</div>
+    <div id="requestsList"><div class="empty-list">No pending requests</div></div>
+  </div>
 
-        console.log('👤 User:', currentUsername, '(ID:', currentUserId, ')');
+  <!-- Search Results -->
+  <div class="search-results" id="searchResults"></div>
 
-        // Initialize
-        function init() {
-            initSocket();
-            loadFriends();
-            loadFriendRequests();
-        }
+  <!-- Chat / Friends List -->
+  <div class="chat-list" id="chatList">
+    <div class="chat-list-label">Conversations</div>
+    <div class="empty-list" id="emptyList">
+      <div>👥</div>
+      <div>Search for friends to start chatting</div>
+    </div>
+  </div>
 
-        // Socket.IO
-        function initSocket() {
-            console.log('🔌 Connecting...');
-            
-            socket = io({
-                withCredentials: true,
-                transports: ['polling', 'websocket']
-            });
+</aside>
 
-            socket.on('connect', function() {
-                console.log('✅ Connected:', socket.id);
-                // Don't load messages until chat is selected
-            });
+<!-- ============================================================
+     MAIN CHAT
+============================================================ -->
+<main class="main-chat">
 
-            socket.on('disconnect', function() {
-                console.log('❌ Disconnected');
-            });
+  <!-- Header -->
+  <div class="chat-header" id="chatHeader">
+    <div class="av lg" id="chatAv">💬</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name" id="chatName">HPZ Messenger</div>
+      <div class="chat-header-sub"  id="chatSub">Select a conversation</div>
+    </div>
+  </div>
 
-            socket.on('new_message', function(message) {
-                console.log('📨 NEW MESSAGE EVENT RECEIVED!');
-                console.log('   Message:', message);
-                console.log('   Current chat:', currentChatId);
-                console.log('   Message chat:', message.chat_id);
-                console.log('   Match?', currentChatId === message.chat_id);
-                
-                // ALWAYS display if it's for current chat
-                if (currentChatId && message.chat_id === currentChatId) {
-                    console.log('✅ Displaying message in current chat');
-                    displayMessage(message);
-                } else {
-                    console.log('⚠️ Message not for current chat, skipping display');
-                }
-                
-                // Update sidebar preview
-                updateChatPreview(message);
-            });
+  <!-- Messages -->
+  <div class="messages-area" id="messagesArea">
+    <div class="chat-empty">
+      <div class="emoji">💬</div>
+      <h3>No chat selected</h3>
+      <p>Pick a friend from the sidebar to start messaging</p>
+    </div>
+  </div>
 
-            socket.on('error', function(error) {
-                console.error('❌ Error:', error);
-                alert('Error: ' + error.message);
-            });
-        }
+  <!-- Typing -->
+  <div class="typing-indicator" id="typingIndicator" style="display:none;">
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <div class="typing-dot"></div>
+    <span id="typingText" style="margin-left:4px;"></span>
+  </div>
 
-        // Load Messages
-        async function loadMessages(chatId) {
-            try {
-                const res = await fetch(`/api/messages/${chatId}`);
-                const data = await res.json();
-                
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = '';
-                
-                if (data.success && data.messages.length > 0) {
-                    data.messages.forEach(msg => displayMessage(msg));
-                } else {
-                    container.innerHTML = '<div class="loading">No messages yet. Start chatting!</div>';
-                }
-                
-                container.scrollTop = container.scrollHeight;
-            } catch (err) {
-                console.error('Error loading messages:', err);
-            }
-        }
+  <!-- Input -->
+  <div class="input-area">
+    <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="uploadImage(this)">
+    <button class="attach-btn" onclick="document.getElementById('imgInput').click()">📎</button>
+    <textarea id="msgInput" rows="1" placeholder="Type a message…"
+              oninput="autoResize(this)"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
 
-        // Display Message
-        function displayMessage(message) {
-            const container = document.getElementById('messagesContainer');
-            
-            if (container.querySelector('.loading')) {
-                container.innerHTML = '';
-            }
-            
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message ' + (message.sender_id === currentUserId ? 'sent' : 'received');
-            
-            const time = formatMessageTime(message.created_at);
-            
-            let content = '';
-            if (message.message_type === 'image') {
-                content = `<img src="${message.content}" class="message-image" onclick="window.open('${message.content}', '_blank')">`;
-            } else {
-                content = `<div class="message-content">${escapeHtml(message.content)}</div>`;
-            }
-            
-            msgDiv.innerHTML = `
-                ${message.sender_id !== currentUserId ? '<div class="message-sender">' + escapeHtml(message.sender_username) + '</div>' : ''}
-                ${content}
-                <div class="message-time">${time}</div>
-            `;
-            
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
+</main>
 
-        // Send Message
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const content = input.value.trim();
-            
-            console.log('📤 SEND MESSAGE CALLED');
-            console.log('   Content:', content);
-            console.log('   Socket connected?', socket?.connected);
-            console.log('   Current chat:', currentChatId);
-            
-            if (!content) {
-                console.log('❌ No content');
-                return;
-            }
-            
-            if (!socket || !socket.connected) {
-                console.log('❌ Socket not connected');
-                alert('Not connected to server. Please refresh.');
-                return;
-            }
-            
-            if (!currentChatId) {
-                console.log('❌ No chat selected');
-                alert('Please select a friend to chat with');
-                return;
-            }
+<!-- Toast -->
+<div class="toast-wrap" id="toastWrap"></div>
 
-            const messageData = {
-                chat_id: currentChatId,
-                content: content,
-                message_type: 'text'
-            };
-            
-            console.log('✅ Emitting send_message:', messageData);
-            socket.emit('send_message', messageData);
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+// ── Constants ──────────────────────────────────────────────
+const ME_ID   = {{ user_id }};
+const ME_NAME = '{{ user.username }}';
 
-            input.value = '';
-            console.log('✅ Message sent, input cleared');
-        }
+// ── State ──────────────────────────────────────────────────
+let socket        = null;
+let currentChatId = null;
+let friends       = [];
+let pendingReqs   = [];
+let searchTimer   = null;
 
-        // Handle Image Upload
-        async function handleImageUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
-            
-            if (!currentChatId) {
-                alert('Please select a friend to chat with');
-                input.value = '';
-                return;
-            }
+// ── Init ──────────────────────────────────────────────────
+(function init() {
+  connectSocket();
+  loadFriends();
+  loadRequests();
+})();
 
-            const formData = new FormData();
-            formData.append('image', file);
+// ============================================================
+// SOCKET
+// ============================================================
+function connectSocket() {
+  socket = io({ withCredentials: true, transports: ['polling', 'websocket'] });
 
-            try {
-                const res = await fetch('/api/upload/image', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    socket.emit('send_message', {
-                        chat_id: currentChatId,
-                        content: data.url,
-                        message_type: 'image'
-                    });
-                } else {
-                    alert('Failed to upload image: ' + data.error);
-                }
-            } catch (err) {
-                console.error('Upload error:', err);
-                alert('Failed to upload image');
-            }
+  socket.on('connect', () => {
+    console.log('✅ Socket connected:', socket.id);
+    if (currentChatId) socket.emit('join_chat', { chat_id: currentChatId });
+  });
 
-            input.value = '';
-        }
+  socket.on('disconnect', () => console.log('❌ Socket disconnected'));
 
-        // Search Users
-        function handleSearch(query) {
-            clearTimeout(searchTimeout);
-            
-            const resultsDiv = document.getElementById('searchResults');
-            
-            if (!query.trim()) {
-                resultsDiv.classList.add('hidden');
-                return;
-            }
+  // ✅ SINGLE handler — no optimistic update anywhere = no duplicates
+  socket.on('new_message', (msg) => {
+    if (currentChatId && msg.chat_id === currentChatId) {
+      appendMessage(msg);
+    }
+    refreshFriendPreview(msg);
+  });
 
-            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
-            resultsDiv.classList.remove('hidden');
-            
-            searchTimeout = setTimeout(() => performSearch(query), 300);
-        }
+  socket.on('typing_start', ({ username }) => showTyping(username));
+  socket.on('typing_stop',  ()             => hideTyping());
 
-        async function performSearch(query) {
-            try {
-                const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`);
-                const data = await res.json();
-                
-                const resultsDiv = document.getElementById('searchResults');
-                
-                if (data.success && data.results.length > 0) {
-                    resultsDiv.innerHTML = data.results.map(user => `
-                        <div class="search-result-item">
-                            <div class="user-info">
-                                <div class="avatar">${user.username[0].toUpperCase()}</div>
-                                <div>${escapeHtml(user.username)}</div>
-                            </div>
-                            ${getActionButton(user)}
-                        </div>
-                    `).join('');
-                } else {
-                    resultsDiv.innerHTML = '<div class="loading">No users found</div>';
-                }
-            } catch (err) {
-                console.error('Search error:', err);
-            }
-        }
+  socket.on('error', (e) => toast(e.message || 'Socket error', 'error'));
+}
 
-        function getActionButton(user) {
-            if (user.is_friend) {
-                return `<button class="btn-message" onclick="openPrivateChat(${user.id}, '${escapeHtml(user.username)}')">Message</button>`;
-            } else if (user.request_sent) {
-                return `<button class="btn-pending">Pending</button>`;
-            } else if (user.request_received) {
-                return `<button class="btn-accept" onclick="acceptFriendRequest(${user.id})">Accept</button>`;
-            } else {
-                return `<button class="btn-add" onclick="sendFriendRequest(${user.id})">Add Friend</button>`;
-            }
-        }
+// ============================================================
+// SEND MESSAGE  ← only one place, no optimistic update
+// ============================================================
+function sendMessage() {
+  const input   = document.getElementById('msgInput');
+  const content = input.value.trim();
 
-        // Friend System
-        async function sendFriendRequest(userId) {
-            try {
-                const res = await fetch('/api/friends/request', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({to_user_id: userId})
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    alert('Friend request sent!');
-                    document.getElementById('searchInput').value = '';
-                    document.getElementById('searchResults').classList.add('hidden');
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (err) {
-                console.error('Error:', err);
-            }
-        }
+  if (!content)        return;
+  if (!socket?.connected) { toast('Not connected', 'error'); return; }
+  if (!currentChatId)  { toast('Select a chat first', 'error'); return; }
 
-        async function acceptFriendRequest(userId) {
-            try {
-                const res = await fetch('/api/friends/requests');
-                const data = await res.json();
-                
-                const request = data.received.find(r => r.user_id === userId);
-                if (!request) return;
-                
-                const acceptRes = await fetch('/api/friends/accept', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({request_id: request.request_id})
-                });
-                
-                const acceptData = await acceptRes.json();
-                
-                if (acceptData.success) {
-                    alert('Friend request accepted!');
-                    loadFriends();
-                    document.getElementById('searchInput').value = '';
-                    document.getElementById('searchResults').classList.add('hidden');
-                }
-            } catch (err) {
-                console.error('Error:', err);
-            }
-        }
+  // Emit to server. Server broadcasts back. We receive via new_message handler.
+  socket.emit('send_message', {
+    chat_id:      currentChatId,
+    content:      content,
+    message_type: 'text'
+  });
 
-        async function loadFriends() {
-            try {
-                const res = await fetch('/api/friends');
-                const data = await res.json();
-                
-                if (data.success) {
-                    friends = data.friends;
-                    renderChatList();
-                }
-            } catch (err) {
-                console.error('Error loading friends:', err);
-            }
-        }
+  input.value = '';
+  input.style.height = '';
+}
 
-        async function loadFriendRequests() {
-            try {
-                const res = await fetch('/api/friends/requests');
-                const data = await res.json();
-                
-                if (data.success && data.received.length > 0) {
-                    // Show badge
-                    console.log('Friend requests:', data.received.length);
-                    const badge = document.getElementById('requestsBadge');
-                    badge.textContent = data.received.length;
-                    badge.classList.remove('hidden');
-                    
-                    // Store requests for rendering
-                    window.friendRequests = data.received;
-                } else {
-                    document.getElementById('requestsBadge').classList.add('hidden');
-                    window.friendRequests = [];
-                }
-            } catch (err) {
-                console.error('Error loading requests:', err);
-            }
-        }
+// ============================================================
+// MESSAGES
+// ============================================================
+async function loadMessages(chatId) {
+  try {
+    const res  = await fetch(`/api/messages/${chatId}`);
+    const data = await res.json();
+    const area = document.getElementById('messagesArea');
+    area.innerHTML = '';
 
-        function toggleFriendRequests() {
-            const panel = document.getElementById('friendRequestsPanel');
-            const searchResults = document.getElementById('searchResults');
-            
-            // Hide search results if open
-            searchResults.classList.add('hidden');
-            
-            // Toggle requests panel
-            if (panel.classList.contains('hidden')) {
-                renderFriendRequests();
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
-            }
-        }
+    if (!data.success || !data.messages.length) {
+      area.innerHTML = '<div class="chat-empty"><div class="emoji">👋</div><h3>Say hello!</h3><p>No messages yet</p></div>';
+      return;
+    }
 
-        function renderFriendRequests() {
-            const panel = document.getElementById('friendRequestsPanel');
-            const requests = window.friendRequests || [];
-            
-            if (requests.length === 0) {
-                panel.innerHTML = '<div class="loading">No pending requests</div>';
-                return;
-            }
-            
-            panel.innerHTML = requests.map(req => `
-                <div class="request-item">
-                    <div class="user-info">
-                        <div class="avatar">${req.username[0].toUpperCase()}</div>
-                        <div>${escapeHtml(req.username)}</div>
-                    </div>
-                    <div class="request-actions">
-                        <button class="btn-accept-small" onclick="acceptRequest(${req.request_id})">Accept</button>
-                        <button class="btn-reject" onclick="rejectRequest(${req.request_id})">Reject</button>
-                    </div>
-                </div>
-            `).join('');
-        }
+    let lastDay = '';
+    data.messages.forEach(m => {
+      const day = dayLabel(m.created_at);
+      if (day !== lastDay) {
+        area.insertAdjacentHTML('beforeend', `<div class="msg-day-divider"><span>${day}</span></div>`);
+        lastDay = day;
+      }
+      appendMessage(m, false);
+    });
 
-        async function acceptRequest(requestId) {
-            try {
-                const res = await fetch('/api/friends/accept', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({request_id: requestId})
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    alert('Friend request accepted!');
-                    await loadFriends();
-                    await loadFriendRequests();
-                    renderFriendRequests();
-                }
-            } catch (err) {
-                console.error('Error:', err);
-            }
-        }
+    scrollBottom();
+  } catch (e) { console.error(e); }
+}
 
-        async function rejectRequest(requestId) {
-            try {
-                const res = await fetch('/api/friends/reject', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({request_id: requestId})
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    alert('Friend request rejected');
-                    await loadFriendRequests();
-                    renderFriendRequests();
-                }
-            } catch (err) {
-                console.error('Error:', err);
-            }
-        }
+function appendMessage(msg, scroll = true) {
+  const area   = document.getElementById('messagesArea');
+  const empty  = area.querySelector('.chat-empty');
+  if (empty) empty.remove();
 
-        function renderChatList() {
-            const chatList = document.getElementById('chatList');
-            
-            if (friends.length === 0) {
-                chatList.innerHTML = '<div class="loading">Search for friends to start chatting...</div>';
-                return;
-            }
-            
-            let html = '';
-            
-            friends.forEach(friend => {
-                const isActive = currentChatId === friend.chat_id;
-                html += `
-                    <div class="chat-item ${isActive ? 'active' : ''}" onclick="switchChat('${friend.chat_id}', '${escapeHtml(friend.username)}')">
-                        <div class="avatar">${friend.username[0].toUpperCase()}</div>
-                        <div class="chat-info">
-                            <div class="chat-name">${escapeHtml(friend.username)}</div>
-                            <div class="chat-preview">${friend.last_message ? escapeHtml(friend.last_message.substring(0, 30)) : 'No messages yet'}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            chatList.innerHTML = html;
-        }
+  const isSent = msg.sender_id === ME_ID;
+  const group  = document.createElement('div');
+  group.className = `msg-group ${isSent ? 'sent' : 'recv'}`;
 
-        function switchChat(chatId, chatName) {
-            currentChatId = chatId;
-            currentChatName = chatName;
-            
-            document.getElementById('chatName').textContent = chatName;
-            document.getElementById('chatAvatar').textContent = chatName[0].toUpperCase();
-            document.getElementById('chatStatus').textContent = '● Online';
-            document.getElementById('chatStatus').className = 'status online';
-            
-            renderChatList();
-            loadMessages(chatId);
-            
-            // Join room
-            if (socket && socket.connected) {
-                socket.emit('join_chat', {chat_id: chatId});
-            }
-            
-            // Close sidebar on mobile
-            if (window.innerWidth <= 768) {
-                closeSidebar();
-            }
-        }
+  let inner = '';
+  if (!isSent) inner += `<div class="msg-sender-name">${esc(msg.sender_username)}</div>`;
 
-        function openPrivateChat(userId, username) {
-            const chatId = userId < currentUserId ? `${userId}-${currentUserId}` : `${currentUserId}-${userId}`;
-            switchChat(chatId, username);
-            document.getElementById('searchInput').value = '';
-            document.getElementById('searchResults').classList.add('hidden');
-        }
+  let body = '';
+  if (msg.message_type === 'image') {
+    body = `<img src="${msg.content}" alt="image" onclick="window.open('${msg.content}','_blank')">`;
+  } else {
+    body = esc(msg.content).replace(/\n/g, '<br>');
+  }
 
-        function updateChatPreview(message) {
-            // Update chat preview in sidebar
-            loadFriends();
-        }
+  inner += `<div class="msg-bubble">${body}<span class="msg-time">${fmtTime(msg.created_at)}</span></div>`;
+  group.innerHTML = inner;
+  area.appendChild(group);
+  if (scroll) scrollBottom();
+}
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+function scrollBottom() {
+  const a = document.getElementById('messagesArea');
+  a.scrollTop = a.scrollHeight;
+}
 
-        async function logout() {
-            await fetch('/api/auth/logout', {method: 'POST'});
-            window.location.href = '/';
-        }
+// ============================================================
+// IMAGE UPLOAD
+// ============================================================
+async function uploadImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!currentChatId) { toast('Select a chat first', 'error'); input.value = ''; return; }
 
-        // Start
-        
-        // Mobile sidebar functions
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            if (sidebar.classList.contains('show')) {
-                closeSidebar();
-            } else {
-                sidebar.classList.add('show');
-                overlay.classList.add('show');
-            }
-        }
+  const fd = new FormData();
+  fd.append('image', file);
 
-        function closeSidebar() {
-            document.getElementById('sidebar').classList.remove('show');
-            document.getElementById('sidebarOverlay').classList.remove('show');
-        }
+  try {
+    const res  = await fetch('/api/upload/image', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      socket.emit('send_message', { chat_id: currentChatId, content: data.url, message_type: 'image' });
+    } else {
+      toast(data.error || 'Upload failed', 'error');
+    }
+  } catch (e) { toast('Upload failed', 'error'); }
+  input.value = '';
+}
 
-        // Phone-style timestamp
-        function formatMessageTime(timestamp) {
-            const messageDate = new Date(timestamp);
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const messageDay = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
-            
-            const diffTime = today - messageDay;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            
-            const hours = messageDate.getHours();
-            const minutes = messageDate.getMinutes().toString().padStart(2, '0');
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12;
-            const timeStr = `${displayHours}:${minutes} ${ampm}`;
-            
-            if (diffDays === 0) {
-                return timeStr;
-            } else if (diffDays === 1) {
-                return `Yesterday ${timeStr}`;
-            } else if (diffDays < 7) {
-                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                return `${days[messageDate.getDay()]} ${timeStr}`;
-            } else {
-                const month = (messageDate.getMonth() + 1).toString().padStart(2, '0');
-                const day = messageDate.getDate().toString().padStart(2, '0');
-                return `${month}/${day}/${messageDate.getFullYear()} ${timeStr}`;
-            }
-        }
+// ============================================================
+// SEARCH
+// ============================================================
+function handleSearch(q) {
+  clearTimeout(searchTimer);
+  const panel = document.getElementById('searchResults');
 
-        
-        init();
-    </script>
+  if (!q.trim()) { panel.classList.remove('open'); panel.innerHTML = ''; return; }
+
+  panel.classList.add('open');
+  panel.innerHTML = '<div class="empty-list" style="padding:14px;">Searching…</div>';
+  searchTimer = setTimeout(() => doSearch(q), 280);
+}
+
+async function doSearch(q) {
+  try {
+    const res  = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const panel = document.getElementById('searchResults');
+
+    if (!data.success || !data.results.length) {
+      panel.innerHTML = '<div class="empty-list" style="padding:14px;">No users found</div>';
+      return;
+    }
+
+    panel.innerHTML = data.results.map(u => `
+      <div class="sr-item">
+        <div class="sr-user">
+          <div class="av sm">${u.username[0].toUpperCase()}</div>
+          <div>
+            <div class="sr-name">${esc(u.username)}</div>
+            <div class="sr-status">${esc(u.status)}</div>
+          </div>
+        </div>
+        ${searchBtn(u)}
+      </div>
+    `).join('');
+  } catch (e) { console.error(e); }
+}
+
+function searchBtn(u) {
+  if (u.relationship === 'friend') {
+    return `<button class="pill-btn pill-message" onclick="openChat(${u.id},'${esc(u.username)}')">Message</button>`;
+  }
+  if (u.relationship === 'request_sent') {
+    return `<button class="pill-btn pill-pending" disabled>Pending</button>`;
+  }
+  if (u.relationship === 'request_received') {
+    return `<button class="pill-btn pill-accept" onclick="quickAccept(${u.id})">Accept</button>`;
+  }
+  return `<button class="pill-btn pill-add" onclick="addFriend(${u.id})">Add Friend</button>`;
+}
+
+// ============================================================
+// FRIENDS
+// ============================================================
+async function loadFriends() {
+  try {
+    const res  = await fetch('/api/friends');
+    const data = await res.json();
+    if (data.success) { friends = data.friends; renderFriends(); }
+  } catch (e) { console.error(e); }
+}
+
+function renderFriends() {
+  const list  = document.getElementById('chatList');
+  const empty = document.getElementById('emptyList');
+
+  // Remove old friend items
+  list.querySelectorAll('.chat-item').forEach(el => el.remove());
+
+  if (!friends.length) { if (empty) empty.style.display = ''; return; }
+  if (empty) empty.style.display = 'none';
+
+  friends.forEach(f => {
+    const active = currentChatId === f.chat_id;
+    const el = document.createElement('div');
+    el.className = `chat-item${active ? ' active' : ''}`;
+    el.dataset.chatId = f.chat_id;
+    el.onclick = () => openChat(f.id, f.username, f.chat_id);
+    el.innerHTML = `
+      <div class="av">${f.username[0].toUpperCase()}</div>
+      <div class="chat-meta">
+        <div class="chat-name-row">
+          <span class="chat-name">${esc(f.username)}</span>
+          ${f.last_message_time ? `<span class="chat-time">${relTime(f.last_message_time)}</span>` : ''}
+        </div>
+        <div class="chat-preview">${f.last_message ? esc(f.last_message) : 'No messages yet'}</div>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+function refreshFriendPreview(msg) {
+  loadFriends(); // Reload sidebar previews after new message
+}
+
+// ============================================================
+// FRIEND REQUESTS
+// ============================================================
+async function loadRequests() {
+  try {
+    const res  = await fetch('/api/friends/requests');
+    const data = await res.json();
+    if (!data.success) return;
+    pendingReqs = data.received || [];
+
+    const badge = document.getElementById('reqBadge');
+    if (pendingReqs.length) {
+      badge.textContent = pendingReqs.length;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+    renderRequests();
+  } catch (e) { console.error(e); }
+}
+
+function renderRequests() {
+  const list = document.getElementById('requestsList');
+  if (!pendingReqs.length) {
+    list.innerHTML = '<div class="empty-list" style="padding:14px;color:rgba(255,255,255,.3);">No pending requests</div>';
+    return;
+  }
+  list.innerHTML = pendingReqs.map(r => `
+    <div class="req-item">
+      <div class="req-user">
+        <div class="av sm">${r.username[0].toUpperCase()}</div>
+        <div>
+          <div class="req-name">${esc(r.username)}</div>
+          <div class="req-time">${r.time_ago}</div>
+        </div>
+      </div>
+      <div class="req-btns">
+        <button class="pill-btn pill-accept" onclick="acceptReq(${r.request_id})">Accept</button>
+        <button class="pill-btn pill-reject" onclick="rejectReq(${r.request_id})">Decline</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleRequests() {
+  const panel = document.getElementById('requestsPanel');
+  panel.classList.toggle('open');
+  document.getElementById('searchResults').classList.remove('open');
+}
+
+async function addFriend(userId) {
+  try {
+    const res  = await fetch('/api/friends/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to_user_id: userId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('Friend request sent! 🎉', 'success');
+      clearSearch();
+    } else {
+      toast(data.error, 'error');
+    }
+  } catch (e) { toast('Failed to send request', 'error'); }
+}
+
+async function acceptReq(reqId) {
+  try {
+    const res  = await fetch('/api/friends/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: reqId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('Friend added! 🎉', 'success');
+      await loadFriends();
+      await loadRequests();
+    } else {
+      toast(data.error, 'error');
+    }
+  } catch (e) { toast('Failed', 'error'); }
+}
+
+async function rejectReq(reqId) {
+  try {
+    await fetch('/api/friends/reject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: reqId })
+    });
+    await loadRequests();
+  } catch (e) {}
+}
+
+async function quickAccept(userId) {
+  const req = pendingReqs.find(r => r.user_id === userId)
+           || await fetchReqByUser(userId);
+  if (req) await acceptReq(req.request_id);
+}
+
+async function fetchReqByUser(userId) {
+  const res  = await fetch('/api/friends/requests');
+  const data = await res.json();
+  if (data.success) { pendingReqs = data.received; }
+  return pendingReqs.find(r => r.user_id === userId) || null;
+}
+
+// ============================================================
+// CHAT NAVIGATION
+// ============================================================
+function openChat(friendId, friendName, chatId) {
+  if (!chatId) {
+    chatId = friendId < ME_ID ? `${friendId}-${ME_ID}` : `${ME_ID}-${friendId}`;
+  }
+
+  currentChatId = chatId;
+
+  document.getElementById('chatAv').textContent   = friendName[0].toUpperCase();
+  document.getElementById('chatName').textContent  = friendName;
+  document.getElementById('chatSub').textContent   = 'Friend';
+  document.getElementById('chatSub').className     = 'chat-header-sub';
+
+  renderFriends(); // Update active state
+  loadMessages(chatId);
+
+  if (socket?.connected) socket.emit('join_chat', { chat_id: chatId });
+  clearSearch();
+  if (window.innerWidth <= 720) closeSidebar();
+}
+
+// ============================================================
+// TYPING
+// ============================================================
+let typingTimer = null;
+document.getElementById('msgInput').addEventListener('input', () => {
+  if (!currentChatId || !socket?.connected) return;
+  socket.emit('typing_start', { chatId: currentChatId });
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => socket.emit('typing_stop', { chatId: currentChatId }), 2000);
+});
+
+function showTyping(name) {
+  document.getElementById('typingText').textContent = `${name} is typing`;
+  document.getElementById('typingIndicator').style.display = 'flex';
+}
+function hideTyping() {
+  document.getElementById('typingIndicator').style.display = 'none';
+}
+
+// ============================================================
+// MISC
+// ============================================================
+function autoResize(el) {
+  el.style.height = '';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').classList.remove('open');
+  document.getElementById('searchResults').innerHTML = '';
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type = '') {
+  const wrap = document.getElementById('toastWrap');
+  const el   = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 250);
+  }, 2800);
+}
+
+// ============================================================
+// DATE / TIME HELPERS
+// ============================================================
+function fmtTime(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const h   = d.getHours(), m = String(d.getMinutes()).padStart(2,'0');
+  const ap  = h >= 12 ? 'PM' : 'AM';
+  const hh  = String(h % 12 || 12);
+  const timeStr = `${hh}:${m} ${ap}`;
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return timeStr;
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return `Yesterday ${timeStr}`;
+  return `${d.getMonth()+1}/${d.getDate()} ${timeStr}`;
+}
+
+function relTime(iso) {
+  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (s < 60)    return 'now';
+  if (s < 3600)  return `${Math.floor(s/60)}m`;
+  if (s < 86400) return `${Math.floor(s/3600)}h`;
+  return `${Math.floor(s/86400)}d`;
+}
+
+function dayLabel(iso) {
+  const d   = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Today';
+  const y = new Date(now); y.setDate(now.getDate()-1);
+  if (d.toDateString() === y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
 </body>
 </html>
