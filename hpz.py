@@ -532,20 +532,9 @@ def handle_send_message(data):
     print(f"💾 Saved to database: Message #{msg.id}")
     print(f"📤 Broadcasting to '{chat_id}' room...")
     
-    # METHOD 1: Broadcast to the room (for other users)
-    socketio.emit('new_message', message_data, room=chat_id, skip_sid=request.sid)
-    print(f"   ✓ Sent to room (excluding sender)")
-    
-    # METHOD 2: Send back to sender (so they see their own message)
-    emit('new_message', message_data)
-    print(f"   ✓ Sent to sender")
-    
-    # METHOD 3: Also send to individual user rooms (backup)
-    if '-' in chat_id:
-        user_ids = chat_id.split('-')
-        for uid in user_ids:
-            socketio.emit('new_message', message_data, room=f'user_{uid}')
-            print(f"   ✓ Sent to user_{uid}")
+    # Send to everyone in the room INCLUDING sender
+    socketio.emit('new_message', message_data, room=chat_id)
+    print(f"   ✓ Broadcast to room '{chat_id}'")
     
     print(f"✅ Message broadcast complete!")
     print(f"{'='*50}\n")
