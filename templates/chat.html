@@ -386,11 +386,179 @@
             padding: 20px;
             color: #999;
         }
+    
+        /* ========== MOBILE RESPONSIVE ========== */
+        
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            width: 45px;
+            height: 45px;
+            background: #ff5900;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+
+        /* Sidebar Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                width: 280px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                z-index: 1000;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .sidebar-header {
+                padding: 12px;
+            }
+            .sidebar-header h3 {
+                font-size: 16px;
+            }
+            .header-right {
+                gap: 5px;
+            }
+            .btn-requests, .btn-logout {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+            .search-box {
+                padding: 8px;
+            }
+            .search-input {
+                font-size: 13px;
+                padding: 7px 10px;
+            }
+            .search-result-item, .request-item {
+                padding: 8px;
+            }
+            .avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+            .btn-add, .btn-message, .btn-pending, .btn-accept {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            .chat-item {
+                padding: 10px 8px;
+            }
+            .chat-name {
+                font-size: 13px;
+            }
+            .chat-preview {
+                font-size: 11px;
+            }
+            .friend-requests-panel {
+                max-height: 200px;
+            }
+        }
+
+        /* Main Chat Responsive */
+        @media (max-width: 768px) {
+            .main-chat {
+                width: 100%;
+            }
+            .chat-header {
+                padding: 12px 15px;
+            }
+            .chat-header h4 {
+                font-size: 14px;
+            }
+            .status {
+                font-size: 11px;
+            }
+            .messages-container {
+                padding: 15px 10px;
+                gap: 6px;
+            }
+            .message {
+                max-width: 75%;
+                font-size: 13px;
+                padding: 7px 10px;
+            }
+            .message-sender {
+                font-size: 11px;
+            }
+            .message-time {
+                font-size: 9px;
+            }
+            .message-image {
+                max-width: 200px;
+                max-height: 200px;
+            }
+            .input-area {
+                padding: 10px;
+                gap: 8px;
+            }
+            .btn-image, .btn-send {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+            #messageInput {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            .loading {
+                padding: 15px;
+                font-size: 13px;
+            }
+        }
+
     </style>
 </head>
 <body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" id="mobileMenuBtn">☰</button>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h3>💬 {{ user.username }}</h3>
             <div class="header-right">
@@ -549,7 +717,7 @@
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message ' + (message.sender_id === currentUserId ? 'sent' : 'received');
             
-            const time = new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const time = formatMessageTime(message.created_at);
             
             let content = '';
             if (message.message_type === 'image') {
@@ -910,6 +1078,11 @@
             if (socket && socket.connected) {
                 socket.emit('join_chat', {chat_id: chatId});
             }
+            
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
         }
 
         function openPrivateChat(userId, username) {
@@ -936,6 +1109,56 @@
         }
 
         // Start
+        
+        // Mobile sidebar functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar.classList.contains('show')) {
+                closeSidebar();
+            } else {
+                sidebar.classList.add('show');
+                overlay.classList.add('show');
+            }
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('show');
+            document.getElementById('sidebarOverlay').classList.remove('show');
+        }
+
+        // Phone-style timestamp
+        function formatMessageTime(timestamp) {
+            const messageDate = new Date(timestamp);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const messageDay = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+            
+            const diffTime = today - messageDay;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            const hours = messageDate.getHours();
+            const minutes = messageDate.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            const timeStr = `${displayHours}:${minutes} ${ampm}`;
+            
+            if (diffDays === 0) {
+                return timeStr;
+            } else if (diffDays === 1) {
+                return `Yesterday ${timeStr}`;
+            } else if (diffDays < 7) {
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                return `${days[messageDate.getDay()]} ${timeStr}`;
+            } else {
+                const month = (messageDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = messageDate.getDate().toString().padStart(2, '0');
+                return `${month}/${day}/${messageDate.getFullYear()} ${timeStr}`;
+            }
+        }
+
+        
         init();
     </script>
 </body>
