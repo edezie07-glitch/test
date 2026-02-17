@@ -19,7 +19,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .sh{padding:16px 14px 12px;background:var(--sb2);border-bottom:1px solid var(--bdr);}
 .sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
 .brand{font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px;}
-.brand-dot{width:8px;height:8px;background:var(--brand);border-radius:50%;box-shadow:0 0 8px var(--brand);}
+
 .hbtns{display:flex;gap:5px;}
 .ib{width:33px;height:33px;border-radius:9px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background var(--trans),color var(--trans);position:relative;}
 .ib:hover{background:rgba(124,106,255,.15);color:var(--brand);}
@@ -176,7 +176,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* MOBILE */
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
-.mtog{display:none;position:fixed;top:10px;left:10px;z-index:750;width:38px;height:38px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;}
+.mtog{display:none;position:fixed;top:10px;left:450px;z-index:750;width:38px;height:38px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;}
 @media(max-width:720px){
   .mtog{display:flex;}
   .mov{display:none;}
@@ -198,7 +198,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <aside class="sidebar" id="sidebar">
   <div class="sh">
     <div class="sh-top">
-      <div class="brand"><span class="brand-dot"></span>HPZ</div>
+      <div class="brand">
+        
+        <span class="brand-dot">
+            <img src="static\uploads\hepozy_logo.jpg" alt="Logo" style="width:50px;height:50px;object-fit:cover;border-radius: 50px 50px;">
+        </div>
       <div class="hbtns">
         <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
         <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
@@ -225,9 +229,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <!-- MAIN -->
 <main class="main">
   <div class="chdr">
-    <div class="av lg" id="chav">💬</div>
+  
     <div class="chdr-info">
-      <div class="chdr-nm" id="chnm">HPZ Messenger</div>
+      <div class="chdr-nm" id="chnm"></div>
       <div class="chdr-sub" id="chsub">Select a conversation</div>
     </div>
   </div>
