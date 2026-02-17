@@ -36,9 +36,10 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 # ============================================================
-# UPLOADS
+# PATHS — always relative to hpz.py, works on Render
 # ============================================================
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))   # ← KEY FIX
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -48,7 +49,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy(app)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
 
-# logger=False prevents Render startup timeout
 socketio = SocketIO(
     app,
     cors_allowed_origins="*",
@@ -187,10 +187,10 @@ def chat():
         session.clear()
         return redirect('/')
 
-# ✅ FIXED: was send_from_directory('templates', ...) — file is in ROOT not templates/
+# ✅ FIXED: BASE_DIR = same folder as hpz.py = repo root on Render
 @app.route('/logo')
 def serve_logo():
-    return send_from_directory('.', 'hepozy_logo.jpg')
+    return send_from_directory(BASE_DIR, 'hepozy_logo.jpg')
 
 # ============================================================
 # AUTH
@@ -201,7 +201,6 @@ def register():
         data     = request.get_json()
         username = data.get('username', '').strip()
         password = data.get('password', '')
-
         if not username or not password:
             return jsonify({'success': False, 'error': 'All fields required'}), 400
         if len(username) < 3:
@@ -210,17 +209,14 @@ def register():
             return jsonify({'success': False, 'error': 'Password min 6 chars'}), 400
         if User.query.filter_by(username=username).first():
             return jsonify({'success': False, 'error': 'Username taken'}), 400
-
         user = User(username=username)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
-
         session.permanent = True
         session['user_id']  = user.id
         session['username'] = user.username
         session.modified    = True
-
         print(f"✅ Registered: {username} (ID:{user.id})")
         return jsonify({'success': True, 'redirect': '/chat'})
     except Exception as e:
@@ -235,19 +231,15 @@ def login():
         data       = request.get_json()
         identifier = data.get('identifier', '').strip()
         password   = data.get('password', '')
-
         if not identifier or not password:
             return jsonify({'success': False, 'error': 'All fields required'}), 400
-
         user = User.query.filter_by(username=identifier).first()
         if not user or not user.check_password(password):
             return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
-
         session.permanent = True
         session['user_id']  = user.id
         session['username'] = user.username
         session.modified    = True
-
         print(f"✅ Login: {user.username} (ID:{user.id})")
         return jsonify({'success': True, 'redirect': '/chat'})
     except Exception as e:
@@ -269,26 +261,21 @@ def search_users():
     try:
         query = request.args.get('q', '').strip()
         uid   = session['user_id']
-
         if not query:
             return jsonify({'success': True, 'results': [], 'count': 0})
-
         users = User.query.filter(
             User.id != uid,
             User.username.ilike(f'%{query}%')
         ).limit(20).all()
-
         results = []
         for u in users:
             is_friend = are_friends(uid, u.id)
             req_sent  = FriendRequest.query.filter_by(from_user_id=uid, to_user_id=u.id, status='pending').first() is not None
             req_recv  = FriendRequest.query.filter_by(from_user_id=u.id, to_user_id=uid, status='pending').first() is not None
-
             if is_friend:   rel = 'friend'
             elif req_sent:  rel = 'request_sent'
             elif req_recv:  rel = 'request_received'
             else:           rel = 'none'
-
             results.append({
                 'id': u.id, 'username': u.username,
                 'avatar': u.avatar_url or f"https://ui-avatars.com/api/?name={u.username}&background=6c63ff&color=fff&size=128",
@@ -296,7 +283,6 @@ def search_users():
                 'is_friend': is_friend, 'relationship': rel,
                 'request_sent': req_sent, 'request_received': req_recv
             })
-
         return jsonify({'success': True, 'results': results, 'count': len(results)})
     except Exception as e:
         print(f"❌ Search error: {e}")
@@ -322,17 +308,14 @@ def update_profile():
     try:
         data = request.get_json()
         user = User.query.get(session['user_id'])
-
         if 'username' in data and data['username'] != user.username:
             if User.query.filter_by(username=data['username']).first():
                 return jsonify({'success': False, 'error': 'Username taken'}), 400
             user.username = data['username']
             session['username'] = data['username']
             session.modified = True
-
         if 'bio'    in data: user.bio    = data['bio'][:500]
         if 'status' in data: user.status = data['status'][:100]
-
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -349,13 +332,11 @@ def upload_avatar():
         file = request.files['avatar']
         if not file or not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Invalid file'}), 400
-
         ext  = file.filename.rsplit('.', 1)[1].lower()
         fn   = f"{uuid.uuid4().hex}.{ext}"
         path = os.path.join(UPLOAD_FOLDER, 'avatars')
         os.makedirs(path, exist_ok=True)
         file.save(os.path.join(path, fn))
-
         url  = f"/static/uploads/avatars/{fn}"
         user = User.query.get(session['user_id'])
         user.avatar_url = url
@@ -375,17 +356,14 @@ def get_friends():
         friendships = Friendship.query.filter(
             or_(Friendship.user1_id == uid, Friendship.user2_id == uid)
         ).all()
-
         friends = []
         for f in friendships:
             fid    = f.user2_id if f.user1_id == uid else f.user1_id
             friend = User.query.get(fid)
             if not friend: continue
-
             cid  = get_chat_id(uid, fid)
             last = Message.query.filter_by(chat_id=cid).order_by(Message.created_at.desc()).first()
             av   = friend.avatar_url or f"https://ui-avatars.com/api/?name={friend.username}&background=6c63ff&color=fff&size=96"
-
             friends.append({
                 'id': friend.id, 'username': friend.username,
                 'avatar': av, 'avatar_url': av,
@@ -394,7 +372,6 @@ def get_friends():
                 'last_message': last.content[:40] if last else None,
                 'last_message_time': last.created_at.isoformat() if last else None
             })
-
         return jsonify({'success': True, 'friends': friends})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -407,13 +384,11 @@ def get_friend_requests():
         uid      = session['user_id']
         received = FriendRequest.query.filter_by(to_user_id=uid,   status='pending').order_by(FriendRequest.created_at.desc()).all()
         sent     = FriendRequest.query.filter_by(from_user_id=uid, status='pending').all()
-
         def fmt(req, tid):
             u  = User.query.get(tid)
             av = u.avatar_url or f"https://ui-avatars.com/api/?name={u.username}&background=6c63ff&color=fff"
             return {'request_id': req.id, 'user_id': u.id, 'username': u.username,
                     'avatar': av, 'time_ago': get_time_ago(req.created_at)}
-
         return jsonify({
             'success': True,
             'received': [fmt(r, r.from_user_id) for r in received],
@@ -430,14 +405,12 @@ def send_friend_request():
         data  = request.get_json()
         uid   = session['user_id']
         to_id = data.get('to_user_id')
-
         if not to_id or uid == to_id:
             return jsonify({'success': False, 'error': 'Invalid user'}), 400
         if are_friends(uid, to_id):
             return jsonify({'success': False, 'error': 'Already friends'}), 400
         if FriendRequest.query.filter_by(from_user_id=uid, to_user_id=to_id, status='pending').first():
             return jsonify({'success': False, 'error': 'Request already sent'}), 400
-
         db.session.add(FriendRequest(from_user_id=uid, to_user_id=to_id))
         db.session.commit()
         return jsonify({'success': True})
@@ -453,7 +426,6 @@ def accept_friend_request():
         req = FriendRequest.query.get(request.get_json().get('request_id'))
         if not req or req.to_user_id != session['user_id']:
             return jsonify({'success': False, 'error': 'Invalid request'}), 400
-
         db.session.add(Friendship(
             user1_id=min(req.from_user_id, req.to_user_id),
             user2_id=max(req.from_user_id, req.to_user_id)
@@ -490,12 +462,10 @@ def get_messages(chat_id):
         uid = session['user_id']
         if chat_id != 'global' and str(uid) not in chat_id.split('-'):
             return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-
         msgs = Message.query.filter_by(chat_id=chat_id)\
                             .order_by(Message.created_at.desc())\
                             .limit(50).all()
         msgs.reverse()
-
         return jsonify({'success': True, 'messages': [{
             'id': m.id, 'chat_id': m.chat_id, 'sender_id': m.sender_id,
             'sender_username': m.sender.username if m.sender else 'Unknown',
@@ -517,7 +487,6 @@ def upload_image():
         file = request.files['image']
         if not file or not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Invalid file'}), 400
-
         ext = file.filename.rsplit('.', 1)[1].lower()
         fn  = f"{uuid.uuid4().hex}.{ext}"
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -539,53 +508,42 @@ def handle_connect():
     join_room('global')
     return True
 
-
 @socketio.on('join_chat')
 def handle_join_chat(data):
     cid = data.get('chat_id')
     uid = session.get('user_id')
     if cid and uid: join_room(cid)
 
-
 @socketio.on('send_message')
 def handle_send_message(data):
     uid   = session.get('user_id')
     uname = session.get('username')
-
     if not uid:
         emit('error', {'message': 'Not authenticated'})
         return
-
     cid     = data.get('chat_id') or data.get('chatId', 'global')
     content = data.get('content', '').strip()
     mtype   = data.get('message_type') or data.get('type', 'text')
-
     if not content: return
-
     if cid != 'global' and str(uid) not in cid.split('-'):
         emit('error', {'message': 'Unauthorized'})
         return
-
     try:
         msg = Message(chat_id=cid, sender_id=uid, content=content, message_type=mtype)
         db.session.add(msg)
         db.session.commit()
         db.session.refresh(msg)
-
         payload = {
             'id': msg.id, 'chat_id': cid,
             'sender_id': uid, 'sender_username': uname,
             'content': content, 'message_type': mtype,
             'created_at': msg.created_at.isoformat()
         }
-
-        # ✅ ONE emit only — no duplicates
         socketio.emit('new_message', payload, room=cid)
         print(f"✅ Msg#{msg.id} → {cid}")
     except Exception as e:
         db.session.rollback()
         print(f"❌ Message error: {e}")
-
 
 @socketio.on('disconnect')
 def handle_disconnect():
