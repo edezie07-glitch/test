@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Flask, render_template, request, jsonify, session, redirect
+from flask import Flask, render_template, request, jsonify, session, redirect, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 from sqlalchemy import or_, and_
 from functools import wraps
-from flask import send_from_directory
+
 # ============================================================
 # APP CONFIG
 # ============================================================
@@ -34,9 +34,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
     'pool_recycle': 300,
 }
-@app.route('/logo')
-def serve_logo():
-    return send_from_directory('templates', 'hepozy_logo.jpg')
+
 # ============================================================
 # UPLOADS
 # ============================================================
@@ -64,13 +62,13 @@ socketio = SocketIO(
 # ============================================================
 class User(db.Model):
     __tablename__ = 'users'
-    id           = db.Column(db.Integer, primary_key=True)
-    username     = db.Column(db.String(80),  unique=True, nullable=False, index=True)
-    password_hash= db.Column(db.String(200), nullable=False)
-    avatar_url   = db.Column(db.String(500))
-    bio          = db.Column(db.String(500), default='')
-    status       = db.Column(db.String(100), default='Available')
-    created_at   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    id            = db.Column(db.Integer, primary_key=True)
+    username      = db.Column(db.String(80),  unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(200), nullable=False)
+    avatar_url    = db.Column(db.String(500))
+    bio           = db.Column(db.String(500), default='')
+    status        = db.Column(db.String(100), default='Available')
+    created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def set_password(self, p):   self.password_hash = generate_password_hash(p)
     def check_password(self, p): return check_password_hash(self.password_hash, p)
@@ -92,9 +90,9 @@ class Message(db.Model):
 
 class Friendship(db.Model):
     __tablename__ = 'friendships'
-    id       = db.Column(db.Integer, primary_key=True)
-    user1_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    user2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    id         = db.Column(db.Integer, primary_key=True)
+    user1_id   = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    user2_id   = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint('user1_id', 'user2_id'),)
 
@@ -188,6 +186,11 @@ def chat():
         print(f"❌ Chat error: {e}")
         session.clear()
         return redirect('/')
+
+# ✅ FIXED: was send_from_directory('templates', ...) — file is in ROOT not templates/
+@app.route('/logo')
+def serve_logo():
+    return send_from_directory('.', 'hepozy_logo.jpg')
 
 # ============================================================
 # AUTH
@@ -347,8 +350,8 @@ def upload_avatar():
         if not file or not allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'Invalid file'}), 400
 
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        fn  = f"{uuid.uuid4().hex}.{ext}"
+        ext  = file.filename.rsplit('.', 1)[1].lower()
+        fn   = f"{uuid.uuid4().hex}.{ext}"
         path = os.path.join(UPLOAD_FOLDER, 'avatars')
         os.makedirs(path, exist_ok=True)
         file.save(os.path.join(path, fn))
@@ -553,7 +556,6 @@ def handle_send_message(data):
         emit('error', {'message': 'Not authenticated'})
         return
 
-    # Accept both key formats from frontend
     cid     = data.get('chat_id') or data.get('chatId', 'global')
     content = data.get('content', '').strip()
     mtype   = data.get('message_type') or data.get('type', 'text')
@@ -589,6 +591,21 @@ def handle_send_message(data):
 def handle_disconnect():
     print(f"❌ DISCONNECT: {session.get('username', 'Unknown')}")
 
+@socketio.on('typing_start')
+def handle_typing_start(data):
+    uid   = session.get('user_id')
+    uname = session.get('username')
+    cid   = data.get('chatId') or data.get('chat_id')
+    if uid and cid:
+        emit('typing_start', {'username': uname}, room=cid, include_self=False)
+
+@socketio.on('typing_stop')
+def handle_typing_stop(data):
+    uid = session.get('user_id')
+    cid = data.get('chatId') or data.get('chat_id')
+    if uid and cid:
+        emit('typing_stop', {}, room=cid, include_self=False)
+
 # ============================================================
 # HEALTH / DEBUG
 # ============================================================
@@ -617,4 +634,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 HPZ Messenger on port {port}")
     socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
-
