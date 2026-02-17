@@ -1,498 +1,159 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HPZ Messenger - Login</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        body {
-            background: linear-gradient(135deg, #ffffff, #ffffff);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .login-container {
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-            padding: 40px 32px;
-            width: 100%;
-            max-width: 400px;
-            animation: slideIn 0.3s ease;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPZ Messenger — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{--brand:#7c6aff;--brand-dk:#6254e0;--font-h:'Syne',sans-serif;--font-b:'Manrope',sans-serif;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:var(--font-b);
+  background:#0f0f17;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;
+  position:relative;
+}
+/* animated gradient orbs */
+body::before{
+  content:'';position:fixed;top:-30%;left:-20%;
+  width:600px;height:600px;
+  background:radial-gradient(circle,rgba(124,106,255,.18) 0%,transparent 70%);
+  animation:float1 8s ease-in-out infinite;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;bottom:-20%;right:-15%;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(99,84,224,.14) 0%,transparent 70%);
+  animation:float2 10s ease-in-out infinite;pointer-events:none;
+}
+@keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,-40px);}}
+@keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,30px);}}
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+.card{
+  background:rgba(22,22,31,.85);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  padding:44px 40px 40px;
+  width:100%;max-width:400px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  position:relative;z-index:1;
+  animation:slideUp .45s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
 
-        .logo-container {
-            text-align: center;
-            margin-bottom: 24px;
-        }
+.logo-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:28px;}
+.logo-img{
+  width:52px;height:52px;border-radius:14px;
+  object-fit:cover;
+  box-shadow:0 0 0 2px rgba(124,106,255,.3),0 8px 24px rgba(124,106,255,.25);
+}
+.logo-text{
+  font-family:var(--font-h);font-size:26px;font-weight:800;
+  color:#fff;letter-spacing:-.5px;
+}
 
-        .logo-container img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin: 0 auto 16px;
-            display: block;
-            object-fit: cover;
-        }
+h1{
+  font-family:var(--font-h);font-size:22px;font-weight:700;
+  color:#e8e8f4;text-align:center;margin-bottom:6px;
+}
+.sub{font-size:13.5px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:28px;}
 
-        h1 {
-            color: #ff5900;
-            font-size: 32px;
-            margin-bottom: 8px;
-            text-align: center;
-            font-weight: 700;
-        }
-        .subtitle {
-            color: #65676b;
-            text-align: center;
-            margin-bottom: 32px;
-            font-size: 15px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: #050505;
-        }
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #e4e6eb;
-            border-radius: 12px;
-            font-size: 15px;
-            transition: 0.2s;
-            background: white;
-            color: #333;
-        }
-        input:focus {
-            outline: none;
-            border-color: #ff5900;
-            box-shadow: 0 0 0 3px rgba(255,89,0,0.1);
-        }
-        input::placeholder {
-            color: #999;
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #ff5900;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
-        }
-        button:hover {
-            background: #e64f00;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255,89,0,0.3);
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: none;
-            animation: shake 0.3s;
-        }
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.field label{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;}
+.field input{
+  padding:11px 14px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:11px;
+  color:#e8e8f4;font-size:14px;font-family:var(--font-b);
+  transition:border-color .18s,background .18s;
+  outline:none;
+}
+.field input:focus{border-color:var(--brand);background:rgba(124,106,255,.08);}
+.field input::placeholder{color:rgba(255,255,255,.2);}
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
+.btn{
+  width:100%;padding:13px;margin-top:6px;
+  background:var(--brand);color:#fff;
+  border:none;border-radius:12px;
+  font-size:14.5px;font-weight:700;font-family:var(--font-b);
+  cursor:pointer;
+  transition:background .18s,transform .12s,box-shadow .18s;
+  box-shadow:0 4px 20px rgba(124,106,255,.35);
+}
+.btn:hover{background:var(--brand-dk);box-shadow:0 6px 28px rgba(124,106,255,.45);}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
 
-        .register-link {
-            text-align: center;
-            margin-top: 24px;
-            color: #65676b;
-            font-size: 14px;
-        }
-        .register-link a {
-            color: #ff5900;
-            text-decoration: none;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-        .register-link a:hover {
-            text-decoration: underline;
-        }
+.err{
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  color:#f87171;font-size:13px;
+  padding:9px 13px;border-radius:9px;
+  margin-bottom:12px;display:none;
+}
+.err.show{display:block;}
 
-        /* ========== 📱 RESPONSIVE DESIGN ========== */
+.divider{
+  display:flex;align-items:center;gap:10px;
+  color:rgba(255,255,255,.2);font-size:12px;
+  margin:18px 0;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08);}
 
-        /* Tablets (768px - 1023px) */
-        @media (max-width: 1023px) and (min-width: 768px) {
-            .login-container {
-                max-width: 450px;
-                padding: 48px 40px;
-            }
-
-            h1 {
-                font-size: 36px;
-            }
-
-            .subtitle {
-                font-size: 16px;
-            }
-
-            input, button {
-                font-size: 16px;
-            }
-        }
-
-        /* Mobile (320px - 767px) */
-        @media (max-width: 767px) {
-            body {
-                padding: 16px;
-            }
-
-            .login-container {
-                padding: 32px 24px;
-                border-radius: 20px;
-                max-width: 100%;
-            }
-
-            .logo-container img {
-                width: 50px;
-                height: 50px;
-            }
-
-            h1 {
-                font-size: 28px;
-                margin-bottom: 6px;
-            }
-
-            .subtitle {
-                font-size: 14px;
-                margin-bottom: 28px;
-            }
-
-            .form-group {
-                margin-bottom: 18px;
-            }
-
-            label {
-                font-size: 13px;
-                margin-bottom: 6px;
-            }
-
-            input {
-                padding: 12px 14px;
-                font-size: 14px;
-                border-radius: 10px;
-            }
-
-            button {
-                padding: 13px;
-                font-size: 15px;
-                border-radius: 10px;
-            }
-
-            .error {
-                padding: 10px;
-                font-size: 13px;
-                margin-bottom: 16px;
-            }
-
-            .register-link {
-                font-size: 13px;
-                margin-top: 20px;
-            }
-        }
-
-        /* Small Mobile (320px - 480px) */
-        @media (max-width: 480px) {
-            body {
-                padding: 12px;
-            }
-
-            .login-container {
-                padding: 28px 20px;
-                border-radius: 16px;
-            }
-
-            .logo-container img {
-                width: 45px;
-                height: 45px;
-                margin-bottom: 12px;
-            }
-
-            h1 {
-                font-size: 26px;
-            }
-
-            .subtitle {
-                font-size: 13px;
-                margin-bottom: 24px;
-            }
-
-            .form-group {
-                margin-bottom: 16px;
-            }
-
-            label {
-                font-size: 12px;
-            }
-
-            input {
-                padding: 11px 12px;
-                font-size: 13px;
-            }
-
-            button {
-                padding: 12px;
-                font-size: 14px;
-            }
-
-            .register-link {
-                font-size: 12px;
-            }
-        }
-
-        /* Landscape Mode (Mobile) */
-        @media (max-height: 500px) and (orientation: landscape) {
-            body {
-                padding: 10px;
-            }
-
-            .login-container {
-                padding: 20px;
-                max-width: 500px;
-            }
-
-            .logo-container {
-                margin-bottom: 12px;
-            }
-
-            .logo-container img {
-                width: 40px;
-                height: 40px;
-                margin-bottom: 8px;
-            }
-
-            h1 {
-                font-size: 24px;
-                margin-bottom: 4px;
-            }
-
-            .subtitle {
-                margin-bottom: 16px;
-            }
-
-            .form-group {
-                margin-bottom: 12px;
-            }
-
-            input, button {
-                padding: 10px 12px;
-            }
-
-            .register-link {
-                margin-top: 16px;
-            }
-        }
-
-        /* Extra Large Screens (1920px+) */
-        @media (min-width: 1920px) {
-            .login-container {
-                max-width: 480px;
-                padding: 48px 40px;
-                border-radius: 28px;
-            }
-
-            .logo-container img {
-                width: 70px;
-                height: 70px;
-            }
-
-            h1 {
-                font-size: 38px;
-            }
-
-            .subtitle {
-                font-size: 17px;
-            }
-
-            input, button {
-                padding: 16px 18px;
-                font-size: 17px;
-            }
-        }
-
-        /* Touch Device Optimizations */
-        @media (hover: none) and (pointer: coarse) {
-            input, button {
-                min-height: 48px;
-            }
-
-            button {
-                min-height: 50px;
-            }
-        }
-
-        /* High DPI Screens */
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-            * {
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-        }
-    </style>
+.link-row{text-align:center;font-size:13.5px;color:rgba(255,255,255,.4);}
+.link-row a{color:var(--brand);text-decoration:none;font-weight:600;}
+.link-row a:hover{text-decoration:underline;}
+</style>
 </head>
 <body>
-    
-    <div class="login-container">
-        <div class="logo-container">
-            <img src="{{ url_for('static', filename='uploads/hepozy_logo.jpg') }}" alt="Hepozy Logo">
-        </div>
-      
-        <div class="subtitle">Connect with friends</div>
-        
-        <div id="errorMessage" class="error"></div>
-        
-        <form id="loginForm">
-            <div class="form-group">
-                <label>Username, Email or Phone</label>
-                <input type="text" id="identifier" placeholder="Enter your details" autocomplete="off" required>
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" placeholder="Enter your password" required>
-            </div>
-            <button type="submit" id="loginBtn">Log In</button>
-        </form>
-        
-        <div class="register-link">
-            Don't have an account? <a href="/register">Sign up</a>
-        </div>
-    </div>
+<div class="card">
+  <div class="logo-wrap">
+    <img class="logo-img" src="/logo" alt="HPZ Logo" onerror="this.style.display='none'">
+    <span class="logo-text">HPZ</span>
+  </div>
+  <h1>Welcome back</h1>
+  <p class="sub">Sign in to continue chatting</p>
 
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const identifier = document.getElementById('identifier').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('loginBtn');
-            const errorDiv = document.getElementById('errorMessage');
-            
-            // Validation
-            if (!identifier) {
-                errorDiv.textContent = 'Please enter your username, email or phone';
-                errorDiv.style.display = 'block';
-                return;
-            }
+  <div class="err" id="err"></div>
 
-            if (!password) {
-                errorDiv.textContent = 'Please enter your password';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            
-            btn.disabled = true;
-            btn.textContent = 'Logging in...';
-            errorDiv.style.display = 'none';
-            
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier, password })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    btn.textContent = 'Success! Redirecting...';
-                    setTimeout(() => {
-                        window.location.href = data.redirect || '/chat';
-                    }, 500);
-                } else {
-                    errorDiv.textContent = data.error || 'Invalid credentials';
-                    errorDiv.style.display = 'block';
-                    btn.disabled = false;
-                    btn.textContent = 'Log In';
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                errorDiv.textContent = 'Connection error. Please try again.';
-                errorDiv.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'Log In';
-            }
-        });
+  <div class="field">
+    <label>Username</label>
+    <input type="text" id="identifier" placeholder="Enter your username" autocomplete="username">
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
 
-        // Auto-hide error after 5 seconds
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            if (errorDiv) {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-                setTimeout(() => {
-                    errorDiv.style.display = 'none';
-                }, 5000);
-            }
-        }
+  <button class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
 
-        // Prevent double submission
-        let isSubmitting = false;
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            if (isSubmitting) {
-                e.preventDefault();
-                return false;
-            }
-        });
+  <div class="divider">or</div>
+  <div class="link-row">Don't have an account? <a href="/register">Create one</a></div>
+</div>
 
-        // Focus on identifier input on load
-        window.addEventListener('load', function() {
-            document.getElementById('identifier').focus();
-        });
-
-        // Handle Enter key in password field
-        document.getElementById('password').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-            }
-        });
-    </script>
+<script>
+async function doLogin(){
+  const id=document.getElementById('identifier').value.trim();
+  const pw=document.getElementById('password').value;
+  const btn=document.getElementById('loginBtn');
+  const err=document.getElementById('err');
+  err.classList.remove('show');
+  if(!id||!pw){showErr('Please fill in all fields.');return;}
+  btn.disabled=true;btn.textContent='Signing in…';
+  try{
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:id,password:pw})});
+    const d=await r.json();
+    if(d.success){window.location.href=d.redirect||'/chat';}
+    else{showErr(d.error||'Login failed.');}
+  }catch(e){showErr('Connection error. Try again.');}
+  btn.disabled=false;btn.textContent='Sign In';
+}
+function showErr(msg){const e=document.getElementById('err');e.textContent=msg;e.classList.add('show');}
+</script>
 </body>
 </html>
