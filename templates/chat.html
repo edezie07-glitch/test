@@ -639,9 +639,28 @@ function fmtTime(iso){
   if(d.toDateString()===y.toDateString())return`Yesterday ${t}`;
   return`${d.getMonth()+1}/${d.getDate()} ${t}`;
 }
+  function openChat(fid, fname, chatId) {
+  if (!chatId) chatId = fid < ME_ID ? `${fid}-${ME_ID}` : `${ME_ID}-${fid}`;
+  currentChatId = chatId;
+  document.getElementById('chav').textContent = fname[0].toUpperCase();
+  document.getElementById('chnm').textContent = fname;
+  document.getElementById('chsub').textContent = 'Friend';
+  document.getElementById('chsub').className = 'chdr-sub';
+  renderFriends();
+  loadMsgs(chatId);
+  if (socket?.connected) socket.emit('join_chat', { chat_id: chatId });
+  clearSearch();
+  if (window.innerWidth <= 720) closeSB();
+
+  // ✅ Auto-focus input — but only on desktop (not mobile, to avoid keyboard jumping)
+  if (window.innerWidth > 720) {
+    document.getElementById('msgInput').focus();
+  }
+}
 function relTime(iso){const s=(Date.now()-toL(iso).getTime())/1000;if(s<60)return'now';if(s<3600)return`${Math.floor(s/60)}m`;if(s<86400)return`${Math.floor(s/3600)}h`;return`${Math.floor(s/86400)}d`;}
 function dayLabel(iso){const d=toL(iso),now=new Date();if(d.toDateString()===now.toDateString())return'Today';const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return'Yesterday';return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  
 </script>
 </body>
 </html>
