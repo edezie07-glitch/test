@@ -257,6 +257,58 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
 .mtog{display:none;position:fixed;top:10px;left:10px;z-index:750;width:38px;height:38px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;}
+
+/* Image Preview Modal */
+.img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;}
+.img-preview-overlay.show{display:block;}
+.img-preview-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:910;width:90%;max-width:700px;max-height:90vh;display:none;flex-direction:column;box-shadow:var(--shad);}
+.img-preview-modal.show{display:flex;}
+.img-preview-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+.img-preview-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
+.img-preview-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);}
+.img-preview-body canvas{max-width:100%;max-height:60vh;border-radius:12px;}
+.img-preview-tools{padding:15px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);display:flex;gap:10px;justify-content:center;background:var(--sb2);}
+.tool-btn{padding:10px 16px;border:none;border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:18px;transition:background var(--trans);}
+.tool-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.img-preview-footer{padding:20px;display:flex;gap:10px;justify-content:flex-end;}
+.cancel-btn{padding:10px 24px;border:1px solid var(--bdr);border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
+.cancel-btn:hover{background:var(--hov);}
+.send-btn{padding:10px 24px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
+.send-btn:hover{background:var(--brand-dk);}
+
+/* Profile View Modal */
+.profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:850;display:none;}
+.profile-overlay.show{display:block;}
+.profile-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:860;width:90%;max-width:450px;display:none;flex-direction:column;box-shadow:var(--shad);}
+.profile-modal.show{display:flex;}
+.profile-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+.profile-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
+.profile-body{padding:30px;text-align:center;}
+.profile-avatar-large{margin-bottom:20px;display:flex;justify-content:center;}
+.profile-body h2{font-family:var(--font-h);font-size:24px;color:var(--txt);margin-bottom:5px;}
+.profile-bio-section{margin:20px 0;padding:20px;background:var(--sb2);border-radius:12px;text-align:left;}
+.profile-bio-section h4{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.profile-actions{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+.profile-action-btn{padding:12px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
+.profile-action-btn:hover{background:var(--brand-dk);}
+
+/* Call Modal */
+.call-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:950;display:none;}
+.call-overlay.show{display:block;}
+.call-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:960;display:none;}
+.call-modal.show{display:block;}
+.call-content{text-align:center;color:#fff;}
+.call-avatar{margin-bottom:20px;}
+.call-content h2{font-family:var(--font-h);font-size:28px;margin-bottom:10px;}
+.call-content p{font-size:16px;color:rgba(255,255,255,.7);margin-bottom:30px;}
+.call-controls{display:flex;gap:15px;justify-content:center;margin-top:30px;}
+.call-control-btn{width:60px;height:60px;border:none;border-radius:50%;cursor:pointer;font-size:24px;transition:transform var(--trans),background var(--trans);}
+.call-control-btn:hover{transform:scale(1.1);}
+.call-control-btn.mute{background:rgba(255,255,255,.2);color:#fff;}
+.call-control-btn.video{background:rgba(255,255,255,.2);color:#fff;}
+.call-control-btn.end{background:#ef4444;color:#fff;}
+.call-control-btn.muted{background:rgba(239,68,68,.3);}
+
 @media(max-width:720px){
   .mtog{display:flex;}
   .mov{display:none;}
@@ -286,7 +338,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <aside class="sidebar" id="sidebar">
   <div class="sh">
     <div class="sh-top">
-      <div class="brand"><img src="/static/hepozy_logo.jpg" alt="HPZ" style="width:40px;height:40px;object-fit:cover;border-radius:50%;" onerror="this.style.display='none'"></div>
+      <div class="brand"><img src="/logo" alt="HPZ Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></div>
       <div class="hbtns">
         <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
         <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
@@ -313,12 +365,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <!-- MAIN -->
 <main class="main">
   <div class="chdr">
-    <div class="av lg" id="chav">💬</div>
-    <div class="chdr-info">
+    <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
+    <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
       <div class="chdr-nm" id="chnm">HPZ Messenger</div>
       <div class="chdr-sub" id="chsub">Select a conversation</div>
     </div>
     <div class="chdr-actions">
+      <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
+      <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
       <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
       <button class="chdr-btn" id="pinnedBtn" onclick="showPinned()" title="Pinned messages" style="display:none;">📌</button>
     </div>
@@ -365,7 +419,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   
   <div class="iarea">
-    <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadImg(this)">
+    <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="previewImage(this)">
     <button class="isb" onclick="document.getElementById('imgInp').click()" title="Attach">📎</button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
@@ -374,6 +428,75 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="sndbtn" onclick="sendMsg()">➤</button>
   </div>
 </main>
+
+<!-- Image Preview Modal -->
+<div class="img-preview-overlay" id="imgPreviewOverlay" onclick="closeImagePreview()"></div>
+<div class="img-preview-modal" id="imgPreviewModal">
+  <div class="img-preview-header">
+    <h3>Preview Image</h3>
+    <button class="closebtn" onclick="closeImagePreview()">✕</button>
+  </div>
+  <div class="img-preview-body">
+    <canvas id="imgPreviewCanvas"></canvas>
+  </div>
+  <div class="img-preview-tools">
+    <button class="tool-btn" onclick="rotateImage(-90)" title="Rotate left">↶</button>
+    <button class="tool-btn" onclick="rotateImage(90)" title="Rotate right">↷</button>
+    <button class="tool-btn" onclick="flipImage('h')" title="Flip horizontal">↔️</button>
+    <button class="tool-btn" onclick="flipImage('v')" title="Flip vertical">↕️</button>
+    <button class="tool-btn" onclick="cropImage()" title="Crop">✂️</button>
+  </div>
+  <div class="img-preview-footer">
+    <button class="cancel-btn" onclick="closeImagePreview()">Cancel</button>
+    <button class="send-btn" onclick="sendEditedImage()">Send</button>
+  </div>
+</div>
+
+<!-- Profile View Modal -->
+<div class="profile-overlay" id="profileOverlay" onclick="closeProfileView()"></div>
+<div class="profile-modal" id="profileModal">
+  <div class="profile-header">
+    <h3>Profile</h3>
+    <button class="closebtn" onclick="closeProfileView()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="profile-avatar-large">
+      <div class="av" id="profileAvLarge" style="width:120px;height:120px;font-size:48px;border-radius:24px;">U</div>
+    </div>
+    <h2 id="profileName">Username</h2>
+    <p id="profileStatus" style="color:var(--sub);margin:8px 0;">Available</p>
+    <div class="profile-bio-section">
+      <h4>Bio</h4>
+      <p id="profileBio" style="color:var(--txt);margin-top:8px;">No bio yet</p>
+    </div>
+    <div class="profile-actions">
+      <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
+      <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
+      <button class="profile-action-btn" onclick="startVideoCall()">📹 Video Call</button>
+    </div>
+  </div>
+</div>
+
+<!-- Call Modal -->
+<div class="call-overlay" id="callOverlay"></div>
+<div class="call-modal" id="callModal">
+  <div class="call-content">
+    <div class="call-avatar">
+      <div class="av" id="callAvatar" style="width:100px;height:100px;font-size:40px;border-radius:20px;">U</div>
+    </div>
+    <h2 id="callName">Username</h2>
+    <p id="callStatus">Calling...</p>
+    <div id="callVideo" style="display:none;margin:20px 0;">
+      <video id="localVideo" autoplay muted style="width:200px;height:150px;border-radius:12px;"></video>
+      <video id="remoteVideo" autoplay style="width:400px;height:300px;border-radius:12px;margin-left:10px;"></video>
+    </div>
+    <div class="call-controls">
+      <button class="call-control-btn mute" id="muteBtn" onclick="toggleMute()" title="Mute" style="display:none;">🎤</button>
+      <button class="call-control-btn video" id="videoBtn" onclick="toggleVideo()" title="Video" style="display:none;">📹</button>
+      <button class="call-control-btn end" onclick="endCall()">📞</button>
+    </div>
+  </div>
+</div>
 
 <!-- SETTINGS (unchanged) -->
 <div class="sov" id="sov" onclick="closeSettings()"></div>
@@ -634,6 +757,236 @@ async function uploadImg(inp){
     else toast(d.error||'Upload failed','err');
   }catch(e){toast('Upload failed','err');}
   inp.value='';
+}
+
+// NEW: Image Preview and Edit
+let imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1};
+
+function previewImage(inp){
+  const f=inp.files[0];
+  if(!f)return;
+  if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
+  
+  imgPreviewData.file=f;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const img=new Image();
+    img.onload=()=>{
+      imgPreviewData.img=img;
+      imgPreviewData.rotation=0;
+      imgPreviewData.flipH=1;
+      imgPreviewData.flipV=1;
+      
+      const canvas=document.getElementById('imgPreviewCanvas');
+      imgPreviewData.canvas=canvas;
+      imgPreviewData.ctx=canvas.getContext('2d');
+      
+      drawImageOnCanvas();
+      
+      document.getElementById('imgPreviewOverlay').classList.add('show');
+      document.getElementById('imgPreviewModal').classList.add('show');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+  inp.value='';
+}
+
+function drawImageOnCanvas(){
+  const {canvas,ctx,img,rotation,flipH,flipV}=imgPreviewData;
+  const angle=rotation*Math.PI/180;
+  
+  let w=img.width;
+  let h=img.height;
+  
+  if(rotation===90||rotation===-90||rotation===270){
+    canvas.width=h;
+    canvas.height=w;
+  }else{
+    canvas.width=w;
+    canvas.height=h;
+  }
+  
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width/2,canvas.height/2);
+  ctx.rotate(angle);
+  ctx.scale(flipH,flipV);
+  ctx.drawImage(img,-w/2,-h/2,w,h);
+  ctx.restore();
+}
+
+function rotateImage(deg){
+  imgPreviewData.rotation=(imgPreviewData.rotation+deg)%360;
+  drawImageOnCanvas();
+}
+
+function flipImage(dir){
+  if(dir==='h')imgPreviewData.flipH*=-1;
+  else imgPreviewData.flipV*=-1;
+  drawImageOnCanvas();
+}
+
+function cropImage(){
+  toast('Crop feature coming soon!','info');
+}
+
+function closeImagePreview(){
+  document.getElementById('imgPreviewOverlay').classList.remove('show');
+  document.getElementById('imgPreviewModal').classList.remove('show');
+  imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1};
+}
+
+async function sendEditedImage(){
+  const {canvas}=imgPreviewData;
+  if(!canvas)return;
+  
+  canvas.toBlob(async(blob)=>{
+    const fd=new FormData();
+    fd.append('image',blob,'edited.jpg');
+    try{
+      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+      const d=await r.json();
+      if(d.success){
+        socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image'});
+        closeImagePreview();
+      }else toast(d.error||'Upload failed','err');
+    }catch(e){toast('Upload failed','err');}
+  },'image/jpeg',0.9);
+}
+
+// NEW: Profile View
+let currentProfileData=null;
+
+function showFriendProfile(){
+  if(!currentFriendId)return;
+  const friend=friends.find(f=>f.id===currentFriendId);
+  if(!friend)return;
+  
+  currentProfileData=friend;
+  
+  document.getElementById('profileName').textContent=friend.username;
+  document.getElementById('profileStatus').textContent=friend.is_online?'Online':friend.status;
+  document.getElementById('profileBio').textContent=friend.bio||'No bio yet';
+  
+  const av=document.getElementById('profileAvLarge');
+  av.textContent=friend.username[0].toUpperCase();
+  if(friend.avatar_url){
+    av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
+  }
+  
+  document.getElementById('profileOverlay').classList.add('show');
+  document.getElementById('profileModal').classList.add('show');
+}
+
+function closeProfileView(){
+  document.getElementById('profileOverlay').classList.remove('show');
+  document.getElementById('profileModal').classList.remove('show');
+}
+
+function messageFromProfile(){
+  closeProfileView();
+  document.getElementById('msgInput').focus();
+}
+
+// NEW: Voice and Video Calls
+let callData={active:false,type:null,muted:false,videoOff:false,localStream:null,remoteStream:null};
+
+function startVoiceCall(){
+  if(!currentFriendId){toast('Select a friend first','err');return;}
+  const friend=friends.find(f=>f.id===currentFriendId);
+  if(!friend)return;
+  
+  callData.type='voice';
+  callData.active=true;
+  
+  document.getElementById('callName').textContent=friend.username;
+  document.getElementById('callStatus').textContent='Calling...';
+  document.getElementById('callAvatar').textContent=friend.username[0].toUpperCase();
+  
+  document.getElementById('muteBtn').style.display='inline-flex';
+  document.getElementById('videoBtn').style.display='none';
+  document.getElementById('callVideo').style.display='none';
+  
+  document.getElementById('callOverlay').classList.add('show');
+  document.getElementById('callModal').classList.add('show');
+  
+  // Simulate call
+  setTimeout(()=>{
+    document.getElementById('callStatus').textContent='Connected';
+  },2000);
+  
+  toast('📞 Voice calls coming soon!','info');
+}
+
+async function startVideoCall(){
+  if(!currentFriendId){toast('Select a friend first','err');return;}
+  const friend=friends.find(f=>f.id===currentFriendId);
+  if(!friend)return;
+  
+  callData.type='video';
+  callData.active=true;
+  
+  document.getElementById('callName').textContent=friend.username;
+  document.getElementById('callStatus').textContent='Calling...';
+  document.getElementById('callAvatar').textContent=friend.username[0].toUpperCase();
+  
+  document.getElementById('muteBtn').style.display='inline-flex';
+  document.getElementById('videoBtn').style.display='inline-flex';
+  document.getElementById('callVideo').style.display='flex';
+  
+  document.getElementById('callOverlay').classList.add('show');
+  document.getElementById('callModal').classList.add('show');
+  
+  // Try to get user media
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    callData.localStream=stream;
+    document.getElementById('localVideo').srcObject=stream;
+    document.getElementById('callStatus').textContent='Connected';
+  }catch(e){
+    toast('Camera/mic access denied','err');
+    document.getElementById('callStatus').textContent='Connected (no camera)';
+  }
+  
+  toast('📹 Video calls coming soon!','info');
+}
+
+function toggleMute(){
+  callData.muted=!callData.muted;
+  const btn=document.getElementById('muteBtn');
+  btn.classList.toggle('muted',callData.muted);
+  btn.textContent=callData.muted?'🔇':'🎤';
+  
+  if(callData.localStream){
+    callData.localStream.getAudioTracks().forEach(track=>{
+      track.enabled=!callData.muted;
+    });
+  }
+}
+
+function toggleVideo(){
+  callData.videoOff=!callData.videoOff;
+  const btn=document.getElementById('videoBtn');
+  btn.classList.toggle('muted',callData.videoOff);
+  btn.textContent=callData.videoOff?'📷':'📹';
+  
+  if(callData.localStream){
+    callData.localStream.getVideoTracks().forEach(track=>{
+      track.enabled=!callData.videoOff;
+    });
+  }
+}
+
+function endCall(){
+  if(callData.localStream){
+    callData.localStream.getTracks().forEach(track=>track.stop());
+  }
+  
+  document.getElementById('callOverlay').classList.remove('show');
+  document.getElementById('callModal').classList.remove('show');
+  
+  callData={active:false,type:null,muted:false,videoOff:false,localStream:null,remoteStream:null};
 }
 
 // Reply functions
@@ -1045,6 +1398,8 @@ function openChat(fid,fname,chatId){
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
   document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
   
+  document.getElementById('videoCallBtn').style.display='block';
+  document.getElementById('voiceCallBtn').style.display='block';
   document.getElementById('searchBtn').style.display='block';
   document.getElementById('pinnedBtn').style.display='block';
   
