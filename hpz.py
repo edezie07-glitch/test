@@ -2,11 +2,11 @@ import os
 import uuid
 from flask import Flask, render_template, request, jsonify, session, redirect, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
-from sqlalchemy import or_, and_, desc
+from sqlalchemy import or_, and_
 from functools import wraps
 
 # ============================================================
@@ -36,9 +36,9 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 # ============================================================
-# PATHS
+# PATHS — always relative to hpz.py, works on Render
 # ============================================================
-BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))   # ← KEY FIX
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -58,9 +58,9 @@ socketio = SocketIO(
 )
 
 # ============================================================
-# ONLINE USERS TRACKING
+# NEW: ONLINE USERS TRACKING
 # ============================================================
-online_users = {}  # {user_id: {'sid': socket_id, 'last_seen': datetime}}
+online_users = {}
 
 # ============================================================
 # MODELS
@@ -73,6 +73,7 @@ class User(db.Model):
     avatar_url    = db.Column(db.String(500))
     bio           = db.Column(db.String(500), default='')
     status        = db.Column(db.String(100), default='Available')
+    # NEW: last_seen for online status
     last_seen     = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -80,8 +81,7 @@ class User(db.Model):
     def check_password(self, p): return check_password_hash(self.password_hash, p)
     def to_dict(self):
         return {'id': self.id, 'username': self.username,
-                'avatar_url': self.avatar_url, 'bio': self.bio, 'status': self.status,
-                'last_seen': self.last_seen.isoformat() if self.last_seen else None}
+                'avatar_url': self.avatar_url, 'bio': self.bio, 'status': self.status}
 
 
 class Message(db.Model):
@@ -91,17 +91,19 @@ class Message(db.Model):
     sender_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     content      = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')
+    # NEW: Features for edit, delete, reply, pin
     reply_to_id  = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True)
     is_edited    = db.Column(db.Boolean, default=False)
     is_deleted   = db.Column(db.Boolean, default=False)
     is_pinned    = db.Column(db.Boolean, default=False)
-    created_at   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     edited_at    = db.Column(db.DateTime, nullable=True)
-    
+    created_at   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     sender       = db.relationship('User', foreign_keys=[sender_id])
+    # NEW: Reply relationship
     reply_to     = db.relationship('Message', remote_side=[id], backref='replies')
 
 
+# NEW: Reactions model
 class MessageReaction(db.Model):
     __tablename__ = 'message_reactions'
     id         = db.Column(db.Integer, primary_key=True)
@@ -112,6 +114,7 @@ class MessageReaction(db.Model):
     __table_args__ = (db.UniqueConstraint('message_id', 'user_id', 'emoji'),)
 
 
+# NEW: Read receipts model
 class MessageRead(db.Model):
     __tablename__ = 'message_reads'
     id         = db.Column(db.Integer, primary_key=True)
@@ -181,6 +184,7 @@ def get_time_ago(dt):
     if s < 86400: return f'{int(s/3600)}h ago'
     return f'{int(s/86400)}d ago'
 
+# NEW: Check if user is online
 def is_user_online(user_id):
     if user_id in online_users:
         last_seen = online_users[user_id].get('last_seen')
@@ -188,8 +192,8 @@ def is_user_online(user_id):
             return True
     return False
 
+# NEW: Format message with all new features
 def format_message(msg, user_id):
-    """Format message with reactions, read receipts, etc."""
     reactions = MessageReaction.query.filter_by(message_id=msg.id).all()
     reads = MessageRead.query.filter_by(message_id=msg.id).all()
     
@@ -304,6 +308,7 @@ def register():
         print(f"❌ Register error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     try:
@@ -325,8 +330,10 @@ def login():
         print(f"❌ Login error: {e}")
         return jsonify({'success': False, 'error': 'Login failed'}), 500
 
+
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
+    # NEW: Remove from online users
     uid = session.get('user_id')
     if uid and uid in online_users:
         del online_users[uid]
@@ -361,7 +368,7 @@ def search_users():
                 'id': u.id, 'username': u.username,
                 'avatar': u.avatar_url or f"https://ui-avatars.com/api/?name={u.username}&background=6c63ff&color=fff&size=128",
                 'status': u.status or 'Available',
-                'is_online': is_user_online(u.id),
+                'is_online': is_user_online(u.id),  # NEW
                 'is_friend': is_friend, 'relationship': rel,
                 'request_sent': req_sent, 'request_received': req_recv
             })
@@ -383,6 +390,7 @@ def get_profile():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/profile', methods=['PUT'])
 @login_required
 def update_profile():
@@ -402,6 +410,7 @@ def update_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/profile/avatar', methods=['POST'])
 @login_required
@@ -444,7 +453,7 @@ def get_friends():
             cid  = get_chat_id(uid, fid)
             last = Message.query.filter_by(chat_id=cid, is_deleted=False).order_by(Message.created_at.desc()).first()
             
-            # Count unread messages
+            # NEW: Count unread messages
             unread_count = Message.query.filter(
                 Message.chat_id == cid,
                 Message.sender_id == fid,
@@ -459,15 +468,16 @@ def get_friends():
                 'id': friend.id, 'username': friend.username,
                 'avatar': av, 'avatar_url': av,
                 'status': friend.status or 'Available',
-                'is_online': is_user_online(fid),
+                'is_online': is_user_online(fid),  # NEW
                 'chat_id': cid,
                 'last_message': last.content[:40] if last else None,
                 'last_message_time': last.created_at.isoformat() if last else None,
-                'unread_count': unread_count
+                'unread_count': unread_count  # NEW
             })
         return jsonify({'success': True, 'friends': friends})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/friends/requests')
 @login_required
@@ -489,6 +499,7 @@ def get_friend_requests():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/friends/request', methods=['POST'])
 @login_required
 def send_friend_request():
@@ -509,6 +520,7 @@ def send_friend_request():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/friends/accept', methods=['POST'])
 @login_required
 def accept_friend_request():
@@ -526,6 +538,7 @@ def accept_friend_request():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/friends/reject', methods=['POST'])
 @login_required
@@ -556,7 +569,7 @@ def get_messages(chat_id):
                             .limit(50).all()
         msgs.reverse()
         
-        # Mark messages as read
+        # NEW: Mark messages as read
         for msg in msgs:
             if msg.sender_id != uid and not msg.is_deleted:
                 existing_read = MessageRead.query.filter_by(message_id=msg.id, user_id=uid).first()
@@ -566,11 +579,12 @@ def get_messages(chat_id):
         
         return jsonify({
             'success': True,
-            'messages': [format_message(m, uid) for m in msgs]
+            'messages': [format_message(m, uid) for m in msgs]  # NEW: Use format helper
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# NEW: Message search endpoint
 @app.route('/api/messages/search/<chat_id>')
 @login_required
 def search_messages(chat_id):
@@ -593,6 +607,7 @@ def search_messages(chat_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# NEW: Get pinned messages
 @app.route('/api/messages/pinned/<chat_id>')
 @login_required
 def get_pinned_messages(chat_id):
@@ -609,6 +624,7 @@ def get_pinned_messages(chat_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# NEW: Edit message
 @app.route('/api/messages/<int:msg_id>/edit', methods=['PUT'])
 @login_required
 def edit_message(msg_id):
@@ -630,13 +646,13 @@ def edit_message(msg_id):
         msg.edited_at = datetime.now(timezone.utc)
         db.session.commit()
         
-        # Broadcast edit via socket
         socketio.emit('message_edited', format_message(msg, uid), room=msg.chat_id)
         return jsonify({'success': True, 'message': format_message(msg, uid)})
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# NEW: Delete message
 @app.route('/api/messages/<int:msg_id>/delete', methods=['DELETE'])
 @login_required
 def delete_message(msg_id):
@@ -650,13 +666,13 @@ def delete_message(msg_id):
         msg.content = '[Message deleted]'
         db.session.commit()
         
-        # Broadcast delete via socket
         socketio.emit('message_deleted', {'id': msg_id, 'chat_id': msg.chat_id}, room=msg.chat_id)
         return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# NEW: Pin/unpin message
 @app.route('/api/messages/<int:msg_id>/pin', methods=['POST'])
 @login_required
 def toggle_pin_message(msg_id):
@@ -671,7 +687,6 @@ def toggle_pin_message(msg_id):
         msg.is_pinned = not msg.is_pinned
         db.session.commit()
         
-        # Broadcast pin status via socket
         socketio.emit('message_pinned', {
             'id': msg_id,
             'chat_id': msg.chat_id,
@@ -682,6 +697,7 @@ def toggle_pin_message(msg_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# NEW: React to message
 @app.route('/api/messages/<int:msg_id>/react', methods=['POST'])
 @login_required
 def react_to_message(msg_id):
@@ -703,17 +719,14 @@ def react_to_message(msg_id):
         ).first()
         
         if existing:
-            # Remove reaction
             db.session.delete(existing)
             action = 'removed'
         else:
-            # Add reaction
             db.session.add(MessageReaction(message_id=msg_id, user_id=uid, emoji=emoji))
             action = 'added'
         
         db.session.commit()
         
-        # Broadcast reaction via socket
         socketio.emit('message_reaction', {
             'message_id': msg_id,
             'chat_id': msg.chat_id,
@@ -758,13 +771,12 @@ def handle_connect():
     print(f"🔌 {uname} (ID:{uid}) SID:{request.sid}")
     if not uid: return False
     
-    # Mark user as online
+    # NEW: Mark user as online
     online_users[uid] = {
         'sid': request.sid,
         'last_seen': datetime.now(timezone.utc)
     }
     
-    # Update last_seen in database
     user = User.query.get(uid)
     if user:
         user.last_seen = datetime.now(timezone.utc)
@@ -773,7 +785,7 @@ def handle_connect():
     join_room(f'user_{uid}')
     join_room('global')
     
-    # Broadcast online status to friends
+    # NEW: Broadcast online status to friends
     friendships = Friendship.query.filter(
         or_(Friendship.user1_id == uid, Friendship.user2_id == uid)
     ).all()
@@ -783,15 +795,58 @@ def handle_connect():
     
     return True
 
+
+@socketio.on('join_chat')
+def handle_join_chat(data):
+    cid = data.get('chat_id')
+    uid = session.get('user_id')
+    if cid and uid: join_room(cid)
+
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    uid   = session.get('user_id')
+    uname = session.get('username')
+    if not uid:
+        emit('error', {'message': 'Not authenticated'})
+        return
+    cid     = data.get('chat_id') or data.get('chatId', 'global')
+    content = data.get('content', '').strip()
+    mtype   = data.get('message_type') or data.get('type', 'text')
+    reply_to_id = data.get('reply_to_id')  # NEW
+    
+    if not content: return
+    if cid != 'global' and str(uid) not in cid.split('-'):
+        emit('error', {'message': 'Unauthorized'})
+        return
+    try:
+        msg = Message(
+            chat_id=cid,
+            sender_id=uid,
+            content=content,
+            message_type=mtype,
+            reply_to_id=reply_to_id  # NEW
+        )
+        db.session.add(msg)
+        db.session.commit()
+        db.session.refresh(msg)
+        
+        socketio.emit('new_message', format_message(msg, uid), room=cid)
+        print(f"✅ Msg#{msg.id} → {cid}")
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Message error: {e}")
+
+
 @socketio.on('disconnect')
 def handle_disconnect():
     uid = session.get('user_id')
     print(f"❌ DISCONNECT: {session.get('username', 'Unknown')}")
     
+    # NEW: Mark user as offline
     if uid and uid in online_users:
         del online_users[uid]
         
-        # Update last_seen in database
         user = User.query.get(uid)
         if user:
             user.last_seen = datetime.now(timezone.utc)
@@ -804,46 +859,6 @@ def handle_disconnect():
         for f in friendships:
             fid = f.user2_id if f.user1_id == uid else f.user1_id
             socketio.emit('user_online', {'user_id': uid, 'online': False}, room=f'user_{fid}')
-
-@socketio.on('join_chat')
-def handle_join_chat(data):
-    cid = data.get('chat_id')
-    uid = session.get('user_id')
-    if cid and uid: join_room(cid)
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    uid   = session.get('user_id')
-    uname = session.get('username')
-    if not uid:
-        emit('error', {'message': 'Not authenticated'})
-        return
-    cid     = data.get('chat_id') or data.get('chatId', 'global')
-    content = data.get('content', '').strip()
-    mtype   = data.get('message_type') or data.get('type', 'text')
-    reply_to_id = data.get('reply_to_id')
-    
-    if not content: return
-    if cid != 'global' and str(uid) not in cid.split('-'):
-        emit('error', {'message': 'Unauthorized'})
-        return
-    try:
-        msg = Message(
-            chat_id=cid,
-            sender_id=uid,
-            content=content,
-            message_type=mtype,
-            reply_to_id=reply_to_id
-        )
-        db.session.add(msg)
-        db.session.commit()
-        db.session.refresh(msg)
-        
-        socketio.emit('new_message', format_message(msg, uid), room=cid)
-        print(f"✅ Msg#{msg.id} → {cid}")
-    except Exception as e:
-        db.session.rollback()
-        print(f"❌ Message error: {e}")
 
 @socketio.on('typing_start')
 def handle_typing_start(data):
@@ -870,7 +885,7 @@ def health():
             'status': 'ok',
             'users': User.query.count(),
             'messages': Message.query.count(),
-            'online_users': len(online_users)
+            'online_users': len(online_users)  # NEW
         })
     except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)}), 500
