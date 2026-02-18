@@ -468,6 +468,7 @@ def get_friends():
                 'id': friend.id, 'username': friend.username,
                 'avatar': av, 'avatar_url': av,
                 'status': friend.status or 'Available',
+                'bio': friend.bio or '',  # NEW
                 'is_online': is_user_online(fid),  # NEW
                 'chat_id': cid,
                 'last_message': last.content[:40] if last else None,
