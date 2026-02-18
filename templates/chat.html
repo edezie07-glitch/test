@@ -276,10 +276,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 <!-- Context Menu -->
 <div class="ctx-menu" id="ctxMenu">
-  <div class="ctx-item" onclick="replyToMsg()">↩️ Reply</div>
-  <div class="ctx-item" onclick="editMsg()">✏️ Edit</div>
-  <div class="ctx-item" onclick="pinMsg()">📌 Pin</div>
-  <div class="ctx-item danger" onclick="deleteMsg()">🗑️ Delete</div>
+  <div class="ctx-item" onclick="replyToMsgCtx()">↩️ Reply</div>
+  <div class="ctx-item" onclick="editMsgCtx()">✏️ Edit</div>
+  <div class="ctx-item" onclick="pinMsgCtx()">📌 Pin</div>
+  <div class="ctx-item danger" onclick="deleteMsgCtx()">🗑️ Delete</div>
 </div>
 
 <!-- SIDEBAR -->
@@ -370,7 +370,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
       oninput="autoR(this);doTyping();"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(editingMsgId){saveEdit();}else{sendMsg();}}"></textarea>
     <button class="sndbtn" onclick="sendMsg()">➤</button>
   </div>
 </main>
@@ -430,7 +430,7 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
 
 (function boot(){
   loadPrefs(); connectSocket(); loadFriends(); loadRequests();
-  document.addEventListener('click',hideCtxMenu);
+  document.addEventListener('click', hideCtxMenu);
 })();
 
 function loadPrefs(){
@@ -583,16 +583,16 @@ function appendMsg(msg,scroll=true){
   
   if(isSent&&!msg.is_deleted){
     inner+=`<div class="msg-actions">
-      <button class="msg-act" onclick="setReply(${msg.id},'${esc(msg.sender_username)}','${esc(msg.content).substring(0,50)}')">↩️</button>
-      <button class="msg-act" onclick="startEdit(${msg.id},'${esc(msg.content)}')">✏️</button>
-      <button class="msg-act" onclick="togglePin(${msg.id})">📌</button>
-      <button class="msg-act" onclick="confirmDelete(${msg.id})">🗑️</button>
+      <button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button>
+      <button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button>
+      <button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button>
+      <button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button>
     </div>`;
   }else if(!isSent&&!msg.is_deleted){
     inner+=`<div class="msg-actions">
-      <button class="msg-act" onclick="setReply(${msg.id},'${esc(msg.sender_username)}','${esc(msg.content).substring(0,50)}')">↩️</button>
-      <button class="msg-act" onclick="showReactPicker(${msg.id},event)">😊</button>
-      <button class="msg-act" onclick="togglePin(${msg.id})">📌</button>
+      <button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button>
+      <button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button>
+      <button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button>
     </div>`;
   }
   
@@ -602,7 +602,7 @@ function appendMsg(msg,scroll=true){
     inner+=`<div class="reactions">`;
     for(const[emoji,count]of Object.entries(msg.reactions)){
       const userReacted=msg.user_reactions&&msg.user_reactions.includes(emoji);
-      inner+=`<div class="reaction${userReacted?' user-reacted':''}" onclick="reactTo(${msg.id},'${emoji}')">
+      inner+=`<div class="reaction${userReacted?' user-reacted':''}" data-emoji="${emoji}">
         <span>${emoji}</span><span class="count">${count}</span>
       </div>`;
     }
@@ -764,40 +764,52 @@ async function reactTo(msgId,emoji){
 // Context Menu
 function showCtxMenu(event,id,isSent){
   event.preventDefault();
+  event.stopPropagation();
   contextMsg={id,isSent};
   const menu=document.getElementById('ctxMenu');
   menu.style.left=`${event.clientX}px`;
   menu.style.top=`${event.clientY}px`;
   menu.classList.add('show');
+  
+  // Hide edit/delete for received messages
+  const editItem = menu.querySelector('[onclick="editMsg()"]');
+  const deleteItem = menu.querySelector('[onclick="deleteMsg()"]');
+  if (editItem) editItem.style.display = isSent ? 'flex' : 'none';
+  if (deleteItem) deleteItem.style.display = isSent ? 'flex' : 'none';
 }
-function hideCtxMenu(){
-  document.getElementById('ctxMenu').classList.remove('show');
+function hideCtxMenu(e){
+  const menu = document.getElementById('ctxMenu');
+  if (!e || !e.target.closest('#ctxMenu')) {
+    menu.classList.remove('show');
+  }
 }
-function replyToMsg(){
+function replyToMsgCtx(){
   if(!contextMsg)return;
-  const el=document.querySelector(`[data-msg-id="${contextMsg.id}"] .bub`);
+  const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);
   if(el){
-    const from=document.querySelector(`[data-msg-id="${contextMsg.id}"] .mfrom`)?.textContent||ME_NAME;
-    const content=el.textContent.trim();
+    const from=el.querySelector('.mfrom')?.textContent||ME_NAME;
+    const bubText=el.querySelector('.bub')?.textContent?.trim()||'';
+    const content=bubText.split('\n')[0]; // Get first line only
     setReply(contextMsg.id,from,content.substring(0,50));
   }
   hideCtxMenu();
 }
-function editMsg(){
+function editMsgCtx(){
   if(!contextMsg||!contextMsg.isSent)return;
-  const el=document.querySelector(`[data-msg-id="${contextMsg.id}"] .bub`);
+  const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);
   if(el){
-    const content=el.textContent.trim();
-    startEdit(contextMsg.id,content.split('\n')[0]);
+    const bubText=el.querySelector('.bub')?.textContent?.trim()||'';
+    const content=bubText.split('\n')[0];
+    startEdit(contextMsg.id,content);
   }
   hideCtxMenu();
 }
-function pinMsg(){
+function pinMsgCtx(){
   if(!contextMsg)return;
   togglePin(contextMsg.id);
   hideCtxMenu();
 }
-function deleteMsg(){
+function deleteMsgCtx(){
   if(!contextMsg||!contextMsg.isSent)return;
   confirmDelete(contextMsg.id);
   hideCtxMenu();
@@ -851,6 +863,50 @@ function toggleEmoji(){document.getElementById('epick').classList.toggle('open')
 function closeEmoji(){document.getElementById('epick').classList.remove('open');}
 function ins(e){document.getElementById('msgInput').value+=e;document.getElementById('msgInput').focus();}
 document.addEventListener('click',(e)=>{if(!e.target.closest('.epick')&&!e.target.closest('.isb'))closeEmoji();});
+
+// Event delegation for message action buttons
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.msg-act');
+  if (!btn) return;
+  
+  const action = btn.dataset.action;
+  const msgId = parseInt(btn.dataset.msgId);
+  const msgEl = btn.closest('[data-msg-id]');
+  
+  if (!msgEl) return;
+  
+  const msgContent = msgEl.querySelector('.bub')?.textContent?.trim() || '';
+  const msgFrom = msgEl.querySelector('.mfrom')?.textContent || ME_NAME;
+  
+  switch(action) {
+    case 'reply':
+      setReply(msgId, msgFrom, msgContent.substring(0, 50));
+      break;
+    case 'edit':
+      startEdit(msgId, msgContent.split('\n')[0]);
+      break;
+    case 'pin':
+      togglePin(msgId);
+      break;
+    case 'delete':
+      confirmDelete(msgId);
+      break;
+    case 'react':
+      showReactPicker(msgId, e);
+      break;
+  }
+});
+
+// Event delegation for reactions
+document.addEventListener('click', (e) => {
+  const reaction = e.target.closest('.reaction');
+  if (!reaction) return;
+  const msgEl = reaction.closest('[data-msg-id]');
+  if (!msgEl) return;
+  const msgId = parseInt(msgEl.dataset.msgId);
+  const emoji = reaction.querySelector('span')?.textContent;
+  if (emoji) reactTo(msgId, emoji);
+});
 
 function handleSearch(q){
   clearTimeout(searchTimer);const p=document.getElementById('srPanel');
