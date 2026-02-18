@@ -749,17 +749,46 @@ def react_to_message(msg_id):
 @login_required
 def upload_image():
     try:
+        print(f"📸 Upload request from user {session.get('user_id')}")
+        print(f"📸 Files in request: {request.files}")
+        print(f"📸 Form data: {request.form}")
+        
         if 'image' not in request.files:
+            print("❌ No 'image' in request.files")
             return jsonify({'success': False, 'error': 'No image'}), 400
+        
         file = request.files['image']
-        if not file or not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'Invalid file'}), 400
+        print(f"📸 File object: {file}")
+        print(f"📸 Filename: {file.filename}")
+        
+        if not file or not file.filename:
+            print("❌ File object empty or no filename")
+            return jsonify({'success': False, 'error': 'No image'}), 400
+            
+        if not allowed_file(file.filename):
+            print(f"❌ File type not allowed: {file.filename}")
+            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+        
         ext = file.filename.rsplit('.', 1)[1].lower()
         fn  = f"{uuid.uuid4().hex}.{ext}"
+        
+        print(f"📸 Saving as: {fn}")
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-        file.save(os.path.join(UPLOAD_FOLDER, fn))
-        return jsonify({'success': True, 'url': f"/static/uploads/{fn}"})
+        
+        filepath = os.path.join(UPLOAD_FOLDER, fn)
+        print(f"📸 Full path: {filepath}")
+        
+        file.save(filepath)
+        print(f"✅ File saved successfully")
+        
+        url = f"/static/uploads/{fn}"
+        print(f"✅ Returning URL: {url}")
+        
+        return jsonify({'success': True, 'url': url})
     except Exception as e:
+        print(f"❌ Upload error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
