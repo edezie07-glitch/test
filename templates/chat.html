@@ -437,6 +437,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   
   <div class="iarea">
     <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
+    <input type="file" id="imgInpDirect" accept="image/*" capture="environment" style="display:none" onchange="handleDirectUpload(this)">
     <button class="isb" onclick="triggerImageSelect()" title="Attach">📎</button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
@@ -778,36 +779,131 @@ async function uploadImg(inp){
 
 // Helper function for mobile file input
 function triggerImageSelect(){
+  console.log('triggerImageSelect called');
   const inp=document.getElementById('imgInp');
+  console.log('Input element:',inp);
+  console.log('Current chat ID:',currentChatId);
+  
   if(!currentChatId){
     toast('Select a chat first','err');
     return;
   }
-  inp.click();
+  
+  // Show debug info
+  toast('Opening camera/gallery...','info');
+  
+  // Try to trigger the input
+  try{
+    inp.click();
+    console.log('Input clicked');
+  }catch(e){
+    console.error('Click failed:',e);
+    toast('Failed to open file picker: '+e.message,'err');
+  }
+}
+
+// Alternative: Direct upload without preview for mobile
+async function directUploadImage(file){
+  console.log('directUploadImage called with:',file);
+  if(!currentChatId){
+    toast('Select a chat first','err');
+    return;
+  }
+  
+  const fd=new FormData();
+  fd.append('image',file);
+  
+  toast('Uploading image...','info');
+  
+  try{
+    console.log('Sending to server...');
+    const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+    console.log('Server response status:',r.status);
+    const d=await r.json();
+    console.log('Server response data:',d);
+    
+    if(d.success){
+      console.log('Upload successful, sending message...');
+      socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image'});
+      toast('Image sent!','ok');
+    }else{
+      console.error('Upload failed:',d.error);
+      toast(d.error||'Upload failed','err');
+    }
+  }catch(e){
+    console.error('Upload error:',e);
+    toast('Upload error: '+e.message,'err');
+  }
+}
+
+// Handler for direct upload input (no preview)
+function handleDirectUpload(inp){
+  console.log('handleDirectUpload called');
+  const f=inp.files[0];
+  if(!f){
+    console.log('No file in direct upload');
+    return;
+  }
+  console.log('Direct upload file:',f.name);
+  directUploadImage(f);
+  inp.value='';
 }
 
 // NEW: Image Preview and Edit
 let imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1};
 
 function previewImage(inp){
+  console.log('previewImage called');
+  console.log('Input files:',inp.files);
+  console.log('Files length:',inp.files.length);
+  
   const f=inp.files[0];
   if(!f){
     console.log('No file selected');
     return;
   }
+  
+  console.log('File selected:',{
+    name:f.name,
+    type:f.type,
+    size:f.size,
+    lastModified:f.lastModified
+  });
+  
   if(!currentChatId){
     toast('Select a chat first','err');
     inp.value='';
     return;
   }
   
-  console.log('File selected:',f.name,f.type,f.size);
+  // Check if we're on mobile - if so, show option to skip preview
+  const isMobile=window.innerWidth<=720;
+  console.log('Is mobile:',isMobile);
   
+  if(isMobile){
+    // Ask user if they want to preview or send directly
+    if(confirm('Preview image before sending? (Cancel to send directly)')){
+      console.log('User chose to preview');
+      showImagePreview(f);
+    }else{
+      console.log('User chose direct upload');
+      directUploadImage(f);
+      inp.value='';
+    }
+  }else{
+    showImagePreview(f);
+  }
+}
+
+function showImagePreview(f){
+  console.log('showImagePreview called');
   imgPreviewData.file=f;
   const reader=new FileReader();
+  
   reader.onload=(e)=>{
-    console.log('File loaded, creating image...');
+    console.log('File loaded, data URL length:',e.target.result.length);
     const img=new Image();
+    
     img.onload=()=>{
       console.log('Image loaded:',img.width,'x',img.height);
       imgPreviewData.img=img;
@@ -816,29 +912,41 @@ function previewImage(inp){
       imgPreviewData.flipV=1;
       
       const canvas=document.getElementById('imgPreviewCanvas');
+      if(!canvas){
+        console.error('Canvas element not found!');
+        toast('Preview error: canvas not found','err');
+        return;
+      }
+      
       imgPreviewData.canvas=canvas;
       imgPreviewData.ctx=canvas.getContext('2d');
       
-      drawImageOnCanvas();
-      
-      document.getElementById('imgPreviewOverlay').classList.add('show');
-      document.getElementById('imgPreviewModal').classList.add('show');
-      console.log('Preview modal opened');
+      try{
+        drawImageOnCanvas();
+        document.getElementById('imgPreviewOverlay').classList.add('show');
+        document.getElementById('imgPreviewModal').classList.add('show');
+        console.log('Preview modal opened');
+      }catch(e){
+        console.error('Draw error:',e);
+        toast('Preview error: '+e.message,'err');
+      }
     };
+    
     img.onerror=(err)=>{
       console.error('Image load error:',err);
       toast('Failed to load image','err');
-      inp.value='';
     };
+    
     img.src=e.target.result;
   };
+  
   reader.onerror=(err)=>{
     console.error('FileReader error:',err);
     toast('Failed to read file','err');
-    inp.value='';
   };
+  
+  console.log('Starting FileReader...');
   reader.readAsDataURL(f);
-  inp.value='';
 }
 
 function drawImageOnCanvas(){
