@@ -265,9 +265,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .img-preview-modal.show{display:flex;}
 .img-preview-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
 .img-preview-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
-.img-preview-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);}
-.img-preview-body canvas{max-width:100%;max-height:60vh;border-radius:12px;}
-.img-preview-tools{padding:15px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);display:flex;gap:10px;justify-content:center;background:var(--sb2);}
+.img-preview-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);max-height:50vh;}
+.img-preview-body canvas{max-width:100%;max-height:100%;border-radius:12px;}
+.img-preview-tools{padding:15px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);display:flex;gap:10px;justify-content:center;background:var(--sb2);flex-wrap:wrap;}
 .tool-btn{padding:10px 16px;border:none;border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:18px;transition:background var(--trans);}
 .tool-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
 .img-preview-footer{padding:20px;display:flex;gap:10px;justify-content:flex-end;}
@@ -319,6 +319,23 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   .chdr{padding-left:56px;}
   .bub{max-width:80%;}
   .sdraw{width:100%;}
+  
+  /* Mobile image preview */
+  .img-preview-modal{width:95%;max-height:95vh;border-radius:16px;}
+  .img-preview-header{padding:15px;}
+  .img-preview-body{padding:10px;max-height:45vh;}
+  .img-preview-tools{padding:10px;gap:8px;}
+  .tool-btn{padding:8px 12px;font-size:16px;}
+  .img-preview-footer{padding:15px;gap:8px;}
+  .cancel-btn,.send-btn{flex:1;padding:12px;}
+  
+  /* Mobile profile modal */
+  .profile-modal{width:95%;}
+  
+  /* Mobile call modal */
+  #callVideo video{width:100%!important;height:auto!important;}
+  #localVideo{max-width:150px!important;max-height:120px!important;}
+  #remoteVideo{max-width:100%!important;margin-left:0!important;margin-top:10px;}
 }
 </style>
 </head>
@@ -419,8 +436,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   
   <div class="iarea">
-    <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="previewImage(this)">
-    <button class="isb" onclick="document.getElementById('imgInp').click()" title="Attach">📎</button>
+    <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
+    <button class="isb" onclick="triggerImageSelect()" title="Attach">📎</button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
       oninput="autoR(this);doTyping();"
@@ -759,19 +776,40 @@ async function uploadImg(inp){
   inp.value='';
 }
 
+// Helper function for mobile file input
+function triggerImageSelect(){
+  const inp=document.getElementById('imgInp');
+  if(!currentChatId){
+    toast('Select a chat first','err');
+    return;
+  }
+  inp.click();
+}
+
 // NEW: Image Preview and Edit
 let imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1};
 
 function previewImage(inp){
   const f=inp.files[0];
-  if(!f)return;
-  if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
+  if(!f){
+    console.log('No file selected');
+    return;
+  }
+  if(!currentChatId){
+    toast('Select a chat first','err');
+    inp.value='';
+    return;
+  }
+  
+  console.log('File selected:',f.name,f.type,f.size);
   
   imgPreviewData.file=f;
   const reader=new FileReader();
   reader.onload=(e)=>{
+    console.log('File loaded, creating image...');
     const img=new Image();
     img.onload=()=>{
+      console.log('Image loaded:',img.width,'x',img.height);
       imgPreviewData.img=img;
       imgPreviewData.rotation=0;
       imgPreviewData.flipH=1;
@@ -785,8 +823,19 @@ function previewImage(inp){
       
       document.getElementById('imgPreviewOverlay').classList.add('show');
       document.getElementById('imgPreviewModal').classList.add('show');
+      console.log('Preview modal opened');
+    };
+    img.onerror=(err)=>{
+      console.error('Image load error:',err);
+      toast('Failed to load image','err');
+      inp.value='';
     };
     img.src=e.target.result;
+  };
+  reader.onerror=(err)=>{
+    console.error('FileReader error:',err);
+    toast('Failed to read file','err');
+    inp.value='';
   };
   reader.readAsDataURL(f);
   inp.value='';
@@ -798,6 +847,14 @@ function drawImageOnCanvas(){
   
   let w=img.width;
   let h=img.height;
+  
+  // Scale down large images for mobile
+  const maxSize=window.innerWidth<=720?800:1200;
+  if(w>maxSize||h>maxSize){
+    const scale=Math.min(maxSize/w,maxSize/h);
+    w=w*scale;
+    h=h*scale;
+  }
   
   if(rotation===90||rotation===-90||rotation===270){
     canvas.width=h;
