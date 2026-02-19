@@ -27,3 +27,5 @@ zope.event==5.0
 zope.interface==7.0.3
 openai==1.12.0  # ADD THIS for AI
 python-dotenv==1.0.1  # ADD THIS for environment variables
+openai==1.12.0
+numpy==1.24.3
