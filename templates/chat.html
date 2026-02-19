@@ -211,8 +211,15 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .reply-bar-close:hover{color:var(--txt);}
 
 /* Emoji Picker */
-.epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px;display:none;flex-wrap:wrap;gap:5px;width:220px;z-index:100;box-shadow:var(--shad);}
+.epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}
 .epick.open{display:flex;}
+.emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);}
+.emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);}
+.emoji-cat:hover{background:var(--hov);}
+.emoji-cat.active{background:rgba(124,106,255,.15);color:var(--brand);}
+.emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;}
+.emoji-section{display:flex;flex-wrap:wrap;gap:5px;width:100%;}
+.emoji-section.hidden{display:none;}
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
 
@@ -373,6 +380,15 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="spanel" id="srPanel">
     <div id="srList"></div>
   </div>
+  
+  <!-- NEW: Stories Section -->
+  <div class="stories-container" id="storiesContainer">
+    <div class="llabel">Stories</div>
+    <div class="stories-scroll" id="storiesScroll">
+      <!-- Stories will be loaded here -->
+    </div>
+  </div>
+  
   <div class="clist" id="clist">
     <div class="llabel">Conversations</div>
     <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
@@ -1380,6 +1396,52 @@ function scrollToMsg(id){
 function toggleEmoji(){document.getElementById('epick').classList.toggle('open');}
 function closeEmoji(){document.getElementById('epick').classList.remove('open');}
 function ins(e){document.getElementById('msgInput').value+=e;document.getElementById('msgInput').focus();}
+
+// NEW: Switch emoji categories
+function switchEmojiCat(cat){
+  document.querySelectorAll('.emoji-cat').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[data-cat="${cat}"]`).classList.add('active');
+  document.querySelectorAll('.emoji-section').forEach(s=>s.classList.add('hidden'));
+  document.querySelector(`.emoji-section[data-category="${cat}"]`).classList.remove('hidden');
+}
+
+// NEW: Long press on mobile / Right click on desktop for reply
+let longPressTimer=null;
+let longPressTarget=null;
+
+// Setup long press handlers on message bubbles
+document.addEventListener('DOMContentLoaded',()=>{
+  setupMessageLongPress();
+});
+
+function setupMessageLongPress(){
+  document.getElementById('marea').addEventListener('touchstart',(e)=>{
+    const bub=e.target.closest('.bub');
+    if(!bub)return;
+    
+    longPressTarget=bub.closest('[data-msg-id]');
+    longPressTimer=setTimeout(()=>{
+      if(longPressTarget){
+        const msgId=parseInt(longPressTarget.dataset.msgId);
+        const from=longPressTarget.querySelector('.mfrom')?.textContent||ME_NAME;
+        const content=bub.textContent.trim().split('\n')[0];
+        setReply(msgId,from,content.substring(0,50));
+        // Haptic feedback on mobile
+        if(navigator.vibrate)navigator.vibrate(50);
+      }
+    },500); // 500ms long press
+  });
+  
+  document.getElementById('marea').addEventListener('touchend',()=>{
+    clearTimeout(longPressTimer);
+    longPressTarget=null;
+  });
+  
+  document.getElementById('marea').addEventListener('touchmove',()=>{
+    clearTimeout(longPressTimer);
+    longPressTarget=null;
+  });
+}
 document.addEventListener('click',(e)=>{if(!e.target.closest('.epick')&&!e.target.closest('.isb'))closeEmoji();});
 
 // Event delegation for message action buttons
