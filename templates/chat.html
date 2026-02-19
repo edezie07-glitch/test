@@ -253,7 +253,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 /* Emoji Picker */
 .epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}
-.epick.open{display:flex;}
 .emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;}
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
@@ -349,7 +348,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .call-control-btn.video{background:rgba(255,255,255,.2);color:#fff;}
 .call-control-btn.end{background:#ef4444;color:#fff;}
 .call-control-btn.muted{background:rgba(239,68,68,.3);}
-
+.emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);}
+.emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);}
+.emoji-cat:hover{background:var(--hov);}
+.emoji-cat.active{background:rgba(124,106,255,.15);color:var(--brand);}
+.emoji-section{display:flex;flex-wrap:wrap;gap:5px;width:100%;}
+.emoji-section.hidden{display:none;}
 @media(max-width:720px){
   .mtog{display:flex;}
   .mov{display:none;}
@@ -501,7 +505,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="send-btn" onclick="sendEditedImage()">Send</button>
   </div>
 </div>
-
+<div class="ef">
+  <label>Relationship Status</label>
+  <select class="ei" id="erel" style="cursor:pointer;">
+    <option value="Prefer not to say">Prefer not to say</option>
+    <option value="Single">Single</option>
+    <option value="Married">Married</option>
+  </select>
+</div>
 <!-- Profile View Modal -->
 <div class="profile-overlay" id="profileOverlay" onclick="closeProfileView()"></div>
 <div class="profile-modal" id="profileModal">
@@ -591,7 +602,48 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         </div>
         <button class="tog" id="tAI" onclick="toggleAI()"></button>
       </div>
+<!-- Blocklist -->
+<div class="ssec" style="margin-top:6px;">
+  <div class="ssec-t">Blocklist</div>
+  <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
+    <div class="sleft">
+      <div class="sic re">🚫</div>
+      <div>
+        <div class="slb">Blocked Users</div>
+        <div class="sdb">Manage blocked friends</div>
+      </div>
+    </div>
+    <span style="color:var(--sub);font-size:14px;">›</span>
+  </div>
+</div>
+       <!-- Blocklist Modal -->
+<div class="sov" id="blocklistOv" onclick="closeBlocklist()" style="display:none;"></div>
+<div class="sdraw" id="blocklistDraw" style="display:none;">
+  <div class="shead">
+    <span style="font-size:20px;">🚫</span>
+    <h2>Blocked Users</h2>
+    <button class="closebtn" onclick="closeBlocklist()">✕</button>
+  </div>
+  <div class="sbody">
+    <div id="blocklistBody" style="padding:20px;">
+      <div class="lempty">Loading...</div>
+    </div>
+  </div>
+  <button class="savebtn" onclick="openAddBlockModal()" style="position:fixed;bottom:20px;right:20px;width:auto;padding:12px 20px;border-radius:50px;">➕ Block User</button>
+</div>
 
+<!-- Add Block Modal -->
+<div class="profile-overlay" id="addBlockOverlay" style="display:none;" onclick="closeAddBlock()"></div>
+<div class="profile-modal" id="addBlockModal" style="display:none;">
+  <div class="profile-header">
+    <h3>Block a Friend</h3>
+    <button class="closebtn" onclick="closeAddBlock()">✕</button>
+  </div>
+  <div class="profile-body">
+    <p style="color:var(--sub);margin-bottom:20px;">Select a friend to block</p>
+    <div id="friendsToBlockList" style="max-height:300px;overflow-y:auto;"></div>
+  </div>
+</div>
       <!-- chat box (always visible, disabled when AI is off) -->
       <div class="ai-chat-box">
         <div class="ai-chat-header">
@@ -659,6 +711,91 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div class="tstack" id="tstack"></div>
 
 <script>
+   async function openBlocklist(){
+  document.getElementById('blocklistOv').style.display='block';
+  document.getElementById('blocklistDraw').style.display='flex';
+  document.getElementById('blocklistDraw').classList.add('open');
+  await loadBlocklist();
+}
+
+function closeBlocklist(){
+  document.getElementById('blocklistOv').style.display='none';
+  document.getElementById('blocklistDraw').style.display='none';
+  document.getElementById('blocklistDraw').classList.remove('open');
+}
+
+async function loadBlocklist(){
+  try{
+    const r=await fetch('/api/blocklist');
+    const d=await r.json();
+    const body=document.getElementById('blocklistBody');
+    if(!d.success||!d.blocked_users.length){
+      body.innerHTML='<div class="lempty">No blocked users</div>';
+      return;
+    }
+    body.innerHTML=d.blocked_users.map(u=>`
+      <div class="pcard" style="margin-bottom:8px;">
+        <div class="av">${u.username[0].toUpperCase()}</div>
+        <div class="pinfo">
+          <div class="pname">${esc(u.username)}</div>
+          <div class="pstat" style="font-size:11px;">Blocked ${relTime(u.blocked_at)}</div>
+        </div>
+        <button class="pill p-no" onclick="unblockUser(${u.id})">Unblock</button>
+      </div>
+    `).join('');
+  }catch(e){toast('Failed to load blocklist','err');}
+}
+
+function openAddBlockModal(){
+  document.getElementById('addBlockOverlay').style.display='block';
+  document.getElementById('addBlockModal').style.display='flex';
+  loadFriendsToBlock();
+}
+
+function closeAddBlock(){
+  document.getElementById('addBlockOverlay').style.display='none';
+  document.getElementById('addBlockModal').style.display='none';
+}
+
+async function loadFriendsToBlock(){
+  const list=document.getElementById('friendsToBlockList');
+  if(!friends.length){list.innerHTML='<p style="color:var(--mute);">No friends to block</p>';return;}
+  list.innerHTML=friends.map(f=>`
+    <div class="srow" style="margin-bottom:6px;">
+      <div class="sleft">
+        <div class="av sm">${f.username[0].toUpperCase()}</div>
+        <div><div class="slb">${esc(f.username)}</div></div>
+      </div>
+      <button class="pill p-no" onclick="blockUser(${f.id})">Block</button>
+    </div>
+  `).join('');
+}
+
+async function blockUser(userId){
+  if(!confirm('Block this user?'))return;
+  try{
+    const r=await fetch('/api/blocklist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+    const d=await r.json();
+    if(d.success){toast('User blocked','ok');closeAddBlock();loadBlocklist();}
+    else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+
+async function unblockUser(userId){
+  if(!confirm('Unblock this user?'))return;
+  try{
+    const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+    const d=await r.json();
+    if(d.success){toast('User unblocked','ok');loadBlocklist();}
+    else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+   function switchEmojiCat(cat){
+  document.querySelectorAll('.emoji-cat').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[data-cat="${cat}"]`).classList.add('active');
+  document.querySelectorAll('.emoji-section').forEach(s=>s.classList.add('hidden'));
+  document.querySelector(`.emoji-section[data-category="${cat}"]`).classList.remove('hidden');
+}
 const ME_ID = {{ user_id }};
 const ME_NAME = '{{ user.username }}';
 let socket=null,currentChatId=null,currentFriendId=null,friends=[],pendingReqs=[],searchTimer=null,typingTimer=null;
@@ -703,8 +840,10 @@ async function saveProfile(){
   const un=document.getElementById('eun').value.trim();
   const st=document.getElementById('est').value.trim();
   const bio=document.getElementById('ebio').value.trim();
+  const rel=document.getElementById('erel').value; // ADD THIS
   try{
-    const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:un,status:st,bio})});
+    const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:un,status:st,bio,relationship_status:rel})}); // UPDATE THIS
     const d=await r.json();
     if(d.success){
       document.getElementById('snm').textContent=un||ME_NAME;
