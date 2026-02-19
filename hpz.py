@@ -10,7 +10,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import or_, and_
 from functools import wraps
-
+try:
+    import numpy
+    print("✅ numpy is installed!")
+except ImportError as e:
+    print("❌ numpy is NOT installed:", e)
 # ============================================================
 # APP CONFIG
 # ============================================================
@@ -1582,3 +1586,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 HPZ Messenger on port {port}")
     socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+
