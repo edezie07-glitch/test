@@ -56,7 +56,9 @@ socketio = SocketIO(
     logger=False,
     engineio_logger=False
 )
-
+database_url = os.environ.get('DATABASE_URL', '')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
 # ============================================================
 # NEW: ONLINE USERS TRACKING
 # ============================================================
@@ -1264,4 +1266,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 HPZ Messenger on port {port}")
     socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
+
 
