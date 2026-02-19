@@ -26,4 +26,10 @@ zope.event==5.0
 zope.interface==7.0.3
 python-dotenv==1.0.1
 openai==1.12.0
-numpy==1.24.3  # <-- MAKE SURE THIS IS HERE
+numpy==1.24.3
+pandas==2.0.3  # <-- ADD THIS
+httpx==0.28.1
+pydantic==2.12.5
+sniffio==1.3.1
+tqdm==4.67.3
+idna==3.11
