@@ -73,6 +73,8 @@ class User(db.Model):
     avatar_url    = db.Column(db.String(500))
     bio           = db.Column(db.String(500), default='')
     status        = db.Column(db.String(100), default='Available')
+    # NEW: Relationship status field
+    relationship_status = db.Column(db.String(50), default='Prefer not to say')  # Single, Married, Prefer not to say
     # NEW: last_seen for online status
     last_seen     = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -81,7 +83,8 @@ class User(db.Model):
     def check_password(self, p): return check_password_hash(self.password_hash, p)
     def to_dict(self):
         return {'id': self.id, 'username': self.username,
-                'avatar_url': self.avatar_url, 'bio': self.bio, 'status': self.status}
+                'avatar_url': self.avatar_url, 'bio': self.bio, 'status': self.status,
+                'relationship_status': self.relationship_status}
 
 
 class Message(db.Model):
@@ -122,6 +125,48 @@ class MessageRead(db.Model):
     user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     read_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint('message_id', 'user_id'),)
+
+
+# NEW: Stories model
+class Story(db.Model):
+    __tablename__ = 'stories'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    content    = db.Column(db.String(500))  # Text content
+    media_url  = db.Column(db.String(500))  # Image/video URL
+    media_type = db.Column(db.String(20), default='image')  # image or video
+    privacy    = db.Column(db.String(20), default='friends')  # public, friends, custom
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime)  # Stories expire after 24 hours
+    user       = db.relationship('User', backref='stories')
+
+
+# NEW: Story views tracking
+class StoryView(db.Model):
+    __tablename__ = 'story_views'
+    id         = db.Column(db.Integer, primary_key=True)
+    story_id   = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False, index=True)
+    viewer_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    viewed_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('story_id', 'viewer_id'),)
+
+
+# NEW: Story privacy settings (for custom privacy)
+class StoryPrivacy(db.Model):
+    __tablename__ = 'story_privacy'
+    id          = db.Column(db.Integer, primary_key=True)
+    story_id    = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
+    allowed_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+
+# NEW: Blocklist model
+class BlockedUser(db.Model):
+    __tablename__ = 'blocked_users'
+    id          = db.Column(db.Integer, primary_key=True)
+    blocker_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    blocked_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('blocker_id', 'blocked_id'),)
 
 
 class Friendship(db.Model):
@@ -191,6 +236,15 @@ def is_user_online(user_id):
         if last_seen and (datetime.now(timezone.utc) - last_seen).seconds < 30:
             return True
     return False
+
+# NEW: Check if user is blocked
+def is_blocked(user_id, other_user_id):
+    return BlockedUser.query.filter(
+        or_(
+            and_(BlockedUser.blocker_id == user_id, BlockedUser.blocked_id == other_user_id),
+            and_(BlockedUser.blocker_id == other_user_id, BlockedUser.blocked_id == user_id)
+        )
+    ).first() is not None
 
 # NEW: Format message with all new features
 def format_message(msg, user_id):
@@ -391,7 +445,7 @@ def get_profile():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/api/profile', methods=['PUT'])
+@app.route('/api/profile', methods='PUT'])
 @login_required
 def update_profile():
     try:
@@ -405,6 +459,9 @@ def update_profile():
             session.modified = True
         if 'bio'    in data: user.bio    = data['bio'][:500]
         if 'status' in data: user.status = data['status'][:100]
+        if 'relationship_status' in data:
+            if data['relationship_status'] in ['Single', 'Married', 'Prefer not to say']:
+                user.relationship_status = data['relationship_status']
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -432,6 +489,276 @@ def upload_avatar():
         db.session.commit()
         return jsonify({'success': True, 'url': url})
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# NEW: Update relationship status
+@app.route('/api/profile/relationship', methods=['PUT'])
+@login_required
+def update_relationship_status():
+    try:
+        data = request.get_json()
+        status = data.get('relationship_status')
+        if status not in ['Single', 'Married', 'Prefer not to say']:
+            return jsonify({'success': False, 'error': 'Invalid status'}), 400
+        
+        user = User.query.get(session['user_id'])
+        user.relationship_status = status
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================
+# STORIES
+# ============================================================
+@app.route('/api/stories/create', methods=['POST'])
+@login_required
+def create_story():
+    try:
+        data = request.get_json()
+        uid = session['user_id']
+        
+        content = data.get('content', '').strip()
+        media_url = data.get('media_url', '')
+        media_type = data.get('media_type', 'image')
+        privacy = data.get('privacy', 'friends')
+        custom_users = data.get('custom_users', [])
+        
+        if not content and not media_url:
+            return jsonify({'success': False, 'error': 'Content or media required'}), 400
+        
+        # Stories expire after 24 hours
+        from datetime import timedelta
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        
+        story = Story(
+            user_id=uid,
+            content=content,
+            media_url=media_url,
+            media_type=media_type,
+            privacy=privacy,
+            expires_at=expires_at
+        )
+        db.session.add(story)
+        db.session.commit()
+        
+        # Add custom privacy users if privacy is 'custom'
+        if privacy == 'custom' and custom_users:
+            for user_id in custom_users:
+                db.session.add(StoryPrivacy(story_id=story.id, allowed_user_id=user_id))
+            db.session.commit()
+        
+        return jsonify({'success': True, 'story_id': story.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/stories/friends')
+@login_required
+def get_friends_stories():
+    try:
+        uid = session['user_id']
+        from datetime import timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        
+        # Get friends
+        friendships = Friendship.query.filter(
+            or_(Friendship.user1_id == uid, Friendship.user2_id == uid)
+        ).all()
+        friend_ids = [f.user2_id if f.user1_id == uid else f.user1_id for f in friendships]
+        friend_ids.append(uid)  # Include own stories
+        
+        # Get stories from friends that haven't expired and user hasn't blocked
+        stories = []
+        for fid in friend_ids:
+            if is_blocked(uid, fid) and fid != uid:
+                continue
+            
+            user_stories = Story.query.filter(
+                Story.user_id == fid,
+                Story.created_at >= cutoff,
+                Story.expires_at > datetime.now(timezone.utc)
+            ).order_by(Story.created_at.desc()).all()
+            
+            for story in user_stories:
+                # Check privacy
+                if story.privacy == 'public':
+                    allowed = True
+                elif story.privacy == 'friends':
+                    allowed = fid == uid or fid in friend_ids
+                elif story.privacy == 'custom':
+                    allowed = fid == uid or StoryPrivacy.query.filter_by(
+                        story_id=story.id, allowed_user_id=uid
+                    ).first() is not None
+                else:
+                    allowed = False
+                
+                if allowed:
+                    viewed = StoryView.query.filter_by(story_id=story.id, viewer_id=uid).first() is not None
+                    stories.append({
+                        'id': story.id,
+                        'user_id': story.user_id,
+                        'username': story.user.username,
+                        'avatar': story.user.avatar_url or f"https://ui-avatars.com/api/?name={story.user.username}&background=6c63ff&color=fff",
+                        'content': story.content,
+                        'media_url': story.media_url,
+                        'media_type': story.media_type,
+                        'created_at': story.created_at.isoformat(),
+                        'expires_at': story.expires_at.isoformat(),
+                        'viewed': viewed,
+                        'is_own': story.user_id == uid
+                    })
+        
+        # Group by user
+        user_stories = {}
+        for story in stories:
+            if story['user_id'] not in user_stories:
+                user_stories[story['user_id']] = {
+                    'user_id': story['user_id'],
+                    'username': story['username'],
+                    'avatar': story['avatar'],
+                    'stories': [],
+                    'has_unviewed': False
+                }
+            user_stories[story['user_id']]['stories'].append(story)
+            if not story['viewed']:
+                user_stories[story['user_id']]['has_unviewed'] = True
+        
+        return jsonify({'success': True, 'stories': list(user_stories.values())})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/stories/<int:story_id>/view', methods=['POST'])
+@login_required
+def view_story(story_id):
+    try:
+        uid = session['user_id']
+        story = Story.query.get(story_id)
+        if not story:
+            return jsonify({'success': False, 'error': 'Story not found'}), 404
+        
+        # Add view if not already viewed
+        existing = StoryView.query.filter_by(story_id=story_id, viewer_id=uid).first()
+        if not existing:
+            db.session.add(StoryView(story_id=story_id, viewer_id=uid))
+            db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/stories/<int:story_id>/viewers')
+@login_required
+def get_story_viewers(story_id):
+    try:
+        uid = session['user_id']
+        story = Story.query.get(story_id)
+        if not story or story.user_id != uid:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        views = StoryView.query.filter_by(story_id=story_id).order_by(StoryView.viewed_at.desc()).all()
+        viewers = []
+        for view in views:
+            viewer = User.query.get(view.viewer_id)
+            if viewer:
+                viewers.append({
+                    'user_id': viewer.id,
+                    'username': viewer.username,
+                    'avatar': viewer.avatar_url or f"https://ui-avatars.com/api/?name={viewer.username}&background=6c63ff&color=fff",
+                    'viewed_at': view.viewed_at.isoformat()
+                })
+        
+        return jsonify({'success': True, 'viewers': viewers, 'count': len(viewers)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/stories/<int:story_id>/delete', methods=['DELETE'])
+@login_required
+def delete_story(story_id):
+    try:
+        uid = session['user_id']
+        story = Story.query.get(story_id)
+        if not story or story.user_id != uid:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        # Delete associated views and privacy settings
+        StoryView.query.filter_by(story_id=story_id).delete()
+        StoryPrivacy.query.filter_by(story_id=story_id).delete()
+        db.session.delete(story)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================
+# BLOCKLIST
+# ============================================================
+@app.route('/api/blocklist')
+@login_required
+def get_blocklist():
+    try:
+        uid = session['user_id']
+        blocked = BlockedUser.query.filter_by(blocker_id=uid).all()
+        blocked_users = []
+        for b in blocked:
+            user = User.query.get(b.blocked_id)
+            if user:
+                blocked_users.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.avatar_url or f"https://ui-avatars.com/api/?name={user.username}&background=6c63ff&color=fff",
+                    'blocked_at': b.created_at.isoformat()
+                })
+        return jsonify({'success': True, 'blocked_users': blocked_users})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/blocklist/add', methods=['POST'])
+@login_required
+def block_user():
+    try:
+        data = request.get_json()
+        uid = session['user_id']
+        blocked_id = data.get('user_id')
+        
+        if not blocked_id or uid == blocked_id:
+            return jsonify({'success': False, 'error': 'Invalid user'}), 400
+        
+        # Check if already blocked
+        existing = BlockedUser.query.filter_by(blocker_id=uid, blocked_id=blocked_id).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'User already blocked'}), 400
+        
+        db.session.add(BlockedUser(blocker_id=uid, blocked_id=blocked_id))
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/blocklist/remove', methods=['POST'])
+@login_required
+def unblock_user():
+    try:
+        data = request.get_json()
+        uid = session['user_id']
+        blocked_id = data.get('user_id')
+        
+        blocked = BlockedUser.query.filter_by(blocker_id=uid, blocked_id=blocked_id).first()
+        if not blocked:
+            return jsonify({'success': False, 'error': 'User not blocked'}), 400
+        
+        db.session.delete(blocked)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ============================================================
