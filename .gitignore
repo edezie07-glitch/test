@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.env
+.venv
+venv/
+ENV/
+
+# Flask
+instance/
+.webassets-cache
+
+# Uploads
+static/uploads/*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
