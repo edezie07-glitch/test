@@ -254,6 +254,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* Emoji Picker */
 .epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}
 .emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;}
+   .emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);overflow-x:auto;}
+.emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);flex-shrink:0;}
+.emoji-cat:hover{background:var(--hov);}
+.emoji-cat.active{background:rgba(124,106,255,.15);color:var(--brand);}
+.emoji-section{display:flex;flex-wrap:wrap;gap:5px;width:100%;}
+.emoji-section.hidden{display:none;}
+.epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}   
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
 
@@ -412,10 +419,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="spanel" id="srPanel">
     <div id="srList"></div>
   </div>
-  <div class="stories-container" id="storiesContainer">
-    <div class="llabel">Stories</div>
-    <div class="stories-scroll" id="storiesScroll"></div>
+ <div class="stories-container" id="storiesContainer">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 14px;">
+    <div class="llabel" style="padding:10px 0 3px 0;">Stories</div>
+    <button class="pill p-add" onclick="openCreateStoryModal()" style="padding:3px 8px;font-size:10px;">➕ Add</button>
   </div>
+  <div class="stories-scroll" id="storiesScroll" style="display:flex;overflow-x:auto;padding:8px 0;"></div>
+</div>
   <div class="clist" id="clist">
     <div class="llabel">Conversations</div>
     <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
@@ -463,15 +473,190 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="reply-bar-close" onclick="cancelReply()">✕</button>
   </div>
   <div class="epick" id="epick">
-    <div class="emoji-grid">
-      <span class="eo" onclick="ins('😀')">😀</span><span class="eo" onclick="ins('😂')">😂</span>
-      <span class="eo" onclick="ins('😍')">😍</span><span class="eo" onclick="ins('🔥')">🔥</span>
-      <span class="eo" onclick="ins('👍')">👍</span><span class="eo" onclick="ins('❤️')">❤️</span>
-      <span class="eo" onclick="ins('😭')">😭</span><span class="eo" onclick="ins('🎉')">🎉</span>
-      <span class="eo" onclick="ins('😎')">😎</span><span class="eo" onclick="ins('🤔')">🤔</span>
-      <span class="eo" onclick="ins('💀')">💀</span><span class="eo" onclick="ins('✅')">✅</span>
-      <span class="eo" onclick="ins('🙏')">🙏</span><span class="eo" onclick="ins('😤')">😤</span>
+  <div class="emoji-categories">
+    <button class="emoji-cat active" data-cat="smileys" onclick="switchEmojiCat('smileys')">😀</button>
+    <button class="emoji-cat" data-cat="gestures" onclick="switchEmojiCat('gestures')">👋</button>
+    <button class="emoji-cat" data-cat="animals" onclick="switchEmojiCat('animals')">🐶</button>
+    <button class="emoji-cat" data-cat="food" onclick="switchEmojiCat('food')">🍕</button>
+    <button class="emoji-cat" data-cat="travel" onclick="switchEmojiCat('travel')">✈️</button>
+    <button class="emoji-cat" data-cat="symbols" onclick="switchEmojiCat('symbols')">❤️</button>
+  </div>
+  <div class="emoji-grid" id="emojiGrid">
+    <div class="emoji-section" data-category="smileys">
+      <span class="eo" onclick="ins('😀')">😀</span><span class="eo" onclick="ins('😃')">😃</span>
+      <span class="eo" onclick="ins('😄')">😄</span><span class="eo" onclick="ins('😁')">😁</span>
+      <span class="eo" onclick="ins('😆')">😆</span><span class="eo" onclick="ins('😅')">😅</span>
+      <span class="eo" onclick="ins('🤣')">🤣</span><span class="eo" onclick="ins('😂')">😂</span>
+      <span class="eo" onclick="ins('🙂')">🙂</span><span class="eo" onclick="ins('🙃')">🙃</span>
+      <span class="eo" onclick="ins('😉')">😉</span><span class="eo" onclick="ins('😊')">😊</span>
+      <span class="eo" onclick="ins('😇')">😇</span><span class="eo" onclick="ins('🥰')">🥰</span>
+      <span class="eo" onclick="ins('😍')">😍</span><span class="eo" onclick="ins('🤩')">🤩</span>
+      <span class="eo" onclick="ins('😘')">😘</span><span class="eo" onclick="ins('😗')">😗</span>
+      <span class="eo" onclick="ins('😚')">😚</span><span class="eo" onclick="ins('😙')">😙</span>
+      <span class="eo" onclick="ins('😋')">😋</span><span class="eo" onclick="ins('😛')">😛</span>
+      <span class="eo" onclick="ins('😜')">😜</span><span class="eo" onclick="ins('🤪')">🤪</span>
+      <span class="eo" onclick="ins('😝')">😝</span><span class="eo" onclick="ins('🤑')">🤑</span>
+      <span class="eo" onclick="ins('🤗')">🤗</span><span class="eo" onclick="ins('🤭')">🤭</span>
+      <span class="eo" onclick="ins('🤫')">🤫</span><span class="eo" onclick="ins('🤔')">🤔</span>
+      <span class="eo" onclick="ins('😐')">😐</span><span class="eo" onclick="ins('😑')">😑</span>
+      <span class="eo" onclick="ins('😶')">😶</span><span class="eo" onclick="ins('😏')">😏</span>
+      <span class="eo" onclick="ins('😒')">😒</span><span class="eo" onclick="ins('🙄')">🙄</span>
+      <span class="eo" onclick="ins('😬')">😬</span><span class="eo" onclick="ins('😌')">😌</span>
+      <span class="eo" onclick="ins('😔')">😔</span><span class="eo" onclick="ins('😪')">😪</span>
+      <span class="eo" onclick="ins('😴')">😴</span><span class="eo" onclick="ins('😷')">😷</span>
+      <span class="eo" onclick="ins('🤒')">🤒</span><span class="eo" onclick="ins('🤕')">🤕</span>
+      <span class="eo" onclick="ins('🥵')">🥵</span><span class="eo" onclick="ins('🥶')">🥶</span>
+      <span class="eo" onclick="ins('😵')">😵</span><span class="eo" onclick="ins('🤯')">🤯</span>
+      <span class="eo" onclick="ins('🤠')">🤠</span><span class="eo" onclick="ins('🥳')">🥳</span>
+      <span class="eo" onclick="ins('😎')">😎</span><span class="eo" onclick="ins('🤓')">🤓</span>
+      <span class="eo" onclick="ins('😕')">😕</span><span class="eo" onclick="ins('😟')">😟</span>
+      <span class="eo" onclick="ins('🙁')">🙁</span><span class="eo" onclick="ins('☹️')">☹️</span>
+      <span class="eo" onclick="ins('😮')">😮</span><span class="eo" onclick="ins('😯')">😯</span>
+      <span class="eo" onclick="ins('😲')">😲</span><span class="eo" onclick="ins('😳')">😳</span>
+      <span class="eo" onclick="ins('🥺')">🥺</span><span class="eo" onclick="ins('😦')">😦</span>
+      <span class="eo" onclick="ins('😧')">😧</span><span class="eo" onclick="ins('😨')">😨</span>
+      <span class="eo" onclick="ins('😰')">😰</span><span class="eo" onclick="ins('😥')">😥</span>
+      <span class="eo" onclick="ins('😢')">😢</span><span class="eo" onclick="ins('😭')">😭</span>
+      <span class="eo" onclick="ins('😱')">😱</span><span class="eo" onclick="ins('😖')">😖</span>
+      <span class="eo" onclick="ins('😣')">😣</span><span class="eo" onclick="ins('😞')">😞</span>
+      <span class="eo" onclick="ins('😓')">😓</span><span class="eo" onclick="ins('😩')">😩</span>
+      <span class="eo" onclick="ins('😫')">😫</span><span class="eo" onclick="ins('🥱')">🥱</span>
+      <span class="eo" onclick="ins('😤')">😤</span><span class="eo" onclick="ins('😡')">😡</span>
+      <span class="eo" onclick="ins('😠')">😠</span><span class="eo" onclick="ins('🤬')">🤬</span>
+      <span class="eo" onclick="ins('😈')">😈</span><span class="eo" onclick="ins('👿')">👿</span>
+      <span class="eo" onclick="ins('💀')">💀</span><span class="eo" onclick="ins('☠️')">☠️</span>
+      <span class="eo" onclick="ins('💩')">💩</span><span class="eo" onclick="ins('🤡')">🤡</span>
+      <span class="eo" onclick="ins('👻')">👻</span><span class="eo" onclick="ins('👽')">👽</span>
+      <span class="eo" onclick="ins('🤖')">🤖</span><span class="eo" onclick="ins('😺')">😺</span>
+      <span class="eo" onclick="ins('😸')">😸</span><span class="eo" onclick="ins('😹')">😹</span>
+      <span class="eo" onclick="ins('😻')">😻</span><span class="eo" onclick="ins('😼')">😼</span>
+      <span class="eo" onclick="ins('😽')">😽</span><span class="eo" onclick="ins('🙀')">🙀</span>
+      <span class="eo" onclick="ins('😿')">😿</span><span class="eo" onclick="ins('😾')">😾</span>
     </div>
+    <div class="emoji-section hidden" data-category="gestures">
+      <span class="eo" onclick="ins('👋')">👋</span><span class="eo" onclick="ins('🤚')">🤚</span>
+      <span class="eo" onclick="ins('✋')">✋</span><span class="eo" onclick="ins('🖖')">🖖</span>
+      <span class="eo" onclick="ins('👌')">👌</span><span class="eo" onclick="ins('✌️')">✌️</span>
+      <span class="eo" onclick="ins('🤞')">🤞</span><span class="eo" onclick="ins('🤟')">🤟</span>
+      <span class="eo" onclick="ins('🤘')">🤘</span><span class="eo" onclick="ins('🤙')">🤙</span>
+      <span class="eo" onclick="ins('👈')">👈</span><span class="eo" onclick="ins('👉')">👉</span>
+      <span class="eo" onclick="ins('👆')">👆</span><span class="eo" onclick="ins('👇')">👇</span>
+      <span class="eo" onclick="ins('☝️')">☝️</span><span class="eo" onclick="ins('👍')">👍</span>
+      <span class="eo" onclick="ins('👎')">👎</span><span class="eo" onclick="ins('✊')">✊</span>
+      <span class="eo" onclick="ins('👊')">👊</span><span class="eo" onclick="ins('🤛')">🤛</span>
+      <span class="eo" onclick="ins('🤜')">🤜</span><span class="eo" onclick="ins('👏')">👏</span>
+      <span class="eo" onclick="ins('🙌')">🙌</span><span class="eo" onclick="ins('👐')">👐</span>
+      <span class="eo" onclick="ins('🤲')">🤲</span><span class="eo" onclick="ins('🤝')">🤝</span>
+      <span class="eo" onclick="ins('🙏')">🙏</span><span class="eo" onclick="ins('✍️')">✍️</span>
+      <span class="eo" onclick="ins('💅')">💅</span><span class="eo" onclick="ins('💪')">💪</span>
+    </div>
+    <div class="emoji-section hidden" data-category="animals">
+      <span class="eo" onclick="ins('🐶')">🐶</span><span class="eo" onclick="ins('🐱')">🐱</span>
+      <span class="eo" onclick="ins('🐭')">🐭</span><span class="eo" onclick="ins('🐹')">🐹</span>
+      <span class="eo" onclick="ins('🐰')">🐰</span><span class="eo" onclick="ins('🦊')">🦊</span>
+      <span class="eo" onclick="ins('🐻')">🐻</span><span class="eo" onclick="ins('🐼')">🐼</span>
+      <span class="eo" onclick="ins('🐨')">🐨</span><span class="eo" onclick="ins('🐯')">🐯</span>
+      <span class="eo" onclick="ins('🦁')">🦁</span><span class="eo" onclick="ins('🐮')">🐮</span>
+      <span class="eo" onclick="ins('🐷')">🐷</span><span class="eo" onclick="ins('🐸')">🐸</span>
+      <span class="eo" onclick="ins('🐵')">🐵</span><span class="eo" onclick="ins('🙈')">🙈</span>
+      <span class="eo" onclick="ins('🙉')">🙉</span><span class="eo" onclick="ins('🙊')">🙊</span>
+      <span class="eo" onclick="ins('🐔')">🐔</span><span class="eo" onclick="ins('🐧')">🐧</span>
+      <span class="eo" onclick="ins('🐦')">🐦</span><span class="eo" onclick="ins('🐤')">🐤</span>
+      <span class="eo" onclick="ins('🦆')">🦆</span><span class="eo" onclick="ins('🦅')">🦅</span>
+      <span class="eo" onclick="ins('🦉')">🦉</span><span class="eo" onclick="ins('🦇')">🦇</span>
+      <span class="eo" onclick="ins('🐺')">🐺</span><span class="eo" onclick="ins('🐗')">🐗</span>
+      <span class="eo" onclick="ins('🐴')">🐴</span><span class="eo" onclick="ins('🦄')">🦄</span>
+      <span class="eo" onclick="ins('🐝')">🐝</span><span class="eo" onclick="ins('🐛')">🐛</span>
+      <span class="eo" onclick="ins('🦋')">🦋</span><span class="eo" onclick="ins('🐌')">🐌</span>
+      <span class="eo" onclick="ins('🐞')">🐞</span><span class="eo" onclick="ins('🐢')">🐢</span>
+      <span class="eo" onclick="ins('🐍')">🐍</span><span class="eo" onclick="ins('🦎')">🦎</span>
+      <span class="eo" onclick="ins('🐙')">🐙</span><span class="eo" onclick="ins('🦑')">🦑</span>
+      <span class="eo" onclick="ins('🦐')">🦐</span><span class="eo" onclick="ins('🦀')">🦀</span>
+      <span class="eo" onclick="ins('🐡')">🐡</span><span class="eo" onclick="ins('🐠')">🐠</span>
+      <span class="eo" onclick="ins('🐟')">🐟</span><span class="eo" onclick="ins('🐬')">🐬</span>
+      <span class="eo" onclick="ins('🐳')">🐳</span><span class="eo" onclick="ins('🐋')">🐋</span>
+      <span class="eo" onclick="ins('🦈')">🦈</span><span class="eo" onclick="ins('🐊')">🐊</span>
+    </div>
+    <div class="emoji-section hidden" data-category="food">
+      <span class="eo" onclick="ins('🍏')">🍏</span><span class="eo" onclick="ins('🍎')">🍎</span>
+      <span class="eo" onclick="ins('🍊')">🍊</span><span class="eo" onclick="ins('🍋')">🍋</span>
+      <span class="eo" onclick="ins('🍌')">🍌</span><span class="eo" onclick="ins('🍉')">🍉</span>
+      <span class="eo" onclick="ins('🍇')">🍇</span><span class="eo" onclick="ins('🍓')">🍓</span>
+      <span class="eo" onclick="ins('🍒')">🍒</span><span class="eo" onclick="ins('🍑')">🍑</span>
+      <span class="eo" onclick="ins('🥭')">🥭</span><span class="eo" onclick="ins('🍍')">🍍</span>
+      <span class="eo" onclick="ins('🥥')">🥥</span><span class="eo" onclick="ins('🥝')">🥝</span>
+      <span class="eo" onclick="ins('🍅')">🍅</span><span class="eo" onclick="ins('🍆')">🍆</span>
+      <span class="eo" onclick="ins('🥑')">🥑</span><span class="eo" onclick="ins('🥦')">🥦</span>
+      <span class="eo" onclick="ins('🥒')">🥒</span><span class="eo" onclick="ins('🌶️')">🌶️</span>
+      <span class="eo" onclick="ins('🌽')">🌽</span><span class="eo" onclick="ins('🥕')">🥕</span>
+      <span class="eo" onclick="ins('🥔')">🥔</span><span class="eo" onclick="ins('🥐')">🥐</span>
+      <span class="eo" onclick="ins('🍞')">🍞</span><span class="eo" onclick="ins('🥖')">🥖</span>
+      <span class="eo" onclick="ins('🧀')">🧀</span><span class="eo" onclick="ins('🥚')">🥚</span>
+      <span class="eo" onclick="ins('🍳')">🍳</span><span class="eo" onclick="ins('🥓')">🥓</span>
+      <span class="eo" onclick="ins('🥩')">🥩</span><span class="eo" onclick="ins('🍗')">🍗</span>
+      <span class="eo" onclick="ins('🍖')">🍖</span><span class="eo" onclick="ins('🌭')">🌭</span>
+      <span class="eo" onclick="ins('🍔')">🍔</span><span class="eo" onclick="ins('🍟')">🍟</span>
+      <span class="eo" onclick="ins('🍕')">🍕</span><span class="eo" onclick="ins('🥪')">🥪</span>
+      <span class="eo" onclick="ins('🌮')">🌮</span><span class="eo" onclick="ins('🌯')">🌯</span>
+      <span class="eo" onclick="ins('🥗')">🥗</span><span class="eo" onclick="ins('🍝')">🍝</span>
+      <span class="eo" onclick="ins('🍜')">🍜</span><span class="eo" onclick="ins('🍲')">🍲</span>
+      <span class="eo" onclick="ins('🍛')">🍛</span><span class="eo" onclick="ins('🍣')">🍣</span>
+      <span class="eo" onclick="ins('🍱')">🍱</span><span class="eo" onclick="ins('🍤')">🍤</span>
+      <span class="eo" onclick="ins('🍙')">🍙</span><span class="eo" onclick="ins('🍚')">🍚</span>
+      <span class="eo" onclick="ins('🧁')">🧁</span><span class="eo" onclick="ins('🍰')">🍰</span>
+      <span class="eo" onclick="ins('🎂')">🎂</span><span class="eo" onclick="ins('🍮')">🍮</span>
+      <span class="eo" onclick="ins('🍭')">🍭</span><span class="eo" onclick="ins('🍬')">🍬</span>
+      <span class="eo" onclick="ins('🍫')">🍫</span><span class="eo" onclick="ins('🍿')">🍿</span>
+      <span class="eo" onclick="ins('🍩')">🍩</span><span class="eo" onclick="ins('🍪')">🍪</span>
+      <span class="eo" onclick="ins('☕')">☕</span><span class="eo" onclick="ins('🍵')">🍵</span>
+      <span class="eo" onclick="ins('🥤')">🥤</span><span class="eo" onclick="ins('🍺')">🍺</span>
+      <span class="eo" onclick="ins('🍻')">🍻</span><span class="eo" onclick="ins('🥂')">🥂</span>
+      <span class="eo" onclick="ins('🍷')">🍷</span><span class="eo" onclick="ins('🥃')">🥃</span>
+      <span class="eo" onclick="ins('🍸')">🍸</span><span class="eo" onclick="ins('🍹')">🍹</span>
+    </div>
+    <div class="emoji-section hidden" data-category="travel">
+      <span class="eo" onclick="ins('🚗')">🚗</span><span class="eo" onclick="ins('🚕')">🚕</span>
+      <span class="eo" onclick="ins('🚙')">🚙</span><span class="eo" onclick="ins('🚌')">🚌</span>
+      <span class="eo" onclick="ins('🚎')">🚎</span><span class="eo" onclick="ins('🏎️')">🏎️</span>
+      <span class="eo" onclick="ins('🚓')">🚓</span><span class="eo" onclick="ins('🚑')">🚑</span>
+      <span class="eo" onclick="ins('🚒')">🚒</span><span class="eo" onclick="ins('🚐')">🚐</span>
+      <span class="eo" onclick="ins('🚚')">🚚</span><span class="eo" onclick="ins('🚛')">🚛</span>
+      <span class="eo" onclick="ins('🚲')">🚲</span><span class="eo" onclick="ins('🛵')">🛵</span>
+      <span class="eo" onclick="ins('🏍️')">🏍️</span><span class="eo" onclick="ins('🚄')">🚄</span>
+      <span class="eo" onclick="ins('🚅')">🚅</span><span class="eo" onclick="ins('🚂')">🚂</span>
+      <span class="eo" onclick="ins('✈️')">✈️</span><span class="eo" onclick="ins('🛫')">🛫</span>
+      <span class="eo" onclick="ins('🛬')">🛬</span><span class="eo" onclick="ins('🚁')">🚁</span>
+      <span class="eo" onclick="ins('🚢')">🚢</span><span class="eo" onclick="ins('⛴️')">⛴️</span>
+      <span class="eo" onclick="ins('⛵')">⛵</span><span class="eo" onclick="ins('🚤')">🚤</span>
+      <span class="eo" onclick="ins('🚀')">🚀</span><span class="eo" onclick="ins('🛸')">🛸</span>
+    </div>
+    <div class="emoji-section hidden" data-category="symbols">
+      <span class="eo" onclick="ins('❤️')">❤️</span><span class="eo" onclick="ins('🧡')">🧡</span>
+      <span class="eo" onclick="ins('💛')">💛</span><span class="eo" onclick="ins('💚')">💚</span>
+      <span class="eo" onclick="ins('💙')">💙</span><span class="eo" onclick="ins('💜')">💜</span>
+      <span class="eo" onclick="ins('🖤')">🖤</span><span class="eo" onclick="ins('🤍')">🤍</span>
+      <span class="eo" onclick="ins('🤎')">🤎</span><span class="eo" onclick="ins('💔')">💔</span>
+      <span class="eo" onclick="ins('❣️')">❣️</span><span class="eo" onclick="ins('💕')">💕</span>
+      <span class="eo" onclick="ins('💞')">💞</span><span class="eo" onclick="ins('💓')">💓</span>
+      <span class="eo" onclick="ins('💗')">💗</span><span class="eo" onclick="ins('💖')">💖</span>
+      <span class="eo" onclick="ins('💘')">💘</span><span class="eo" onclick="ins('💝')">💝</span>
+      <span class="eo" onclick="ins('✨')">✨</span><span class="eo" onclick="ins('⭐')">⭐</span>
+      <span class="eo" onclick="ins('🌟')">🌟</span><span class="eo" onclick="ins('💫')">💫</span>
+      <span class="eo" onclick="ins('✅')">✅</span><span class="eo" onclick="ins('❌')">❌</span>
+      <span class="eo" onclick="ins('⭕')">⭕</span><span class="eo" onclick="ins('🚫')">🚫</span>
+      <span class="eo" onclick="ins('💯')">💯</span><span class="eo" onclick="ins('💢')">💢</span>
+      <span class="eo" onclick="ins('⚠️')">⚠️</span><span class="eo" onclick="ins('❗')">❗</span>
+      <span class="eo" onclick="ins('❓')">❓</span><span class="eo" onclick="ins('💤')">💤</span>
+      <span class="eo" onclick="ins('🔥')">🔥</span><span class="eo" onclick="ins('💧')">💧</span>
+      <span class="eo" onclick="ins('⚡')">⚡</span><span class="eo" onclick="ins('🌈')">🌈</span>
+      <span class="eo" onclick="ins('☀️')">☀️</span><span class="eo" onclick="ins('⭐')">⭐</span>
+      <span class="eo" onclick="ins('🌙')">🌙</span><span class="eo" onclick="ins('☁️')">☁️</span>
+      <span class="eo" onclick="ins('⛅')">⛅</span><span class="eo" onclick="ins('🌤️')">🌤️</span>
+      <span class="eo" onclick="ins('⛈️')">⛈️</span><span class="eo" onclick="ins('🌧️')">🌧️</span>
+      <span class="eo" onclick="ins('⚡')">⚡</span><span class="eo" onclick="ins('❄️')">❄️</span>
+    </div>
+  </div>
+</div>
   </div>
   <div class="iarea">
     <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
@@ -527,9 +712,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <h2 id="profileName">Username</h2>
     <p id="profileStatus" style="color:var(--sub);margin:8px 0;">Available</p>
     <div class="profile-bio-section">
-      <h4>Bio</h4>
-      <p id="profileBio" style="color:var(--txt);margin-top:8px;">No bio yet</p>
-    </div>
+  <h4>Bio</h4>
+  <p id="profileBio" style="color:var(--txt);margin-top:8px;">No bio yet</p>
+</div>
+<div class="profile-bio-section" style="margin-top:12px;">
+  <h4>Relationship Status</h4>
+  <p id="profileRelationship" style="color:var(--txt);margin-top:8px;">Prefer not to say</p>
+</div>
     <div class="profile-actions">
       <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
       <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
@@ -582,7 +771,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="ef"><label>Display Name</label><input class="ei" id="eun" value="{{ user.username }}"></div>
       <div class="ef"><label>Status</label><input class="ei" id="est" value="Available"></div>
       <div class="ef"><label>Bio</label><input class="ei" id="ebio" placeholder="Tell people about yourself…"></div>
-      <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
+<div class="ef" style="display:none;">
+  <select class="ei" id="erel">
+    <option value="Prefer not to say">Prefer not to say</option>
+    <option value="Single">Single</option>
+    <option value="Married">Married</option>
+  </select>
+</div>
+<button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
     </div>
 
     <!-- ══════════════════════════════════════════
@@ -700,8 +896,24 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
 
     <!-- Account -->
-    <div class="ssec" style="margin-top:6px;">
-      <div class="ssec-t">Account</div>
+   <!-- Blocklist -->
+<div class="ssec" style="margin-top:6px;">
+  <div class="ssec-t">Blocklist</div>
+  <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
+    <div class="sleft">
+      <div class="sic re">🚫</div>
+      <div>
+        <div class="slb">Blocked Users</div>
+        <div class="sdb">Manage blocked friends</div>
+      </div>
+    </div>
+    <span style="color:var(--sub);font-size:14px;">›</span>
+  </div>
+</div>
+
+<!-- Account -->
+<div class="ssec" style="margin-top:6px;">
+  <div class="ssec-t">Account</div>
       <button class="dangbtn" onclick="logout()">🚪 Log Out</button>
     </div>
 
@@ -709,6 +921,100 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div><!-- /sdraw -->
 
 <div class="tstack" id="tstack"></div>
+
+<!-- Blocklist Modal -->
+<div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
+<div class="sdraw" id="blocklistDraw">
+  <div class="shead">
+    <span style="font-size:20px;">🚫</span>
+    <h2>Blocked Users</h2>
+    <button class="closebtn" onclick="closeBlocklist()">✕</button>
+  </div>
+  <div class="sbody">
+    <div id="blocklistBody" style="padding:20px;">
+      <div class="lempty">Loading...</div>
+    </div>
+  </div>
+  <button class="savebtn" onclick="openAddBlockModal()" style="position:fixed;bottom:80px;right:30px;width:auto;padding:12px 20px;border-radius:50px;box-shadow:var(--shad);">➕ Block User</button>
+</div>
+
+<!-- Add Block Modal -->
+<div class="profile-overlay" id="addBlockOverlay" onclick="closeAddBlock()"></div>
+<div class="profile-modal" id="addBlockModal">
+  <div class="profile-header">
+    <h3>Block a Friend</h3>
+    <button class="closebtn" onclick="closeAddBlock()">✕</button>
+  </div>
+  <div class="profile-body">
+    <p style="color:var(--sub);margin-bottom:20px;">Select a friend to block</p>
+    <div id="friendsToBlockList" style="max-height:300px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- Story Viewer Modal -->
+<div class="profile-overlay" id="storyOverlay" onclick="closeStoryViewer()"></div>
+<div class="profile-modal" id="storyModal" style="max-width:500px;">
+  <div class="profile-header">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;">
+      <div class="av sm" id="storyUserAvatar">U</div>
+      <div>
+        <h3 id="storyUsername" style="margin:0;">Username</h3>
+        <p style="font-size:11px;color:var(--mute);margin:0;" id="storyTime">2h ago</p>
+      </div>
+    </div>
+    <button class="closebtn" onclick="closeStoryViewer()">✕</button>
+  </div>
+  <div class="profile-body" style="padding:0;background:var(--bg);">
+    <div id="storyContent" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
+      <img id="storyImage" style="max-width:100%;max-height:500px;border-radius:12px;display:none;">
+      <p id="storyText" style="padding:40px;font-size:18px;text-align:center;color:var(--txt);"></p>
+    </div>
+  </div>
+  <div style="padding:15px;border-top:1px solid var(--bdr);display:flex;gap:10px;" id="storyActions">
+    <button class="profile-action-btn" onclick="prevStory()" style="flex:1;">← Previous</button>
+    <button class="profile-action-btn" onclick="nextStory()" style="flex:1;">Next →</button>
+  </div>
+  <div style="padding:10px 15px;border-top:1px solid var(--bdr);font-size:12px;color:var(--mute);text-align:center;" id="storyViewers"></div>
+</div>
+
+<!-- Create Story Modal -->
+<div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
+<div class="profile-modal" id="createStoryModal" style="max-width:450px;">
+  <div class="profile-header">
+    <h3>Create Story</h3>
+    <button class="closebtn" onclick="closeCreateStory()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="ef">
+      <label>Story Type</label>
+      <select class="ei" id="storyType" onchange="toggleStoryType()">
+        <option value="text">Text Only</option>
+        <option value="image">Image</option>
+      </select>
+    </div>
+    <div class="ef" id="storyTextInput">
+      <label>Your Story</label>
+      <textarea class="ei" id="storyTextContent" rows="4" placeholder="What's on your mind?" style="resize:vertical;"></textarea>
+    </div>
+    <div class="ef" id="storyImageInput" style="display:none;">
+      <label>Upload Image</label>
+      <input type="file" class="ei" id="storyImageFile" accept="image/*" style="padding:8px;">
+    </div>
+    <div class="ef">
+      <label>Privacy</label>
+      <select class="ei" id="storyPrivacy">
+        <option value="friends">Friends</option>
+        <option value="public">Public</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="ef" id="customPrivacySection" style="display:none;">
+      <label>Select Friends</label>
+      <div id="customFriendsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
+    </div>
+    <button class="savebtn" onclick="createStory()">📸 Post Story</button>
+  </div>
+</div>
 
 <script>
    async function openBlocklist(){
@@ -1502,6 +1808,337 @@ function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';retur
 function fmtTime(iso){const d=toL(iso),now=new Date();const h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM',hh=String(h%12||12);const t=`${hh}:${m} ${ap}`;if(d.toDateString()===now.toDateString())return t;const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return`Yesterday ${t}`;return`${d.getMonth()+1}/${d.getDate()} ${t}`;}
 function relTime(iso){const s=(Date.now()-toL(iso).getTime())/1000;if(s<60)return'now';if(s<3600)return`${Math.floor(s/60)}m`;if(s<86400)return`${Math.floor(s/3600)}h`;return`${Math.floor(s/86400)}d`;}
 function dayLabel(iso){const d=toL(iso),now=new Date();if(d.toDateString()===now.toDateString())return'Today';const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return'Yesterday';return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
+   // ═══════ EMOJI CATEGORIES ═══════
+function switchEmojiCat(cat){
+  document.querySelectorAll('.emoji-cat').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[data-cat="${cat}"]`).classList.add('active');
+  document.querySelectorAll('.emoji-section').forEach(s=>s.classList.add('hidden'));
+  document.querySelector(`.emoji-section[data-category="${cat}"]`).classList.remove('hidden');
+}
+
+// ═══════ BLOCKLIST ═══════
+async function openBlocklist(){
+  document.getElementById('blocklistOv').classList.add('open');
+  document.getElementById('blocklistDraw').classList.add('open');
+  await loadBlocklist();
+}
+
+function closeBlocklist(){
+  document.getElementById('blocklistOv').classList.remove('open');
+  document.getElementById('blocklistDraw').classList.remove('open');
+}
+
+async function loadBlocklist(){
+  try{
+    const r=await fetch('/api/blocklist');
+    const d=await r.json();
+    const body=document.getElementById('blocklistBody');
+    if(!d.success||!d.blocked_users.length){
+      body.innerHTML='<div class="lempty">No blocked users</div>';
+      return;
+    }
+    body.innerHTML=d.blocked_users.map(u=>`
+      <div class="pcard" style="margin-bottom:8px;">
+        <div class="av">${u.username[0].toUpperCase()}</div>
+        <div class="pinfo">
+          <div class="pname">${esc(u.username)}</div>
+          <div class="pstat" style="font-size:11px;">Blocked ${relTime(u.blocked_at)}</div>
+        </div>
+        <button class="pill p-no" onclick="unblockUser(${u.id})">Unblock</button>
+      </div>
+    `).join('');
+  }catch(e){toast('Failed to load blocklist','err');}
+}
+
+function openAddBlockModal(){
+  document.getElementById('addBlockOverlay').classList.add('show');
+  document.getElementById('addBlockModal').classList.add('show');
+  loadFriendsToBlock();
+}
+
+function closeAddBlock(){
+  document.getElementById('addBlockOverlay').classList.remove('show');
+  document.getElementById('addBlockModal').classList.remove('show');
+}
+
+async function loadFriendsToBlock(){
+  const list=document.getElementById('friendsToBlockList');
+  if(!friends.length){list.innerHTML='<p style="color:var(--mute);">No friends to block</p>';return;}
+  list.innerHTML=friends.map(f=>`
+    <div class="srow" style="margin-bottom:6px;cursor:pointer;" onclick="blockUser(${f.id})">
+      <div class="sleft">
+        <div class="av sm">${f.username[0].toUpperCase()}</div>
+        <div><div class="slb">${esc(f.username)}</div></div>
+      </div>
+      <span style="color:var(--sub);">›</span>
+    </div>
+  `).join('');
+}
+
+async function blockUser(userId){
+  if(!confirm('Block this user? They won\'t be able to message you.'))return;
+  try{
+    const r=await fetch('/api/blocklist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+    const d=await r.json();
+    if(d.success){toast('✅ User blocked','ok');closeAddBlock();loadBlocklist();loadFriends();}
+    else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+
+async function unblockUser(userId){
+  if(!confirm('Unblock this user?'))return;
+  try{
+    const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});
+    const d=await r.json();
+    if(d.success){toast('✅ User unblocked','ok');loadBlocklist();loadFriends();}
+    else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+
+// ═══════ STORIES ═══════
+let currentStories=[];
+let currentStoryIndex=0;
+let currentStoryUserId=null;
+
+async function loadStories(){
+  try{
+    const r=await fetch('/api/stories/friends');
+    const d=await r.json();
+    if(d.success){
+      renderStoriesBar(d.stories);
+    }
+  }catch(e){console.error('Failed to load stories',e);}
+}
+
+function renderStoriesBar(stories){
+  const container=document.getElementById('storiesScroll');
+  if(!stories||stories.length===0){
+    container.innerHTML='<div class="lempty" style="padding:12px;font-size:11px;">No stories yet</div>';
+    return;
+  }
+  container.innerHTML=stories.map(s=>`
+    <div class="story-circle ${s.has_unviewed?'unviewed':''}" onclick="openStory(${s.user_id})" style="cursor:pointer;text-align:center;margin:0 8px;">
+      <div class="av" style="border:2px solid ${s.has_unviewed?'var(--brand)':'var(--bdr)'};">
+        ${s.username[0].toUpperCase()}
+      </div>
+      <div style="font-size:10px;margin-top:4px;color:var(--txt);">${esc(s.username)}</div>
+    </div>
+  `).join('');
+}
+
+async function openStory(userId){
+  try{
+    const r=await fetch('/api/stories/friends');
+    const d=await r.json();
+    if(!d.success)return;
+    const userStories=d.stories.find(s=>s.user_id===userId);
+    if(!userStories||!userStories.stories.length)return;
+    
+    currentStories=userStories.stories;
+    currentStoryIndex=0;
+    currentStoryUserId=userId;
+    showStory();
+  }catch(e){toast('Failed to load story','err');}
+}
+
+function showStory(){
+  if(!currentStories.length)return;
+  const story=currentStories[currentStoryIndex];
+  
+  document.getElementById('storyUsername').textContent=story.username;
+  document.getElementById('storyTime').textContent=relTime(story.created_at);
+  document.getElementById('storyUserAvatar').textContent=story.username[0].toUpperCase();
+  
+  const imgEl=document.getElementById('storyImage');
+  const textEl=document.getElementById('storyText');
+  
+  if(story.media_url){
+    imgEl.src=story.media_url;
+    imgEl.style.display='block';
+    textEl.style.display='none';
+  }else{
+    textEl.textContent=story.content;
+    textEl.style.display='block';
+    imgEl.style.display='none';
+  }
+  
+  document.getElementById('storyOverlay').classList.add('show');
+  document.getElementById('storyModal').classList.add('show');
+  
+  // Mark as viewed
+  fetch(`/api/stories/${story.id}/view`,{method:'POST'});
+  
+  // Load viewers if it's own story
+  if(story.is_own){
+    loadStoryViewers(story.id);
+  }else{
+    document.getElementById('storyViewers').innerHTML='';
+  }
+}
+
+async function loadStoryViewers(storyId){
+  try{
+    const r=await fetch(`/api/stories/${storyId}/viewers`);
+    const d=await r.json();
+    if(d.success){
+      document.getElementById('storyViewers').innerHTML=`👁️ Viewed by ${d.count} ${d.count===1?'person':'people'}`;
+    }
+  }catch(e){}
+}
+
+function prevStory(){
+  if(currentStoryIndex>0){
+    currentStoryIndex--;
+    showStory();
+  }else{
+    toast('This is the first story','info');
+  }
+}
+
+function nextStory(){
+  if(currentStoryIndex<currentStories.length-1){
+    currentStoryIndex++;
+    showStory();
+  }else{
+    closeStoryViewer();
+  }
+}
+
+function closeStoryViewer(){
+  document.getElementById('storyOverlay').classList.remove('show');
+  document.getElementById('storyModal').classList.remove('show');
+  loadStories(); // Refresh stories
+}
+
+function openCreateStoryModal(){
+  document.getElementById('createStoryOverlay').classList.add('show');
+  document.getElementById('createStoryModal').classList.add('show');
+  document.getElementById('storyPrivacy').value='friends';
+  toggleStoryType();
+}
+
+function closeCreateStory(){
+  document.getElementById('createStoryOverlay').classList.remove('show');
+  document.getElementById('createStoryModal').classList.remove('show');
+  document.getElementById('storyTextContent').value='';
+  document.getElementById('storyImageFile').value='';
+}
+
+function toggleStoryType(){
+  const type=document.getElementById('storyType').value;
+  document.getElementById('storyTextInput').style.display=type==='text'?'block':'none';
+  document.getElementById('storyImageInput').style.display=type==='image'?'block':'none';
+}
+
+document.getElementById('storyPrivacy')?.addEventListener('change',function(){
+  document.getElementById('customPrivacySection').style.display=this.value==='custom'?'block':'none';
+  if(this.value==='custom')loadCustomFriendsList();
+});
+
+function loadCustomFriendsList(){
+  const list=document.getElementById('customFriendsList');
+  list.innerHTML=friends.map(f=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;">
+      <input type="checkbox" value="${f.id}" style="width:16px;height:16px;">
+      <span>${esc(f.username)}</span>
+    </label>
+  `).join('');
+}
+
+async function createStory(){
+  const type=document.getElementById('storyType').value;
+  const privacy=document.getElementById('storyPrivacy').value;
+  let content='',mediaUrl='';
+  
+  if(type==='text'){
+    content=document.getElementById('storyTextContent').value.trim();
+    if(!content){toast('Please enter story content','err');return;}
+  }else{
+    const file=document.getElementById('storyImageFile').files[0];
+    if(!file){toast('Please select an image','err');return;}
+    
+    // Upload image first
+    const fd=new FormData();
+    fd.append('image',file);
+    try{
+      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+      const d=await r.json();
+      if(!d.success){toast('Image upload failed','err');return;}
+      mediaUrl=d.url;
+    }catch(e){toast('Upload failed','err');return;}
+  }
+  
+  let customUsers=[];
+  if(privacy==='custom'){
+    customUsers=Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));
+    if(!customUsers.length){toast('Select at least one friend','err');return;}
+  }
+  
+  try{
+    const r=await fetch('/api/stories/create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        content,
+        media_url:mediaUrl,
+        media_type:type==='image'?'image':'text',
+        privacy,
+        custom_users:customUsers
+      })
+    });
+    const d=await r.json();
+    if(d.success){
+      toast('✅ Story posted!','ok');
+      closeCreateStory();
+      loadStories();
+    }else{
+      toast(d.error||'Failed to post story','err');
+    }
+  }catch(e){
+    toast('Failed to post story','err');
+  }
+}
+
+// Load stories on boot
+setTimeout(loadStories,1000);
+
+// ═══════ UPDATE PROFILE FUNCTIONS ═══════
+// Update showFriendProfile to include relationship
+const originalShowFriendProfile=showFriendProfile;
+showFriendProfile=function(){
+  if(!currentFriendId)return;
+  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
+  currentProfileData=friend;
+  document.getElementById('profileName').textContent=friend.username;
+  document.getElementById('profileStatus').textContent=friend.is_online?'Online':friend.status;
+  document.getElementById('profileBio').textContent=friend.bio||'No bio yet';
+  document.getElementById('profileRelationship').textContent=friend.relationship_status||'Prefer not to say';
+  const av=document.getElementById('profileAvLarge');
+  av.textContent=friend.username[0].toUpperCase();
+  if(friend.avatar_url)av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
+  document.getElementById('profileOverlay').classList.add('show');
+  document.getElementById('profileModal').classList.add('show');
+};
+
+// Update saveProfile to include relationship
+const originalSaveProfile=saveProfile;
+saveProfile=async function(){
+  const un=document.getElementById('eun').value.trim();
+  const st=document.getElementById('est').value.trim();
+  const bio=document.getElementById('ebio').value.trim();
+  const rel=document.getElementById('erel').value;
+  try{
+    const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:un,status:st,bio,relationship_status:rel})});
+    const d=await r.json();
+    if(d.success){
+      document.getElementById('snm').textContent=un||ME_NAME;
+      document.getElementById('sst').textContent=st||'Available';
+      toast('✅ Profile saved!','ok');
+    }else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+};
+</script>
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 </script>
 </body>
