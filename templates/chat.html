@@ -770,14 +770,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
       <div class="ef"><label>Display Name</label><input class="ei" id="eun" value="{{ user.username }}"></div>
       <div class="ef"><label>Status</label><input class="ei" id="est" value="Available"></div>
-      <div class="ef"><label>Bio</label><input class="ei" id="ebio" placeholder="Tell people about yourself…"></div>
-<div class="ef" style="display:none;">
-  <select class="ei" id="erel">
-    <option value="Prefer not to say">Prefer not to say</option>
-    <option value="Single">Single</option>
-    <option value="Married">Married</option>
-  </select>
-</div>
+      <div class="ef"><label>Bio</label><input class="ei" id="ebio" placeholder="Tell people about yourself..."></div>
+<div class="ef">
 <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
     </div>
 
@@ -2102,42 +2096,8 @@ async function createStory(){
 // Load stories on boot
 setTimeout(loadStories,1000);
 
-// ═══════ UPDATE PROFILE FUNCTIONS ═══════
-// Update showFriendProfile to include relationship
-const originalShowFriendProfile=showFriendProfile;
-showFriendProfile=function(){
-  if(!currentFriendId)return;
-  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
-  currentProfileData=friend;
-  document.getElementById('profileName').textContent=friend.username;
-  document.getElementById('profileStatus').textContent=friend.is_online?'Online':friend.status;
-  document.getElementById('profileBio').textContent=friend.bio||'No bio yet';
-  document.getElementById('profileRelationship').textContent=friend.relationship_status||'Prefer not to say';
-  const av=document.getElementById('profileAvLarge');
-  av.textContent=friend.username[0].toUpperCase();
-  if(friend.avatar_url)av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
-  document.getElementById('profileOverlay').classList.add('show');
-  document.getElementById('profileModal').classList.add('show');
-};
 
-// Update saveProfile to include relationship
-const originalSaveProfile=saveProfile;
-saveProfile=async function(){
-  const un=document.getElementById('eun').value.trim();
-  const st=document.getElementById('est').value.trim();
-  const bio=document.getElementById('ebio').value.trim();
-  const rel=document.getElementById('erel').value;
-  try{
-    const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:un,status:st,bio,relationship_status:rel})});
-    const d=await r.json();
-    if(d.success){
-      document.getElementById('snm').textContent=un||ME_NAME;
-      document.getElementById('sst').textContent=st||'Available';
-      toast('✅ Profile saved!','ok');
-    }else toast(d.error||'Failed','err');
-  }catch(e){toast('Failed','err');}
-};
+
 </script>
 
 </script>
