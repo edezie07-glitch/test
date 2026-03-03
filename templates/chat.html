@@ -607,7 +607,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
       </div>
     </div>
-  
     <!-- Appearance -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Appearance</div>
@@ -749,9 +748,9 @@ const ME_NAME = '{{ user.username }}';
 let socket=null,currentChatId=null,currentFriendId=null,friends=[],pendingReqs=[],searchTimer=null,typingTimer=null;
 let prefs={theme:'dark',sound:true};
 let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
-let aiEnabled=false,aiConvId=null,aiDaily={used:0,limit:50},aiModel='gpt-3.5-turbo',aiLoading=false;
+
 (function boot(){
-  loadPrefs();connectSocket();loadFriends();loadRequests();loadAIStatus();
+  loadPrefs();connectSocket();loadFriends();loadRequests();
   document.addEventListener('click',hideCtxMenu);
 })();
 function loadPrefs(){
@@ -790,7 +789,42 @@ async function saveProfile(){
     }else toast(d.error||'Failed','err');
   }catch(e){toast('Failed','err');}
 }
+ questions left today`;
+    body.classList.remove('disabled');
+    inp.disabled=false;sendBtn.disabled=false;modelSel.disabled=false;
+    const emptyEl=document.getElementById('aiEmpty');
+    if(emptyEl&&document.getElementById('aiMsgs').children.length===1){
+      emptyEl.innerHTML='<div class="ai-empty-icon">🤖</div><p>Ask me anything!</p>';
+    }
+  }else{
+    label.textContent='Tap to activate';
+    remaining.textContent='Enable to start chatting';
+    body.classList.add('disabled');
+    inp.disabled=true;sendBtn.disabled=true;modelSel.disabled=true;
+  }
+  usedEl.textContent=aiDaily.used;
+  limitEl.textContent=aiDaily.limit;
+}
+    updateAIUI();
+}
+}
 
+`;bub.textContent=content;
+  const ts=document.createElement('span');ts.className='ai-msg-time';
+  ts.textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  bub.appendChild(ts);msgs.appendChild(bub);msgs.scrollTop=msgs.scrollHeight;return bub;
+}
+
+  const inp=document.getElementById('aiInp');const q=inp.value.trim();if(!q)return;
+  inp.value='';inp.style.height='';appendAIMsg('user',q);
+  const thinking=document.createElement('div');thinking.className='ai-bubble thinking';thinking.id='aiThinking';thinking.textContent='🤖 Thinking…';
+  document.getElementById('aiMsgs').appendChild(thinking);document.getElementById('aiMsgs').scrollTop=99999;
+  try{
+    const d=await r.json();document.getElementById('aiThinking')?.remove();
+    if(d.success){aiConvId=d.conversation_id;aiDaily.used=aiDaily.limit-d.daily_remaining;appendAIMsg('assistant',d.answer);updateAIUI();}
+    else{const err=document.createElement('div');err.className='ai-bubble error';err.textContent='⚠️ '+d.error;document.getElementById('aiMsgs').appendChild(err);document.getElementById('aiMsgs').scrollTop=99999;}
+  }catch(e){document.getElementById('aiThinking')?.remove();const err=document.createElement('div');err.className='ai-bubble error';err.textContent='⚠️ Connection failed';document.getElementById('aiMsgs').appendChild(err);}
+}
 function connectSocket(){
   socket=io({withCredentials:true,transports:['polling','websocket']});
   socket.on('connect',()=>{if(currentChatId)socket.emit('join_chat',{chat_id:currentChatId});});
