@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>HPZ Messenger</title>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
@@ -192,7 +192,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .emoji-section.hidden{display:none;}
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
-.iarea{padding:16px 14px 24px;background:var(--hdr);border-top:1px solid var(--bdr);display:none;align-items:flex-end;gap:8px;position:relative;transition:background .25s,border-color .25s;}
+.iarea{padding:16px 14px 24px;padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));background:var(--hdr);border-top:1px solid var(--bdr);display:none;align-items:flex-end;gap:8px;position:relative;transition:background .25s,border-color .25s;}
 .isb{width:42px;height:42px;border-radius:50%;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background var(--trans),color var(--trans);margin-bottom:2px;}
 .isb:hover{background:rgba(124,106,255,.15);color:var(--brand);}
 #msgInput{flex:1;padding:13px 16px;background:var(--inp);border:1px solid var(--ibdr);border-radius:22px;color:var(--txt);font-size:15px;font-family:var(--font-b);outline:none;resize:none;line-height:1.4;max-height:110px;transition:border-color var(--trans),background .25s;}
@@ -298,6 +298,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   #callVideo video{width:100%!important;height:auto!important;}
   #localVideo{max-width:150px!important;max-height:120px!important;}
   #remoteVideo{max-width:100%!important;margin-left:0!important;margin-top:10px;}
+}
+
+/* Mobile browser nav bar fix */
+@supports(padding-bottom: env(safe-area-inset-bottom)){
+  .iarea{padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));}
+}
+@media(max-width:720px){
+  .iarea{padding-bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 16px));}
 }
 </style>
 </head>
