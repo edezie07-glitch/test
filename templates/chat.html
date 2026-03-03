@@ -929,12 +929,11 @@ function showFriendProfile(){
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
 // ═══════ WEBRTC CALLS ═══════
-const STUN = {iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},{urls:'stun:stun3.l.google.com:19302'},{urls:'stun:stun4.l.google.com:19302'}]};
-let callData={active:false,type:null,muted:false,videoOff:false,localStream:null,remoteStream:null,pc:null,callerId:null,calleeId:null};
+const STUN={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},{urls:'stun:stun3.l.google.com:19302'},{urls:'stun:stun4.l.google.com:19302'}]};
+let callData={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,pendingCandidates:[],_incomingData:null,_ringTimer:null};
 
 function showCallModal(name,status,isVideo){
-  const av=document.getElementById('callAvatar');
-  av.textContent=name[0].toUpperCase();
+  document.getElementById('callAvatar').textContent=name[0].toUpperCase();
   document.getElementById('callName').textContent=name;
   document.getElementById('callStatus').textContent=status;
   document.getElementById('callVideo').style.display=isVideo?'flex':'none';
@@ -942,12 +941,10 @@ function showCallModal(name,status,isVideo){
   document.getElementById('callOverlay').classList.add('show');
   document.getElementById('callModal').classList.add('show');
 }
-
 function hideCallModal(){
   document.getElementById('callOverlay').classList.remove('show');
   document.getElementById('callModal').classList.remove('show');
 }
-
 function showIncomingCall(name,type,callerId){
   document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
   document.getElementById('incomingCallName').textContent=name;
@@ -955,192 +952,146 @@ function showIncomingCall(name,type,callerId){
   document.getElementById('incomingCallOverlay').classList.add('show');
   document.getElementById('incomingCallModal').classList.add('show');
   callData.callerId=callerId;
-  // Ring sound
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();function ring(){const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=440;g.gain.setValueAtTime(.15,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.4);o.start();o.stop(ctx.currentTime+.4);}ring();callData._ringTimer=setInterval(ring,1000);}catch(e){}
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();function ring(){const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=480;g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);o.start();o.stop(ctx.currentTime+.5);}ring();callData._ringTimer=setInterval(ring,1200);}catch(e){}
 }
-
 function hideIncomingCall(){
   document.getElementById('incomingCallOverlay').classList.remove('show');
   document.getElementById('incomingCallModal').classList.remove('show');
   clearInterval(callData._ringTimer);
 }
 
-async function createPeerConnection(targetId){
+function createPeerConnection(targetId){
   const pc=new RTCPeerConnection(STUN);
   callData.pc=pc;
-  // Send ICE candidates to the other side
-  pc.onicecandidate=(e)=>{
-    if(e.candidate){
-      socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});
-    }
-  };
-  // When remote stream arrives show it
+  callData.pendingCandidates=[];
+  pc.onicecandidate=(e)=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
   pc.ontrack=(e)=>{
-    const remoteVideo=document.getElementById('remoteVideo');
-    if(!remoteVideo.srcObject){remoteVideo.srcObject=new MediaStream();}
-    remoteVideo.srcObject.addTrack(e.track);
+    const track=e.track;
+    if(track.kind==='audio'){
+      let audio=document.getElementById('remoteAudio');
+      if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;audio.setAttribute('playsinline','');audio.style.display='none';document.body.appendChild(audio);}
+      if(!audio.srcObject){audio.srcObject=new MediaStream();}
+      audio.srcObject.addTrack(track);audio.play().catch(()=>{});
+    }
+    if(track.kind==='video'){
+      const rv=document.getElementById('remoteVideo');
+      if(!rv.srcObject){rv.srcObject=new MediaStream();}
+      rv.srcObject.addTrack(track);rv.setAttribute('playsinline','');rv.play().catch(()=>{});
+    }
     document.getElementById('callStatus').textContent='Connected ✅';
   };
   pc.oniceconnectionstatechange=()=>{
-    if(pc.iceConnectionState==='disconnected'||pc.iceConnectionState==='failed'){
-      endCall();
-    }
+    const s=pc.iceConnectionState;
+    const el=document.getElementById('callStatus');
+    if(s==='connected'||s==='completed')el.textContent='Connected ✅';
+    else if(s==='checking')el.textContent='Connecting...';
+    else if(s==='disconnected'){el.textContent='Reconnecting...';setTimeout(()=>{if(callData.pc&&callData.pc.iceConnectionState==='disconnected'){toast('Call disconnected','info');endCall();}},5000);}
+    else if(s==='failed'){toast('Connection failed','err');endCall();}
   };
   return pc;
 }
 
-async function startVoiceCall(){
-  if(!currentFriendId){toast('Select a friend first','err');return;}
-  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
-  await initiateCall(friend,'voice');
+async function flushPendingCandidates(){
+  if(!callData.pc||!callData.pc.remoteDescription)return;
+  for(const cand of callData.pendingCandidates){try{await callData.pc.addIceCandidate(new RTCIceCandidate(cand));}catch(e){}}
+  callData.pendingCandidates=[];
 }
 
-async function startVideoCall(){
-  if(!currentFriendId){toast('Select a friend first','err');return;}
-  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
-  await initiateCall(friend,'video');
+async function getMedia(type){
+  const c=type==='video'?{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true}}:{audio:{echoCancellation:true,noiseSuppression:true},video:false};
+  try{return await navigator.mediaDevices.getUserMedia(c);}
+  catch(e){
+    if(type==='video'){try{return await navigator.mediaDevices.getUserMedia({video:true,audio:true});}catch(e2){}}
+    try{return await navigator.mediaDevices.getUserMedia({audio:true});}catch(e3){}
+    throw e;
+  }
 }
+
+async function startVoiceCall(){if(!currentFriendId){toast('Select a friend first','err');return;}const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;await initiateCall(friend,'voice');}
+async function startVideoCall(){if(!currentFriendId){toast('Select a friend first','err');return;}const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;await initiateCall(friend,'video');}
 
 async function initiateCall(friend,type){
+  if(callData.active){toast('Already in a call','err');return;}
   try{
     callData.type=type;callData.active=true;callData.calleeId=friend.id;
-    // Get local media
-    const constraints=type==='video'?{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true}}:{audio:{echoCancellation:true,noiseSuppression:true},video:false};
-    const stream=await navigator.mediaDevices.getUserMedia(constraints);
+    const stream=await getMedia(type);
     callData.localStream=stream;
-    if(type==='video'){document.getElementById('localVideo').srcObject=stream;}
-    // Create peer connection
-    const pc=await createPeerConnection(friend.id);
+    if(type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.play().catch(()=>{});}
+    const pc=createPeerConnection(friend.id);
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-    // Create offer
-    const offer=await pc.createOffer();
+    const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==='video'});
     await pc.setLocalDescription(offer);
-    // Show outgoing call UI
     showCallModal(friend.username,'Calling...',type==='video');
-    // Send offer via socket
-    socket.emit('call_offer',{callee_id:friend.id,offer,call_type:type});
+    socket.emit('call_offer',{callee_id:friend.id,offer:pc.localDescription,call_type:type});
   }catch(e){
-    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){
-      toast('❌ Camera/mic permission denied — allow it in your browser settings','err');
-    }else if(e.name==='NotFoundError'||e.name==='DevicesNotFoundError'){
-      toast('❌ No camera or microphone found on this device','err');
-    }else if(e.name==='NotReadableError'||e.name==='TrackStartError'){
-      toast('❌ Camera/mic is already in use by another app','err');
-    }else if(e.name==='OverconstrainedError'){
-      toast('❌ Camera does not support the required settings','err');
-    }else if(location.protocol!=='https:'){
-      toast('❌ Calls require HTTPS — make sure you are on https://','err');
-    }else{
-      toast('❌ Could not start call: '+e.message,'err');
-    }
-    cleanupCall();
+    const msg=e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera permission denied':e.name==='NotFoundError'?'No mic/camera found':e.name==='NotReadableError'?'Mic/camera in use by another app':location.protocol!=='https:'?'Calls require HTTPS':'Call failed: '+e.message;
+    toast('❌ '+msg,'err');cleanupCall();
   }
 }
 
 async function acceptCall(){
   hideIncomingCall();
-  const incomingData=callData._incomingData;
-  if(!incomingData)return;
+  const d=callData._incomingData;
+  if(!d)return;
   try{
-    callData.type=incomingData.call_type;callData.active=true;callData.calleeId=incomingData.caller_id;
-    const constraints=incomingData.call_type==='video'?{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true}}:{audio:{echoCancellation:true,noiseSuppression:true},video:false};
-    const stream=await navigator.mediaDevices.getUserMedia(constraints);
+    callData.type=d.call_type;callData.active=true;callData.calleeId=d.caller_id;
+    const stream=await getMedia(d.call_type);
     callData.localStream=stream;
-    if(incomingData.call_type==='video'){document.getElementById('localVideo').srcObject=stream;}
-    const pc=await createPeerConnection(incomingData.caller_id);
+    if(d.call_type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.play().catch(()=>{});}
+    const pc=createPeerConnection(d.caller_id);
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-    // Set remote offer and create answer
-    await pc.setRemoteDescription(new RTCSessionDescription(incomingData.offer));
+    await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
+    await flushPendingCandidates();
     const answer=await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    // Show call UI
-    showCallModal(incomingData.caller_name,'Connecting...',incomingData.call_type==='video');
-    // Send answer
-    socket.emit('call_answer',{caller_id:incomingData.caller_id,answer,accepted:true});
+    showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
+    socket.emit('call_answer',{caller_id:d.caller_id,answer:pc.localDescription,accepted:true});
   }catch(e){
-    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){
-      toast('❌ Camera/mic permission denied — allow it in your browser settings','err');
-    }else if(e.name==='NotFoundError'){
-      toast('❌ No camera or microphone found on this device','err');
-    }else if(e.name==='NotReadableError'){
-      toast('❌ Camera/mic is already in use by another app','err');
-    }else if(location.protocol!=='https:'){
-      toast('❌ Calls require HTTPS — make sure you are on https://','err');
-    }else{
-      toast('❌ Could not start call: '+e.message,'err');
-    }
-    rejectCall();
+    const msg=e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera permission denied':e.name==='NotFoundError'?'No mic/camera found':e.name==='NotReadableError'?'Mic/camera in use by another app':location.protocol!=='https:'?'Calls require HTTPS':'Call failed: '+e.message;
+    toast('❌ '+msg,'err');rejectCall();
   }
 }
 
 function rejectCall(){
   hideIncomingCall();
-  if(callData._incomingData){
-    socket.emit('call_answer',{caller_id:callData._incomingData.caller_id,accepted:false});
-  }
+  if(callData._incomingData)socket.emit('call_answer',{caller_id:callData._incomingData.caller_id,accepted:false});
   callData._incomingData=null;
 }
-
-function toggleMute(){
-  callData.muted=!callData.muted;
-  const btn=document.getElementById('muteBtn');
-  btn.classList.toggle('muted',callData.muted);
-  btn.textContent=callData.muted?'🔇':'🎤';
-  if(callData.localStream)callData.localStream.getAudioTracks().forEach(t=>t.enabled=!callData.muted);
-}
-
-function toggleVideo(){
-  callData.videoOff=!callData.videoOff;
-  const btn=document.getElementById('videoBtn');
-  btn.classList.toggle('muted',callData.videoOff);
-  btn.textContent=callData.videoOff?'📷':'📹';
-  if(callData.localStream)callData.localStream.getVideoTracks().forEach(t=>t.enabled=!callData.videoOff);
-}
-
-function endCall(){
-  const targetId=callData.calleeId||callData.callerId;
-  if(targetId)socket.emit('call_end',{target_id:targetId});
-  cleanupCall();
-  toast('Call ended','info');
-}
-
+function toggleMute(){callData.muted=!callData.muted;const btn=document.getElementById('muteBtn');btn.classList.toggle('muted',callData.muted);btn.textContent=callData.muted?'🔇':'🎤';if(callData.localStream)callData.localStream.getAudioTracks().forEach(t=>t.enabled=!callData.muted);}
+function toggleVideo(){callData.videoOff=!callData.videoOff;const btn=document.getElementById('videoBtn');btn.classList.toggle('muted',callData.videoOff);btn.textContent=callData.videoOff?'📷':'📹';if(callData.localStream)callData.localStream.getVideoTracks().forEach(t=>t.enabled=!callData.videoOff);}
+function endCall(){const targetId=callData.calleeId||callData.callerId;if(targetId)socket.emit('call_end',{target_id:targetId});cleanupCall();toast('Call ended','info');}
 function cleanupCall(){
   if(callData.localStream)callData.localStream.getTracks().forEach(t=>t.stop());
-  if(callData.pc)callData.pc.close();
-  hideCallModal();
-  hideIncomingCall();
-  callData={active:false,type:null,muted:false,videoOff:false,localStream:null,remoteStream:null,pc:null,callerId:null,calleeId:null};
+  if(callData.pc){try{callData.pc.close();}catch(e){}}
+  const ra=document.getElementById('remoteAudio');if(ra)ra.remove();
+  const rv=document.getElementById('remoteVideo');if(rv)rv.srcObject=null;
+  const lv=document.getElementById('localVideo');if(lv)lv.srcObject=null;
+  hideCallModal();hideIncomingCall();
+  callData={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,pendingCandidates:[],_incomingData:null,_ringTimer:null};
 }
 
-// WebRTC socket listeners
 function setupCallListeners(){
   socket.on('incoming_call',(data)=>{
+    if(callData.active){socket.emit('call_answer',{caller_id:data.caller_id,accepted:false});return;}
     callData._incomingData=data;
     showIncomingCall(data.caller_name,data.call_type,data.caller_id);
   });
   socket.on('call_accepted',async(data)=>{
-    document.getElementById('callStatus').textContent='Connecting...';
-    if(callData.pc){
+    if(!callData.pc)return;
+    try{
       await callData.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-    }
+      await flushPendingCandidates();
+      document.getElementById('callStatus').textContent='Connecting...';
+    }catch(e){toast('Call setup failed','err');endCall();}
   });
-  socket.on('call_rejected',(data)=>{
-    toast(`${data.callee_name} rejected the call`,'info');
-    cleanupCall();
-  });
+  socket.on('call_rejected',(data)=>{toast((data.callee_name||'User')+' declined','info');cleanupCall();});
   socket.on('ice_candidate',async(data)=>{
-    if(callData.pc&&data.candidate){
-      try{await callData.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}
-    }
+    if(!callData.pc||!data.candidate)return;
+    if(!callData.pc.remoteDescription||!callData.pc.remoteDescription.type){callData.pendingCandidates.push(data.candidate);}
+    else{try{await callData.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}}
   });
-  socket.on('call_ended',()=>{
-    toast('Call ended','info');
-    cleanupCall();
-  });
-  socket.on('call_error',(data)=>{
-    toast(data.message||'Call failed','err');
-    cleanupCall();
-  });
+  socket.on('call_ended',()=>{toast('Call ended','info');cleanupCall();});
+  socket.on('call_error',(data)=>{toast(data.message||'Call failed','err');cleanupCall();});
 }
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
 function cancelReply(){replyToMsg=null;document.getElementById('replyBar').classList.remove('show');}
