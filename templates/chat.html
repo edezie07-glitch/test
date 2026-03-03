@@ -1012,7 +1012,19 @@ async function initiateCall(friend,type){
     // Send offer via socket
     socket.emit('call_offer',{callee_id:friend.id,offer,call_type:type});
   }catch(e){
-    toast('Could not access camera/microphone','err');
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){
+      toast('❌ Camera/mic permission denied — allow it in your browser settings','err');
+    }else if(e.name==='NotFoundError'||e.name==='DevicesNotFoundError'){
+      toast('❌ No camera or microphone found on this device','err');
+    }else if(e.name==='NotReadableError'||e.name==='TrackStartError'){
+      toast('❌ Camera/mic is already in use by another app','err');
+    }else if(e.name==='OverconstrainedError'){
+      toast('❌ Camera does not support the required settings','err');
+    }else if(location.protocol!=='https:'){
+      toast('❌ Calls require HTTPS — make sure you are on https://','err');
+    }else{
+      toast('❌ Could not start call: '+e.message,'err');
+    }
     cleanupCall();
   }
 }
@@ -1038,7 +1050,17 @@ async function acceptCall(){
     // Send answer
     socket.emit('call_answer',{caller_id:incomingData.caller_id,answer,accepted:true});
   }catch(e){
-    toast('Could not access camera/microphone','err');
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'){
+      toast('❌ Camera/mic permission denied — allow it in your browser settings','err');
+    }else if(e.name==='NotFoundError'){
+      toast('❌ No camera or microphone found on this device','err');
+    }else if(e.name==='NotReadableError'){
+      toast('❌ Camera/mic is already in use by another app','err');
+    }else if(location.protocol!=='https:'){
+      toast('❌ Calls require HTTPS — make sure you are on https://','err');
+    }else{
+      toast('❌ Could not start call: '+e.message,'err');
+    }
     rejectCall();
   }
 }
