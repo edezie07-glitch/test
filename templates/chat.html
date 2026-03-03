@@ -1,1023 +1,1109 @@
-import os
-import uuid
-from datetime import datetime, timezone, timedelta
-from functools import wraps
-from flask import Flask, render_template, request, jsonify, session, redirect, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask_cors import CORS
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
-from sqlalchemy import or_, and_
-# ============================================================
-# APP CONFIGURATION
-# ============================================================
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'hpz-secret-2025')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-# Database configuration
-database_url = os.environ.get('DATABASE_URL', '')
-if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///hpz.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPZ Messenger</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#7c6aff;--brand-dk:#6254e0;--radius:14px;--trans:.18s ease;--font-h:'Syne',sans-serif;--font-b:'Manrope',sans-serif;}
+[data-theme="dark"]{--bg:#0f0f17;--sb:#16161f;--sb2:#1c1c27;--card:#1c1c27;--inp:#1c1c27;--recv:#22222f;--sent:var(--brand);--hov:rgba(255,255,255,.05);--act:rgba(124,106,255,.15);--bdr:rgba(255,255,255,.07);--txt:#e8e8f4;--sub:rgba(255,255,255,.45);--mute:rgba(255,255,255,.25);--chat:#13131c;--hdr:#16161f;--ibdr:rgba(255,255,255,.12);--shad:0 4px 24px rgba(0,0,0,.4);--scr:rgba(124,106,255,.3);--online:#22c55e;--warn:#fb923c;}
+[data-theme="light"]{--bg:#f2f2fa;--sb:#fff;--sb2:#f7f7fd;--card:#fff;--inp:#f7f7fd;--recv:#fff;--sent:var(--brand);--hov:rgba(0,0,0,.04);--act:rgba(124,106,255,.1);--bdr:rgba(0,0,0,.07);--txt:#1a1a2e;--sub:rgba(0,0,0,.45);--mute:rgba(0,0,0,.3);--chat:#eaeaf4;--hdr:#fff;--ibdr:rgba(0,0,0,.12);--shad:0 4px 24px rgba(0,0,0,.1);--scr:rgba(124,106,255,.4);--online:#22c55e;--warn:#fb923c;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;color:var(--txt);transition:background .25s,color .25s;}
+::-webkit-scrollbar{width:0px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:transparent;}
+/* SIDEBAR */
+.sidebar{width:300px;min-width:300px;background:var(--sb);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:background .25s,border-color .25s;}
+.sh{padding:16px 14px 12px;background:var(--sb2);border-bottom:1px solid var(--bdr);}
+.sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.brand{font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px;}
+.hbtns{display:flex;gap:5px;}
+.ib{width:33px;height:33px;border-radius:9px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background var(--trans),color var(--trans);position:relative;}
+.ib:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.ib.on{background:rgba(124,106,255,.2);color:var(--brand);}
+.nbadge{position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.nbadge.hidden{display:none!important;}
+.sinp-w{position:relative;}
+.sinp-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:13px;pointer-events:none;}
+.sinp{width:100%;padding:8px 12px 8px 32px;background:var(--inp);border:1px solid var(--ibdr);border-radius:10px;color:var(--txt);font-size:13px;font-family:var(--font-b);transition:border-color var(--trans),background .25s;}
+.sinp::placeholder{color:var(--mute);}.sinp:focus{outline:none;border-color:var(--brand);}
+/* Slide Panels */
+.spanel{background:var(--sb2);border-bottom:1px solid var(--bdr);max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.spanel.open{max-height:250px;overflow-y:auto;}
+.ptitle{padding:10px 14px 5px;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--mute);text-transform:uppercase;}
+.req-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--bdr);}
+.req-usr{display:flex;align-items:center;gap:8px;}
+.req-nm{font-size:13px;font-weight:500;color:var(--txt);}
+.req-wh{font-size:11px;color:var(--mute);}
+.req-ac{display:flex;gap:4px;}
+.sr-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--bdr);transition:background var(--trans);}
+.sr-row:hover{background:var(--hov);}
+.sr-l{display:flex;align-items:center;gap:8px;}
+.sr-nm{font-size:13px;font-weight:500;color:var(--txt);}
+.sr-st{font-size:11px;color:var(--mute);}
+/* Pills */
+.pill{padding:4px 11px;border:none;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:opacity var(--trans);}
+.pill:hover{opacity:.85;}
+.p-add{background:var(--brand);color:#fff;}
+.p-msg{background:rgba(124,106,255,.15);color:var(--brand);}
+.p-pend{background:var(--hov);color:var(--mute);cursor:default;}
+.p-ok{background:#22c55e;color:#fff;}
+.p-no{background:var(--hov);color:var(--sub);}
+/* Chat List */
+.clist{flex:1;overflow-y:auto;padding:6px 0;}
+.llabel{padding:10px 14px 3px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--mute);text-transform:uppercase;}
+.crow{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 5px;border-radius:11px;cursor:pointer;transition:background var(--trans);position:relative;}
+.crow:hover{background:var(--hov);}
+.crow.active{background:var(--act);}
+.crow.active::before{content:'';position:absolute;left:0;top:22%;height:56%;width:3px;border-radius:3px;background:var(--brand);}
+.crow .unread{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--brand);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+.cmeta{flex:1;min-width:0;}
+.cnrow{display:flex;justify-content:space-between;align-items:center;}
+.cuname{font-size:13.5px;font-weight:600;color:var(--txt);}
+.cts{font-size:10.5px;color:var(--mute);}
+.cprev{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.lempty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;gap:6px;text-align:center;color:var(--mute);font-size:13px;}
+/* Avatar */
+.av{width:38px;height:38px;border-radius:12px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;position:relative;}
+.av img{width:100%;height:100%;object-fit:cover;}
+.av.sm{width:32px;height:32px;border-radius:9px;font-size:12px;}
+.av.lg{width:44px;height:44px;border-radius:13px;font-size:18px;}
+.av.xl{width:64px;height:64px;border-radius:18px;font-size:26px;}
+.av .online-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:var(--online);border:2px solid var(--sb);border-radius:50%;}
+.av.lg .online-dot{width:12px;height:12px;}
+/* SETTINGS DRAWER */
+.sov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;opacity:0;pointer-events:none;transition:opacity .25s;}
+.sov.open{opacity:1;pointer-events:all;}
+.sdraw{position:fixed;top:0;right:0;height:100%;width:340px;background:var(--bg);border-left:1px solid var(--bdr);z-index:810;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1),background .25s;box-shadow:-8px 0 40px rgba(0,0,0,.3);}
+.sdraw.open{transform:translateX(0);}
+.shead{padding:20px 20px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;background:var(--sb2);}
+.shead h2{font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--txt);flex:1;}
+.closebtn{width:30px;height:30px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
+.closebtn:hover{background:rgba(239,68,68,.15);color:#ef4444;}
+.sbody{flex:1;overflow-y:auto;padding:10px 0 20px;}
+.ssec{padding:14px 20px 6px;}
+.ssec-t{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--mute);text-transform:uppercase;margin-bottom:10px;}
+.pcard{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:8px;transition:background .25s,border-color .25s;}
+.pinfo{flex:1;min-width:0;}
+.pname{font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--txt);}
+.pstat{font-size:12px;color:var(--sub);margin-top:2px;}
+.ef{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.ef label{font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;}
+.ei{padding:9px 12px;background:var(--inp);border:1px solid var(--ibdr);border-radius:9px;color:var(--txt);font-size:13px;font-family:var(--font-b);transition:border-color var(--trans),background .25s;}
+.ei:focus{outline:none;border-color:var(--brand);}
+.ei::placeholder{color:var(--mute);}
+.savebtn{width:100%;padding:10px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:13.5px;font-weight:600;font-family:var(--font-b);cursor:pointer;transition:background var(--trans);margin-top:4px;}
+.savebtn:hover{background:var(--brand-dk);}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);margin-bottom:6px;transition:background .25s,border-color .25s;}
+.sleft{display:flex;align-items:center;gap:11px;}
+.sic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.sic.pu{background:rgba(124,106,255,.15);}
+.sic.gr{background:rgba(34,197,94,.15);}
+.sic.or{background:rgba(251,146,60,.15);}
+.sic.re{background:rgba(239,68,68,.12);}
+.sic.bl{background:rgba(59,130,246,.15);}
+.sic.ye{background:rgba(234,179,8,.15);}
+.slb{font-size:13.5px;font-weight:500;color:var(--txt);}
+.sdb{font-size:11px;color:var(--mute);margin-top:1px;}
+.tog{width:40px;height:22px;background:rgba(255,255,255,.1);border-radius:11px;border:none;cursor:pointer;position:relative;transition:background var(--trans);flex-shrink:0;}
+[data-theme="light"] .tog{background:rgba(0,0,0,.1);}
+.tog.on{background:var(--brand);}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.6);transition:transform var(--trans),background var(--trans);}
+[data-theme="light"] .tog::after{background:rgba(0,0,0,.4);}
+.tog.on::after{transform:translateX(18px);background:#fff;}
+.dangbtn{width:100%;padding:11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:13.5px;font-weight:600;font-family:var(--font-b);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--trans);margin-top:2px;}
+.dangbtn:hover{background:rgba(239,68,68,.18);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--chat);transition:background .25s;}
+.chdr{padding:13px 18px;min-height:62px;background:var(--hdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;transition:background .25s,border-color .25s;}
+.chdr-info{flex:1;min-width:0;}
+.chdr-nm{font-family:var(--font-h);font-size:15px;font-weight:700;color:var(--txt);}
+.chdr-sub{font-size:11.5px;color:var(--mute);margin-top:1px;}
+.chdr-sub.online{color:var(--online);}
+.chdr-actions{display:flex;gap:6px;}
+.chdr-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
+.chdr-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+/* Pinned Messages Banner */
+.pinned-banner{background:rgba(251,146,60,.08);border-bottom:1px solid rgba(251,146,60,.2);padding:8px 18px;display:none;cursor:pointer;transition:background var(--trans);}
+.pinned-banner:hover{background:rgba(251,146,60,.12);}
+.pinned-banner.show{display:flex;align-items:center;gap:8px;}
+.pinned-banner .pin-icon{color:var(--warn);font-size:14px;}
+.pinned-banner .pin-text{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Message Area */
+.marea{flex:1;overflow-y:auto;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;scrollbar-width:none;-ms-overflow-style:none;}
+.daydiv{text-align:center;margin:10px 0 5px;}
+.daydiv span{background:rgba(124,106,255,.1);color:var(--mute);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
+.mgrp{display:flex;flex-direction:column;position:relative;}
+.mgrp.sent{align-items:flex-end;}
+.mgrp.recv{align-items:flex-start;}
+.mgrp+.mgrp{margin-top:4px;}
+.mfrom{font-size:11px;font-weight:700;color:var(--brand);margin-bottom:3px;margin-left:2px;}
+.bub{max-width:64%;padding:10px 14px;border-radius:var(--radius);font-size:13.5px;line-height:1.55;word-break:break-word;position:relative;transition:background .25s;cursor:pointer;}
+.mgrp.sent .bub{background:var(--sent);color:#fff;border-bottom-right-radius:4px;}
+.mgrp.recv .bub{background:var(--recv);color:var(--txt);border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.bub:hover .msg-actions{opacity:1;}
+.bub.pinned::before{content:'📌';position:absolute;top:-8px;right:-8px;font-size:16px;}
+.bub.edited .mts::after{content:' (edited)';opacity:.7;}
+.reply-prev{background:rgba(0,0,0,.15);border-left:3px solid rgba(255,255,255,.3);padding:6px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;}
+.mgrp.recv .reply-prev{background:rgba(0,0,0,.05);border-left-color:var(--brand);}
+.reply-prev-from{font-weight:600;color:var(--brand);margin-bottom:2px;}
+.reply-prev-text{opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.msg-actions{position:absolute;top:-12px;right:8px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:2px;display:flex;gap:2px;opacity:0;transition:opacity var(--trans);box-shadow:var(--shad);z-index:10;}
+.mgrp.sent .msg-actions{right:auto;left:8px;}
+.msg-act{width:28px;height:28px;border:none;background:transparent;color:var(--sub);cursor:pointer;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
+.msg-act:hover{background:var(--hov);color:var(--txt);}
+.reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.reaction{background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.2);padding:2px 8px;border-radius:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all var(--trans);}
+.reaction:hover{background:rgba(124,106,255,.18);}
+.reaction.user-reacted{background:rgba(124,106,255,.25);border-color:rgba(124,106,255,.4);}
+.reaction .count{font-size:11px;font-weight:600;color:var(--txt);}
+.react-picker{position:absolute;bottom:100%;right:0;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:8px;display:none;flex-wrap:wrap;gap:4px;width:200px;box-shadow:var(--shad);z-index:100;margin-bottom:4px;}
+.react-picker.show{display:flex;}
+.react-emoji{font-size:20px;cursor:pointer;padding:4px;border-radius:6px;transition:background var(--trans);}
+.react-emoji:hover{background:var(--hov);}
+.bub img{max-width:240px;max-height:240px;border-radius:8px;display:block;cursor:pointer;margin-bottom:4px;}
+.mts{font-size:10px;display:block;margin-top:4px;}
+.mgrp.sent .mts{color:rgba(255,255,255,.55);text-align:right;}
+.mgrp.recv .mts{color:var(--mute);}
+.ces{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--mute);text-align:center;}
+.ces .big{font-size:52px;margin-bottom:4px;}
+.ces h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
+.ces p{font-size:13px;}
+.tybar{display:flex;align-items:center;gap:5px;padding:6px 18px;min-height:26px;font-size:12px;color:var(--mute);}
+.tdot{width:6px;height:6px;background:var(--mute);border-radius:50%;animation:tdot 1.2s infinite;}
+.tdot:nth-child(2){animation-delay:.2s;}.tdot:nth-child(3){animation-delay:.4s;}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.reply-bar{background:rgba(124,106,255,.08);border-top:1px solid rgba(124,106,255,.2);padding:8px 18px;display:none;align-items:center;gap:10px;}
+.reply-bar.show{display:flex;}
+.reply-bar-content{flex:1;min-width:0;}
+.reply-bar-from{font-size:11px;font-weight:600;color:var(--brand);}
+.reply-bar-text{font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.reply-bar-close{width:24px;height:24px;border:none;background:transparent;color:var(--mute);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.reply-bar-close:hover{color:var(--txt);}
+.epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}
+.emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;}
+.emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);overflow-x:auto;}
+.emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);flex-shrink:0;}
+.emoji-cat:hover{background:var(--hov);}
+.emoji-cat.active{background:rgba(124,106,255,.15);color:var(--brand);}
+.emoji-section{display:flex;flex-wrap:wrap;gap:5px;width:100%;}
+.emoji-section.hidden{display:none;}
+.eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
+.eo:hover{background:var(--hov);}
+.iarea{padding:10px 14px;background:var(--hdr);border-top:1px solid var(--bdr);display:none;align-items:flex-end;gap:8px;position:relative;transition:background .25s,border-color .25s;}
+.isb{width:36px;height:36px;border-radius:50%;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background var(--trans),color var(--trans);margin-bottom:2px;}
+.isb:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+#msgInput{flex:1;padding:10px 14px;background:var(--inp);border:1px solid var(--ibdr);border-radius:20px;color:var(--txt);font-size:13.5px;font-family:var(--font-b);outline:none;resize:none;line-height:1.4;max-height:110px;transition:border-color var(--trans),background .25s;}
+#msgInput:focus{border-color:var(--brand);}
+#msgInput::placeholder{color:var(--mute);}
+.sndbtn{width:38px;height:38px;border-radius:50%;border:none;background:var(--brand);color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background var(--trans),transform var(--trans);margin-bottom:2px;}
+.sndbtn:hover{background:var(--brand-dk);transform:scale(1.07);}
+.sndbtn:active{transform:scale(.94);}
+.search-panel{background:var(--sb2);border-bottom:1px solid var(--bdr);max-height:0;overflow:hidden;transition:max-height .3s ease;}
+.search-panel.open{max-height:300px;overflow-y:auto;}
+.search-results{padding:10px;}
+.search-msg{padding:8px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background var(--trans);}
+.search-msg:hover{background:var(--hov);}
+.search-msg-from{font-size:11px;font-weight:600;color:var(--brand);margin-bottom:4px;}
+.search-msg-content{font-size:13px;color:var(--txt);}
+.search-msg-time{font-size:10px;color:var(--mute);margin-top:4px;}
+/* TOAST */
+.tstack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none;}
+.toast{background:var(--card);color:var(--txt);padding:9px 18px;border-radius:24px;font-size:12.5px;font-family:var(--font-b);box-shadow:var(--shad);border:1px solid var(--bdr);opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{border-left:3px solid #22c55e;}
+.toast.err{border-left:3px solid #ef4444;}
+.toast.info{border-left:3px solid var(--brand);}
+/* Context Menu */
+.ctx-menu{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:4px;min-width:160px;box-shadow:var(--shad);z-index:1000;display:none;}
+.ctx-menu.show{display:block;}
+.ctx-item{padding:8px 12px;border-radius:6px;font-size:13px;color:var(--txt);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background var(--trans);}
+.ctx-item:hover{background:var(--hov);}
+.ctx-item.danger{color:#ef4444;}
+.ctx-item.danger:hover{background:rgba(239,68,68,.1);}
+/* MOBILE */
+.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
+.mov.show{display:block;}
+.mtog{display:none;position:fixed;top:10px;left:10px;z-index:750;width:38px;height:38px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;}
+/* Image Preview Modal */
+.img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;}
+.img-preview-overlay.show{display:block;}
+.img-preview-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:910;width:90%;max-width:700px;max-height:90vh;display:none;flex-direction:column;box-shadow:var(--shad);}
+.img-preview-modal.show{display:flex;}
+.img-preview-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+.img-preview-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
+.img-preview-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);max-height:50vh;}
+.img-preview-body canvas{max-width:100%;max-height:100%;border-radius:12px;}
+.img-preview-tools{padding:15px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);display:flex;gap:10px;justify-content:center;background:var(--sb2);flex-wrap:wrap;}
+.tool-btn{padding:10px 16px;border:none;border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:18px;transition:background var(--trans);}
+.tool-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.img-preview-footer{padding:20px;display:flex;gap:10px;justify-content:flex-end;}
+.cancel-btn{padding:10px 24px;border:1px solid var(--bdr);border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
+.send-btn{padding:10px 24px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
+.send-btn:hover{background:var(--brand-dk);}
+/* Profile View Modal */
+.profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:850;display:none;}
+.profile-overlay.show{display:block;}
+.profile-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:860;width:90%;max-width:450px;display:none;flex-direction:column;box-shadow:var(--shad);}
+.profile-modal.show{display:flex;}
+.profile-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+.profile-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
+.profile-body{padding:30px;text-align:center;}
+.profile-avatar-large{margin-bottom:20px;display:flex;justify-content:center;}
+.profile-body h2{font-family:var(--font-h);font-size:24px;color:var(--txt);margin-bottom:5px;}
+.profile-bio-section{margin:20px 0;padding:20px;background:var(--sb2);border-radius:12px;text-align:left;}
+.profile-bio-section h4{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.profile-actions{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+.profile-action-btn{padding:12px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
+.profile-action-btn:hover{background:var(--brand-dk);}
+/* Call Modal */
+.call-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:950;display:none;}
+.call-overlay.show{display:block;}
+.call-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:960;display:none;}
+.call-modal.show{display:block;}
+.call-content{text-align:center;color:#fff;}
+.call-avatar{margin-bottom:20px;}
+.call-content h2{font-family:var(--font-h);font-size:28px;margin-bottom:10px;}
+.call-content p{font-size:16px;color:rgba(255,255,255,.7);margin-bottom:30px;}
+.call-controls{display:flex;gap:15px;justify-content:center;margin-top:30px;}
+.call-control-btn{width:60px;height:60px;border:none;border-radius:50%;cursor:pointer;font-size:24px;transition:transform var(--trans),background var(--trans);}
+.call-control-btn:hover{transform:scale(1.1);}
+.call-control-btn.mute{background:rgba(255,255,255,.2);color:#fff;}
+.call-control-btn.video{background:rgba(255,255,255,.2);color:#fff;}
+.call-control-btn.end{background:#ef4444;color:#fff;}
+.call-control-btn.muted{background:rgba(239,68,68,.3);}
+@media(max-width:720px){
+  .mtog{display:flex;}
+  .mov{display:none;}
+  .mov.show{display:block;}
+  .sidebar{position:fixed;left:0;top:0;height:100%;z-index:720;width:280px;transform:translateX(-100%);transition:transform .28s ease;}
+  .sidebar.open{transform:translateX(0);}
+  .main{width:100%;}
+  .chdr{padding-left:56px;}
+  .bub{max-width:80%;}
+  .sdraw{width:100%;}
+  .img-preview-modal{width:95%;max-height:95vh;border-radius:16px;}
+  .img-preview-header{padding:15px;}
+  .img-preview-body{padding:10px;max-height:45vh;}
+  .img-preview-tools{padding:10px;gap:8px;}
+  .tool-btn{padding:8px 12px;font-size:16px;}
+  .img-preview-footer{padding:15px;gap:8px;}
+  .cancel-btn,.send-btn{flex:1;padding:12px;}
+  .profile-modal{width:95%;}
+  #callVideo video{width:100%!important;height:auto!important;}
+  #localVideo{max-width:150px!important;max-height:120px!important;}
+  #remoteVideo{max-width:100%!important;margin-left:0!important;margin-top:10px;}
 }
-# File upload configuration
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Ensure upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-# ============================================================
-# EXTENSIONS
-# ============================================================
-db = SQLAlchemy(app)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode='gevent',
-    logger=False,
-    engineio_logger=False
-)
-# Online users tracking: {user_id: {'sid': socket_id, 'last_seen': datetime}}
-online_users = {}
-# ============================================================
-# DATABASE MODELS
-# ============================================================
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(200), nullable=False)
-    avatar_url = db.Column(db.String(500))
-    bio = db.Column(db.String(500), default='')
-    status = db.Column(db.String(100), default='Available')
-    relationship_status = db.Column(db.String(50), default='Prefer not to say')
-    last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'avatar_url': self.avatar_url,
-            'bio': self.bio,
-            'status': self.status,
-            'relationship_status': self.relationship_status
-        }
-
-class Friendship(db.Model):
-    __tablename__ = 'friendships'
-    id = db.Column(db.Integer, primary_key=True)
-    user1_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    user2_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (db.UniqueConstraint('user1_id', 'user2_id'),)
-
-class FriendRequest(db.Model):
-    __tablename__ = 'friend_requests'
-    id = db.Column(db.Integer, primary_key=True)
-    from_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    to_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    status = db.Column(db.String(20), default='pending')
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-class Message(db.Model):
-    __tablename__ = 'messages'
-    id = db.Column(db.Integer, primary_key=True)
-    chat_id = db.Column(db.String(100), nullable=False, index=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    message_type = db.Column(db.String(20), default='text')
-    reply_to_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True)
-    is_edited = db.Column(db.Boolean, default=False)
-    is_deleted = db.Column(db.Boolean, default=False)
-    is_pinned = db.Column(db.Boolean, default=False)
-    edited_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    sender = db.relationship('User', foreign_keys=[sender_id])
-    reply_to = db.relationship('Message', remote_side=[id], backref='replies')
-
-class MessageReaction(db.Model):
-    __tablename__ = 'message_reactions'
-    id = db.Column(db.Integer, primary_key=True)
-    message_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    emoji = db.Column(db.String(10), nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (db.UniqueConstraint('message_id', 'user_id', 'emoji'),)
-
-class MessageRead(db.Model):
-    __tablename__ = 'message_reads'
-    id = db.Column(db.Integer, primary_key=True)
-    message_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    read_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (db.UniqueConstraint('message_id', 'user_id'),)
-
-class Story(db.Model):
-    __tablename__ = 'stories'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    content = db.Column(db.String(500))
-    media_url = db.Column(db.String(500))
-    media_type = db.Column(db.String(20), default='text')
-    privacy = db.Column(db.String(20), default='friends')
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime)
-    user = db.relationship('User', backref='stories')
-
-class StoryView(db.Model):
-    __tablename__ = 'story_views'
-    id = db.Column(db.Integer, primary_key=True)
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False, index=True)
-    viewer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    viewed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (db.UniqueConstraint('story_id', 'viewer_id'),)
-
-class StoryPrivacy(db.Model):
-    __tablename__ = 'story_privacy'
-    id = db.Column(db.Integer, primary_key=True)
-    story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
-    allowed_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-class BlockedUser(db.Model):
-    __tablename__ = 'blocked_users'
-    id = db.Column(db.Integer, primary_key=True)
-    blocker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    blocked_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (db.UniqueConstraint('blocker_id', 'blocked_id'),)
-
-# ============================================================
-# DATABASE INITIALIZATION
-# ============================================================
-with app.app_context():
-    try:
-        db.create_all()
-        print("✅ Database tables created successfully")
-    except Exception as e:
-        print(f"❌ Database initialization error: {e}")
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-def login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Login required'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def get_chat_id(user1_id, user2_id):
-    return f"{min(user1_id, user2_id)}-{max(user1_id, user2_id)}"
-
-def are_friends(user1_id, user2_id):
-    return Friendship.query.filter(
-        or_(
-            and_(Friendship.user1_id == user1_id, Friendship.user2_id == user2_id),
-            and_(Friendship.user1_id == user2_id, Friendship.user2_id == user1_id)
-        )
-    ).first() is not None
-
-def is_blocked(user_id, other_user_id):
-    return BlockedUser.query.filter(
-        or_(
-            and_(BlockedUser.blocker_id == user_id, BlockedUser.blocked_id == other_user_id),
-            and_(BlockedUser.blocker_id == other_user_id, BlockedUser.blocked_id == user_id)
-        )
-    ).first() is not None
-
-def is_user_online(user_id):
-    if user_id in online_users:
-        last_seen = online_users[user_id].get('last_seen')
-        if last_seen and (datetime.now(timezone.utc) - last_seen).seconds < 30:
-            return True
-    return False
-
-def get_time_ago(dt):
-    if not dt:
-        return 'Never'
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    seconds = (datetime.now(timezone.utc) - dt).total_seconds()
-    if seconds < 60:
-        return 'Just now'
-    elif seconds < 3600:
-        return f'{int(seconds/60)}m ago'
-    elif seconds < 86400:
-        return f'{int(seconds/3600)}h ago'
-    else:
-        return f'{int(seconds/86400)}d ago'
-
-def format_message(msg, user_id):
-    reactions = MessageReaction.query.filter_by(message_id=msg.id).all()
-    reads = MessageRead.query.filter_by(message_id=msg.id).all()
-    reaction_counts = {}
-    user_reactions = []
-    for r in reactions:
-        reaction_counts[r.emoji] = reaction_counts.get(r.emoji, 0) + 1
-        if r.user_id == user_id:
-            user_reactions.append(r.emoji)
-    reply_msg = None
-    if msg.reply_to_id:
-        reply = Message.query.get(msg.reply_to_id)
-        if reply and not reply.is_deleted:
-            reply_msg = {
-                'id': reply.id,
-                'sender_username': reply.sender.username if reply.sender else 'Unknown',
-                'content': reply.content[:50] + ('...' if len(reply.content) > 50 else '')
-            }
-    return {
-        'id': msg.id,
-        'chat_id': msg.chat_id,
-        'sender_id': msg.sender_id,
-        'sender_username': msg.sender.username if msg.sender else 'Unknown',
-        'content': msg.content if not msg.is_deleted else '[Message deleted]',
-        'message_type': msg.message_type,
-        'is_edited': msg.is_edited,
-        'is_deleted': msg.is_deleted,
-        'is_pinned': msg.is_pinned,
-        'created_at': msg.created_at.isoformat(),
-        'edited_at': msg.edited_at.isoformat() if msg.edited_at else None,
-        'reactions': reaction_counts,
-        'user_reactions': user_reactions,
-        'read_by': len(reads),
-        'reply_to': reply_msg
-    }
-
-# ============================================================
-# ERROR HANDLERS
-# ============================================================
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({'success': False, 'error': 'Not found'}), 404
-
-@app.errorhandler(500)
-def server_error(e):
-    db.session.rollback()
-    return jsonify({'success': False, 'error': 'Server error'}), 500
-
-# ============================================================
-# PAGE ROUTES
-# ============================================================
-@app.route('/')
-def index():
-    return render_template('login.html')
-
-@app.route('/register')
-def register_page():
-    return render_template('register.html')
-
-@app.route('/chat')
-@login_required
-def chat():
-    user = User.query.get(session['user_id'])
-    if not user:
-        return redirect('/')
-    return render_template('chat.html', user=user, user_id=user.id)
-
-@app.route('/logo')
-def serve_logo():
-    logo_path = os.path.join(BASE_DIR, 'static', 'logo.png')
-    if os.path.exists(logo_path):
-        return send_from_directory(os.path.join(BASE_DIR, 'static'), 'logo.png')
-    return '', 404
-
-# ============================================================
-# AUTHENTICATION API
-# ============================================================
-@app.route('/api/auth/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
-    if not username or not password:
-        return jsonify({'success': False, 'error': 'Username and password required'}), 400
-    if len(username) < 3:
-        return jsonify({'success': False, 'error': 'Username must be at least 3 characters'}), 400
-    if len(password) < 6:
-        return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
-    if User.query.filter_by(username=username).first():
-        return jsonify({'success': False, 'error': 'Username already taken'}), 409
-    try:
-        user = User(username=username)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        session['user_id'] = user.id
-        session.permanent = True
-        return jsonify({'success': True, 'message': 'Registration successful', 'user': user.to_dict()})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/auth/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
-    user = User.query.filter_by(username=username).first()
-    if not user or not user.check_password(password):
-        return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
-    session['user_id'] = user.id
-    session.permanent = True
-    return jsonify({'success': True, 'message': 'Login successful', 'user': user.to_dict()})
-
-@app.route('/api/auth/logout', methods=['POST'])
-def logout():
-    user_id = session.get('user_id')
-    if user_id and user_id in online_users:
-        del online_users[user_id]
-    session.clear()
-    return jsonify({'success': True, 'message': 'Logged out'})
-
-# ============================================================
-# USER & PROFILE API
-# ============================================================
-@app.route('/api/users/search')
-@login_required
-def search_users():
-    query = request.args.get('q', '').strip()
-    user_id = session['user_id']
-    if not query:
-        return jsonify({'success': False, 'error': 'Search query required'}), 400
-    users = User.query.filter(
-        User.username.ilike(f'%{query}%'),
-        User.id != user_id
-    ).limit(10).all()
-    results = []
-    for u in users:
-        if is_blocked(user_id, u.id):
-            continue
-        relationship = 'none'
-        if are_friends(user_id, u.id):
-            relationship = 'friend'
-        else:
-            req_sent = FriendRequest.query.filter_by(from_user_id=user_id, to_user_id=u.id, status='pending').first()
-            req_received = FriendRequest.query.filter_by(from_user_id=u.id, to_user_id=user_id, status='pending').first()
-            if req_sent:
-                relationship = 'request_sent'
-            elif req_received:
-                relationship = 'request_received'
-        results.append({**u.to_dict(), 'relationship': relationship, 'is_online': is_user_online(u.id)})
-    return jsonify({'success': True, 'results': results})
-
-@app.route('/api/profile', methods=['GET'])
-@login_required
-def get_profile():
-    user = User.query.get(session['user_id'])
-    if not user:
-        return jsonify({'success': False, 'error': 'User not found'}), 404
-    return jsonify({'success': True, 'user': user.to_dict()})
-
-@app.route('/api/profile', methods=['PUT'])
-@login_required
-def update_profile():
-    user = User.query.get(session['user_id'])
-    if not user:
-        return jsonify({'success': False, 'error': 'User not found'}), 404
-    data = request.get_json()
-    if 'username' in data and data['username'].strip():
-        new_username = data['username'].strip()
-        if new_username != user.username:
-            existing = User.query.filter_by(username=new_username).first()
-            if existing:
-                return jsonify({'success': False, 'error': 'Username already taken'}), 409
-            user.username = new_username
-    if 'status' in data:
-        user.status = data['status'][:100]
-    if 'bio' in data:
-        user.bio = data['bio'][:500]
-    if 'relationship_status' in data:
-        user.relationship_status = data['relationship_status']
-    try:
-        db.session.commit()
-        return jsonify({'success': True, 'user': user.to_dict()})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/profile/avatar', methods=['POST'])
-@login_required
-def upload_avatar():
-    if 'avatar' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
-    file = request.files['avatar']
-    if file.filename == '' or not allowed_file(file.filename):
-        return jsonify({'success': False, 'error': 'Invalid file'}), 400
-    try:
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"avatar_{session['user_id']}_{uuid.uuid4().hex[:8]}.{ext}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        user = User.query.get(session['user_id'])
-        user.avatar_url = f'/static/uploads/{filename}'
-        db.session.commit()
-        return jsonify({'success': True, 'avatar_url': user.avatar_url})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# FRIENDS API
-# ============================================================
-@app.route('/api/friends')
-@login_required
-def get_friends():
-    user_id = session['user_id']
-    friendships = Friendship.query.filter(
-        or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
-    ).all()
-    friends = []
-    for f in friendships:
-        friend_id = f.user2_id if f.user1_id == user_id else f.user1_id
-        friend = User.query.get(friend_id)
-        if not friend:
-            continue
-        chat_id = get_chat_id(user_id, friend_id)
-        last_msg = Message.query.filter_by(chat_id=chat_id).order_by(Message.created_at.desc()).first()
-        unread = 0
-        if last_msg:
-            unread = Message.query.filter(
-                Message.chat_id == chat_id,
-                Message.sender_id == friend_id,
-                ~Message.id.in_(db.session.query(MessageRead.message_id).filter_by(user_id=user_id))
-            ).count()
-        friends.append({
-            **friend.to_dict(),
-            'chat_id': chat_id,
-            'is_online': is_user_online(friend_id),
-            'last_message': last_msg.content[:50] if last_msg else None,
-            'last_message_time': last_msg.created_at.isoformat() if last_msg else None,
-            'unread_count': unread
-        })
-    friends.sort(key=lambda x: x['last_message_time'] or '', reverse=True)
-    return jsonify({'success': True, 'friends': friends})
-
-@app.route('/api/friends/requests')
-@login_required
-def get_friend_requests():
-    user_id = session['user_id']
-    received = FriendRequest.query.filter_by(to_user_id=user_id, status='pending').all()
-    received_list = []
-    for req in received:
-        user = User.query.get(req.from_user_id)
-        if user:
-            received_list.append({
-                'request_id': req.id,
-                'user_id': user.id,
-                'username': user.username,
-                'avatar_url': user.avatar_url,
-                'time_ago': get_time_ago(req.created_at)
-            })
-    return jsonify({'success': True, 'received': received_list})
-
-@app.route('/api/friends/request', methods=['POST'])
-@login_required
-def send_friend_request():
-    data = request.get_json()
-    to_user_id = data.get('to_user_id')
-    from_user_id = session['user_id']
-    if from_user_id == to_user_id:
-        return jsonify({'success': False, 'error': 'Cannot add yourself'}), 400
-    if are_friends(from_user_id, to_user_id):
-        return jsonify({'success': False, 'error': 'Already friends'}), 400
-    existing = FriendRequest.query.filter_by(from_user_id=from_user_id, to_user_id=to_user_id, status='pending').first()
-    if existing:
-        return jsonify({'success': False, 'error': 'Request already sent'}), 400
-    try:
-        req = FriendRequest(from_user_id=from_user_id, to_user_id=to_user_id)
-        db.session.add(req)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Friend request sent'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/friends/accept', methods=['POST'])
-@login_required
-def accept_friend_request():
-    data = request.get_json()
-    request_id = data.get('request_id')
-    user_id = session['user_id']
-    req = FriendRequest.query.get(request_id)
-    if not req or req.to_user_id != user_id:
-        return jsonify({'success': False, 'error': 'Request not found'}), 404
-    try:
-        friendship = Friendship(user1_id=req.from_user_id, user2_id=req.to_user_id)
-        db.session.add(friendship)
-        req.status = 'accepted'
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Friend request accepted'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/friends/reject', methods=['POST'])
-@login_required
-def reject_friend_request():
-    data = request.get_json()
-    request_id = data.get('request_id')
-    user_id = session['user_id']
-    req = FriendRequest.query.get(request_id)
-    if not req or req.to_user_id != user_id:
-        return jsonify({'success': False, 'error': 'Request not found'}), 404
-    try:
-        req.status = 'rejected'
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Friend request rejected'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# MESSAGES API
-# ============================================================
-@app.route('/api/messages/<chat_id>')
-@login_required
-def get_messages(chat_id):
-    user_id = session['user_id']
-    parts = chat_id.split('-')
-    if len(parts) != 2:
-        return jsonify({'success': False, 'error': 'Invalid chat ID'}), 400
-    user1_id, user2_id = int(parts[0]), int(parts[1])
-    if user_id not in [user1_id, user2_id]:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.created_at).all()
-    return jsonify({'success': True, 'messages': [format_message(m, user_id) for m in messages]})
-
-@app.route('/api/messages/search/<chat_id>')
-@login_required
-def search_messages(chat_id):
-    query = request.args.get('q', '').strip()
-    user_id = session['user_id']
-    if not query:
-        return jsonify({'success': False, 'error': 'Search query required'}), 400
-    parts = chat_id.split('-')
-    if len(parts) != 2:
-        return jsonify({'success': False, 'error': 'Invalid chat ID'}), 400
-    user1_id, user2_id = int(parts[0]), int(parts[1])
-    if user_id not in [user1_id, user2_id]:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    messages = Message.query.filter(
-        Message.chat_id == chat_id,
-        Message.content.ilike(f'%{query}%'),
-        Message.is_deleted == False
-    ).order_by(Message.created_at.desc()).limit(50).all()
-    return jsonify({'success': True, 'messages': [format_message(m, user_id) for m in messages]})
-
-@app.route('/api/messages/pinned/<chat_id>')
-@login_required
-def get_pinned_messages(chat_id):
-    user_id = session['user_id']
-    parts = chat_id.split('-')
-    if len(parts) != 2:
-        return jsonify({'success': False, 'error': 'Invalid chat ID'}), 400
-    user1_id, user2_id = int(parts[0]), int(parts[1])
-    if user_id not in [user1_id, user2_id]:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    messages = Message.query.filter_by(chat_id=chat_id, is_pinned=True).all()
-    return jsonify({'success': True, 'messages': [format_message(m, user_id) for m in messages]})
-
-@app.route('/api/messages/<int:msg_id>/edit', methods=['PUT'])
-@login_required
-def edit_message(msg_id):
-    user_id = session['user_id']
-    data = request.get_json()
-    new_content = data.get('content', '').strip()
-    if not new_content:
-        return jsonify({'success': False, 'error': 'Content required'}), 400
-    msg = Message.query.get(msg_id)
-    if not msg or msg.sender_id != user_id:
-        return jsonify({'success': False, 'error': 'Message not found'}), 404
-    if msg.is_deleted:
-        return jsonify({'success': False, 'error': 'Cannot edit deleted message'}), 400
-    try:
-        msg.content = new_content
-        msg.is_edited = True
-        msg.edited_at = datetime.now(timezone.utc)
-        db.session.commit()
-        socketio.emit('message_edited', format_message(msg, user_id), room=msg.chat_id)
-        return jsonify({'success': True, 'message': format_message(msg, user_id)})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/messages/<int:msg_id>/delete', methods=['DELETE'])
-@login_required
-def delete_message(msg_id):
-    user_id = session['user_id']
-    msg = Message.query.get(msg_id)
-    if not msg or msg.sender_id != user_id:
-        return jsonify({'success': False, 'error': 'Message not found'}), 404
-    try:
-        msg.is_deleted = True
-        msg.content = '[Message deleted]'
-        db.session.commit()
-        socketio.emit('message_deleted', {'id': msg.id, 'chat_id': msg.chat_id}, room=msg.chat_id)
-        return jsonify({'success': True, 'message': 'Message deleted'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/messages/<int:msg_id>/pin', methods=['POST'])
-@login_required
-def toggle_pin_message(msg_id):
-    user_id = session['user_id']
-    msg = Message.query.get(msg_id)
-    if not msg:
-        return jsonify({'success': False, 'error': 'Message not found'}), 404
-    parts = msg.chat_id.split('-')
-    user1_id, user2_id = int(parts[0]), int(parts[1])
-    if user_id not in [user1_id, user2_id]:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    try:
-        msg.is_pinned = not msg.is_pinned
-        db.session.commit()
-        socketio.emit('message_pinned', {'id': msg.id, 'chat_id': msg.chat_id, 'is_pinned': msg.is_pinned}, room=msg.chat_id)
-        return jsonify({'success': True, 'is_pinned': msg.is_pinned, 'message': format_message(msg, user_id)})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/messages/<int:msg_id>/react', methods=['POST'])
-@login_required
-def react_to_message(msg_id):
-    user_id = session['user_id']
-    data = request.get_json()
-    emoji = data.get('emoji', '').strip()
-    if not emoji:
-        return jsonify({'success': False, 'error': 'Emoji required'}), 400
-    msg = Message.query.get(msg_id)
-    if not msg:
-        return jsonify({'success': False, 'error': 'Message not found'}), 404
-    try:
-        existing = MessageReaction.query.filter_by(message_id=msg_id, user_id=user_id, emoji=emoji).first()
-        if existing:
-            db.session.delete(existing)
-        else:
-            reaction = MessageReaction(message_id=msg_id, user_id=user_id, emoji=emoji)
-            db.session.add(reaction)
-        db.session.commit()
-        socketio.emit('message_reaction', {'message': format_message(msg, user_id), 'chat_id': msg.chat_id}, room=msg.chat_id)
-        return jsonify({'success': True, 'message': format_message(msg, user_id)})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# BLOCKLIST API
-# ============================================================
-@app.route('/api/blocklist')
-@login_required
-def get_blocklist():
-    user_id = session['user_id']
-    blocked = BlockedUser.query.filter_by(blocker_id=user_id).all()
-    blocked_users = []
-    for b in blocked:
-        user = User.query.get(b.blocked_id)
-        if user:
-            blocked_users.append({'id': user.id, 'username': user.username, 'avatar_url': user.avatar_url, 'blocked_at': b.created_at.isoformat()})
-    return jsonify({'success': True, 'blocked_users': blocked_users})
-
-@app.route('/api/blocklist/add', methods=['POST'])
-@login_required
-def block_user():
-    user_id = session['user_id']
-    data = request.get_json()
-    blocked_id = data.get('user_id')
-    if user_id == blocked_id:
-        return jsonify({'success': False, 'error': 'Cannot block yourself'}), 400
-    existing = BlockedUser.query.filter_by(blocker_id=user_id, blocked_id=blocked_id).first()
-    if existing:
-        return jsonify({'success': False, 'error': 'User already blocked'}), 400
-    try:
-        block = BlockedUser(blocker_id=user_id, blocked_id=blocked_id)
-        db.session.add(block)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'User blocked'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/blocklist/remove', methods=['POST'])
-@login_required
-def unblock_user():
-    user_id = session['user_id']
-    data = request.get_json()
-    blocked_id = data.get('user_id')
-    block = BlockedUser.query.filter_by(blocker_id=user_id, blocked_id=blocked_id).first()
-    if not block:
-        return jsonify({'success': False, 'error': 'User not blocked'}), 404
-    try:
-        db.session.delete(block)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'User unblocked'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# STORIES API
-# ============================================================
-@app.route('/api/stories/create', methods=['POST'])
-@login_required
-def create_story():
-    user_id = session['user_id']
-    data = request.get_json()
-    content = data.get('content', '')
-    media_url = data.get('media_url', '')
-    media_type = data.get('media_type', 'text')
-    privacy = data.get('privacy', 'friends')
-    custom_users = data.get('custom_users', [])
-    if not content and not media_url:
-        return jsonify({'success': False, 'error': 'Content or media required'}), 400
-    try:
-        story = Story(
-            user_id=user_id, content=content, media_url=media_url,
-            media_type=media_type, privacy=privacy,
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
-        )
-        db.session.add(story)
-        db.session.flush()
-        if privacy == 'custom' and custom_users:
-            for allowed_user_id in custom_users:
-                db.session.add(StoryPrivacy(story_id=story.id, allowed_user_id=allowed_user_id))
-        db.session.commit()
-        return jsonify({'success': True, 'story_id': story.id, 'message': 'Story created'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/stories/friends')
-@login_required
-def get_friends_stories():
-    user_id = session['user_id']
-    now = datetime.now(timezone.utc)
-    friendships = Friendship.query.filter(
-        or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
-    ).all()
-    friend_ids = [f.user2_id if f.user1_id == user_id else f.user1_id for f in friendships]
-    friend_ids.append(user_id)
-    stories_by_user = {}
-    for friend_id in friend_ids:
-        user_stories = Story.query.filter(Story.user_id == friend_id, Story.expires_at > now).order_by(Story.created_at.desc()).all()
-        visible_stories = []
-        for story in user_stories:
-            if story.user_id == user_id:
-                visible_stories.append(story)
-                continue
-            if story.privacy in ('public', 'friends'):
-                visible_stories.append(story)
-            elif story.privacy == 'custom':
-                if StoryPrivacy.query.filter_by(story_id=story.id, allowed_user_id=user_id).first():
-                    visible_stories.append(story)
-        if visible_stories:
-            user = User.query.get(friend_id)
-            unviewed = any(not StoryView.query.filter_by(story_id=s.id, viewer_id=user_id).first() for s in visible_stories)
-            stories_by_user[friend_id] = {
-                'user_id': friend_id, 'username': user.username, 'avatar_url': user.avatar_url,
-                'has_unviewed': unviewed,
-                'stories': [{'id': s.id, 'content': s.content, 'media_url': s.media_url, 'media_type': s.media_type, 'created_at': s.created_at.isoformat(), 'expires_at': s.expires_at.isoformat(), 'is_own': s.user_id == user_id, 'username': user.username} for s in visible_stories]
-            }
-    return jsonify({'success': True, 'stories': list(stories_by_user.values())})
-
-@app.route('/api/stories/<int:story_id>/view', methods=['POST'])
-@login_required
-def view_story(story_id):
-    user_id = session['user_id']
-    story = Story.query.get(story_id)
-    if not story:
-        return jsonify({'success': False, 'error': 'Story not found'}), 404
-    if story.user_id == user_id:
-        return jsonify({'success': True, 'message': 'Own story'})
-    if StoryView.query.filter_by(story_id=story_id, viewer_id=user_id).first():
-        return jsonify({'success': True, 'message': 'Already viewed'})
-    try:
-        db.session.add(StoryView(story_id=story_id, viewer_id=user_id))
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Story viewed'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/stories/<int:story_id>/viewers')
-@login_required
-def get_story_viewers(story_id):
-    user_id = session['user_id']
-    story = Story.query.get(story_id)
-    if not story or story.user_id != user_id:
-        return jsonify({'success': False, 'error': 'Story not found'}), 404
-    views = StoryView.query.filter_by(story_id=story_id).all()
-    viewers = []
-    for view in views:
-        user = User.query.get(view.viewer_id)
-        if user:
-            viewers.append({'user_id': user.id, 'username': user.username, 'avatar_url': user.avatar_url, 'viewed_at': view.viewed_at.isoformat()})
-    return jsonify({'success': True, 'count': len(viewers), 'viewers': viewers})
-
-@app.route('/api/stories/<int:story_id>/delete', methods=['DELETE'])
-@login_required
-def delete_story(story_id):
-    user_id = session['user_id']
-    story = Story.query.get(story_id)
-    if not story or story.user_id != user_id:
-        return jsonify({'success': False, 'error': 'Story not found'}), 404
-    try:
-        StoryView.query.filter_by(story_id=story_id).delete()
-        StoryPrivacy.query.filter_by(story_id=story_id).delete()
-        db.session.delete(story)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Story deleted'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# FILE UPLOAD API
-# ============================================================
-@app.route('/api/upload/image', methods=['POST'])
-@login_required
-def upload_image():
-    if 'image' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
-    file = request.files['image']
-    if file.filename == '' or not allowed_file(file.filename):
-        return jsonify({'success': False, 'error': 'Invalid file'}), 400
-    try:
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"img_{uuid.uuid4().hex}.{ext}"
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return jsonify({'success': True, 'url': f'/static/uploads/{filename}', 'filename': filename})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ============================================================
-# SOCKET.IO EVENTS
-# ============================================================
-@socketio.on('connect')
-def handle_connect():
-    """On connect: track user, notify friends, and auto-join all friend chat rooms"""
-    if 'user_id' not in session:
-        return False
-
-    user_id = session['user_id']
-    online_users[user_id] = {
-        'sid': request.sid,
-        'last_seen': datetime.now(timezone.utc)
-    }
-
-    # ── KEY FIX: auto-join every friend's chat room so messages arrive instantly ──
-    friendships = Friendship.query.filter(
-        or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
-    ).all()
-
-    for f in friendships:
-        friend_id = f.user2_id if f.user1_id == user_id else f.user1_id
-        chat_id = get_chat_id(user_id, friend_id)
-        join_room(chat_id)  # join all chat rooms on connect
-
-        # Notify online friends that this user came online
-        if friend_id in online_users:
-            emit('user_online', {'user_id': user_id, 'online': True},
-                 room=online_users[friend_id]['sid'])
-
-    print(f"✅ User {user_id} connected and joined {len(friendships)} chat rooms")
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    """On disconnect: notify friends and clean up"""
-    if 'user_id' not in session:
-        return
-
-    user_id = session['user_id']
-
-    friendships = Friendship.query.filter(
-        or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
-    ).all()
-
-    for f in friendships:
-        friend_id = f.user2_id if f.user1_id == user_id else f.user1_id
-        if friend_id in online_users:
-            emit('user_online', {'user_id': user_id, 'online': False},
-                 room=online_users[friend_id]['sid'])
-
-    if user_id in online_users:
-        del online_users[user_id]
-
-    print(f"❌ User {user_id} disconnected")
-
-@socketio.on('join_chat')
-def handle_join_chat(data):
-    """Explicitly join a chat room (called when user opens a chat)"""
-    chat_id = data.get('chat_id')
-    if chat_id:
-        join_room(chat_id)
-        print(f"User joined chat: {chat_id}")
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    """Save message and broadcast to ALL users in the chat room instantly"""
-    if 'user_id' not in session:
-        return
-
-    user_id = session['user_id']
-    chat_id = data.get('chat_id')
-    content = data.get('content', '').strip()
-    message_type = data.get('message_type', 'text')
-    reply_to_id = data.get('reply_to_id')
-
-    if not content or not chat_id:
-        return
-
-    parts = chat_id.split('-')
-    if len(parts) != 2:
-        return
-
-    user1_id, user2_id = int(parts[0]), int(parts[1])
-    if user_id not in [user1_id, user2_id]:
-        return
-
-    other_user_id = user2_id if user_id == user1_id else user1_id
-    if is_blocked(user_id, other_user_id):
-        emit('error', {'message': 'Cannot send message to blocked user'})
-        return
-
-    try:
-        msg = Message(
-            chat_id=chat_id,
-            sender_id=user_id,
-            content=content,
-            message_type=message_type,
-            reply_to_id=reply_to_id
-        )
-        db.session.add(msg)
-        db.session.commit()
-
-        msg_data = format_message(msg, user_id)
-
-        # Broadcast to the room (delivers to sender + receiver if both joined)
-        emit('new_message', msg_data, room=chat_id)
-
-        # ── KEY FIX: also push directly to receiver's socket ID if they are
-        #    online but haven't opened this chat (so they get the sidebar update) ──
-        if other_user_id in online_users:
-            receiver_sid = online_users[other_user_id]['sid']
-            socketio.emit('new_message', msg_data, room=receiver_sid)
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error sending message: {e}")
-
-@socketio.on('typing_start')
-def handle_typing_start(data):
-    if 'user_id' not in session:
-        return
-    user = User.query.get(session['user_id'])
-    if not user:
-        return
-    chat_id = data.get('chatId')
-    if chat_id:
-        emit('typing_start', {'username': user.username}, room=chat_id, include_self=False)
-
-@socketio.on('typing_stop')
-def handle_typing_stop(data):
-    chat_id = data.get('chatId')
-    if chat_id:
-        emit('typing_stop', {}, room=chat_id, include_self=False)
-
-# ============================================================
-# UTILITY ROUTES
-# ============================================================
-@app.route('/health')
-def health():
-    return jsonify({'status': 'healthy', 'timestamp': datetime.now(timezone.utc).isoformat()})
-
-@app.teardown_appcontext
-def shutdown_session(exception=None):
-    db.session.remove()
-
-# ============================================================
-# RUN SERVER
-# ============================================================
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+</style>
+</head>
+<body>
+<div class="mov" id="mov" onclick="closeSB()"></div>
+<button class="mtog" onclick="toggleSB()">☰</button>
+<!-- Context Menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="replyToMsgCtx()">↩️ Reply</div>
+  <div class="ctx-item" onclick="editMsgCtx()">✏️ Edit</div>
+  <div class="ctx-item" onclick="pinMsgCtx()">📌 Pin</div>
+  <div class="ctx-item danger" onclick="deleteMsgCtx()">🗑️ Delete</div>
+</div>
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sh">
+    <div class="sh-top">
+      <div class="brand"><img src="/logo" alt="HPZ Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></div>
+      <div class="hbtns">
+        <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
+        <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
+      </div>
+    </div>
+    <div class="sinp-w">
+      <span class="sinp-ic">🔍</span>
+      <input class="sinp" id="sinp" type="text" placeholder="Search users…" oninput="handleSearch(this.value)" autocomplete="off">
+    </div>
+  </div>
+  <div class="spanel" id="rqPanel">
+    <div class="ptitle">Friend Requests</div>
+    <div id="rqList"><div class="lempty" style="padding:12px;">No pending requests</div></div>
+  </div>
+  <div class="spanel" id="srPanel">
+    <div id="srList"></div>
+  </div>
+  <div class="stories-container" id="storiesContainer">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 14px;">
+      <div class="llabel" style="padding:10px 0 3px 0;">Stories</div>
+      <button class="pill p-add" onclick="openCreateStoryModal()" style="padding:3px 8px;font-size:10px;">➕ Add</button>
+    </div>
+    <div class="stories-scroll" id="storiesScroll" style="display:flex;overflow-x:auto;padding:8px 0;"></div>
+  </div>
+  <div class="clist" id="clist">
+    <div class="llabel">Conversations</div>
+    <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
+  </div>
+</aside>
+<!-- MAIN -->
+<main class="main">
+  <div class="chdr">
+    <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
+    <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
+      <div class="chdr-nm" id="chnm">HPZ Messenger</div>
+      <div class="chdr-sub" id="chsub">Select a conversation</div>
+    </div>
+    <div class="chdr-actions">
+      <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
+      <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
+      <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
+      <button class="chdr-btn" id="pinnedBtn" onclick="showPinned()" title="Pinned messages" style="display:none;">📌</button>
+    </div>
+  </div>
+  <div class="search-panel" id="searchPanel">
+    <div style="padding:10px 18px;">
+      <input class="sinp" id="msgSearch" type="text" placeholder="Search messages…" oninput="searchMsgs(this.value)" style="width:100%;padding-left:12px;">
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+  <div class="pinned-banner" id="pinnedBanner" onclick="showPinned()">
+    <span class="pin-icon">📌</span>
+    <span class="pin-text" id="pinnedText">1 pinned message</span>
+  </div>
+  <div class="marea" id="marea">
+    <div class="ces"><div class="big">💬</div><h3>No chat open</h3><p>Select a friend from the sidebar</p></div>
+  </div>
+  <div class="tybar" id="tybar" style="display:none;">
+    <div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>
+    <span id="tytxt" style="margin-left:4px;"></span>
+  </div>
+  <div class="reply-bar" id="replyBar">
+    <div style="color:var(--brand);font-size:18px;">↩️</div>
+    <div class="reply-bar-content">
+      <div class="reply-bar-from" id="replyFrom">Username</div>
+      <div class="reply-bar-text" id="replyText">Message content...</div>
+    </div>
+    <button class="reply-bar-close" onclick="cancelReply()">✕</button>
+  </div>
+  <div class="epick" id="epick">
+    <div class="emoji-categories">
+      <button class="emoji-cat active" data-cat="smileys" onclick="switchEmojiCat('smileys')">😀</button>
+      <button class="emoji-cat" data-cat="gestures" onclick="switchEmojiCat('gestures')">👋</button>
+      <button class="emoji-cat" data-cat="animals" onclick="switchEmojiCat('animals')">🐶</button>
+      <button class="emoji-cat" data-cat="food" onclick="switchEmojiCat('food')">🍕</button>
+      <button class="emoji-cat" data-cat="travel" onclick="switchEmojiCat('travel')">✈️</button>
+      <button class="emoji-cat" data-cat="symbols" onclick="switchEmojiCat('symbols')">❤️</button>
+    </div>
+    <div class="emoji-grid" id="emojiGrid">
+      <div class="emoji-section" data-category="smileys">
+        <span class="eo" onclick="ins('😀')">😀</span><span class="eo" onclick="ins('😃')">😃</span>
+        <span class="eo" onclick="ins('😄')">😄</span><span class="eo" onclick="ins('😁')">😁</span>
+        <span class="eo" onclick="ins('😆')">😆</span><span class="eo" onclick="ins('😅')">😅</span>
+        <span class="eo" onclick="ins('🤣')">🤣</span><span class="eo" onclick="ins('😂')">😂</span>
+        <span class="eo" onclick="ins('🙂')">🙂</span><span class="eo" onclick="ins('🙃')">🙃</span>
+        <span class="eo" onclick="ins('😉')">😉</span><span class="eo" onclick="ins('😊')">😊</span>
+        <span class="eo" onclick="ins('😇')">😇</span><span class="eo" onclick="ins('🥰')">🥰</span>
+        <span class="eo" onclick="ins('😍')">😍</span><span class="eo" onclick="ins('🤩')">🤩</span>
+        <span class="eo" onclick="ins('😘')">😘</span><span class="eo" onclick="ins('😗')">😗</span>
+        <span class="eo" onclick="ins('😚')">😚</span><span class="eo" onclick="ins('😙')">😙</span>
+        <span class="eo" onclick="ins('😋')">😋</span><span class="eo" onclick="ins('😛')">😛</span>
+        <span class="eo" onclick="ins('😜')">😜</span><span class="eo" onclick="ins('🤪')">🤪</span>
+        <span class="eo" onclick="ins('😝')">😝</span><span class="eo" onclick="ins('🤑')">🤑</span>
+        <span class="eo" onclick="ins('🤗')">🤗</span><span class="eo" onclick="ins('🤭')">🤭</span>
+        <span class="eo" onclick="ins('🤫')">🤫</span><span class="eo" onclick="ins('🤔')">🤔</span>
+        <span class="eo" onclick="ins('😐')">😐</span><span class="eo" onclick="ins('😑')">😑</span>
+        <span class="eo" onclick="ins('😶')">😶</span><span class="eo" onclick="ins('😏')">😏</span>
+        <span class="eo" onclick="ins('😒')">😒</span><span class="eo" onclick="ins('🙄')">🙄</span>
+        <span class="eo" onclick="ins('😬')">😬</span><span class="eo" onclick="ins('😌')">😌</span>
+        <span class="eo" onclick="ins('😔')">😔</span><span class="eo" onclick="ins('😪')">😪</span>
+        <span class="eo" onclick="ins('😴')">😴</span><span class="eo" onclick="ins('😷')">😷</span>
+        <span class="eo" onclick="ins('🤒')">🤒</span><span class="eo" onclick="ins('🤕')">🤕</span>
+        <span class="eo" onclick="ins('🥵')">🥵</span><span class="eo" onclick="ins('🥶')">🥶</span>
+        <span class="eo" onclick="ins('😵')">😵</span><span class="eo" onclick="ins('🤯')">🤯</span>
+        <span class="eo" onclick="ins('🤠')">🤠</span><span class="eo" onclick="ins('🥳')">🥳</span>
+        <span class="eo" onclick="ins('😎')">😎</span><span class="eo" onclick="ins('🤓')">🤓</span>
+        <span class="eo" onclick="ins('😕')">😕</span><span class="eo" onclick="ins('😟')">😟</span>
+        <span class="eo" onclick="ins('🙁')">🙁</span><span class="eo" onclick="ins('☹️')">☹️</span>
+        <span class="eo" onclick="ins('😮')">😮</span><span class="eo" onclick="ins('😯')">😯</span>
+        <span class="eo" onclick="ins('😲')">😲</span><span class="eo" onclick="ins('😳')">😳</span>
+        <span class="eo" onclick="ins('🥺')">🥺</span><span class="eo" onclick="ins('😦')">😦</span>
+        <span class="eo" onclick="ins('😧')">😧</span><span class="eo" onclick="ins('😨')">😨</span>
+        <span class="eo" onclick="ins('😰')">😰</span><span class="eo" onclick="ins('😥')">😥</span>
+        <span class="eo" onclick="ins('😢')">😢</span><span class="eo" onclick="ins('😭')">😭</span>
+        <span class="eo" onclick="ins('😱')">😱</span><span class="eo" onclick="ins('😖')">😖</span>
+        <span class="eo" onclick="ins('😣')">😣</span><span class="eo" onclick="ins('😞')">😞</span>
+        <span class="eo" onclick="ins('😓')">😓</span><span class="eo" onclick="ins('😩')">😩</span>
+        <span class="eo" onclick="ins('😫')">😫</span><span class="eo" onclick="ins('🥱')">🥱</span>
+        <span class="eo" onclick="ins('😤')">😤</span><span class="eo" onclick="ins('😡')">😡</span>
+        <span class="eo" onclick="ins('😠')">😠</span><span class="eo" onclick="ins('🤬')">🤬</span>
+        <span class="eo" onclick="ins('😈')">😈</span><span class="eo" onclick="ins('👿')">👿</span>
+        <span class="eo" onclick="ins('💀')">💀</span><span class="eo" onclick="ins('☠️')">☠️</span>
+        <span class="eo" onclick="ins('💩')">💩</span><span class="eo" onclick="ins('🤡')">🤡</span>
+        <span class="eo" onclick="ins('👻')">👻</span><span class="eo" onclick="ins('👽')">👽</span>
+        <span class="eo" onclick="ins('🤖')">🤖</span>
+      </div>
+      <div class="emoji-section hidden" data-category="gestures">
+        <span class="eo" onclick="ins('👋')">👋</span><span class="eo" onclick="ins('🤚')">🤚</span>
+        <span class="eo" onclick="ins('✋')">✋</span><span class="eo" onclick="ins('🖖')">🖖</span>
+        <span class="eo" onclick="ins('👌')">👌</span><span class="eo" onclick="ins('✌️')">✌️</span>
+        <span class="eo" onclick="ins('🤞')">🤞</span><span class="eo" onclick="ins('🤟')">🤟</span>
+        <span class="eo" onclick="ins('🤘')">🤘</span><span class="eo" onclick="ins('🤙')">🤙</span>
+        <span class="eo" onclick="ins('👈')">👈</span><span class="eo" onclick="ins('👉')">👉</span>
+        <span class="eo" onclick="ins('👆')">👆</span><span class="eo" onclick="ins('👇')">👇</span>
+        <span class="eo" onclick="ins('☝️')">☝️</span><span class="eo" onclick="ins('👍')">👍</span>
+        <span class="eo" onclick="ins('👎')">👎</span><span class="eo" onclick="ins('✊')">✊</span>
+        <span class="eo" onclick="ins('👊')">👊</span><span class="eo" onclick="ins('🤛')">🤛</span>
+        <span class="eo" onclick="ins('🤜')">🤜</span><span class="eo" onclick="ins('👏')">👏</span>
+        <span class="eo" onclick="ins('🙌')">🙌</span><span class="eo" onclick="ins('👐')">👐</span>
+        <span class="eo" onclick="ins('🤲')">🤲</span><span class="eo" onclick="ins('🤝')">🤝</span>
+        <span class="eo" onclick="ins('🙏')">🙏</span><span class="eo" onclick="ins('✍️')">✍️</span>
+        <span class="eo" onclick="ins('💅')">💅</span><span class="eo" onclick="ins('💪')">💪</span>
+      </div>
+      <div class="emoji-section hidden" data-category="animals">
+        <span class="eo" onclick="ins('🐶')">🐶</span><span class="eo" onclick="ins('🐱')">🐱</span>
+        <span class="eo" onclick="ins('🐭')">🐭</span><span class="eo" onclick="ins('🐹')">🐹</span>
+        <span class="eo" onclick="ins('🐰')">🐰</span><span class="eo" onclick="ins('🦊')">🦊</span>
+        <span class="eo" onclick="ins('🐻')">🐻</span><span class="eo" onclick="ins('🐼')">🐼</span>
+        <span class="eo" onclick="ins('🐨')">🐨</span><span class="eo" onclick="ins('🐯')">🐯</span>
+        <span class="eo" onclick="ins('🦁')">🦁</span><span class="eo" onclick="ins('🐮')">🐮</span>
+        <span class="eo" onclick="ins('🐷')">🐷</span><span class="eo" onclick="ins('🐸')">🐸</span>
+        <span class="eo" onclick="ins('🐵')">🐵</span><span class="eo" onclick="ins('🙈')">🙈</span>
+        <span class="eo" onclick="ins('🙉')">🙉</span><span class="eo" onclick="ins('🙊')">🙊</span>
+        <span class="eo" onclick="ins('🦋')">🦋</span><span class="eo" onclick="ins('🐢')">🐢</span>
+        <span class="eo" onclick="ins('🐬')">🐬</span><span class="eo" onclick="ins('🦄')">🦄</span>
+      </div>
+      <div class="emoji-section hidden" data-category="food">
+        <span class="eo" onclick="ins('🍕')">🍕</span><span class="eo" onclick="ins('🍔')">🍔</span>
+        <span class="eo" onclick="ins('🍟')">🍟</span><span class="eo" onclick="ins('🌮')">🌮</span>
+        <span class="eo" onclick="ins('🍣')">🍣</span><span class="eo" onclick="ins('🍜')">🍜</span>
+        <span class="eo" onclick="ins('🍩')">🍩</span><span class="eo" onclick="ins('🎂')">🎂</span>
+        <span class="eo" onclick="ins('☕')">☕</span><span class="eo" onclick="ins('🍺')">🍺</span>
+        <span class="eo" onclick="ins('🍷')">🍷</span><span class="eo" onclick="ins('🥤')">🥤</span>
+      </div>
+      <div class="emoji-section hidden" data-category="travel">
+        <span class="eo" onclick="ins('✈️')">✈️</span><span class="eo" onclick="ins('🚗')">🚗</span>
+        <span class="eo" onclick="ins('🚀')">🚀</span><span class="eo" onclick="ins('🚢')">🚢</span>
+        <span class="eo" onclick="ins('🏖️')">🏖️</span><span class="eo" onclick="ins('🗺️')">🗺️</span>
+      </div>
+      <div class="emoji-section hidden" data-category="symbols">
+        <span class="eo" onclick="ins('❤️')">❤️</span><span class="eo" onclick="ins('🧡')">🧡</span>
+        <span class="eo" onclick="ins('💛')">💛</span><span class="eo" onclick="ins('💚')">💚</span>
+        <span class="eo" onclick="ins('💙')">💙</span><span class="eo" onclick="ins('💜')">💜</span>
+        <span class="eo" onclick="ins('🖤')">🖤</span><span class="eo" onclick="ins('💔')">💔</span>
+        <span class="eo" onclick="ins('✨')">✨</span><span class="eo" onclick="ins('⭐')">⭐</span>
+        <span class="eo" onclick="ins('🔥')">🔥</span><span class="eo" onclick="ins('💯')">💯</span>
+        <span class="eo" onclick="ins('✅')">✅</span><span class="eo" onclick="ins('❌')">❌</span>
+        <span class="eo" onclick="ins('⚡')">⚡</span><span class="eo" onclick="ins('🌈')">🌈</span>
+      </div>
+    </div>
+  </div>
+  <div class="iarea">
+    <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
+    <input type="file" id="imgInpDirect" accept="image/*" capture="environment" style="display:none" onchange="handleDirectUpload(this)">
+    <button class="isb" onclick="triggerImageSelect()" title="Attach">📎</button>
+    <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
+    <textarea id="msgInput" rows="1" placeholder="Type a message…"
+      oninput="autoR(this);doTyping();"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(editingMsgId){saveEdit();}else{sendMsg();}}"></textarea>
+    <button class="sndbtn" onclick="sendMsg()">➤</button>
+  </div>
+</main>
+<!-- Image Preview Modal -->
+<div class="img-preview-overlay" id="imgPreviewOverlay" onclick="closeImagePreview()"></div>
+<div class="img-preview-modal" id="imgPreviewModal">
+  <div class="img-preview-header">
+    <h3>Preview Image</h3>
+    <button class="closebtn" onclick="closeImagePreview()">✕</button>
+  </div>
+  <div class="img-preview-body"><canvas id="imgPreviewCanvas"></canvas></div>
+  <div class="img-preview-tools">
+    <button class="tool-btn" onclick="rotateImage(-90)" title="Rotate left">↶</button>
+    <button class="tool-btn" onclick="rotateImage(90)" title="Rotate right">↷</button>
+    <button class="tool-btn" onclick="flipImage('h')" title="Flip horizontal">↔️</button>
+    <button class="tool-btn" onclick="flipImage('v')" title="Flip vertical">↕️</button>
+    <button class="tool-btn" onclick="cropImage()" title="Crop">✂️</button>
+  </div>
+  <div class="img-preview-footer">
+    <button class="cancel-btn" onclick="closeImagePreview()">Cancel</button>
+    <button class="send-btn" onclick="sendEditedImage()">Send</button>
+  </div>
+</div>
+<!-- Profile View Modal -->
+<div class="profile-overlay" id="profileOverlay" onclick="closeProfileView()"></div>
+<div class="profile-modal" id="profileModal">
+  <div class="profile-header">
+    <h3>Profile</h3>
+    <button class="closebtn" onclick="closeProfileView()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="profile-avatar-large">
+      <div class="av" id="profileAvLarge" style="width:120px;height:120px;font-size:48px;border-radius:24px;">U</div>
+    </div>
+    <h2 id="profileName">Username</h2>
+    <p id="profileStatus" style="color:var(--sub);margin:8px 0;">Available</p>
+    <div class="profile-bio-section">
+      <h4>Bio</h4>
+      <p id="profileBio" style="color:var(--txt);margin-top:8px;">No bio yet</p>
+    </div>
+    <div class="profile-bio-section" style="margin-top:12px;">
+      <h4>Relationship Status</h4>
+      <p id="profileRelationship" style="color:var(--txt);margin-top:8px;">Prefer not to say</p>
+    </div>
+    <div class="profile-actions">
+      <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
+      <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
+      <button class="profile-action-btn" onclick="startVideoCall()">📹 Video Call</button>
+    </div>
+  </div>
+</div>
+<!-- Call Modal -->
+<div class="call-overlay" id="callOverlay"></div>
+<div class="call-modal" id="callModal">
+  <div class="call-content">
+    <div class="call-avatar">
+      <div class="av" id="callAvatar" style="width:100px;height:100px;font-size:40px;border-radius:20px;">U</div>
+    </div>
+    <h2 id="callName">Username</h2>
+    <p id="callStatus">Calling...</p>
+    <div id="callVideo" style="display:none;margin:20px 0;">
+      <video id="localVideo" autoplay muted style="width:200px;height:150px;border-radius:12px;"></video>
+      <video id="remoteVideo" autoplay style="width:400px;height:300px;border-radius:12px;margin-left:10px;"></video>
+    </div>
+    <div class="call-controls">
+      <button class="call-control-btn mute" id="muteBtn" onclick="toggleMute()" title="Mute" style="display:none;">🎤</button>
+      <button class="call-control-btn video" id="videoBtn" onclick="toggleVideo()" title="Video" style="display:none;">📹</button>
+      <button class="call-control-btn end" onclick="endCall()">📞</button>
+    </div>
+  </div>
+</div>
+<!-- SETTINGS DRAWER -->
+<div class="sov" id="sov" onclick="closeSettings()"></div>
+<div class="sdraw" id="sdraw">
+  <div class="shead">
+    <span style="font-size:20px;">⚙️</span>
+    <h2>Settings</h2>
+    <button class="closebtn" onclick="closeSettings()">✕</button>
+  </div>
+  <div class="sbody">
+    <!-- Profile -->
+    <div class="ssec">
+      <div class="ssec-t">My Profile</div>
+      <div class="pcard">
+        <div class="av xl" id="sav">{{ user.username[0]|upper }}</div>
+        <div class="pinfo">
+          <div class="pname" id="snm">{{ user.username }}</div>
+          <div class="pstat" id="sst">Available</div>
+        </div>
+      </div>
+      <div class="ef"><label>Display Name</label><input class="ei" id="eun" value="{{ user.username }}"></div>
+      <div class="ef"><label>Bio</label><input class="ei" id="ebio" placeholder="Tell people about yourself..."></div>
+      <!-- ── Relationship Status now lives here inside the profile section ── -->
+      <div class="ef">
+        <label>Relationship Status</label>
+        <select class="ei" id="erel" style="cursor:pointer;">
+          <option value="Prefer not to say">Prefer not to say</option>
+          <option value="Single">Single</option>
+          <option value="Married">Married</option>
+        </select>
+      </div>
+      <div class="ef">
+        <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
+      </div>
+    </div>
+    <!-- Appearance -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Appearance</div>
+      <div class="srow">
+        <div class="sleft"><div class="sic pu">🌙</div><div><div class="slb">Dark Mode</div><div class="sdb">Toggle dark / light theme</div></div></div>
+        <button class="tog on" id="tDark" onclick="toggleTheme()"></button>
+      </div>
+    </div>
+    <!-- Notifications -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Notifications</div>
+      <div class="srow">
+        <div class="sleft"><div class="sic gr">🔔</div><div><div class="slb">Sound Alerts</div><div class="sdb">Play sound on new messages</div></div></div>
+        <button class="tog on" id="tSound" onclick="toggleSetting('sound','tSound')"></button>
+      </div>
+    </div>
+    <!-- Blocklist -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Blocklist</div>
+      <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
+        <div class="sleft">
+          <div class="sic re">🚫</div>
+          <div>
+            <div class="slb">Blocked Users</div>
+            <div class="sdb">Manage blocked friends</div>
+          </div>
+        </div>
+        <span style="color:var(--sub);font-size:14px;">›</span>
+      </div>
+    </div>
+    <!-- Account -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Account</div>
+      <button class="dangbtn" onclick="logout()">🚪 Log Out</button>
+    </div>
+  </div><!-- /sbody -->
+</div><!-- /sdraw -->
+<div class="tstack" id="tstack"></div>
+<!-- Blocklist Modal -->
+<div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
+<div class="sdraw" id="blocklistDraw">
+  <div class="shead">
+    <span style="font-size:20px;">🚫</span>
+    <h2>Blocked Users</h2>
+    <button class="closebtn" onclick="closeBlocklist()">✕</button>
+  </div>
+  <div class="sbody">
+    <div id="blocklistBody" style="padding:20px;">
+      <div class="lempty">Loading...</div>
+    </div>
+  </div>
+  <button class="savebtn" onclick="openAddBlockModal()" style="position:fixed;bottom:80px;right:30px;width:auto;padding:12px 20px;border-radius:50px;box-shadow:var(--shad);">➕ Block User</button>
+</div>
+<!-- Add Block Modal -->
+<div class="profile-overlay" id="addBlockOverlay" onclick="closeAddBlock()"></div>
+<div class="profile-modal" id="addBlockModal">
+  <div class="profile-header">
+    <h3>Block a Friend</h3>
+    <button class="closebtn" onclick="closeAddBlock()">✕</button>
+  </div>
+  <div class="profile-body">
+    <p style="color:var(--sub);margin-bottom:20px;">Select a friend to block</p>
+    <div id="friendsToBlockList" style="max-height:300px;overflow-y:auto;"></div>
+  </div>
+</div>
+<!-- Story Viewer Modal -->
+<div class="profile-overlay" id="storyOverlay" onclick="closeStoryViewer()"></div>
+<div class="profile-modal" id="storyModal" style="max-width:500px;">
+  <div class="profile-header">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;">
+      <div class="av sm" id="storyUserAvatar">U</div>
+      <div>
+        <h3 id="storyUsername" style="margin:0;">Username</h3>
+        <p style="font-size:11px;color:var(--mute);margin:0;" id="storyTime">2h ago</p>
+      </div>
+    </div>
+    <button class="closebtn" onclick="closeStoryViewer()">✕</button>
+  </div>
+  <div class="profile-body" style="padding:0;background:var(--bg);">
+    <div id="storyContent" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
+      <img id="storyImage" style="max-width:100%;max-height:500px;border-radius:12px;display:none;">
+      <p id="storyText" style="padding:40px;font-size:18px;text-align:center;color:var(--txt);"></p>
+    </div>
+  </div>
+  <div style="padding:15px;border-top:1px solid var(--bdr);display:flex;gap:10px;" id="storyActions">
+    <button class="profile-action-btn" onclick="prevStory()" style="flex:1;">← Previous</button>
+    <button class="profile-action-btn" onclick="nextStory()" style="flex:1;">Next →</button>
+  </div>
+  <div style="padding:10px 15px;border-top:1px solid var(--bdr);font-size:12px;color:var(--mute);text-align:center;" id="storyViewers"></div>
+</div>
+<!-- Create Story Modal -->
+<div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
+<div class="profile-modal" id="createStoryModal" style="max-width:450px;">
+  <div class="profile-header">
+    <h3>Create Story</h3>
+    <button class="closebtn" onclick="closeCreateStory()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="ef">
+      <label>Story Type</label>
+      <select class="ei" id="storyType" onchange="toggleStoryType()">
+        <option value="text">Text Only</option>
+        <option value="image">Image</option>
+      </select>
+    </div>
+    <div class="ef" id="storyTextInput">
+      <label>Your Story</label>
+      <textarea class="ei" id="storyTextContent" rows="4" placeholder="What's on your mind?" style="resize:vertical;"></textarea>
+    </div>
+    <div class="ef" id="storyImageInput" style="display:none;">
+      <label>Upload Image</label>
+      <input type="file" class="ei" id="storyImageFile" accept="image/*" style="padding:8px;">
+    </div>
+    <div class="ef">
+      <label>Privacy</label>
+      <select class="ei" id="storyPrivacy">
+        <option value="friends">Friends</option>
+        <option value="public">Public</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="ef" id="customPrivacySection" style="display:none;">
+      <label>Select Friends</label>
+      <div id="customFriendsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
+    </div>
+    <button class="savebtn" onclick="createStory()">📸 Post Story</button>
+  </div>
+</div>
+<script>
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function switchEmojiCat(cat){
+  document.querySelectorAll('.emoji-cat').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[data-cat="${cat}"]`).classList.add('active');
+  document.querySelectorAll('.emoji-section').forEach(s=>s.classList.add('hidden'));
+  document.querySelector(`.emoji-section[data-category="${cat}"]`).classList.remove('hidden');
+}
+const ME_ID = {{ user_id }};
+const ME_NAME = '{{ user.username }}';
+let socket=null,currentChatId=null,currentFriendId=null,friends=[],pendingReqs=[],searchTimer=null,typingTimer=null;
+let prefs={theme:'dark',sound:true};
+let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
+
+(function boot(){
+  loadPrefs();connectSocket();loadFriends();loadRequests();
+  document.addEventListener('click',hideCtxMenu);
+})();
+function loadPrefs(){
+  try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
+  applyTheme();
+  document.getElementById('tDark').classList.toggle('on',prefs.theme==='dark');
+  document.getElementById('tSound').classList.toggle('on',prefs.sound);
+}
+function savePrefs(){localStorage.setItem('hpz_prefs',JSON.stringify(prefs));}
+function applyTheme(){document.documentElement.setAttribute('data-theme',prefs.theme);}
+function toggleTheme(){
+  prefs.theme=prefs.theme==='dark'?'light':'dark';
+  applyTheme();
+  document.getElementById('tDark').classList.toggle('on',prefs.theme==='dark');
+  savePrefs();
+  toast(prefs.theme==='dark'?'🌙 Dark mode':'☀️ Light mode','info');
+}
+function toggleSetting(key,btnId){
+  prefs[key]=!prefs[key];
+  document.getElementById(btnId).classList.toggle('on',prefs[key]);
+  savePrefs();
+}
+function openSettings(){document.getElementById('sov').classList.add('open');document.getElementById('sdraw').classList.add('open');}
+function closeSettings(){document.getElementById('sov').classList.remove('open');document.getElementById('sdraw').classList.remove('open');}
+async function saveProfile(){
+  const un=document.getElementById('eun').value.trim();
+  const bio=document.getElementById('ebio').value.trim();
+  const rel=document.getElementById('erel').value;
+  try{
+    const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:un,bio,relationship_status:rel})});
+    const d=await r.json();
+    if(d.success){
+      document.getElementById('snm').textContent=un||ME_NAME;
+      toast('✅ Profile saved!','ok');
+    }else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+function connectSocket(){
+  socket=io({withCredentials:true,transports:['polling','websocket']});
+  socket.on('connect',()=>{if(currentChatId)socket.emit('join_chat',{chat_id:currentChatId});});
+  socket.on('new_message',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)appendMsg(msg);if(prefs.sound&&msg.sender_id!==ME_ID)beep();updatePrev(msg);});
+  socket.on('message_edited',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)updateMsgInDOM(msg);});
+  socket.on('message_deleted',(data)=>{if(currentChatId&&data.chat_id===currentChatId){const el=document.querySelector(`[data-msg-id="${data.id}"]`);if(el)el.remove();}});
+  socket.on('message_pinned',(data)=>{if(currentChatId&&data.chat_id===currentChatId){const el=document.querySelector(`[data-msg-id="${data.id}"] .bub`);if(el)el.classList.toggle('pinned',data.is_pinned);updatePinnedBanner();}});
+  socket.on('message_reaction',(data)=>{if(currentChatId&&data.chat_id===currentChatId)updateMsgInDOM(data.message);});
+  socket.on('user_online',(data)=>{if(data.online)onlineUsers.add(data.user_id);else onlineUsers.delete(data.user_id);updateOnlineStatus();});
+  socket.on('typing_start',({username})=>showTyping(username));
+  socket.on('typing_stop',hideTyping);
+  socket.on('error',(e)=>toast(e.message||'Socket error','err'));
+}
+function sendMsg(){
+  const inp=document.getElementById('msgInput');const c=inp.value.trim();if(!c)return;
+  if(!socket?.connected){toast('Not connected','err');return;}
+  if(!currentChatId){toast('Select a chat first','err');return;}
+  const data={chat_id:currentChatId,content:c,message_type:'text'};
+  if(replyToMsg)data.reply_to_id=replyToMsg.id;
+  socket.emit('send_message',data);inp.value='';inp.style.height='';closeEmoji();cancelReply();
+}
+async function loadMsgs(chatId){
+  try{
+    const r=await fetch(`/api/messages/${chatId}`);const d=await r.json();
+    const area=document.getElementById('marea');area.innerHTML='';
+    if(!d.success||!d.messages.length){area.innerHTML='<div class="ces"><div class="big">👋</div><h3>Say hello!</h3><p>No messages yet</p></div>';return;}
+    let ld='';
+    d.messages.forEach(m=>{const dy=dayLabel(m.created_at);if(dy!==ld){area.insertAdjacentHTML('beforeend',`<div class="daydiv"><span>${dy}</span></div>`);ld=dy;}appendMsg(m,false);});
+    scrollBot();updatePinnedBanner();
+  }catch(e){console.error(e);}
+}
+function appendMsg(msg,scroll=true){
+  const area=document.getElementById('marea');const em=area.querySelector('.ces');if(em)em.remove();
+  const isSent=msg.sender_id===ME_ID;
+  const g=document.createElement('div');g.className=`mgrp ${isSent?'sent':'recv'}`;g.setAttribute('data-msg-id',msg.id);
+  let inner='';
+  if(!isSent)inner+=`<div class="mfrom">${esc(msg.sender_username)}</div>`;
+  let body='';
+  if(msg.reply_to){body+=`<div class="reply-prev"><div class="reply-prev-from">${esc(msg.reply_to.sender_username)}</div><div class="reply-prev-text">${esc(msg.reply_to.content)}</div></div>`;}
+  if(msg.message_type==='image'){body+=`<img src="${msg.content}" alt="img" onclick="window.open('${msg.content}','_blank')">`;}
+  else if(!msg.is_deleted){body+=esc(msg.content).replace(/\n/g,'<br>');}
+  else{body+='<em style="opacity:.5">[Message deleted]</em>';}
+  const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
+  inner+=`<div class="${bubClass}" oncontextmenu="showCtxMenu(event,${msg.id},${isSent})">`;
+  inner+=body;inner+=`<span class="mts">${fmtTime(msg.created_at)}</span>`;
+  if(isSent&&!msg.is_deleted){inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button></div>`;}
+  else if(!isSent&&!msg.is_deleted){inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button></div>`;}
+  inner+=`</div>`;
+  if(msg.reactions&&Object.keys(msg.reactions).length>0){
+    inner+=`<div class="reactions">`;
+    for(const[emoji,count]of Object.entries(msg.reactions)){const userReacted=msg.user_reactions&&msg.user_reactions.includes(emoji);inner+=`<div class="reaction${userReacted?' user-reacted':''}" data-emoji="${emoji}"><span>${emoji}</span><span class="count">${count}</span></div>`;}
+    inner+=`</div>`;
+  }
+  g.innerHTML=inner;area.appendChild(g);if(scroll)scrollBot();
+}
+function updateMsgInDOM(msg){const el=document.querySelector(`[data-msg-id="${msg.id}"]`);if(!el)return;el.outerHTML='';appendMsg(msg,false);}
+function scrollBot(){const a=document.getElementById('marea');a.scrollTop=a.scrollHeight;}
+async function uploadImg(inp){
+  const f=inp.files[0];if(!f)return;
+  if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
+  const fd=new FormData();fd.append('image',f);
+  try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();if(d.success)socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image'});else toast(d.error||'Upload failed','err');}catch(e){toast('Upload failed','err');}
+  inp.value='';
+}
+function triggerImageSelect(){if(!currentChatId){toast('Select a chat first','err');return;}document.getElementById('imgInp').click();}
+async function directUploadImage(file){
+  if(!currentChatId){toast('Select a chat first','err');return;}
+  const fd=new FormData();fd.append('image',file);toast('Uploading image...','info');
+  try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image'});toast('Image sent!','ok');}else toast(d.error||'Upload failed','err');}catch(e){toast('Upload error: '+e.message,'err');}
+}
+function handleDirectUpload(inp){const f=inp.files[0];if(!f)return;directUploadImage(f);inp.value='';}
+let imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1};
+function previewImage(inp){
+  const f=inp.files[0];if(!f)return;
+  if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
+  const isMobile=window.innerWidth<=720;
+  if(isMobile){if(confirm('Preview image before sending?')){showImagePreview(f);}else{directUploadImage(f);inp.value='';}}
+  else{showImagePreview(f);}
+}
+function showImagePreview(f){
+  imgPreviewData.file=f;const reader=new FileReader();
+  reader.onload=(e)=>{const img=new Image();img.onload=()=>{imgPreviewData.img=img;imgPreviewData.rotation=0;imgPreviewData.flipH=1;imgPreviewData.flipV=1;const canvas=document.getElementById('imgPreviewCanvas');imgPreviewData.canvas=canvas;imgPreviewData.ctx=canvas.getContext('2d');drawImageOnCanvas();document.getElementById('imgPreviewOverlay').classList.add('show');document.getElementById('imgPreviewModal').classList.add('show');};img.src=e.target.result;};reader.readAsDataURL(f);
+}
+function drawImageOnCanvas(){
+  const{canvas,ctx,img,rotation,flipH,flipV}=imgPreviewData;const angle=rotation*Math.PI/180;let w=img.width,h=img.height;
+  const maxSize=window.innerWidth<=720?800:1200;if(w>maxSize||h>maxSize){const scale=Math.min(maxSize/w,maxSize/h);w*=scale;h*=scale;}
+  if(rotation===90||rotation===-90||rotation===270){canvas.width=h;canvas.height=w;}else{canvas.width=w;canvas.height=h;}
+  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(angle);ctx.scale(flipH,flipV);ctx.drawImage(img,-w/2,-h/2,w,h);ctx.restore();
+}
+function rotateImage(deg){imgPreviewData.rotation=(imgPreviewData.rotation+deg)%360;drawImageOnCanvas();}
+function flipImage(dir){if(dir==='h')imgPreviewData.flipH*=-1;else imgPreviewData.flipV*=-1;drawImageOnCanvas();}
+function cropImage(){toast('Crop feature coming soon!','info');}
+function closeImagePreview(){document.getElementById('imgPreviewOverlay').classList.remove('show');document.getElementById('imgPreviewModal').classList.remove('show');imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1};}
+async function sendEditedImage(){
+  const{canvas}=imgPreviewData;if(!canvas)return;
+  canvas.toBlob(async(blob)=>{const fd=new FormData();fd.append('image',blob,'edited.jpg');try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image'});closeImagePreview();}else toast(d.error||'Upload failed','err');}catch(e){toast('Upload failed','err');};},'image/jpeg',0.9);
+}
+let currentProfileData=null;
+function showFriendProfile(){
+  if(!currentFriendId)return;
+  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
+  currentProfileData=friend;
+  document.getElementById('profileName').textContent=friend.username;
+  document.getElementById('profileStatus').textContent=friend.is_online?'Online':friend.status;
+  document.getElementById('profileBio').textContent=friend.bio||'No bio yet';
+  document.getElementById('profileRelationship').textContent=friend.relationship_status||'Prefer not to say';
+  const av=document.getElementById('profileAvLarge');av.textContent=friend.username[0].toUpperCase();
+  if(friend.avatar_url)av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
+  document.getElementById('profileOverlay').classList.add('show');document.getElementById('profileModal').classList.add('show');
+}
+function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
+function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
+let callData={active:false,type:null,muted:false,videoOff:false,localStream:null,remoteStream:null};
+function startVoiceCall(){
+  if(!currentFriendId){toast('Select a friend first','err');return;}
+  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
+  callData.type='voice';callData.active=true;
+  document.getElementById('callName').textContent=friend.username;document.getElementById('callStatus').textContent='Calling...';document.getElementById('callAvatar').textContent=friend.username[0].toUpperCase();
+  document.getElementById('muteBtn').style.display='inline-flex';document.getElementById('videoBtn').style.display='none';document.getElementById('callVideo').style.display='none';
+  document.getElementById('callOverlay').classList.add('show');document.getElementById('callModal').classList.add('show');
+  setTimeout(()=>document.getElementById('callStatus').textContent='Connected',2000);toast('📞 Voice calls coming soon!','info');
+}
+async function startVideoCall(){
+  if(!currentFriendId){toast('Select a friend first','err');return;}
+  const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;
+  callData.type='video';callData.active=true;
+  document.getElementById('callName').textContent=friend.username;document.getElementById('callStatus').textContent='Calling...';document.getElementById('callAvatar').textContent=friend.username[0].toUpperCase();
+  document.getElementById('muteBtn').style.display='inline-flex';document.getElementById('videoBtn').style.display='inline-flex';document.getElementById('callVideo').style.display='flex';
+  document.getElementById('callOverlay').classList.add('show');document.getElementById('callModal').classList.add('show');
+  try{const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});callData.localStream=stream;document.getElementById('localVideo').srcObject=stream;document.getElementById('callStatus').textContent='Connected';}
+  catch(e){toast('Camera/mic access denied','err');document.getElementById('callStatus').textContent='Connected (no camera)';}
+  toast('📹 Video calls coming soon!','info');
+}
+function toggleMute(){callData.muted=!callData.muted;const btn=document.getElementById('muteBtn');btn.classList.toggle('muted',callData.muted);btn.textContent=callData.muted?'🔇':'🎤';if(callData.localStream)callData.localStream.getAudioTracks().forEach(t=>t.enabled=!callData.muted);}
+function toggleVideo(){callData.videoOff=!callData.videoOff;const btn=document.getElementById('videoBtn');btn.classList.toggle('muted',callData.videoOff);btn.textContent=callData.videoOff?'📷':'📹';if(callData.localStream)callData.localStream.getVideoTracks().forEach(t=>t.enabled=!callData.videoOff);}
+function endCall(){if(callData.localStream)callData.localStream.getTracks().forEach(t=>t.stop());document.getElementById('callOverlay').classList.remove('show');document.getElementById('callModal').classList.remove('show');callData={active:false,type:null,muted:false,videoOff:false,localStream:null,remoteStream:null};}
+function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
+function cancelReply(){replyToMsg=null;document.getElementById('replyBar').classList.remove('show');}
+let editingMsgId=null;
+function startEdit(id,content){editingMsgId=id;const inp=document.getElementById('msgInput');inp.value=content.replace(/<br>/g,'\n');inp.focus();toast('✏️ Editing message - press Enter to save','info');}
+async function saveEdit(){
+  if(!editingMsgId)return;const inp=document.getElementById('msgInput');const content=inp.value.trim();if(!content)return;
+  try{const r=await fetch(`/api/messages/${editingMsgId}/edit`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});const d=await r.json();if(d.success){inp.value='';inp.style.height='';editingMsgId=null;toast('✅ Message updated','ok');}else toast(d.error,'err');}catch(e){toast('Failed','err');}
+}
+async function confirmDelete(id){if(!confirm('Delete this message?'))return;try{const r=await fetch(`/api/messages/${id}/delete`,{method:'DELETE'});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function togglePin(id){try{const r=await fetch(`/api/messages/${id}/pin`,{method:'POST'});const d=await r.json();if(d.success){toast(d.is_pinned?'📌 Message pinned':'📌 Message unpinned','info');updatePinnedBanner();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function updatePinnedBanner(){
+  if(!currentChatId)return;
+  try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();const banner=document.getElementById('pinnedBanner');if(d.success&&d.messages.length>0){document.getElementById('pinnedText').textContent=d.messages.length===1?'1 pinned message':`${d.messages.length} pinned messages`;banner.classList.add('show');}else banner.classList.remove('show');}catch(e){}
+}
+async function showPinned(){
+  if(!currentChatId)return;
+  try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();if(d.success&&d.messages.length>0){const list=d.messages.map(m=>`• ${m.content.substring(0,60)}`).join('\n');alert(`Pinned Messages:\n\n${list}`);}else toast('No pinned messages','info');}catch(e){toast('Failed','err');}
+}
+function showReactPicker(id,event){
+  event.stopPropagation();const picker=document.createElement('div');picker.className='react-picker show';picker.style.position='fixed';picker.style.left=`${event.clientX}px`;picker.style.top=`${event.clientY-100}px`;
+  ['❤️','😂','😮','😢','👍','🎉'].forEach(emoji=>{const btn=document.createElement('div');btn.className='react-emoji';btn.textContent=emoji;btn.onclick=()=>{reactTo(id,emoji);picker.remove();};picker.appendChild(btn);});
+  document.body.appendChild(picker);setTimeout(()=>picker.remove(),5000);
+}
+async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
+function showCtxMenu(event,id,isSent){event.preventDefault();event.stopPropagation();contextMsg={id,isSent};const menu=document.getElementById('ctxMenu');menu.style.left=`${event.clientX}px`;menu.style.top=`${event.clientY}px`;menu.classList.add('show');}
+function hideCtxMenu(e){const menu=document.getElementById('ctxMenu');if(!e||!e.target.closest('#ctxMenu'))menu.classList.remove('show');}
+function replyToMsgCtx(){if(!contextMsg)return;const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);if(el){const from=el.querySelector('.mfrom')?.textContent||ME_NAME;const bubText=el.querySelector('.bub')?.textContent?.trim()||'';setReply(contextMsg.id,from,bubText.split('\n')[0].substring(0,50));}hideCtxMenu();}
+function editMsgCtx(){if(!contextMsg||!contextMsg.isSent)return;const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);if(el){const bubText=el.querySelector('.bub')?.textContent?.trim()||'';startEdit(contextMsg.id,bubText.split('\n')[0]);}hideCtxMenu();}
+function pinMsgCtx(){if(!contextMsg)return;togglePin(contextMsg.id);hideCtxMenu();}
+function deleteMsgCtx(){if(!contextMsg||!contextMsg.isSent)return;confirmDelete(contextMsg.id);hideCtxMenu();}
+function toggleSearch(){document.getElementById('searchPanel').classList.toggle('open');if(document.getElementById('searchPanel').classList.contains('open'))document.getElementById('msgSearch').focus();}
+let searchMsgTimer=null;
+function searchMsgs(q){clearTimeout(searchMsgTimer);if(!q.trim()){document.getElementById('searchResults').innerHTML='';return;}searchMsgTimer=setTimeout(()=>doSearchMsgs(q),300);}
+async function doSearchMsgs(q){
+  if(!currentChatId)return;
+  try{const r=await fetch(`/api/messages/search/${currentChatId}?q=${encodeURIComponent(q)}`);const d=await r.json();const results=document.getElementById('searchResults');if(!d.success||!d.messages.length){results.innerHTML='<div class="lempty" style="padding:12px;">No results</div>';return;}results.innerHTML=d.messages.map(m=>`<div class="search-msg" onclick="scrollToMsg(${m.id})"><div class="search-msg-from">${esc(m.sender_username)}</div><div class="search-msg-content">${esc(m.content)}</div><div class="search-msg-time">${fmtTime(m.created_at)}</div></div>`).join('');}catch(e){}
+}
+function scrollToMsg(id){const el=document.querySelector(`[data-msg-id="${id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(124,106,255,.2)';setTimeout(()=>el.style.background='',2000);}}
+function toggleEmoji(){document.getElementById('epick').classList.toggle('open');}
+function closeEmoji(){document.getElementById('epick').classList.remove('open');}
+function ins(e){document.getElementById('msgInput').value+=e;document.getElementById('msgInput').focus();}
+document.addEventListener('click',(e)=>{if(!e.target.closest('.epick')&&!e.target.closest('.isb'))closeEmoji();});
+document.addEventListener('click',(e)=>{
+  const btn=e.target.closest('.msg-act');if(!btn)return;
+  const action=btn.dataset.action,msgId=parseInt(btn.dataset.msgId);
+  const msgEl=btn.closest('[data-msg-id]');if(!msgEl)return;
+  const msgContent=msgEl.querySelector('.bub')?.textContent?.trim()||'';
+  const msgFrom=msgEl.querySelector('.mfrom')?.textContent||ME_NAME;
+  switch(action){
+    case 'reply':setReply(msgId,msgFrom,msgContent.substring(0,50));break;
+    case 'edit':startEdit(msgId,msgContent.split('\n')[0]);break;
+    case 'pin':togglePin(msgId);break;
+    case 'delete':confirmDelete(msgId);break;
+    case 'react':showReactPicker(msgId,e);break;
+  }
+});
+document.addEventListener('click',(e)=>{const reaction=e.target.closest('.reaction');if(!reaction)return;const msgEl=reaction.closest('[data-msg-id]');if(!msgEl)return;const msgId=parseInt(msgEl.dataset.msgId);const emoji=reaction.querySelector('span')?.textContent;if(emoji)reactTo(msgId,emoji);});
+document.getElementById('marea').addEventListener('touchstart',(e)=>{
+  const bub=e.target.closest('.bub');if(!bub)return;const target=bub.closest('[data-msg-id]');
+  const timer=setTimeout(()=>{if(target){const msgId=parseInt(target.dataset.msgId);const from=target.querySelector('.mfrom')?.textContent||ME_NAME;const content=bub.textContent.trim().split('\n')[0];setReply(msgId,from,content.substring(0,50));if(navigator.vibrate)navigator.vibrate(50);}},500);
+  const clear=()=>clearTimeout(timer);document.addEventListener('touchend',clear,{once:true});document.addEventListener('touchmove',clear,{once:true});
+});
+function handleSearch(q){
+  clearTimeout(searchTimer);const p=document.getElementById('srPanel');
+  if(!q.trim()){p.classList.remove('open');return;}
+  p.classList.add('open');document.getElementById('srList').innerHTML='<div class="lempty" style="padding:12px;">Searching…</div>';
+  searchTimer=setTimeout(()=>doSearch(q),280);
+}
+async function doSearch(q){
+  try{const r=await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);const d=await r.json();const list=document.getElementById('srList');if(!d.success||!d.results.length){list.innerHTML='<div class="lempty" style="padding:12px;">No users found</div>';return;}list.innerHTML=d.results.map(u=>`<div class="sr-row"><div class="sr-l"><div class="av sm">${u.username[0].toUpperCase()}</div><div><div class="sr-nm">${esc(u.username)}</div><div class="sr-st">${u.is_online?'Online':esc(u.status)}</div></div></div>${srBtn(u)}</div>`).join('');}catch(e){console.error(e);}
+}
+function srBtn(u){
+  if(u.relationship==='friend')return`<button class="pill p-msg" onclick="openChat(${u.id},'${esc(u.username)}')">Message</button>`;
+  if(u.relationship==='request_sent')return`<button class="pill p-pend" disabled>Pending</button>`;
+  if(u.relationship==='request_received')return`<button class="pill p-ok" onclick="quickAccept(${u.id})">Accept</button>`;
+  return`<button class="pill p-add" onclick="addFriend(${u.id})">Add Friend</button>`;
+}
+async function loadFriends(){try{const r=await fetch('/api/friends');const d=await r.json();if(d.success){friends=d.friends;renderFriends();}}catch(e){}}
+function renderFriends(){
+  const list=document.getElementById('clist');const empty=document.getElementById('cempty');
+  list.querySelectorAll('.crow').forEach(e=>e.remove());
+  if(!friends.length){empty.style.display='';return;}empty.style.display='none';
+  friends.forEach(f=>{
+    const el=document.createElement('div');el.className=`crow${currentChatId===f.chat_id?' active':''}`;el.onclick=()=>openChat(f.id,f.username,f.chat_id);
+    const isOnline=onlineUsers.has(f.id);
+    el.innerHTML=`<div class="av">${isOnline?'<div class="online-dot"></div>':''}${f.username[0].toUpperCase()}</div><div class="cmeta"><div class="cnrow"><span class="cuname">${esc(f.username)}</span></div><div class="cprev">${f.last_message?esc(f.last_message):'No messages yet'}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''} ${f.unread_count?`<div class="unread">${f.unread_count}</div>`:''}</div>`;
+    list.appendChild(el);
+  });
+}
+function updateOnlineStatus(){if(currentFriendId&&onlineUsers.has(currentFriendId)){document.getElementById('chsub').textContent='Online';document.getElementById('chsub').classList.add('online');}else if(currentFriendId){document.getElementById('chsub').textContent='Friend';document.getElementById('chsub').classList.remove('online');}renderFriends();}
+function updatePrev(){loadFriends();}
+async function loadRequests(){
+  try{const r=await fetch('/api/friends/requests');const d=await r.json();if(!d.success)return;pendingReqs=d.received||[];const b=document.getElementById('rqBadge');if(pendingReqs.length){b.textContent=pendingReqs.length;b.classList.remove('hidden');}else b.classList.add('hidden');renderRequests();}catch(e){}
+}
+function renderRequests(){
+  const list=document.getElementById('rqList');if(!pendingReqs.length){list.innerHTML='<div class="lempty" style="padding:12px;">No pending requests</div>';return;}
+  list.innerHTML=pendingReqs.map(r=>`<div class="req-row"><div class="req-usr"><div class="av sm">${r.username[0].toUpperCase()}</div><div><div class="req-nm">${esc(r.username)}</div><div class="req-wh">${r.time_ago||''}</div></div></div><div class="req-ac"><button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button><button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button></div></div>`).join('');
+}
+function toggleP(id){const p=document.getElementById(id);p.classList.toggle('open');document.getElementById('rqBtn').classList.toggle('on',p.classList.contains('open'));if(id!=='srPanel')document.getElementById('srPanel').classList.remove('open');}
+async function addFriend(uid){try{const r=await fetch('/api/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to_user_id:uid})});const d=await r.json();if(d.success){toast('Friend request sent! 🎉','ok');clearSearch();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function acceptReq(reqId){try{const r=await fetch('/api/friends/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});const d=await r.json();if(d.success){toast('Friend added! 🎉','ok');await loadFriends();await loadRequests();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function rejectReq(reqId){try{await fetch('/api/friends/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});await loadRequests();}catch(e){}}
+async function quickAccept(userId){let rq=pendingReqs.find(r=>r.user_id===userId);if(!rq){await loadRequests();rq=pendingReqs.find(r=>r.user_id===userId);}if(rq)await acceptReq(rq.request_id);}
+function openChat(fid,fname,chatId){
+  if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
+  currentChatId=chatId;currentFriendId=fid;
+  document.getElementById('chav').textContent=fname[0].toUpperCase();document.getElementById('chnm').textContent=fname;
+  const isOnline=onlineUsers.has(fid);document.getElementById('chsub').textContent=isOnline?'Online':'Friend';document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
+  document.getElementById('videoCallBtn').style.display='block';document.getElementById('voiceCallBtn').style.display='block';document.getElementById('searchBtn').style.display='block';document.getElementById('pinnedBtn').style.display='block';
+  document.querySelector('.iarea').style.display='flex';
+  renderFriends();loadMsgs(chatId);if(socket?.connected)socket.emit('join_chat',{chat_id:chatId});clearSearch();
+  if(window.innerWidth<=720)closeSB();if(window.innerWidth>720)document.getElementById('msgInput').focus();
+}
+function doTyping(){if(!currentChatId||!socket?.connected)return;socket.emit('typing_start',{chatId:currentChatId});clearTimeout(typingTimer);typingTimer=setTimeout(()=>socket.emit('typing_stop',{chatId:currentChatId}),2000);}
+function showTyping(name){document.getElementById('tytxt').textContent=`${name} is typing`;document.getElementById('tybar').style.display='flex';}
+function hideTyping(){document.getElementById('tybar').style.display='none';}
+function beep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.value=880;g.gain.setValueAtTime(.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}catch(e){}}
+function autoR(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+function clearSearch(){document.getElementById('sinp').value='';document.getElementById('srPanel').classList.remove('open');document.getElementById('srList').innerHTML='';}
+function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mov').classList.toggle('show');}
+function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mov').classList.remove('show');}
+async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
+function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
+function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
+function fmtTime(iso){const d=toL(iso),now=new Date();const h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM',hh=String(h%12||12);const t=`${hh}:${m} ${ap}`;if(d.toDateString()===now.toDateString())return t;const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return`Yesterday ${t}`;return`${d.getMonth()+1}/${d.getDate()} ${t}`;}
+function relTime(iso){const s=(Date.now()-toL(iso).getTime())/1000;if(s<60)return'now';if(s<3600)return`${Math.floor(s/60)}m`;if(s<86400)return`${Math.floor(s/3600)}h`;return`${Math.floor(s/86400)}d`;}
+function dayLabel(iso){const d=toL(iso),now=new Date();if(d.toDateString()===now.toDateString())return'Today';const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return'Yesterday';return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
+// ═══════ BLOCKLIST ═══════
+async function openBlocklist(){document.getElementById('blocklistOv').classList.add('open');document.getElementById('blocklistDraw').classList.add('open');await loadBlocklist();}
+function closeBlocklist(){document.getElementById('blocklistOv').classList.remove('open');document.getElementById('blocklistDraw').classList.remove('open');}
+async function loadBlocklist(){
+  try{const r=await fetch('/api/blocklist');const d=await r.json();const body=document.getElementById('blocklistBody');if(!d.success||!d.blocked_users.length){body.innerHTML='<div class="lempty">No blocked users</div>';return;}
+  body.innerHTML=d.blocked_users.map(u=>`<div class="pcard" style="margin-bottom:8px;"><div class="av">${u.username[0].toUpperCase()}</div><div class="pinfo"><div class="pname">${esc(u.username)}</div><div class="pstat" style="font-size:11px;">Blocked ${relTime(u.blocked_at)}</div></div><button class="pill p-no" onclick="unblockUser(${u.id})">Unblock</button></div>`).join('');}catch(e){toast('Failed to load blocklist','err');}
+}
+function openAddBlockModal(){document.getElementById('addBlockOverlay').classList.add('show');document.getElementById('addBlockModal').classList.add('show');loadFriendsToBlock();}
+function closeAddBlock(){document.getElementById('addBlockOverlay').classList.remove('show');document.getElementById('addBlockModal').classList.remove('show');}
+async function loadFriendsToBlock(){
+  const list=document.getElementById('friendsToBlockList');if(!friends.length){list.innerHTML='<p style="color:var(--mute);">No friends to block</p>';return;}
+  list.innerHTML=friends.map(f=>`<div class="srow" style="margin-bottom:6px;cursor:pointer;" onclick="blockUser(${f.id})"><div class="sleft"><div class="av sm">${f.username[0].toUpperCase()}</div><div><div class="slb">${esc(f.username)}</div></div></div><span style="color:var(--sub);">›</span></div>`).join('');
+}
+async function blockUser(userId){if(!confirm('Block this user? They won\'t be able to message you.'))return;try{const r=await fetch('/api/blocklist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User blocked','ok');closeAddBlock();loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
+async function unblockUser(userId){if(!confirm('Unblock this user?'))return;try{const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User unblocked','ok');loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
+// ═══════ STORIES ═══════
+let currentStories=[],currentStoryIndex=0,currentStoryUserId=null;
+async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesBar(d.stories);}catch(e){console.error('Failed to load stories',e);}}
+function renderStoriesBar(stories){
+  const container=document.getElementById('storiesScroll');
+  if(!stories||stories.length===0){container.innerHTML='<div class="lempty" style="padding:12px;font-size:11px;">No stories yet</div>';return;}
+  container.innerHTML=stories.map(s=>`<div class="story-circle ${s.has_unviewed?'unviewed':''}" onclick="openStory(${s.user_id})" style="cursor:pointer;text-align:center;margin:0 8px;"><div class="av" style="border:2px solid ${s.has_unviewed?'var(--brand)':'var(--bdr)'};">${s.username[0].toUpperCase()}</div><div style="font-size:10px;margin-top:4px;color:var(--txt);">${esc(s.username)}</div></div>`).join('');
+}
+async function openStory(userId){
+  try{const r=await fetch('/api/stories/friends');const d=await r.json();if(!d.success)return;const userStories=d.stories.find(s=>s.user_id===userId);if(!userStories||!userStories.stories.length)return;currentStories=userStories.stories;currentStoryIndex=0;currentStoryUserId=userId;showStory();}catch(e){toast('Failed to load story','err');}
+}
+function showStory(){
+  if(!currentStories.length)return;const story=currentStories[currentStoryIndex];
+  document.getElementById('storyUsername').textContent=story.username;document.getElementById('storyTime').textContent=relTime(story.created_at);document.getElementById('storyUserAvatar').textContent=story.username[0].toUpperCase();
+  const imgEl=document.getElementById('storyImage');const textEl=document.getElementById('storyText');
+  if(story.media_url){imgEl.src=story.media_url;imgEl.style.display='block';textEl.style.display='none';}else{textEl.textContent=story.content;textEl.style.display='block';imgEl.style.display='none';}
+  document.getElementById('storyOverlay').classList.add('show');document.getElementById('storyModal').classList.add('show');
+  fetch(`/api/stories/${story.id}/view`,{method:'POST'});
+  if(story.is_own){loadStoryViewers(story.id);}else{document.getElementById('storyViewers').innerHTML='';}
+}
+async function loadStoryViewers(storyId){try{const r=await fetch(`/api/stories/${storyId}/viewers`);const d=await r.json();if(d.success)document.getElementById('storyViewers').innerHTML=`👁️ Viewed by ${d.count} ${d.count===1?'person':'people'}`;}catch(e){}}
+function prevStory(){if(currentStoryIndex>0){currentStoryIndex--;showStory();}else{toast('This is the first story','info');}}
+function nextStory(){if(currentStoryIndex<currentStories.length-1){currentStoryIndex++;showStory();}else{closeStoryViewer();}}
+function closeStoryViewer(){document.getElementById('storyOverlay').classList.remove('show');document.getElementById('storyModal').classList.remove('show');loadStories();}
+function openCreateStoryModal(){document.getElementById('createStoryOverlay').classList.add('show');document.getElementById('createStoryModal').classList.add('show');document.getElementById('storyPrivacy').value='friends';toggleStoryType();}
+function closeCreateStory(){document.getElementById('createStoryOverlay').classList.remove('show');document.getElementById('createStoryModal').classList.remove('show');document.getElementById('storyTextContent').value='';document.getElementById('storyImageFile').value='';}
+function toggleStoryType(){const type=document.getElementById('storyType').value;document.getElementById('storyTextInput').style.display=type==='text'?'block':'none';document.getElementById('storyImageInput').style.display=type==='image'?'block':'none';}
+document.getElementById('storyPrivacy')?.addEventListener('change',function(){document.getElementById('customPrivacySection').style.display=this.value==='custom'?'block':'none';if(this.value==='custom')loadCustomFriendsList();});
+function loadCustomFriendsList(){const list=document.getElementById('customFriendsList');list.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;"><span>${esc(f.username)}</span></label>`).join('');}
+async function createStory(){
+  const type=document.getElementById('storyType').value;const privacy=document.getElementById('storyPrivacy').value;let content='',mediaUrl='';
+  if(type==='text'){content=document.getElementById('storyTextContent').value.trim();if(!content){toast('Please enter story content','err');return;}}
+  else{const file=document.getElementById('storyImageFile').files[0];if(!file){toast('Please select an image','err');return;}const fd=new FormData();fd.append('image',file);try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();if(!d.success){toast('Image upload failed','err');return;}mediaUrl=d.url;}catch(e){toast('Upload failed','err');return;}}
+  let customUsers=[];if(privacy==='custom'){customUsers=Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));if(!customUsers.length){toast('Select at least one friend','err');return;}}
+  try{const r=await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,media_url:mediaUrl,media_type:type==='image'?'image':'text',privacy,custom_users:customUsers})});const d=await r.json();if(d.success){toast('✅ Story posted!','ok');closeCreateStory();loadStories();}else{toast(d.error||'Failed to post story','err');}}catch(e){toast('Failed to post story','err');}
+}
+setTimeout(loadStories,1000);
+</script>
+</body>
+</html>
