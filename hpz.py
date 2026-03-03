@@ -18,7 +18,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('RENDER'))
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 # Database configuration
 database_url = os.environ.get('DATABASE_URL', '')
@@ -974,14 +974,8 @@ def handle_send_message(data):
 
         msg_data = format_message(msg, user_id)
 
-        # Broadcast to the room (delivers to sender + receiver if both joined)
+        # Broadcast to room — both users auto-joined on connect
         emit('new_message', msg_data, room=chat_id)
-
-        # ── KEY FIX: also push directly to receiver's socket ID if they are
-        #    online but haven't opened this chat (so they get the sidebar update) ──
-        if other_user_id in online_users:
-            receiver_sid = online_users[other_user_id]['sid']
-            socketio.emit('new_message', msg_data, room=receiver_sid)
 
     except Exception as e:
         db.session.rollback()
