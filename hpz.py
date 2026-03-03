@@ -1016,6 +1016,99 @@ def shutdown_session(exception=None):
     db.session.remove()
 
 # ============================================================
+# WEBRTC SIGNALING EVENTS
+# ============================================================
+@socketio.on('call_offer')
+def handle_call_offer(data):
+    """User A sends call offer to User B"""
+    if 'user_id' not in session:
+        return
+    caller_id = session['user_id']
+    callee_id = data.get('callee_id')
+    offer = data.get('offer')
+    call_type = data.get('call_type', 'voice')  # voice or video
+
+    caller = User.query.get(caller_id)
+    if not caller:
+        return
+
+    # Make sure they are friends
+    if not are_friends(caller_id, callee_id):
+        emit('call_error', {'message': 'Not friends'})
+        return
+
+    # Deliver offer to callee if online
+    if callee_id in online_users:
+        callee_sid = online_users[callee_id]['sid']
+        socketio.emit('incoming_call', {
+            'caller_id': caller_id,
+            'caller_name': caller.username,
+            'caller_avatar': caller.avatar_url,
+            'offer': offer,
+            'call_type': call_type
+        }, room=callee_sid)
+    else:
+        emit('call_error', {'message': 'User is offline'})
+
+@socketio.on('call_answer')
+def handle_call_answer(data):
+    """User B answers the call (accept or reject)"""
+    if 'user_id' not in session:
+        return
+    callee_id = session['user_id']
+    caller_id = data.get('caller_id')
+    answer = data.get('answer')
+    accepted = data.get('accepted', False)
+
+    callee = User.query.get(callee_id)
+    if not callee:
+        return
+
+    if caller_id in online_users:
+        caller_sid = online_users[caller_id]['sid']
+        if accepted:
+            socketio.emit('call_accepted', {
+                'callee_id': callee_id,
+                'callee_name': callee.username,
+                'answer': answer
+            }, room=caller_sid)
+        else:
+            socketio.emit('call_rejected', {
+                'callee_id': callee_id,
+                'callee_name': callee.username
+            }, room=caller_sid)
+
+@socketio.on('ice_candidate')
+def handle_ice_candidate(data):
+    """Exchange ICE candidates between caller and callee"""
+    if 'user_id' not in session:
+        return
+    sender_id = session['user_id']
+    target_id = data.get('target_id')
+    candidate = data.get('candidate')
+
+    if target_id in online_users:
+        target_sid = online_users[target_id]['sid']
+        socketio.emit('ice_candidate', {
+            'sender_id': sender_id,
+            'candidate': candidate
+        }, room=target_sid)
+
+@socketio.on('call_end')
+def handle_call_end(data):
+    """Either user ends the call"""
+    if 'user_id' not in session:
+        return
+    user_id = session['user_id']
+    target_id = data.get('target_id')
+
+    if target_id in online_users:
+        target_sid = online_users[target_id]['sid']
+        socketio.emit('call_ended', {
+            'by_user_id': user_id
+        }, room=target_sid)
+
+# ============================================================
 # RUN SERVER
 # ============================================================
 if __name__ == '__main__':
