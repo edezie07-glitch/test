@@ -966,44 +966,34 @@ function createPeerConnection(targetId){
   callData.pendingCandidates=[];
   pc.onicecandidate=(e)=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
   pc.ontrack=(e)=>{
-    // Use streams directly — most reliable across all browsers/devices
-    if(e.streams&&e.streams[0]){
-      const stream=e.streams[0];
-      // Audio
+    const track=e.track;
+    // Use a dedicated MediaStream per track type — most reliable on all devices
+    if(track.kind==='audio'){
       let audio=document.getElementById('remoteAudio');
-      if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;audio.setAttribute('playsinline','');audio.muted=false;audio.volume=1.0;audio.style.display='none';document.body.appendChild(audio);}
-      audio.srcObject=stream;
-      // Force play — unlock autoplay block
-      const tryPlay=()=>audio.play().catch(()=>setTimeout(tryPlay,200));
+      if(!audio){
+        audio=document.createElement('audio');
+        audio.id='remoteAudio';
+        audio.autoplay=true;
+        audio.setAttribute('playsinline','');
+        audio.muted=false;
+        audio.volume=1.0;
+        audio.style.display='none';
+        document.body.appendChild(audio);
+      }
+      // Always use a fresh MediaStream for the audio track
+      const audioStream=new MediaStream([track]);
+      audio.srcObject=audioStream;
+      const tryPlay=()=>audio.play().catch(err=>{console.warn('audio play blocked',err);setTimeout(tryPlay,300);});
       tryPlay();
-      // Video
-      if(stream.getVideoTracks().length>0){
-        const rv=document.getElementById('remoteVideo');
-        rv.srcObject=stream;
-        rv.setAttribute('playsinline','');
-        rv.muted=false;
-        const tryPlayV=()=>rv.play().catch(()=>setTimeout(tryPlayV,200));
-        tryPlayV();
-      }
-    }else{
-      // Fallback: add track manually
-      const track=e.track;
-      if(track.kind==='audio'){
-        let audio=document.getElementById('remoteAudio');
-        if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;audio.setAttribute('playsinline','');audio.muted=false;audio.volume=1.0;audio.style.display='none';document.body.appendChild(audio);}
-        if(!audio.srcObject){audio.srcObject=new MediaStream();}
-        audio.srcObject.addTrack(track);
-        const tryPlay=()=>audio.play().catch(()=>setTimeout(tryPlay,200));
-        tryPlay();
-      }
-      if(track.kind==='video'){
-        const rv=document.getElementById('remoteVideo');
-        if(!rv.srcObject){rv.srcObject=new MediaStream();}
-        rv.srcObject.addTrack(track);
-        rv.setAttribute('playsinline','');
-        const tryPlayV=()=>rv.play().catch(()=>setTimeout(tryPlayV,200));
-        tryPlayV();
-      }
+    }
+    if(track.kind==='video'){
+      const rv=document.getElementById('remoteVideo');
+      const videoStream=new MediaStream([track]);
+      rv.srcObject=videoStream;
+      rv.setAttribute('playsinline','');
+      rv.muted=true; // video element must be muted to autoplay on mobile; audio comes from <audio> element
+      const tryPlayV=()=>rv.play().catch(err=>{console.warn('video play blocked',err);setTimeout(tryPlayV,300);});
+      tryPlayV();
     }
     document.getElementById('callStatus').textContent='Connected ✅';
   };
@@ -1047,8 +1037,11 @@ async function initiateCall(friend,type){
     callData.localStream=stream;
     if(type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.play().catch(()=>{});}
     const pc=createPeerConnection(friend.id);
+    // addTransceiver ensures bidirectional send+receive on all browsers
+    pc.addTransceiver('audio',{direction:'sendrecv'});
+    if(type==='video')pc.addTransceiver('video',{direction:'sendrecv'});
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-    const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==='video'});
+    const offer=await pc.createOffer();
     await pc.setLocalDescription(offer);
     showCallModal(friend.username,'Calling...',type==='video');
     socket.emit('call_offer',{callee_id:friend.id,offer:pc.localDescription,call_type:type});
