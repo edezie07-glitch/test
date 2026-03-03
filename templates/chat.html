@@ -1010,7 +1010,7 @@ function renderFriends(){
   friends.forEach(f=>{
     const el=document.createElement('div');el.className=`crow${currentChatId===f.chat_id?' active':''}`;el.onclick=()=>openChat(f.id,f.username,f.chat_id);
     const isOnline=onlineUsers.has(f.id);
-    el.innerHTML=`<div class="av">${isOnline?'<div class="online-dot"></div>':''}${f.username[0].toUpperCase()}</div><div class="cmeta"><div class="cnrow"><span class="cuname">${esc(f.username)}</span>${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''}</div><div class="cprev">${f.last_message?esc(f.last_message):'No messages yet'}</div></div>${f.unread_count?`<div class="unread">${f.unread_count}</div>`:''}`;
+    el.innerHTML=`<div class="av">${isOnline?'<div class="online-dot"></div>':''}${f.username[0].toUpperCase()}</div><div class="cmeta"><div class="cnrow"><span class="cuname">${esc(f.username)}</span></div><div class="cprev">${f.last_message?esc(f.last_message):'No messages yet'}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''} ${f.unread_count?`<div class="unread">${f.unread_count}</div>`:''}</div>`;
     list.appendChild(el);
   });
 }
