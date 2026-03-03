@@ -589,8 +589,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <h2 id="callName">Username</h2>
     <p id="callStatus">Calling...</p>
     <div id="callVideo" style="display:none;margin:20px 0;justify-content:center;gap:10px;">
-      <video id="localVideo" autoplay muted style="width:180px;height:135px;border-radius:12px;object-fit:cover;"></video>
-      <video id="remoteVideo" autoplay style="width:320px;height:240px;border-radius:12px;object-fit:cover;"></video>
+      <video id="localVideo" autoplay muted playsinline style="width:180px;height:135px;border-radius:12px;object-fit:cover;"></video>
+      <video id="remoteVideo" autoplay playsinline style="width:320px;height:240px;border-radius:12px;object-fit:cover;"></video>
     </div>
     <div class="call-controls">
       <button class="call-control-btn mute" id="muteBtn" onclick="toggleMute()" title="Mute">🎤</button>
@@ -966,17 +966,44 @@ function createPeerConnection(targetId){
   callData.pendingCandidates=[];
   pc.onicecandidate=(e)=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
   pc.ontrack=(e)=>{
-    const track=e.track;
-    if(track.kind==='audio'){
+    // Use streams directly — most reliable across all browsers/devices
+    if(e.streams&&e.streams[0]){
+      const stream=e.streams[0];
+      // Audio
       let audio=document.getElementById('remoteAudio');
-      if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;audio.setAttribute('playsinline','');audio.style.display='none';document.body.appendChild(audio);}
-      if(!audio.srcObject){audio.srcObject=new MediaStream();}
-      audio.srcObject.addTrack(track);audio.play().catch(()=>{});
-    }
-    if(track.kind==='video'){
-      const rv=document.getElementById('remoteVideo');
-      if(!rv.srcObject){rv.srcObject=new MediaStream();}
-      rv.srcObject.addTrack(track);rv.setAttribute('playsinline','');rv.play().catch(()=>{});
+      if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;audio.setAttribute('playsinline','');audio.muted=false;audio.volume=1.0;audio.style.display='none';document.body.appendChild(audio);}
+      audio.srcObject=stream;
+      // Force play — unlock autoplay block
+      const tryPlay=()=>audio.play().catch(()=>setTimeout(tryPlay,200));
+      tryPlay();
+      // Video
+      if(stream.getVideoTracks().length>0){
+        const rv=document.getElementById('remoteVideo');
+        rv.srcObject=stream;
+        rv.setAttribute('playsinline','');
+        rv.muted=false;
+        const tryPlayV=()=>rv.play().catch(()=>setTimeout(tryPlayV,200));
+        tryPlayV();
+      }
+    }else{
+      // Fallback: add track manually
+      const track=e.track;
+      if(track.kind==='audio'){
+        let audio=document.getElementById('remoteAudio');
+        if(!audio){audio=document.createElement('audio');audio.id='remoteAudio';audio.autoplay=true;audio.setAttribute('playsinline','');audio.muted=false;audio.volume=1.0;audio.style.display='none';document.body.appendChild(audio);}
+        if(!audio.srcObject){audio.srcObject=new MediaStream();}
+        audio.srcObject.addTrack(track);
+        const tryPlay=()=>audio.play().catch(()=>setTimeout(tryPlay,200));
+        tryPlay();
+      }
+      if(track.kind==='video'){
+        const rv=document.getElementById('remoteVideo');
+        if(!rv.srcObject){rv.srcObject=new MediaStream();}
+        rv.srcObject.addTrack(track);
+        rv.setAttribute('playsinline','');
+        const tryPlayV=()=>rv.play().catch(()=>setTimeout(tryPlayV,200));
+        tryPlayV();
+      }
     }
     document.getElementById('callStatus').textContent='Connected ✅';
   };
@@ -1011,6 +1038,8 @@ async function startVoiceCall(){if(!currentFriendId){toast('Select a friend firs
 async function startVideoCall(){if(!currentFriendId){toast('Select a friend first','err');return;}const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;await initiateCall(friend,'video');}
 
 async function initiateCall(friend,type){
+  // Unlock AudioContext on user gesture — critical for mobile autoplay
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')await ctx.resume();}catch(e){}
   if(callData.active){toast('Already in a call','err');return;}
   try{
     callData.type=type;callData.active=true;callData.calleeId=friend.id;
@@ -1030,6 +1059,8 @@ async function initiateCall(friend,type){
 }
 
 async function acceptCall(){
+  // Unlock AudioContext on user gesture — critical for mobile autoplay
+  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')await ctx.resume();}catch(e){}
   hideIncomingCall();
   const d=callData._incomingData;
   if(!d)return;
