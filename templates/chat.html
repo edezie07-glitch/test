@@ -274,6 +274,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .call-control-btn.video{background:rgba(255,255,255,.2);color:#fff;}
 .call-control-btn.end{background:#ef4444;color:#fff;}
 .call-control-btn.muted{background:rgba(239,68,68,.3);}
+/* Call system messages */
+.call-msg{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;margin:8px auto;background:var(--card);border:1px solid var(--bdr);border-radius:20px;font-size:12px;color:var(--mute);max-width:260px;}
+.call-msg.missed{color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05);}
+.call-msg.answered{color:#22c55e;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.05);}
 /* Incoming call pulse animation */
 #incomingCallModal .av{animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 16px rgba(34,197,94,0);}}
@@ -588,6 +592,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
     <h2 id="callName">Username</h2>
     <p id="callStatus">Calling...</p>
+    <p id="callTimer" style="font-size:22px;font-weight:700;color:#fff;letter-spacing:2px;margin:0;display:none;">00:00</p>
     <div id="callVideo" style="display:none;margin:20px 0;justify-content:center;gap:10px;">
       <video id="localVideo" autoplay muted playsinline style="width:180px;height:135px;border-radius:12px;object-fit:cover;"></video>
       <video id="remoteVideo" autoplay playsinline style="width:320px;height:240px;border-radius:12px;object-fit:cover;"></video>
@@ -929,9 +934,24 @@ function showFriendProfile(){
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
 // ═══════ WEBRTC CALLS ═══════
-const STUN={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},{urls:'stun:stun3.l.google.com:19302'},{urls:'stun:stun4.l.google.com:19302'}]};
-let callData={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,pendingCandidates:[],_incomingData:null,_ringTimer:null};
+const STUN={iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'},
+  {urls:'stun:stun3.l.google.com:19302'},
+  {urls:'stun:stun4.l.google.com:19302'}
+]};
 
+let callData={
+  active:false,type:null,muted:false,videoOff:false,
+  localStream:null,pc:null,
+  callerId:null,calleeId:null,
+  pendingCandidates:[],
+  _incomingData:null,_ringTimer:null,
+  _timerInterval:null,_startTime:null,_duration:0
+};
+
+// ── UI helpers ──
 function showCallModal(name,status,isVideo){
   document.getElementById('callAvatar').textContent=name[0].toUpperCase();
   document.getElementById('callName').textContent=name;
@@ -952,7 +972,18 @@ function showIncomingCall(name,type,callerId){
   document.getElementById('incomingCallOverlay').classList.add('show');
   document.getElementById('incomingCallModal').classList.add('show');
   callData.callerId=callerId;
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();function ring(){const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=480;g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);o.start();o.stop(ctx.currentTime+.5);}ring();callData._ringTimer=setInterval(ring,1200);}catch(e){}
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    function ring(){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=480;
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      o.start();o.stop(ctx.currentTime+0.5);
+    }
+    ring();callData._ringTimer=setInterval(ring,1200);
+  }catch(e){}
 }
 function hideIncomingCall(){
   document.getElementById('incomingCallOverlay').classList.remove('show');
@@ -960,100 +991,217 @@ function hideIncomingCall(){
   clearInterval(callData._ringTimer);
 }
 
+// ── Get microphone/camera — tries best quality first, falls back ──
+async function getMedia(type){
+  const attempts=[
+    type==='video'
+      ?{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true,sampleRate:44100}}
+      :{audio:{echoCancellation:true,noiseSuppression:true,sampleRate:44100},video:false},
+    type==='video'
+      ?{video:true,audio:true}
+      :{audio:true,video:false},
+    {audio:true,video:false}
+  ];
+  for(const constraints of attempts){
+    try{return await navigator.mediaDevices.getUserMedia(constraints);}
+    catch(e){if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;}
+  }
+  throw new Error('Could not access microphone');
+}
+
+
+// ── Call timer ──
+function startCallTimer(){
+  callData._startTime=Date.now();
+  callData._duration=0;
+  const timerEl=document.getElementById('callTimer');
+  if(timerEl){timerEl.style.display='block';}
+  callData._timerInterval=setInterval(()=>{
+    callData._duration=Math.floor((Date.now()-callData._startTime)/1000);
+    const m=String(Math.floor(callData._duration/60)).padStart(2,'0');
+    const s=String(callData._duration%60).padStart(2,'0');
+    const timerEl=document.getElementById('callTimer');
+    if(timerEl)timerEl.textContent=m+':'+s;
+  },1000);
+}
+function stopCallTimer(){
+  clearInterval(callData._timerInterval);
+  const timerEl=document.getElementById('callTimer');
+  if(timerEl){timerEl.style.display='none';timerEl.textContent='00:00';}
+}
+function fmtDuration(secs){
+  if(secs<60)return secs+'s';
+  const m=Math.floor(secs/60),s=secs%60;
+  return s>0?m+'m '+s+'s':m+'m';
+}
+
+// ── Append call message into chat ──
+function appendCallMsg(type,durationSecs){
+  const area=document.getElementById('marea');
+  if(!area)return;
+  const div=document.createElement('div');
+  if(type==='missed'){
+    div.className='call-msg missed';
+    div.innerHTML='📵 Missed call';
+  }else if(type==='voice'){
+    div.className='call-msg answered';
+    div.innerHTML='📞 Voice call · '+fmtDuration(durationSecs);
+  }else{
+    div.className='call-msg answered';
+    div.innerHTML='📹 Video call · '+fmtDuration(durationSecs);
+  }
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+}
+
+// ── Unlock AudioContext — required on mobile to allow sound ──
+async function unlockAudio(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    if(ctx.state==='suspended')await ctx.resume();
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start();
+  }catch(e){}
+}
+
+// ── Play remote audio reliably — retries until it works ──
+function playRemoteAudio(stream){
+  let el=document.getElementById('remoteAudio');
+  if(!el){
+    el=document.createElement('audio');
+    el.id='remoteAudio';
+    el.autoplay=true;
+    el.setAttribute('playsinline','');
+    el.muted=false;
+    el.volume=1.0;
+    el.style.display='none';
+    document.body.appendChild(el);
+  }
+  el.srcObject=stream;
+  el.muted=false;
+  el.volume=1.0;
+  function tryPlay(){
+    el.play().then(()=>{
+      el.muted=false;el.volume=1.0;
+    }).catch(()=>setTimeout(tryPlay,300));
+  }
+  tryPlay();
+}
+
+// ── Create RTCPeerConnection ──
 function createPeerConnection(targetId){
   const pc=new RTCPeerConnection(STUN);
   callData.pc=pc;
   callData.pendingCandidates=[];
-  pc.onicecandidate=(e)=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
-  pc.ontrack=(e)=>{
-    const track=e.track;
-    // Use a dedicated MediaStream per track type — most reliable on all devices
-    if(track.kind==='audio'){
-      let audio=document.getElementById('remoteAudio');
-      if(!audio){
-        audio=document.createElement('audio');
-        audio.id='remoteAudio';
-        audio.autoplay=true;
-        audio.setAttribute('playsinline','');
-        audio.muted=false;
-        audio.volume=1.0;
-        audio.style.display='none';
-        document.body.appendChild(audio);
-      }
-      // Always use a fresh MediaStream for the audio track
-      const audioStream=new MediaStream([track]);
-      audio.srcObject=audioStream;
-      const tryPlay=()=>audio.play().catch(err=>{console.warn('audio play blocked',err);setTimeout(tryPlay,300);});
-      tryPlay();
+
+  pc.onicecandidate=(e)=>{
+    if(e.candidate){
+      socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});
     }
-    if(track.kind==='video'){
-      const rv=document.getElementById('remoteVideo');
-      const videoStream=new MediaStream([track]);
-      rv.srcObject=videoStream;
-      rv.setAttribute('playsinline','');
-      rv.muted=true; // video element must be muted to autoplay on mobile; audio comes from <audio> element
-      const tryPlayV=()=>rv.play().catch(err=>{console.warn('video play blocked',err);setTimeout(tryPlayV,300);});
-      tryPlayV();
-    }
-    document.getElementById('callStatus').textContent='Connected ✅';
   };
+
   pc.oniceconnectionstatechange=()=>{
     const s=pc.iceConnectionState;
     const el=document.getElementById('callStatus');
-    if(s==='connected'||s==='completed')el.textContent='Connected ✅';
-    else if(s==='checking')el.textContent='Connecting...';
-    else if(s==='disconnected'){el.textContent='Reconnecting...';setTimeout(()=>{if(callData.pc&&callData.pc.iceConnectionState==='disconnected'){toast('Call disconnected','info');endCall();}},5000);}
-    else if(s==='failed'){toast('Connection failed','err');endCall();}
+    if(!el)return;
+    if(s==='connected'||s==='completed'){
+      el.textContent='Connected ✅';
+    }else if(s==='checking'){
+      el.textContent='Connecting...';
+    }else if(s==='disconnected'){
+      el.textContent='Reconnecting...';
+      setTimeout(()=>{
+        if(callData.pc&&callData.pc.iceConnectionState==='disconnected'){endCall();}
+      },6000);
+    }else if(s==='failed'){
+      toast('❌ Call connection failed','err');endCall();
+    }
   };
+
+  // ── ontrack: handle incoming audio and video ──
+  pc.ontrack=(e)=>{
+    const track=e.track;
+    const stream=e.streams&&e.streams[0]?e.streams[0]:new MediaStream([track]);
+
+    if(track.kind==='audio'){
+      playRemoteAudio(stream);
+    }
+    if(track.kind==='video'){
+      const rv=document.getElementById('remoteVideo');
+      if(rv){
+        rv.srcObject=stream;
+        rv.setAttribute('playsinline','');
+        rv.muted=true; // muted so mobile autoplay works; audio handled by <audio> element
+        rv.play().catch(()=>{});
+      }
+    }
+    document.getElementById('callStatus').textContent='Connected ✅';
+    if(!callData._startTime)startCallTimer();
+  };
+
   return pc;
 }
 
-async function flushPendingCandidates(){
-  if(!callData.pc||!callData.pc.remoteDescription)return;
-  for(const cand of callData.pendingCandidates){try{await callData.pc.addIceCandidate(new RTCIceCandidate(cand));}catch(e){}}
+// ── Flush queued ICE candidates after remote description is set ──
+async function flushCandidates(){
+  for(const c of callData.pendingCandidates){
+    try{await callData.pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}
+  }
   callData.pendingCandidates=[];
 }
 
-async function getMedia(type){
-  const c=type==='video'?{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true}}:{audio:{echoCancellation:true,noiseSuppression:true},video:false};
-  try{return await navigator.mediaDevices.getUserMedia(c);}
-  catch(e){
-    if(type==='video'){try{return await navigator.mediaDevices.getUserMedia({video:true,audio:true});}catch(e2){}}
-    try{return await navigator.mediaDevices.getUserMedia({audio:true});}catch(e3){}
-    throw e;
-  }
+// ── Start calls ──
+async function startVoiceCall(){
+  if(!currentFriendId){toast('Open a chat first','err');return;}
+  const friend=friends.find(f=>f.id===currentFriendId);
+  if(!friend)return;
+  await initiateCall(friend,'voice');
+}
+async function startVideoCall(){
+  if(!currentFriendId){toast('Open a chat first','err');return;}
+  const friend=friends.find(f=>f.id===currentFriendId);
+  if(!friend)return;
+  await initiateCall(friend,'video');
 }
 
-async function startVoiceCall(){if(!currentFriendId){toast('Select a friend first','err');return;}const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;await initiateCall(friend,'voice');}
-async function startVideoCall(){if(!currentFriendId){toast('Select a friend first','err');return;}const friend=friends.find(f=>f.id===currentFriendId);if(!friend)return;await initiateCall(friend,'video');}
-
 async function initiateCall(friend,type){
-  // Unlock AudioContext on user gesture — critical for mobile autoplay
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')await ctx.resume();}catch(e){}
   if(callData.active){toast('Already in a call','err');return;}
+  await unlockAudio();
   try{
     callData.type=type;callData.active=true;callData.calleeId=friend.id;
     const stream=await getMedia(type);
     callData.localStream=stream;
-    if(type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.play().catch(()=>{});}
+
+    if(type==='video'){
+      const lv=document.getElementById('localVideo');
+      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});
+    }
+
     const pc=createPeerConnection(friend.id);
-    // addTransceiver ensures bidirectional send+receive on all browsers
-    pc.addTransceiver('audio',{direction:'sendrecv'});
-    if(type==='video')pc.addTransceiver('video',{direction:'sendrecv'});
+
+    // Add tracks WITH stream reference — critical for ontrack to fire with e.streams
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+
     const offer=await pc.createOffer();
     await pc.setLocalDescription(offer);
     showCallModal(friend.username,'Calling...',type==='video');
     socket.emit('call_offer',{callee_id:friend.id,offer:pc.localDescription,call_type:type});
+
   }catch(e){
-    const msg=e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera permission denied':e.name==='NotFoundError'?'No mic/camera found':e.name==='NotReadableError'?'Mic/camera in use by another app':location.protocol!=='https:'?'Calls require HTTPS':'Call failed: '+e.message;
-    toast('❌ '+msg,'err');cleanupCall();
+    const msg=
+      e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — tap Allow in your browser':
+      e.name==='NotFoundError'?'No microphone found on this device':
+      e.name==='NotReadableError'?'Mic/camera is in use by another app':
+      !window.isSecureContext?'Calls require HTTPS':
+      'Call error: '+e.message;
+    toast('❌ '+msg,'err');
+    cleanupCall();
   }
 }
 
 async function acceptCall(){
-  // Unlock AudioContext on user gesture — critical for mobile autoplay
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')await ctx.resume();}catch(e){}
+  await unlockAudio();
   hideIncomingCall();
   const d=callData._incomingData;
   if(!d)return;
@@ -1061,30 +1209,81 @@ async function acceptCall(){
     callData.type=d.call_type;callData.active=true;callData.calleeId=d.caller_id;
     const stream=await getMedia(d.call_type);
     callData.localStream=stream;
-    if(d.call_type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.play().catch(()=>{});}
+
+    if(d.call_type==='video'){
+      const lv=document.getElementById('localVideo');
+      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});
+    }
+
     const pc=createPeerConnection(d.caller_id);
+
+    // Add tracks WITH stream reference
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+
+    // MUST set remote desc before creating answer
     await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
-    await flushPendingCandidates();
+    await flushCandidates();
+
     const answer=await pc.createAnswer();
     await pc.setLocalDescription(answer);
+
     showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
     socket.emit('call_answer',{caller_id:d.caller_id,answer:pc.localDescription,accepted:true});
+
   }catch(e){
-    const msg=e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera permission denied':e.name==='NotFoundError'?'No mic/camera found':e.name==='NotReadableError'?'Mic/camera in use by another app':location.protocol!=='https:'?'Calls require HTTPS':'Call failed: '+e.message;
-    toast('❌ '+msg,'err');rejectCall();
+    const msg=
+      e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — tap Allow in your browser':
+      e.name==='NotFoundError'?'No microphone found on this device':
+      e.name==='NotReadableError'?'Mic/camera is in use by another app':
+      !window.isSecureContext?'Calls require HTTPS':
+      'Call error: '+e.message;
+    toast('❌ '+msg,'err');
+    rejectCall();
   }
 }
 
 function rejectCall(){
   hideIncomingCall();
-  if(callData._incomingData)socket.emit('call_answer',{caller_id:callData._incomingData.caller_id,accepted:false});
+  if(callData._incomingData){
+    socket.emit('call_answer',{caller_id:callData._incomingData.caller_id,accepted:false});
+    appendCallMsg('missed',0);
+  }
   callData._incomingData=null;
 }
-function toggleMute(){callData.muted=!callData.muted;const btn=document.getElementById('muteBtn');btn.classList.toggle('muted',callData.muted);btn.textContent=callData.muted?'🔇':'🎤';if(callData.localStream)callData.localStream.getAudioTracks().forEach(t=>t.enabled=!callData.muted);}
-function toggleVideo(){callData.videoOff=!callData.videoOff;const btn=document.getElementById('videoBtn');btn.classList.toggle('muted',callData.videoOff);btn.textContent=callData.videoOff?'📷':'📹';if(callData.localStream)callData.localStream.getVideoTracks().forEach(t=>t.enabled=!callData.videoOff);}
-function endCall(){const targetId=callData.calleeId||callData.callerId;if(targetId)socket.emit('call_end',{target_id:targetId});cleanupCall();toast('Call ended','info');}
+
+function toggleMute(){
+  callData.muted=!callData.muted;
+  const btn=document.getElementById('muteBtn');
+  btn.classList.toggle('muted',callData.muted);
+  btn.textContent=callData.muted?'🔇':'🎤';
+  if(callData.localStream)callData.localStream.getAudioTracks().forEach(t=>t.enabled=!callData.muted);
+}
+function toggleVideo(){
+  callData.videoOff=!callData.videoOff;
+  const btn=document.getElementById('videoBtn');
+  btn.classList.toggle('muted',callData.videoOff);
+  btn.textContent=callData.videoOff?'📷':'📹';
+  if(callData.localStream)callData.localStream.getVideoTracks().forEach(t=>t.enabled=!callData.videoOff);
+}
+
+function endCall(){
+  const targetId=callData.calleeId||callData.callerId;
+  if(targetId)socket.emit('call_end',{target_id:targetId});
+  const dur=callData._duration||0;
+  const type=callData.type||'voice';
+  const wasConnected=callData._startTime!==null;
+  stopCallTimer();
+  cleanupCall();
+  if(wasConnected&&dur>0){
+    appendCallMsg(type,dur);
+    toast('Call ended · '+fmtDuration(dur),'info');
+  }else{
+    toast('Call ended','info');
+  }
+}
+
 function cleanupCall(){
+  stopCallTimer();
   if(callData.localStream)callData.localStream.getTracks().forEach(t=>t.stop());
   if(callData.pc){try{callData.pc.close();}catch(e){}}
   const ra=document.getElementById('remoteAudio');if(ra)ra.remove();
@@ -1096,27 +1295,55 @@ function cleanupCall(){
 
 function setupCallListeners(){
   socket.on('incoming_call',(data)=>{
-    if(callData.active){socket.emit('call_answer',{caller_id:data.caller_id,accepted:false});return;}
+    if(callData.active){
+      socket.emit('call_answer',{caller_id:data.caller_id,accepted:false});
+      return;
+    }
     callData._incomingData=data;
     showIncomingCall(data.caller_name,data.call_type,data.caller_id);
   });
+
   socket.on('call_accepted',async(data)=>{
     if(!callData.pc)return;
     try{
       await callData.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-      await flushPendingCandidates();
+      await flushCandidates();
       document.getElementById('callStatus').textContent='Connecting...';
-    }catch(e){toast('Call setup failed','err');endCall();}
+    }catch(e){toast('❌ Call setup failed','err');endCall();}
   });
-  socket.on('call_rejected',(data)=>{toast((data.callee_name||'User')+' declined','info');cleanupCall();});
+
+  socket.on('call_rejected',(data)=>{
+    appendCallMsg('missed',0);
+    toast((data.callee_name||'User')+' declined the call','info');
+    cleanupCall();
+  });
+
   socket.on('ice_candidate',async(data)=>{
     if(!callData.pc||!data.candidate)return;
-    if(!callData.pc.remoteDescription||!callData.pc.remoteDescription.type){callData.pendingCandidates.push(data.candidate);}
-    else{try{await callData.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}}
+    if(!callData.pc.remoteDescription||!callData.pc.remoteDescription.type){
+      callData.pendingCandidates.push(data.candidate);
+    }else{
+      try{await callData.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}
+    }
   });
-  socket.on('call_ended',()=>{toast('Call ended','info');cleanupCall();});
+
+  socket.on('call_ended',()=>{
+    const dur=callData._duration||0;
+    const type=callData.type||'voice';
+    const wasConnected=callData._startTime!==null;
+    stopCallTimer();
+    cleanupCall();
+    if(wasConnected&&dur>0){
+      appendCallMsg(type,dur);
+      toast('Call ended · '+fmtDuration(dur),'info');
+    }else{
+      appendCallMsg('missed',0);
+      toast('Call ended','info');
+    }
+  });
   socket.on('call_error',(data)=>{toast(data.message||'Call failed','err');cleanupCall();});
 }
+
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
 function cancelReply(){replyToMsg=null;document.getElementById('replyBar').classList.remove('show');}
 let editingMsgId=null;
