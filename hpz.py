@@ -1014,24 +1014,25 @@ def shutdown_session(exception=None):
 # ============================================================
 @socketio.on('call_offer')
 def handle_call_offer(data):
-    """User A sends call offer to User B"""
     if 'user_id' not in session:
         return
     caller_id = session['user_id']
-    callee_id = data.get('callee_id')
+    try:
+        callee_id = int(data.get('callee_id', 0))
+    except (ValueError, TypeError):
+        emit('call_error', {'message': 'Invalid callee'})
+        return
     offer = data.get('offer')
-    call_type = data.get('call_type', 'voice')  # voice or video
+    call_type = data.get('call_type', 'voice')
 
     caller = User.query.get(caller_id)
     if not caller:
         return
 
-    # Make sure they are friends
     if not are_friends(caller_id, callee_id):
         emit('call_error', {'message': 'Not friends'})
         return
 
-    # Deliver offer to callee if online
     if callee_id in online_users:
         callee_sid = online_users[callee_id]['sid']
         socketio.emit('incoming_call', {
@@ -1046,11 +1047,13 @@ def handle_call_offer(data):
 
 @socketio.on('call_answer')
 def handle_call_answer(data):
-    """User B answers the call (accept or reject)"""
     if 'user_id' not in session:
         return
     callee_id = session['user_id']
-    caller_id = data.get('caller_id')
+    try:
+        caller_id = int(data.get('caller_id', 0))
+    except (ValueError, TypeError):
+        return
     answer = data.get('answer')
     accepted = data.get('accepted', False)
 
@@ -1074,11 +1077,13 @@ def handle_call_answer(data):
 
 @socketio.on('ice_candidate')
 def handle_ice_candidate(data):
-    """Exchange ICE candidates between caller and callee"""
     if 'user_id' not in session:
         return
     sender_id = session['user_id']
-    target_id = data.get('target_id')
+    try:
+        target_id = int(data.get('target_id', 0))
+    except (ValueError, TypeError):
+        return
     candidate = data.get('candidate')
 
     if target_id in online_users:
@@ -1090,11 +1095,13 @@ def handle_ice_candidate(data):
 
 @socketio.on('call_end')
 def handle_call_end(data):
-    """Either user ends the call"""
     if 'user_id' not in session:
         return
     user_id = session['user_id']
-    target_id = data.get('target_id')
+    try:
+        target_id = int(data.get('target_id', 0))
+    except (ValueError, TypeError):
+        return
 
     if target_id in online_users:
         target_sid = online_users[target_id]['sid']
