@@ -379,7 +379,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <!-- MAIN -->
 <main class="main">
   <div class="chdr">
-    <button id="mtogBtn" class="mtog-chdr" onclick="toggleSB()" aria-label="Menu">☰</button>
+    <button id="mtogBtn" class="mtog-chdr" aria-label="Menu">☰</button>
     <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
     <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
       <div class="chdr-nm" id="chnm">HPZ Messenger</div>
@@ -1990,23 +1990,15 @@ function renderUnreadBadge(fid){
 }
 function autoR(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,110)+'px';}
 function clearSearch(){document.getElementById('sinp').value='';document.getElementById('srPanel').classList.remove('open');document.getElementById('srList').innerHTML='';}
-function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mov').classList.toggle('show');}
-function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mov').classList.remove('show');}
-// Touch-safe hamburger — prevents ghost click on mobile
-(function(){
-  const btn=document.getElementById('mtogBtn');
-  if(!btn)return;
-  let lastTouch=0;
-  btn.addEventListener('touchend',function(e){
-    e.preventDefault();
-    lastTouch=Date.now();
-    toggleSB();
-  },{passive:false});
-  btn.addEventListener('click',function(e){
-    if(Date.now()-lastTouch<400)return; // already handled by touchend
-    toggleSB();
-  });
-})();
+function toggleSB(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mov').classList.toggle('show');
+}
+function closeSB(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mov').classList.remove('show');
+}
+document.getElementById('mtogBtn').addEventListener('click', toggleSB);
 async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
 function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
 function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
