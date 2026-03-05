@@ -1014,14 +1014,19 @@ async function getMedia(type){
 function startCallTimer(){
   callData._startTime=Date.now();
   callData._duration=0;
+  // Record human-readable start time from device clock
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes();
+  const ap=h>=12?'PM':'AM',hh=h%12||12;
+  callData._startTimeStr=hh+':'+String(m).padStart(2,'0')+' '+ap;
   const timerEl=document.getElementById('callTimer');
   if(timerEl){timerEl.style.display='block';}
   callData._timerInterval=setInterval(()=>{
     callData._duration=Math.floor((Date.now()-callData._startTime)/1000);
-    const m=String(Math.floor(callData._duration/60)).padStart(2,'0');
-    const s=String(callData._duration%60).padStart(2,'0');
+    const mm=String(Math.floor(callData._duration/60)).padStart(2,'0');
+    const ss=String(callData._duration%60).padStart(2,'0');
     const timerEl=document.getElementById('callTimer');
-    if(timerEl)timerEl.textContent=m+':'+s;
+    if(timerEl)timerEl.textContent=mm+':'+ss;
   },1000);
 }
 function stopCallTimer(){
@@ -1040,15 +1045,21 @@ function appendCallMsg(type,durationSecs){
   const area=document.getElementById('marea');
   if(!area)return;
   const div=document.createElement('div');
+  // Get end time from device clock
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes();
+  const ap=h>=12?'PM':'AM',hh=h%12||12;
+  const endTimeStr=hh+':'+String(m).padStart(2,'0')+' '+ap;
+  const startStr=callData._startTimeStr||endTimeStr;
   if(type==='missed'){
     div.className='call-msg missed';
-    div.innerHTML='📵 Missed call';
+    div.innerHTML='📵 Missed call · '+endTimeStr;
   }else if(type==='voice'){
     div.className='call-msg answered';
-    div.innerHTML='📞 Voice call · '+fmtDuration(durationSecs);
+    div.innerHTML='📞 Voice call · '+startStr+' – '+endTimeStr+' ('+fmtDuration(durationSecs)+')';
   }else{
     div.className='call-msg answered';
-    div.innerHTML='📹 Video call · '+fmtDuration(durationSecs);
+    div.innerHTML='📹 Video call · '+startStr+' – '+endTimeStr+' ('+fmtDuration(durationSecs)+')';
   }
   area.appendChild(div);
   area.scrollTop=area.scrollHeight;
@@ -1136,7 +1147,8 @@ function createPeerConnection(targetId){
         rv.play().catch(()=>{});
       }
     }
-    document.getElementById('callStatus').textContent='Connected ✅';
+    const _now=new Date();const _h=_now.getHours(),_m=_now.getMinutes();const _ap=_h>=12?'PM':'AM',_hh=_h%12||12;const _t=_hh+':'+String(_m).padStart(2,'0')+' '+_ap;document.getElementById('callStatus').textContent='Connected ✅  ·  Started '+_t;if(!callData._timerInterval)startCallTimer();
+    if(!callData._timerInterval)startCallTimer();
     if(!callData._startTime)startCallTimer();
   };
 
@@ -1151,6 +1163,35 @@ async function flushCandidates(){
   callData.pendingCandidates=[];
 }
 
+
+// ── Call timer ──
+function startCallTimer(){
+  callData._startTime = Date.now();
+  const timerEl = document.getElementById('callTimer');
+  if(timerEl) timerEl.style.display = 'block';
+  callData._timerInterval = setInterval(()=>{
+    const elapsed = Math.floor((Date.now() - callData._startTime) / 1000);
+    const h = Math.floor(elapsed / 3600);
+    const m = Math.floor((elapsed % 3600) / 60);
+    const s = elapsed % 60;
+    const fmt = h > 0
+      ? String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
+      : String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    if(timerEl) timerEl.textContent = fmt;
+  }, 1000);
+}
+function stopCallTimer(){
+  clearInterval(callData._timerInterval);
+  callData._timerInterval = null;
+  const timerEl = document.getElementById('callTimer');
+  if(timerEl) timerEl.style.display = 'none';
+}
+function fmtLocalTime(ts){
+  const d = new Date(ts);
+  const h = d.getHours(), m = String(d.getMinutes()).padStart(2,'0');
+  const ap = h >= 12 ? 'PM' : 'AM';
+  return String(h % 12 || 12) + ':' + m + ' ' + ap;
+}
 // ── Start calls ──
 async function startVoiceCall(){
   if(!currentFriendId){toast('Open a chat first','err');return;}
@@ -1269,19 +1310,19 @@ function toggleVideo(){
 function endCall(){
   const targetId=callData.calleeId||callData.callerId;
   if(targetId)socket.emit('call_end',{target_id:targetId});
-  const dur=callData._duration||0;
-  const type=callData.type||'voice';
-  const wasConnected=callData._startTime!==null;
-  stopCallTimer();
-  cleanupCall();
-  if(wasConnected&&dur>0){
-    appendCallMsg(type,dur);
-    toast('Call ended · '+fmtDuration(dur),'info');
+  const endTime=Date.now();
+  const startTime=callData._startTime;
+  if(startTime){
+    const secs=Math.floor((endTime-startTime)/1000);
+    const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+    const dur=h>0?h+'h '+m+'m '+s+'s':m>0?m+'m '+s+'s':s+'s';
+    toast('📞 Call ended  '+fmtLocalTime(startTime)+' – '+fmtLocalTime(endTime)+'  ('+dur+')','info');
   }else{
     toast('Call ended','info');
   }
+  stopCallTimer();
+  cleanupCall();
 }
-
 function cleanupCall(){
   stopCallTimer();
   if(callData.localStream)callData.localStream.getTracks().forEach(t=>t.stop());
@@ -1290,7 +1331,7 @@ function cleanupCall(){
   const rv=document.getElementById('remoteVideo');if(rv)rv.srcObject=null;
   const lv=document.getElementById('localVideo');if(lv)lv.srcObject=null;
   hideCallModal();hideIncomingCall();
-  callData={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,pendingCandidates:[],_incomingData:null,_ringTimer:null};
+  callData={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,pendingCandidates:[],_incomingData:null,_ringTimer:null,_startTime:null,_timerInterval:null};
 }
 
 function setupCallListeners(){
