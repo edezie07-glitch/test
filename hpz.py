@@ -13,11 +13,12 @@ from sqlalchemy import or_, and_
 # APP CONFIGURATION
 # ============================================================
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'hpz-secret-2025')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(32)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_NAME'] = 'hpz_session'
 app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('RENDER'))
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 # Database configuration
@@ -182,7 +183,17 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Login required'}), 401
+            # API routes get JSON, page routes get redirect
+            if request.path.startswith('/api/'):
+                return jsonify({'success': False, 'error': 'Login required'}), 401
+            return redirect('/')
+        # Validate user still exists in DB
+        user = User.query.get(session['user_id'])
+        if not user:
+            session.clear()
+            if request.path.startswith('/api/'):
+                return jsonify({'success': False, 'error': 'Session expired'}), 401
+            return redirect('/')
         return f(*args, **kwargs)
     return decorated
 
@@ -284,10 +295,20 @@ def server_error(e):
 # ============================================================
 @app.route('/')
 def index():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user:
+            return redirect('/chat')
+        session.clear()
     return render_template('login.html')
 
 @app.route('/register')
 def register_page():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user:
+            return redirect('/chat')
+        session.clear()
     return render_template('register.html')
 
 @app.route('/chat')
@@ -351,7 +372,10 @@ def logout():
     if user_id and user_id in online_users:
         del online_users[user_id]
     session.clear()
-    return jsonify({'success': True, 'message': 'Logged out'})
+    response = jsonify({'success': True, 'message': 'Logged out'})
+    response.delete_cookie('hpz_session')
+    response.delete_cookie('session')
+    return response
 
 # ============================================================
 # USER & PROFILE API
@@ -530,6 +554,14 @@ def accept_friend_request():
         db.session.add(friendship)
         req.status = 'accepted'
         db.session.commit()
+        # Notify the sender that their request was accepted
+        acceptor = User.query.get(user_id)
+        sender_sid = get_sid(req.from_user_id)
+        if sender_sid and acceptor:
+            socketio.emit('friend_request_accepted', {
+                'user_id': user_id,
+                'username': acceptor.username
+            }, room=sender_sid)
         return jsonify({'success': True, 'message': 'Friend request accepted'})
     except Exception as e:
         db.session.rollback()
