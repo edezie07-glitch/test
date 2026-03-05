@@ -1116,7 +1116,8 @@ def handle_ice_candidate(data):
 
 @socketio.on('call_end')
 def handle_call_end(data):
-    """Notify the other party that the call has ended."""    if 'user_id' not in session:
+    """Notify the other party that the call has ended."""
+    if 'user_id' not in session:
         return
     user_id = session['user_id']
     try:
