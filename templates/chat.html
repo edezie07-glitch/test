@@ -1596,15 +1596,14 @@ async function flushPending(){
 
 // ── Error message helper ──
 function mediaErr(e){
-  const msg=
-    e.message==='HTTPS_REQUIRED'||!window.isSecureContext?'Calls require HTTPS — make sure you're on the secure site':
-    e.message==='NO_MEDIA_DEVICES'?'Your browser doesn't support calls':
-    e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — tap Allow in your browser settings':
-    e.name==='NotFoundError'?'No microphone found on this device':
-    e.name==='NotReadableError'?'Mic/camera is in use by another app — close it and try again':
-    'Could not start call: '+e.message;
-  toast('❌ '+msg,'err');
-  console.error('[Call media error]',e.name,e.message);
+  let msg='Could not start call: '+e.message;
+  if(e.message==='HTTPS_REQUIRED'||!window.isSecureContext) msg='Calls require HTTPS';
+  else if(e.message==='NO_MEDIA_DEVICES') msg='Browser does not support calls';
+  else if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') msg='Mic/camera blocked - allow it in browser settings';
+  else if(e.name==='NotFoundError') msg='No microphone found on this device';
+  else if(e.name==='NotReadableError') msg='Mic/camera in use by another app';
+  toast('Call error: '+msg,'err');
+  console.error('[mediaErr]',e.name,e.message);
 }
 
 // ── Public call starters ──
