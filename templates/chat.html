@@ -834,7 +834,7 @@ let prefs={theme:'dark',sound:true};
 let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
 
 (function boot(){
-  loadPrefs();connectSocket();loadFriends();loadRequests();setTimeout(requestNotifPermission,2000);
+  loadPrefs();connectSocket();setupCallListeners();loadFriends();loadRequests();setTimeout(requestNotifPermission,2000);
   document.addEventListener('click',hideCtxMenu);
 })();
 function loadPrefs(){
@@ -884,8 +884,6 @@ function connectSocket(){
     requestNotifPermission();
   });
 
-  socket.on('disconnect',()=>{ setTimeout(()=>{ if(!socket.connected)connectSocket(); },3000); });
-
   // Read receipt — sender's dot turns orange when other person reads
   socket.on('receipt_update',(data)=>{
     const dot=document.querySelector(`.receipt[data-msg-id="${data.msg_id}"]`);
@@ -927,7 +925,6 @@ function connectSocket(){
     }
   });
 
-  setupCallListeners();
 }
 function sendMsg(){
   const inp=document.getElementById('msgInput');
@@ -1333,13 +1330,23 @@ function showFriendProfile(){
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
 // ═══════ WEBRTC CALLS ═══════
-const STUN={iceServers:[
-  {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'},
-  {urls:'stun:stun2.l.google.com:19302'},
-  {urls:'stun:stun3.l.google.com:19302'},
-  {urls:'stun:stun4.l.google.com:19302'}
-]};
+const STUN={
+  iceServers:[
+    // Google STUN — for same-network / simple NAT
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'stun:stun2.l.google.com:19302'},
+    // Open Relay TURN — required for mobile data ↔ WiFi, strict NAT, different ISPs
+    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
+    // Metered TURN (backup)
+    {urls:'turn:a.relay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:a.relay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turns:a.relay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
+  ],
+  iceCandidatePoolSize:10
+};
 
 // ── State — always reset via resetCd() ──
 let cd={};
@@ -1456,21 +1463,24 @@ async function unlockAudio(){
 
 // ── Get media with multiple fallbacks ──
 async function getMedia(type){
+  // Check if getUserMedia is available (HTTPS required)
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    throw new Error(!window.isSecureContext?'HTTPS_REQUIRED':'NO_MEDIA_DEVICES');
+  }
   const list=type==='video'
     ?[
-      {video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000}},
+      {video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true}},
       {video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},
       {video:true,audio:true},
-      {audio:true,video:false}
+      {audio:true,video:false} // fallback: audio only if camera fails
      ]
     :[
-      {audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000},video:false},
       {audio:{echoCancellation:true,noiseSuppression:true},video:false},
       {audio:true,video:false}
      ];
   let err;
-  for(const c of list){
-    try{return await navigator.mediaDevices.getUserMedia(c);}
+  for(const constraints of list){
+    try{return await navigator.mediaDevices.getUserMedia(constraints);}
     catch(e){
       err=e;
       if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;
@@ -1546,7 +1556,28 @@ function makePc(targetId){
     }
   };
 
-  // ICE state → update UI and start timer
+  // Connection state — more reliable than iceConnectionState
+  pc.onconnectionstatechange=()=>{
+    const s=pc.connectionState;
+    if(s==='connected'){
+      setStatus('Connected ✅  ·  '+nowStr());
+      startCallTimer();
+    }else if(s==='failed'){
+      // Try ICE restart before giving up
+      if(pc.restartIce) pc.restartIce();
+      setStatus('Reconnecting...');
+      setTimeout(()=>{
+        if(cd.pc&&(cd.pc.connectionState==='failed'||cd.pc.iceConnectionState==='failed')){
+          toast('❌ Connection failed — check your network','err');
+          endCall();
+        }
+      },8000);
+    }else if(s==='disconnected'){
+      setStatus('Reconnecting...');
+    }
+  };
+
+  // ICE state as backup indicator
   pc.oniceconnectionstatechange=()=>{
     const s=pc.iceConnectionState;
     if(s==='connected'||s==='completed'){
@@ -1554,12 +1585,6 @@ function makePc(targetId){
       startCallTimer();
     }else if(s==='checking'){
       setStatus('Connecting...');
-    }else if(s==='failed'){
-      toast('❌ Connection failed','err');
-      endCall();
-    }else if(s==='disconnected'){
-      setStatus('Reconnecting...');
-      setTimeout(()=>{if(cd.pc&&cd.pc.iceConnectionState==='disconnected')endCall();},6000);
     }
   };
 
@@ -1575,13 +1600,15 @@ async function flushPending(){
 
 // ── Error message helper ──
 function mediaErr(e){
-  toast('❌ '+(
-    e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — allow it in your browser settings':
-    e.name==='NotFoundError'?'No microphone/camera found on this device':
-    e.name==='NotReadableError'?'Mic/camera is being used by another app':
-    !window.isSecureContext?'Calls require HTTPS':
-    'Could not start call: '+e.message
-  ),'err');
+  const msg=
+    e.message==='HTTPS_REQUIRED'||!window.isSecureContext?'Calls require HTTPS — make sure you're on the secure site':
+    e.message==='NO_MEDIA_DEVICES'?'Your browser doesn't support calls':
+    e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — tap Allow in your browser settings':
+    e.name==='NotFoundError'?'No microphone found on this device':
+    e.name==='NotReadableError'?'Mic/camera is in use by another app — close it and try again':
+    'Could not start call: '+e.message;
+  toast('❌ '+msg,'err');
+  console.error('[Call media error]',e.name,e.message);
 }
 
 // ── Public call starters ──
@@ -1616,7 +1643,10 @@ async function doCall(friend,type){
     // Pass stream reference so receiver gets e.streams[0]
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
 
-    const offer=await pc.createOffer();
+    const offer=await pc.createOffer({
+      offerToReceiveAudio:true,
+      offerToReceiveVideo:type==='video'
+    });
     await pc.setLocalDescription(offer);
 
     showCallModal(friend.username,'Calling...',type==='video');
