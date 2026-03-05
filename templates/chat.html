@@ -239,7 +239,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* MOBILE */
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
-.mtog{display:none;position:fixed;top:10px;left:10px;z-index:750;width:38px;height:38px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;}
+.mtog{display:none;position:fixed;top:10px;left:10px;z-index:1500;width:42px;height:42px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:20px;cursor:pointer;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 /* Image Preview Modal */
 .img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;}
 .img-preview-overlay.show{display:block;}
@@ -306,7 +306,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   .mov.show{display:block;}
   .sidebar{position:fixed;left:0;top:0;height:100%;z-index:720;width:280px;transform:translateX(-100%);transition:transform .28s ease;}
   .sidebar.open{transform:translateX(0);}
-  .main{width:100%;}
+  .main{width:100%;position:relative;z-index:1;}
   .chdr{padding-left:56px;}
   .bub{max-width:80%;}
   .sdraw{width:100%;}
@@ -334,7 +334,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </head>
 <body>
 <div class="mov" id="mov" onclick="closeSB()"></div>
-<button class="mtog" onclick="toggleSB()">☰</button>
+<button class="mtog" id="mtogBtn" style="touch-action:manipulation;">☰</button>
 <!-- Context Menu -->
 <div class="ctx-menu" id="ctxMenu">
   <div class="ctx-item" onclick="replyToMsgCtx()">↩️ Reply</div>
@@ -1991,6 +1991,21 @@ function autoR(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,1
 function clearSearch(){document.getElementById('sinp').value='';document.getElementById('srPanel').classList.remove('open');document.getElementById('srList').innerHTML='';}
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mov').classList.toggle('show');}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mov').classList.remove('show');}
+// Touch-safe hamburger — prevents ghost click on mobile
+(function(){
+  const btn=document.getElementById('mtogBtn');
+  if(!btn)return;
+  let lastTouch=0;
+  btn.addEventListener('touchend',function(e){
+    e.preventDefault();
+    lastTouch=Date.now();
+    toggleSB();
+  },{passive:false});
+  btn.addEventListener('click',function(e){
+    if(Date.now()-lastTouch<400)return; // already handled by touchend
+    toggleSB();
+  });
+})();
 async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
 function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
 function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
