@@ -934,30 +934,88 @@ function showFriendProfile(){
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
 // ═══════ WEBRTC CALLS ═══════
-const STUN={iceServers:[
-  {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'},
-  {urls:'stun:stun2.l.google.com:19302'},
-  {urls:'stun:stun3.l.google.com:19302'},
-  {urls:'stun:stun4.l.google.com:19302'}
-]};
-
-let callData={
-  active:false,type:null,muted:false,videoOff:false,
-  localStream:null,pc:null,
-  callerId:null,calleeId:null,
-  pendingCandidates:[],
-  _incomingData:null,_ringTimer:null,
-  _timerInterval:null,_startTime:null,_duration:0
+const STUN = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' }
+  ]
 };
 
-// ── UI helpers ──
+// ── Single state object ──
+let cd = {
+  active:false, type:null, muted:false, videoOff:false,
+  localStream:null, pc:null,
+  callerId:null, calleeId:null,
+  pending:[],       // ICE candidates queued before remote desc is set
+  incoming:null,    // incoming call data
+  ringTimer:null,
+  timerInterval:null, startTime:null, startTimeStr:null, duration:0,
+  remoteAudioStream: new MediaStream(),
+  remoteVideoStream: new MediaStream()
+};
+
+// ── Helpers ──
+function nowStr(){
+  const d=new Date(),h=d.getHours(),m=d.getMinutes();
+  const ap=h>=12?'PM':'AM',hh=h%12||12;
+  return hh+':'+String(m).padStart(2,'0')+' '+ap;
+}
+function fmtDur(s){
+  if(s<60)return s+'s';
+  const m=Math.floor(s/60),r=s%60;
+  return r>0?m+'m '+r+'s':m+'m';
+}
+function setStatus(t){ const e=document.getElementById('callStatus');if(e)e.textContent=t; }
+
+// ── Timer ──
+function startCallTimer(){
+  if(cd.timerInterval)return;
+  cd.startTime=Date.now(); cd.duration=0; cd.startTimeStr=nowStr();
+  const el=document.getElementById('callTimer');
+  if(el)el.style.display='block';
+  cd.timerInterval=setInterval(()=>{
+    cd.duration=Math.floor((Date.now()-cd.startTime)/1000);
+    const m=String(Math.floor(cd.duration/60)).padStart(2,'0');
+    const s=String(cd.duration%60).padStart(2,'0');
+    const el=document.getElementById('callTimer');
+    if(el)el.textContent=m+':'+s;
+  },1000);
+}
+function stopCallTimer(){
+  clearInterval(cd.timerInterval); cd.timerInterval=null;
+  const el=document.getElementById('callTimer');
+  if(el){el.style.display='none';el.textContent='00:00';}
+}
+
+// ── Call log in chat ──
+function appendCallMsg(type,dur){
+  const area=document.getElementById('marea');
+  if(!area)return;
+  const div=document.createElement('div');
+  const endT=nowStr(), startT=cd.startTimeStr||endT;
+  if(type==='missed'){
+    div.className='call-msg missed';
+    div.innerHTML='📵 Missed call · '+endT;
+  } else {
+    div.className='call-msg answered';
+    const icon=type==='video'?'📹 Video':'📞 Voice';
+    div.innerHTML=icon+' call · '+startT+' – '+endT+' ('+fmtDur(dur)+')';
+  }
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+}
+
+// ── UI show/hide ──
 function showCallModal(name,status,isVideo){
   document.getElementById('callAvatar').textContent=name[0].toUpperCase();
   document.getElementById('callName').textContent=name;
   document.getElementById('callStatus').textContent=status;
   document.getElementById('callVideo').style.display=isVideo?'flex':'none';
   document.getElementById('videoBtn').style.display=isVideo?'inline-flex':'none';
+  document.getElementById('muteBtn').textContent='🎤';
   document.getElementById('callOverlay').classList.add('show');
   document.getElementById('callModal').classList.add('show');
 }
@@ -968,10 +1026,11 @@ function hideCallModal(){
 function showIncomingCall(name,type,callerId){
   document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
   document.getElementById('incomingCallName').textContent=name;
-  document.getElementById('incomingCallType').textContent=type==='video'?'📹 Incoming video call...':'📞 Incoming voice call...';
+  document.getElementById('incomingCallType').textContent=
+    type==='video'?'📹 Incoming video call...':'📞 Incoming voice call...';
   document.getElementById('incomingCallOverlay').classList.add('show');
   document.getElementById('incomingCallModal').classList.add('show');
-  callData.callerId=callerId;
+  cd.callerId=callerId;
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     function ring(){
@@ -979,411 +1038,366 @@ function showIncomingCall(name,type,callerId){
       o.connect(g);g.connect(ctx.destination);
       o.frequency.value=480;
       g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-      o.start();o.stop(ctx.currentTime+0.5);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+      o.start();o.stop(ctx.currentTime+0.6);
     }
-    ring();callData._ringTimer=setInterval(ring,1200);
+    ring(); cd.ringTimer=setInterval(ring,1400);
   }catch(e){}
 }
 function hideIncomingCall(){
   document.getElementById('incomingCallOverlay').classList.remove('show');
   document.getElementById('incomingCallModal').classList.remove('show');
-  clearInterval(callData._ringTimer);
+  clearInterval(cd.ringTimer); cd.ringTimer=null;
 }
 
-// ── Get microphone/camera — tries best quality first, falls back ──
-async function getMedia(type){
-  const attempts=[
-    type==='video'
-      ?{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true,sampleRate:44100}}
-      :{audio:{echoCancellation:true,noiseSuppression:true,sampleRate:44100},video:false},
-    type==='video'
-      ?{video:true,audio:true}
-      :{audio:true,video:false},
-    {audio:true,video:false}
-  ];
-  for(const constraints of attempts){
-    try{return await navigator.mediaDevices.getUserMedia(constraints);}
-    catch(e){if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;}
-  }
-  throw new Error('Could not access microphone');
-}
-
-
-// ── Call timer ──
-function startCallTimer(){
-  callData._startTime=Date.now();
-  callData._duration=0;
-  // Record human-readable start time from device clock
-  const now=new Date();
-  const h=now.getHours(),m=now.getMinutes();
-  const ap=h>=12?'PM':'AM',hh=h%12||12;
-  callData._startTimeStr=hh+':'+String(m).padStart(2,'0')+' '+ap;
-  const timerEl=document.getElementById('callTimer');
-  if(timerEl){timerEl.style.display='block';}
-  callData._timerInterval=setInterval(()=>{
-    callData._duration=Math.floor((Date.now()-callData._startTime)/1000);
-    const mm=String(Math.floor(callData._duration/60)).padStart(2,'0');
-    const ss=String(callData._duration%60).padStart(2,'0');
-    const timerEl=document.getElementById('callTimer');
-    if(timerEl)timerEl.textContent=mm+':'+ss;
-  },1000);
-}
-function stopCallTimer(){
-  clearInterval(callData._timerInterval);
-  const timerEl=document.getElementById('callTimer');
-  if(timerEl){timerEl.style.display='none';timerEl.textContent='00:00';}
-}
-function fmtDuration(secs){
-  if(secs<60)return secs+'s';
-  const m=Math.floor(secs/60),s=secs%60;
-  return s>0?m+'m '+s+'s':m+'m';
-}
-
-// ── Append call message into chat ──
-function appendCallMsg(type,durationSecs){
-  const area=document.getElementById('marea');
-  if(!area)return;
-  const div=document.createElement('div');
-  // Get end time from device clock
-  const now=new Date();
-  const h=now.getHours(),m=now.getMinutes();
-  const ap=h>=12?'PM':'AM',hh=h%12||12;
-  const endTimeStr=hh+':'+String(m).padStart(2,'0')+' '+ap;
-  const startStr=callData._startTimeStr||endTimeStr;
-  if(type==='missed'){
-    div.className='call-msg missed';
-    div.innerHTML='📵 Missed call · '+endTimeStr;
-  }else if(type==='voice'){
-    div.className='call-msg answered';
-    div.innerHTML='📞 Voice call · '+startStr+' – '+endTimeStr+' ('+fmtDuration(durationSecs)+')';
-  }else{
-    div.className='call-msg answered';
-    div.innerHTML='📹 Video call · '+startStr+' – '+endTimeStr+' ('+fmtDuration(durationSecs)+')';
-  }
-  area.appendChild(div);
-  area.scrollTop=area.scrollHeight;
-}
-
-// ── Unlock AudioContext — required on mobile to allow sound ──
+// ── Unlock AudioContext on user gesture (mobile requirement) ──
 async function unlockAudio(){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     if(ctx.state==='suspended')await ctx.resume();
-    const buf=ctx.createBuffer(1,1,22050);
-    const src=ctx.createBufferSource();
-    src.buffer=buf;src.connect(ctx.destination);src.start();
+    const b=ctx.createBuffer(1,1,22050);
+    const s=ctx.createBufferSource();
+    s.buffer=b; s.connect(ctx.destination); s.start(0);
   }catch(e){}
 }
 
-// ── Play remote audio reliably — retries until it works ──
-function playRemoteAudio(stream){
-  let el=document.getElementById('remoteAudio');
-  if(!el){
-    el=document.createElement('audio');
-    el.id='remoteAudio';
-    el.autoplay=true;
-    el.setAttribute('playsinline','');
-    el.muted=false;
-    el.volume=1.0;
-    el.style.display='none';
-    document.body.appendChild(el);
+// ── Get mic/camera with fallbacks for all devices ──
+async function getMedia(type){
+  const tries = type==='video'
+    ? [
+        {video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true}},
+        {video:true, audio:true},
+        {video:false, audio:true}
+      ]
+    : [
+        {audio:{echoCancellation:true,noiseSuppression:true}, video:false},
+        {audio:true, video:false}
+      ];
+  let lastErr;
+  for(const constraints of tries){
+    try{ return await navigator.mediaDevices.getUserMedia(constraints); }
+    catch(e){
+      lastErr=e;
+      if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') throw e;
+    }
   }
-  el.srcObject=stream;
-  el.muted=false;
-  el.volume=1.0;
-  function tryPlay(){
-    el.play().then(()=>{
-      el.muted=false;el.volume=1.0;
-    }).catch(()=>setTimeout(tryPlay,300));
-  }
-  tryPlay();
+  throw lastErr;
 }
 
-// ── Create RTCPeerConnection ──
-function createPeerConnection(targetId){
-  const pc=new RTCPeerConnection(STUN);
-  callData.pc=pc;
-  callData.pendingCandidates=[];
+// ── Handle mic/camera errors with clear messages ──
+function mediaError(e){
+  const msg =
+    (e.name==='NotAllowedError'||e.name==='PermissionDeniedError') ? 'Mic/camera blocked — tap Allow in browser settings' :
+    e.name==='NotFoundError' ? 'No microphone found on this device' :
+    e.name==='NotReadableError' ? 'Mic/camera is in use by another app' :
+    !window.isSecureContext ? 'Calls require HTTPS' :
+    'Could not access mic/camera: '+e.message;
+  toast('❌ '+msg,'err');
+}
 
+// ── Setup RTCPeerConnection ──
+function makePc(targetId){
+  const pc=new RTCPeerConnection(STUN);
+  cd.pc=pc;
+  cd.pending=[];
+  // Fresh streams for this call
+  cd.remoteAudioStream=new MediaStream();
+  cd.remoteVideoStream=new MediaStream();
+
+  // Send ICE candidates to the other peer via socket
   pc.onicecandidate=(e)=>{
     if(e.candidate){
-      socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});
+      socket.emit('ice_candidate',{target_id:targetId, candidate:e.candidate});
     }
   };
 
-  pc.oniceconnectionstatechange=()=>{
-    const s=pc.iceConnectionState;
-    const el=document.getElementById('callStatus');
-    if(!el)return;
-    if(s==='connected'||s==='completed'){
-      el.textContent='Connected ✅';
-    }else if(s==='checking'){
-      el.textContent='Connecting...';
-    }else if(s==='disconnected'){
-      el.textContent='Reconnecting...';
-      setTimeout(()=>{
-        if(callData.pc&&callData.pc.iceConnectionState==='disconnected'){endCall();}
-      },6000);
-    }else if(s==='failed'){
-      toast('❌ Call connection failed','err');endCall();
-    }
-  };
-
-  // ── ontrack: handle incoming audio and video ──
+  // Track incoming remote tracks — called once per track
   pc.ontrack=(e)=>{
     const track=e.track;
-    const stream=e.streams&&e.streams[0]?e.streams[0]:new MediaStream([track]);
 
     if(track.kind==='audio'){
-      playRemoteAudio(stream);
+      // Add audio track to dedicated audio stream
+      cd.remoteAudioStream.addTrack(track);
+      // Set up or update the hidden <audio> element
+      let audio=document.getElementById('remoteAudio');
+      if(!audio){
+        audio=document.createElement('audio');
+        audio.id='remoteAudio';
+        audio.setAttribute('autoplay','');
+        audio.setAttribute('playsinline','');
+        audio.style.display='none';
+        document.body.appendChild(audio);
+      }
+      audio.srcObject=cd.remoteAudioStream;
+      audio.muted=false;
+      audio.volume=1.0;
+      // Play with retry — mobile browsers block autoplay
+      (function tryPlay(){
+        audio.play().catch(()=>setTimeout(tryPlay,300));
+      })();
     }
+
     if(track.kind==='video'){
+      // Add video track to dedicated video stream
+      cd.remoteVideoStream.addTrack(track);
       const rv=document.getElementById('remoteVideo');
       if(rv){
-        rv.srcObject=stream;
+        rv.srcObject=cd.remoteVideoStream;
         rv.setAttribute('playsinline','');
-        rv.muted=true; // muted so mobile autoplay works; audio handled by <audio> element
-        rv.play().catch(()=>{});
+        rv.muted=true; // MUST be muted for mobile autoplay — audio comes from <audio> element
+        (function tryPlayV(){
+          rv.play().catch(()=>setTimeout(tryPlayV,300));
+        })();
       }
     }
-    const _now=new Date();const _h=_now.getHours(),_m=_now.getMinutes();const _ap=_h>=12?'PM':'AM',_hh=_h%12||12;const _t=_hh+':'+String(_m).padStart(2,'0')+' '+_ap;document.getElementById('callStatus').textContent='Connected ✅  ·  Started '+_t;if(!callData._timerInterval)startCallTimer();
-    if(!callData._timerInterval)startCallTimer();
-    if(!callData._startTime)startCallTimer();
+  };
+
+  // Update call status from ICE connection state
+  pc.oniceconnectionstatechange=()=>{
+    const s=pc.iceConnectionState;
+    if(s==='connected'||s==='completed'){
+      setStatus('Connected ✅  ·  '+nowStr());
+      startCallTimer();
+    } else if(s==='checking'){
+      setStatus('Connecting...');
+    } else if(s==='failed'){
+      toast('❌ Connection failed — check your network','err');
+      endCall();
+    } else if(s==='disconnected'){
+      setStatus('Reconnecting...');
+      setTimeout(()=>{ if(cd.pc&&cd.pc.iceConnectionState==='disconnected') endCall(); },6000);
+    }
   };
 
   return pc;
 }
 
-// ── Flush queued ICE candidates after remote description is set ──
-async function flushCandidates(){
-  for(const c of callData.pendingCandidates){
-    try{await callData.pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}
+// ── Flush ICE candidates queued before remote description was set ──
+async function flushPending(){
+  if(!cd.pc||!cd.pc.remoteDescription||!cd.pc.remoteDescription.type) return;
+  for(const c of cd.pending){
+    try{ await cd.pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
   }
-  callData.pendingCandidates=[];
+  cd.pending=[];
 }
 
-
-// ── Call timer ──
-function startCallTimer(){
-  callData._startTime = Date.now();
-  const timerEl = document.getElementById('callTimer');
-  if(timerEl) timerEl.style.display = 'block';
-  callData._timerInterval = setInterval(()=>{
-    const elapsed = Math.floor((Date.now() - callData._startTime) / 1000);
-    const h = Math.floor(elapsed / 3600);
-    const m = Math.floor((elapsed % 3600) / 60);
-    const s = elapsed % 60;
-    const fmt = h > 0
-      ? String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
-      : String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-    if(timerEl) timerEl.textContent = fmt;
-  }, 1000);
-}
-function stopCallTimer(){
-  clearInterval(callData._timerInterval);
-  callData._timerInterval = null;
-  const timerEl = document.getElementById('callTimer');
-  if(timerEl) timerEl.style.display = 'none';
-}
-function fmtLocalTime(ts){
-  const d = new Date(ts);
-  const h = d.getHours(), m = String(d.getMinutes()).padStart(2,'0');
-  const ap = h >= 12 ? 'PM' : 'AM';
-  return String(h % 12 || 12) + ':' + m + ' ' + ap;
-}
-// ── Start calls ──
+// ── Public: start voice/video call ──
 async function startVoiceCall(){
   if(!currentFriendId){toast('Open a chat first','err');return;}
-  const friend=friends.find(f=>f.id===currentFriendId);
-  if(!friend)return;
-  await initiateCall(friend,'voice');
+  const f=friends.find(f=>f.id===currentFriendId);
+  if(f) await doCall(f,'voice');
 }
 async function startVideoCall(){
   if(!currentFriendId){toast('Open a chat first','err');return;}
-  const friend=friends.find(f=>f.id===currentFriendId);
-  if(!friend)return;
-  await initiateCall(friend,'video');
+  const f=friends.find(f=>f.id===currentFriendId);
+  if(f) await doCall(f,'video');
 }
 
-async function initiateCall(friend,type){
-  if(callData.active){toast('Already in a call','err');return;}
+// ── Caller: create offer and send to receiver ──
+async function doCall(friend,type){
+  if(cd.active){toast('Already in a call','err');return;}
   await unlockAudio();
   try{
-    callData.type=type;callData.active=true;callData.calleeId=friend.id;
-    const stream=await getMedia(type);
-    callData.localStream=stream;
+    cd.active=true; cd.type=type; cd.calleeId=friend.id;
 
+    const stream=await getMedia(type);
+    cd.localStream=stream;
+
+    // Show local video preview
     if(type==='video'){
       const lv=document.getElementById('localVideo');
-      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});
+      lv.srcObject=stream;
+      lv.setAttribute('playsinline','');
+      lv.muted=true;
+      lv.play().catch(()=>{});
     }
 
-    const pc=createPeerConnection(friend.id);
+    const pc=makePc(friend.id);
 
-    // Add tracks WITH stream reference — critical for ontrack to fire with e.streams
+    // IMPORTANT: add tracks WITH the stream reference
+    // This ensures receiver's ontrack fires with e.streams[0] populated
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
 
+    // Create offer
     const offer=await pc.createOffer();
     await pc.setLocalDescription(offer);
+
     showCallModal(friend.username,'Calling...',type==='video');
-    socket.emit('call_offer',{callee_id:friend.id,offer:pc.localDescription,call_type:type});
+
+    // Send SDP offer to receiver through server
+    socket.emit('call_offer',{
+      callee_id: friend.id,
+      offer: {type:pc.localDescription.type, sdp:pc.localDescription.sdp},
+      call_type: type
+    });
 
   }catch(e){
-    const msg=
-      e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — tap Allow in your browser':
-      e.name==='NotFoundError'?'No microphone found on this device':
-      e.name==='NotReadableError'?'Mic/camera is in use by another app':
-      !window.isSecureContext?'Calls require HTTPS':
-      'Call error: '+e.message;
-    toast('❌ '+msg,'err');
+    mediaError(e);
     cleanupCall();
   }
 }
 
+// ── Receiver: accept incoming call ──
 async function acceptCall(){
   await unlockAudio();
   hideIncomingCall();
-  const d=callData._incomingData;
+  const d=cd.incoming;
   if(!d)return;
   try{
-    callData.type=d.call_type;callData.active=true;callData.calleeId=d.caller_id;
+    cd.active=true; cd.type=d.call_type; cd.calleeId=d.caller_id;
+
     const stream=await getMedia(d.call_type);
-    callData.localStream=stream;
+    cd.localStream=stream;
 
     if(d.call_type==='video'){
       const lv=document.getElementById('localVideo');
-      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});
+      lv.srcObject=stream;
+      lv.setAttribute('playsinline','');
+      lv.muted=true;
+      lv.play().catch(()=>{});
     }
 
-    const pc=createPeerConnection(d.caller_id);
+    const pc=makePc(d.caller_id);
 
-    // Add tracks WITH stream reference
+    // Add local tracks WITH stream ref before setRemoteDescription
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
 
-    // MUST set remote desc before creating answer
+    // CRITICAL ORDER:
+    // 1. setRemoteDescription (the offer from caller)
+    // 2. flush any ICE candidates that arrived early
+    // 3. createAnswer
+    // 4. setLocalDescription
+    // 5. send answer back
     await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
-    await flushCandidates();
+    await flushPending();
 
     const answer=await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
     showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
-    socket.emit('call_answer',{caller_id:d.caller_id,answer:pc.localDescription,accepted:true});
+
+    socket.emit('call_answer',{
+      caller_id: d.caller_id,
+      answer: {type:pc.localDescription.type, sdp:pc.localDescription.sdp},
+      accepted: true
+    });
 
   }catch(e){
-    const msg=
-      e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — tap Allow in your browser':
-      e.name==='NotFoundError'?'No microphone found on this device':
-      e.name==='NotReadableError'?'Mic/camera is in use by another app':
-      !window.isSecureContext?'Calls require HTTPS':
-      'Call error: '+e.message;
-    toast('❌ '+msg,'err');
+    mediaError(e);
     rejectCall();
   }
 }
 
+// ── Receiver: decline incoming call ──
 function rejectCall(){
   hideIncomingCall();
-  if(callData._incomingData){
-    socket.emit('call_answer',{caller_id:callData._incomingData.caller_id,accepted:false});
-    appendCallMsg('missed',0);
-  }
-  callData._incomingData=null;
+  if(cd.incoming) socket.emit('call_answer',{caller_id:cd.incoming.caller_id, accepted:false});
+  cd.incoming=null;
 }
 
+// ── In-call controls ──
 function toggleMute(){
-  callData.muted=!callData.muted;
+  cd.muted=!cd.muted;
   const btn=document.getElementById('muteBtn');
-  btn.classList.toggle('muted',callData.muted);
-  btn.textContent=callData.muted?'🔇':'🎤';
-  if(callData.localStream)callData.localStream.getAudioTracks().forEach(t=>t.enabled=!callData.muted);
+  btn.classList.toggle('muted',cd.muted);
+  btn.textContent=cd.muted?'🔇':'🎤';
+  if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
 }
 function toggleVideo(){
-  callData.videoOff=!callData.videoOff;
+  cd.videoOff=!cd.videoOff;
   const btn=document.getElementById('videoBtn');
-  btn.classList.toggle('muted',callData.videoOff);
-  btn.textContent=callData.videoOff?'📷':'📹';
-  if(callData.localStream)callData.localStream.getVideoTracks().forEach(t=>t.enabled=!callData.videoOff);
+  btn.classList.toggle('muted',cd.videoOff);
+  btn.textContent=cd.videoOff?'📷':'📹';
+  if(cd.localStream) cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
 }
 
+// ── End call ──
 function endCall(){
-  const targetId=callData.calleeId||callData.callerId;
-  if(targetId)socket.emit('call_end',{target_id:targetId});
-  const endTime=Date.now();
-  const startTime=callData._startTime;
-  if(startTime){
-    const secs=Math.floor((endTime-startTime)/1000);
-    const h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
-    const dur=h>0?h+'h '+m+'m '+s+'s':m>0?m+'m '+s+'s':s+'s';
-    toast('📞 Call ended  '+fmtLocalTime(startTime)+' – '+fmtLocalTime(endTime)+'  ('+dur+')','info');
-  }else{
-    toast('Call ended','info');
-  }
-  stopCallTimer();
+  const targetId=cd.calleeId||cd.callerId;
+  if(targetId) socket.emit('call_end',{target_id:targetId});
+  const dur=cd.duration||0, type=cd.type||'voice';
   cleanupCall();
+  appendCallMsg(type,dur);
 }
+
+// ── Clean up all call state ──
 function cleanupCall(){
   stopCallTimer();
-  if(callData.localStream)callData.localStream.getTracks().forEach(t=>t.stop());
-  if(callData.pc){try{callData.pc.close();}catch(e){}}
-  const ra=document.getElementById('remoteAudio');if(ra)ra.remove();
-  const rv=document.getElementById('remoteVideo');if(rv)rv.srcObject=null;
-  const lv=document.getElementById('localVideo');if(lv)lv.srcObject=null;
-  hideCallModal();hideIncomingCall();
-  callData={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,pendingCandidates:[],_incomingData:null,_ringTimer:null,_startTime:null,_timerInterval:null};
+  if(cd.localStream) cd.localStream.getTracks().forEach(t=>t.stop());
+  if(cd.pc){ try{cd.pc.close();}catch(e){} }
+  const ra=document.getElementById('remoteAudio'); if(ra)ra.remove();
+  const rv=document.getElementById('remoteVideo'); if(rv)rv.srcObject=null;
+  const lv=document.getElementById('localVideo'); if(lv)lv.srcObject=null;
+  hideCallModal();
+  hideIncomingCall();
+  cd={
+    active:false, type:null, muted:false, videoOff:false,
+    localStream:null, pc:null, callerId:null, calleeId:null,
+    pending:[], incoming:null, ringTimer:null,
+    timerInterval:null, startTime:null, startTimeStr:null, duration:0,
+    remoteAudioStream:new MediaStream(), remoteVideoStream:new MediaStream()
+  };
 }
 
+// ── All socket events for call signaling ──
 function setupCallListeners(){
+
   socket.on('incoming_call',(data)=>{
-    if(callData.active){
-      socket.emit('call_answer',{caller_id:data.caller_id,accepted:false});
+    if(cd.active){
+      // Already busy — auto decline
+      socket.emit('call_answer',{caller_id:data.caller_id, accepted:false});
       return;
     }
-    callData._incomingData=data;
-    showIncomingCall(data.caller_name,data.call_type,data.caller_id);
+    cd.incoming=data;
+    showIncomingCall(data.caller_name, data.call_type, data.caller_id);
   });
 
+  // Caller receives this when receiver accepted
   socket.on('call_accepted',async(data)=>{
-    if(!callData.pc)return;
+    if(!cd.pc)return;
     try{
-      await callData.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-      await flushCandidates();
-      document.getElementById('callStatus').textContent='Connecting...';
-    }catch(e){toast('❌ Call setup failed','err');endCall();}
+      await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      await flushPending();
+      setStatus('Connecting...');
+    }catch(e){
+      toast('❌ Call setup failed','err');
+      endCall();
+    }
   });
 
+  // Caller receives this when receiver declined
   socket.on('call_rejected',(data)=>{
-    appendCallMsg('missed',0);
     toast((data.callee_name||'User')+' declined the call','info');
     cleanupCall();
   });
 
+  // Both sides receive ICE candidates from each other
   socket.on('ice_candidate',async(data)=>{
-    if(!callData.pc||!data.candidate)return;
-    if(!callData.pc.remoteDescription||!callData.pc.remoteDescription.type){
-      callData.pendingCandidates.push(data.candidate);
-    }else{
-      try{await callData.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}
+    if(!cd.pc||!data.candidate)return;
+    // If remote description not set yet, queue it
+    if(!cd.pc.remoteDescription||!cd.pc.remoteDescription.type){
+      cd.pending.push(data.candidate);
+    } else {
+      try{ await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate)); }catch(e){}
     }
   });
 
+  // Other side hung up
   socket.on('call_ended',()=>{
-    const dur=callData._duration||0;
-    const type=callData.type||'voice';
-    const wasConnected=callData._startTime!==null;
-    stopCallTimer();
+    const dur=cd.duration||0, type=cd.type||'voice';
     cleanupCall();
-    if(wasConnected&&dur>0){
-      appendCallMsg(type,dur);
-      toast('Call ended · '+fmtDuration(dur),'info');
-    }else{
-      appendCallMsg('missed',0);
-      toast('Call ended','info');
-    }
+    appendCallMsg(type,dur);
   });
-  socket.on('call_error',(data)=>{toast(data.message||'Call failed','err');cleanupCall();});
+
+  socket.on('call_error',(data)=>{
+    toast(data.message||'Call failed','err');
+    cleanupCall();
+  });
 }
+
+
+
+
 
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
 function cancelReply(){replyToMsg=null;document.getElementById('replyBar').classList.remove('show');}
