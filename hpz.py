@@ -1072,6 +1072,7 @@ def handle_call_answer(data):
         return
 
     accepted = data.get('accepted', False)
+    busy = data.get('busy', False)
     sid = get_sid(caller_id)
     if not sid:
         return
@@ -1085,7 +1086,8 @@ def handle_call_answer(data):
     else:
         socketio.emit('call_rejected', {
             'callee_id': callee_id,
-            'callee_name': callee.username
+            'callee_name': callee.username,
+            'busy': busy
         }, room=sid)
 
 @socketio.on('ice_candidate')
