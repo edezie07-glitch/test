@@ -13,7 +13,6 @@
 html,body{height:100%;overflow:hidden;}
 body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;color:var(--txt);transition:background .25s,color .25s;}
 ::-webkit-scrollbar{width:0px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:transparent;}
-/* SIDEBAR */
 .sidebar{width:300px;min-width:300px;background:var(--sb);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:background .25s,border-color .25s;}
 .sh{padding:16px 14px 12px;background:var(--sb2);border-bottom:1px solid var(--bdr);}
 .sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
@@ -28,7 +27,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .sinp-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:13px;pointer-events:none;}
 .sinp{width:100%;padding:8px 12px 8px 32px;background:var(--inp);border:1px solid var(--ibdr);border-radius:10px;color:var(--txt);font-size:13px;font-family:var(--font-b);transition:border-color var(--trans),background .25s;}
 .sinp::placeholder{color:var(--mute);}.sinp:focus{outline:none;border-color:var(--brand);}
-/* Slide Panels */
 .spanel{background:var(--sb2);border-bottom:1px solid var(--bdr);max-height:0;overflow:hidden;transition:max-height .3s ease;}
 .spanel.open{max-height:250px;overflow-y:auto;}
 .ptitle{padding:10px 14px 5px;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--mute);text-transform:uppercase;}
@@ -42,7 +40,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .sr-l{display:flex;align-items:center;gap:8px;}
 .sr-nm{font-size:13px;font-weight:500;color:var(--txt);}
 .sr-st{font-size:11px;color:var(--mute);}
-/* Pills */
 .pill{padding:4px 11px;border:none;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:opacity var(--trans);}
 .pill:hover{opacity:.85;}
 .p-add{background:var(--brand);color:#fff;}
@@ -50,7 +47,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .p-pend{background:var(--hov);color:var(--mute);cursor:default;}
 .p-ok{background:#22c55e;color:#fff;}
 .p-no{background:var(--hov);color:var(--sub);}
-/* Chat List */
 .clist{flex:1;overflow-y:auto;padding:6px 0;}
 .llabel{padding:10px 14px 3px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--mute);text-transform:uppercase;}
 .crow{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 5px;border-radius:11px;cursor:pointer;transition:background var(--trans);position:relative;}
@@ -64,7 +60,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cts{font-size:10.5px;color:var(--mute);}
 .cprev{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 .lempty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;gap:6px;text-align:center;color:var(--mute);font-size:13px;}
-/* Avatar */
 .av{width:38px;height:38px;border-radius:12px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;position:relative;}
 .av img{width:100%;height:100%;object-fit:cover;}
 .av.sm{width:32px;height:32px;border-radius:9px;font-size:12px;}
@@ -72,7 +67,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .av.xl{width:64px;height:64px;border-radius:18px;font-size:26px;}
 .av .online-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:var(--online);border:2px solid var(--sb);border-radius:50%;}
 .av.lg .online-dot{width:12px;height:12px;}
-/* SETTINGS DRAWER */
 .sov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;opacity:0;pointer-events:none;transition:opacity .25s;}
 .sov.open{opacity:1;pointer-events:all;}
 .sdraw{position:fixed;top:0;right:0;height:100%;width:340px;background:var(--bg);border-left:1px solid var(--bdr);z-index:810;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1),background .25s;box-shadow:-8px 0 40px rgba(0,0,0,.3);}
@@ -114,8 +108,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .tog.on::after{transform:translateX(18px);background:#fff;}
 .dangbtn{width:100%;padding:11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font-b);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--trans);margin-top:2px;}
 .dangbtn:hover{background:rgba(239,68,68,.18);}
-
-/* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--chat);transition:background .25s;}
 .chdr{padding:13px 18px;min-height:62px;background:var(--hdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;transition:background .25s,border-color .25s;}
 .chdr-info{flex:1;min-width:0;}
@@ -125,13 +117,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .chdr-actions{display:flex;gap:6px;}
 .chdr-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
 .chdr-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
-/* Pinned Messages Banner */
 .pinned-banner{background:rgba(251,146,60,.08);border-bottom:1px solid rgba(251,146,60,.2);padding:8px 18px;display:none;cursor:pointer;transition:background var(--trans);}
 .pinned-banner:hover{background:rgba(251,146,60,.12);}
 .pinned-banner.show{display:flex;align-items:center;gap:8px;}
 .pinned-banner .pin-icon{color:var(--warn);font-size:14px;}
 .pinned-banner .pin-text{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-/* Message Area */
 .marea{flex:1;overflow-y:auto;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;scrollbar-width:none;-ms-overflow-style:none;}
 .daydiv{text-align:center;margin:10px 0 5px;}
 .daydiv span{background:rgba(124,106,255,.1);color:var(--mute);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
@@ -164,18 +154,15 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .react-emoji{font-size:20px;cursor:pointer;padding:4px;border-radius:6px;transition:background var(--trans);}
 .react-emoji:hover{background:var(--hov);}
 .bub img{max-width:260px;max-height:260px;border-radius:10px;display:block;cursor:zoom-in;margin-bottom:4px;}
-/* Scrollable photo strip */
 .photo-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;max-width:320px;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent;}
 .photo-strip::-webkit-scrollbar{height:4px;}
 .photo-strip::-webkit-scrollbar-track{background:transparent;}
 .photo-strip::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:4px;}
 .photo-strip img{width:110px;height:110px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;transition:opacity .15s;}
 .photo-strip img:hover{opacity:.88;}
-/* Read receipt circle */
 .receipt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:5px;vertical-align:middle;flex-shrink:0;transition:background .4s;}
 .receipt.delivered{background:rgba(255,180,100,.45);border:1.5px solid rgba(255,150,60,.5);}
 .receipt.seen{background:#ff8c00;border:1.5px solid #e07800;box-shadow:0 0 4px rgba(255,140,0,.5);}
-/* Row wrapper for time + receipt */
 .msg-foot{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;}
 .mts{font-size:11px;opacity:.65;white-space:nowrap;display:block;margin-top:4px;}
 .mgrp.sent .mts{color:rgba(255,255,255,.55);text-align:right;}
@@ -196,6 +183,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .reply-bar-close{width:24px;height:24px;border:none;background:transparent;color:var(--mute);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
 .reply-bar-close:hover{color:var(--txt);}
 .epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}
+.epick.open{display:flex;}
 .emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;}
 .emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);overflow-x:auto;}
 .emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);flex-shrink:0;}
@@ -205,7 +193,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .emoji-section.hidden{display:none;}
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
+/* FIX: iarea always flex, visibility controlled by active-chat class on main */
 .iarea{padding:16px 14px 24px;padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));background:var(--hdr);border-top:1px solid var(--bdr);display:none;align-items:flex-end;gap:8px;position:relative;transition:background .25s,border-color .25s;}
+.iarea.active{display:flex;}
 .isb{width:42px;height:42px;border-radius:50%;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background var(--trans),color var(--trans);margin-bottom:2px;}
 .isb:hover{background:rgba(124,106,255,.15);color:var(--brand);}
 #msgInput{flex:1;padding:13px 16px;background:var(--inp);border:1px solid var(--ibdr);border-radius:22px;color:var(--txt);font-size:15px;font-family:var(--font-b);outline:none;resize:none;line-height:1.4;max-height:110px;transition:border-color var(--trans),background .25s;}
@@ -222,25 +212,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .search-msg-from{font-size:11px;font-weight:600;color:var(--brand);margin-bottom:4px;}
 .search-msg-content{font-size:13px;color:var(--txt);}
 .search-msg-time{font-size:10px;color:var(--mute);margin-top:4px;}
-/* TOAST */
 .tstack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none;}
 .toast{background:var(--card);color:var(--txt);padding:9px 18px;border-radius:24px;font-size:12.5px;font-family:var(--font-b);box-shadow:var(--shad);border:1px solid var(--bdr);opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;}
 .toast.show{opacity:1;transform:translateY(0);}
 .toast.ok{border-left:3px solid #22c55e;}
 .toast.err{border-left:3px solid #ef4444;}
 .toast.info{border-left:3px solid var(--brand);}
-/* Context Menu */
 .ctx-menu{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:4px;min-width:160px;box-shadow:var(--shad);z-index:1000;display:none;}
 .ctx-menu.show{display:block;}
 .ctx-item{padding:8px 12px;border-radius:6px;font-size:13px;color:var(--txt);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background var(--trans);}
 .ctx-item:hover{background:var(--hov);}
 .ctx-item.danger{color:#ef4444;}
 .ctx-item.danger:hover{background:rgba(239,68,68,.1);}
-/* MOBILE */
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
 .mtog{display:none;position:fixed;top:10px;left:10px;z-index:750;width:38px;height:38px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:18px;cursor:pointer;align-items:center;justify-content:center;}
-/* Image Preview Modal */
 .img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;}
 .img-preview-overlay.show{display:block;}
 .img-preview-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:910;width:90%;max-width:700px;max-height:90vh;display:none;flex-direction:column;box-shadow:var(--shad);}
@@ -256,7 +242,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cancel-btn{padding:10px 24px;border:1px solid var(--bdr);border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .send-btn{padding:10px 24px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .send-btn:hover{background:var(--brand-dk);}
-/* Profile View Modal */
 .profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:850;display:none;}
 .profile-overlay.show{display:block;}
 .profile-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:860;width:90%;max-width:450px;display:none;flex-direction:column;box-shadow:var(--shad);}
@@ -271,7 +256,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .profile-actions{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
 .profile-action-btn{padding:12px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .profile-action-btn:hover{background:var(--brand-dk);}
-/* Call Modal */
 .call-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:950;display:none;}
 .call-overlay.show{display:block;}
 .call-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:960;display:none;}
@@ -287,19 +271,18 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .call-control-btn.video{background:rgba(255,255,255,.2);color:#fff;}
 .call-control-btn.end{background:#ef4444;color:#fff;}
 .call-control-btn.muted{background:rgba(239,68,68,.3);}
-/* Attach menu */
-#attachMenu button:active{background:var(--hov)!important;}
-/* Image viewer zoom on hover */
+#imgCaption::placeholder{color:var(--mute);}
 #imgViewerImg{transition:transform .2s;cursor:zoom-in;}
 #imgViewerImg.zoomed{transform:scale(2);cursor:zoom-out;}
-#imgCaption::placeholder{color:var(--mute);}
-/* Call system messages */
 .call-msg{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;margin:8px auto;background:var(--card);border:1px solid var(--bdr);border-radius:20px;font-size:12px;color:var(--mute);max-width:260px;}
 .call-msg.missed{color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05);}
 .call-msg.answered{color:#22c55e;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.05);}
-/* Incoming call pulse animation */
 #incomingCallModal .av{animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 16px rgba(34,197,94,0);}}
+/* Notification permission banner */
+.notif-banner{background:rgba(124,106,255,.1);border-bottom:1px solid rgba(124,106,255,.2);padding:10px 18px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txt);}
+.notif-banner button{padding:6px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font-b);}
+.notif-banner .dismiss{background:transparent;color:var(--mute);font-size:18px;padding:0 4px;}
 @media(max-width:720px){
   .mtog{display:flex;}
   .mov{display:none;}
@@ -322,13 +305,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   #localVideo{max-width:150px!important;max-height:120px!important;}
   #remoteVideo{max-width:100%!important;margin-left:0!important;margin-top:10px;}
 }
-
-/* Mobile browser nav bar fix */
 @supports(padding-bottom: env(safe-area-inset-bottom)){
   .iarea{padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));}
-}
-@media(max-width:720px){
-  .iarea{padding-bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 16px));}
 }
 </style>
 </head>
@@ -348,7 +326,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="sh-top">
       <div class="brand"><img src="/logo" alt="HPZ Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></div>
       <div class="hbtns">
+        <!-- FIX: Bell button now requests/shows notification permission -->
         <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
+        <button class="ib" id="notifBtn" onclick="requestNotifPermission()" title="Enable Notifications">🔕</button>
         <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
       </div>
     </div>
@@ -385,10 +365,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="chdr-sub" id="chsub">Select a conversation</div>
     </div>
     <div class="chdr-actions">
-      <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
-      <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
-      <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
-      <button class="chdr-btn" id="pinnedBtn" onclick="showPinned()" title="Pinned messages" style="display:none;">📌</button>
+      <!-- FIX: Buttons hidden via class, not inline style -->
+      <button class="chdr-btn chat-only" id="videoCallBtn" onclick="startVideoCall()" title="Video call">📹</button>
+      <button class="chdr-btn chat-only" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call">📞</button>
+      <button class="chdr-btn chat-only" id="searchBtn" onclick="toggleSearch()" title="Search messages">🔍</button>
+      <button class="chdr-btn chat-only" id="pinnedBtn" onclick="showPinned()" title="Pinned messages">📌</button>
     </div>
   </div>
   <div class="search-panel" id="searchPanel">
@@ -427,108 +408,27 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
     <div class="emoji-grid" id="emojiGrid">
       <div class="emoji-section" data-category="smileys">
-        <span class="eo" onclick="ins('😀')">😀</span><span class="eo" onclick="ins('😃')">😃</span>
-        <span class="eo" onclick="ins('😄')">😄</span><span class="eo" onclick="ins('😁')">😁</span>
-        <span class="eo" onclick="ins('😆')">😆</span><span class="eo" onclick="ins('😅')">😅</span>
-        <span class="eo" onclick="ins('🤣')">🤣</span><span class="eo" onclick="ins('😂')">😂</span>
-        <span class="eo" onclick="ins('🙂')">🙂</span><span class="eo" onclick="ins('🙃')">🙃</span>
-        <span class="eo" onclick="ins('😉')">😉</span><span class="eo" onclick="ins('😊')">😊</span>
-        <span class="eo" onclick="ins('😇')">😇</span><span class="eo" onclick="ins('🥰')">🥰</span>
-        <span class="eo" onclick="ins('😍')">😍</span><span class="eo" onclick="ins('🤩')">🤩</span>
-        <span class="eo" onclick="ins('😘')">😘</span><span class="eo" onclick="ins('😗')">😗</span>
-        <span class="eo" onclick="ins('😚')">😚</span><span class="eo" onclick="ins('😙')">😙</span>
-        <span class="eo" onclick="ins('😋')">😋</span><span class="eo" onclick="ins('😛')">😛</span>
-        <span class="eo" onclick="ins('😜')">😜</span><span class="eo" onclick="ins('🤪')">🤪</span>
-        <span class="eo" onclick="ins('😝')">😝</span><span class="eo" onclick="ins('🤑')">🤑</span>
-        <span class="eo" onclick="ins('🤗')">🤗</span><span class="eo" onclick="ins('🤭')">🤭</span>
-        <span class="eo" onclick="ins('🤫')">🤫</span><span class="eo" onclick="ins('🤔')">🤔</span>
-        <span class="eo" onclick="ins('😐')">😐</span><span class="eo" onclick="ins('😑')">😑</span>
-        <span class="eo" onclick="ins('😶')">😶</span><span class="eo" onclick="ins('😏')">😏</span>
-        <span class="eo" onclick="ins('😒')">😒</span><span class="eo" onclick="ins('🙄')">🙄</span>
-        <span class="eo" onclick="ins('😬')">😬</span><span class="eo" onclick="ins('😌')">😌</span>
-        <span class="eo" onclick="ins('😔')">😔</span><span class="eo" onclick="ins('😪')">😪</span>
-        <span class="eo" onclick="ins('😴')">😴</span><span class="eo" onclick="ins('😷')">😷</span>
-        <span class="eo" onclick="ins('🤒')">🤒</span><span class="eo" onclick="ins('🤕')">🤕</span>
-        <span class="eo" onclick="ins('🥵')">🥵</span><span class="eo" onclick="ins('🥶')">🥶</span>
-        <span class="eo" onclick="ins('😵')">😵</span><span class="eo" onclick="ins('🤯')">🤯</span>
-        <span class="eo" onclick="ins('🤠')">🤠</span><span class="eo" onclick="ins('🥳')">🥳</span>
-        <span class="eo" onclick="ins('😎')">😎</span><span class="eo" onclick="ins('🤓')">🤓</span>
-        <span class="eo" onclick="ins('😕')">😕</span><span class="eo" onclick="ins('😟')">😟</span>
-        <span class="eo" onclick="ins('🙁')">🙁</span><span class="eo" onclick="ins('☹️')">☹️</span>
-        <span class="eo" onclick="ins('😮')">😮</span><span class="eo" onclick="ins('😯')">😯</span>
-        <span class="eo" onclick="ins('😲')">😲</span><span class="eo" onclick="ins('😳')">😳</span>
-        <span class="eo" onclick="ins('🥺')">🥺</span><span class="eo" onclick="ins('😦')">😦</span>
-        <span class="eo" onclick="ins('😧')">😧</span><span class="eo" onclick="ins('😨')">😨</span>
-        <span class="eo" onclick="ins('😰')">😰</span><span class="eo" onclick="ins('😥')">😥</span>
-        <span class="eo" onclick="ins('😢')">😢</span><span class="eo" onclick="ins('😭')">😭</span>
-        <span class="eo" onclick="ins('😱')">😱</span><span class="eo" onclick="ins('😖')">😖</span>
-        <span class="eo" onclick="ins('😣')">😣</span><span class="eo" onclick="ins('😞')">😞</span>
-        <span class="eo" onclick="ins('😓')">😓</span><span class="eo" onclick="ins('😩')">😩</span>
-        <span class="eo" onclick="ins('😫')">😫</span><span class="eo" onclick="ins('🥱')">🥱</span>
-        <span class="eo" onclick="ins('😤')">😤</span><span class="eo" onclick="ins('😡')">😡</span>
-        <span class="eo" onclick="ins('😠')">😠</span><span class="eo" onclick="ins('🤬')">🤬</span>
-        <span class="eo" onclick="ins('😈')">😈</span><span class="eo" onclick="ins('👿')">👿</span>
-        <span class="eo" onclick="ins('💀')">💀</span><span class="eo" onclick="ins('☠️')">☠️</span>
-        <span class="eo" onclick="ins('💩')">💩</span><span class="eo" onclick="ins('🤡')">🤡</span>
-        <span class="eo" onclick="ins('👻')">👻</span><span class="eo" onclick="ins('👽')">👽</span>
-        <span class="eo" onclick="ins('🤖')">🤖</span>
+        <span class="eo" onclick="ins('😀')">😀</span><span class="eo" onclick="ins('😃')">😃</span><span class="eo" onclick="ins('😄')">😄</span><span class="eo" onclick="ins('😁')">😁</span><span class="eo" onclick="ins('😆')">😆</span><span class="eo" onclick="ins('😅')">😅</span><span class="eo" onclick="ins('🤣')">🤣</span><span class="eo" onclick="ins('😂')">😂</span><span class="eo" onclick="ins('🙂')">🙂</span><span class="eo" onclick="ins('🙃')">🙃</span><span class="eo" onclick="ins('😉')">😉</span><span class="eo" onclick="ins('😊')">😊</span><span class="eo" onclick="ins('😇')">😇</span><span class="eo" onclick="ins('🥰')">🥰</span><span class="eo" onclick="ins('😍')">😍</span><span class="eo" onclick="ins('🤩')">🤩</span><span class="eo" onclick="ins('😘')">😘</span><span class="eo" onclick="ins('😗')">😗</span><span class="eo" onclick="ins('😚')">😚</span><span class="eo" onclick="ins('😙')">😙</span><span class="eo" onclick="ins('😋')">😋</span><span class="eo" onclick="ins('😛')">😛</span><span class="eo" onclick="ins('😜')">😜</span><span class="eo" onclick="ins('🤪')">🤪</span><span class="eo" onclick="ins('😝')">😝</span><span class="eo" onclick="ins('🤑')">🤑</span><span class="eo" onclick="ins('🤗')">🤗</span><span class="eo" onclick="ins('🤭')">🤭</span><span class="eo" onclick="ins('🤫')">🤫</span><span class="eo" onclick="ins('🤔')">🤔</span><span class="eo" onclick="ins('😐')">😐</span><span class="eo" onclick="ins('😑')">😑</span><span class="eo" onclick="ins('😶')">😶</span><span class="eo" onclick="ins('😏')">😏</span><span class="eo" onclick="ins('😒')">😒</span><span class="eo" onclick="ins('🙄')">🙄</span><span class="eo" onclick="ins('😬')">😬</span><span class="eo" onclick="ins('😌')">😌</span><span class="eo" onclick="ins('😔')">😔</span><span class="eo" onclick="ins('😪')">😪</span><span class="eo" onclick="ins('😴')">😴</span><span class="eo" onclick="ins('😷')">😷</span><span class="eo" onclick="ins('🤒')">🤒</span><span class="eo" onclick="ins('🤕')">🤕</span><span class="eo" onclick="ins('🥵')">🥵</span><span class="eo" onclick="ins('🥶')">🥶</span><span class="eo" onclick="ins('😵')">😵</span><span class="eo" onclick="ins('🤯')">🤯</span><span class="eo" onclick="ins('🤠')">🤠</span><span class="eo" onclick="ins('🥳')">🥳</span><span class="eo" onclick="ins('😎')">😎</span><span class="eo" onclick="ins('🤓')">🤓</span><span class="eo" onclick="ins('😕')">😕</span><span class="eo" onclick="ins('😟')">😟</span><span class="eo" onclick="ins('🙁')">🙁</span><span class="eo" onclick="ins('☹️')">☹️</span><span class="eo" onclick="ins('😮')">😮</span><span class="eo" onclick="ins('😯')">😯</span><span class="eo" onclick="ins('😲')">😲</span><span class="eo" onclick="ins('😳')">😳</span><span class="eo" onclick="ins('🥺')">🥺</span><span class="eo" onclick="ins('😦')">😦</span><span class="eo" onclick="ins('😧')">😧</span><span class="eo" onclick="ins('😨')">😨</span><span class="eo" onclick="ins('😰')">😰</span><span class="eo" onclick="ins('😥')">😥</span><span class="eo" onclick="ins('😢')">😢</span><span class="eo" onclick="ins('😭')">😭</span><span class="eo" onclick="ins('😱')">😱</span><span class="eo" onclick="ins('😖')">😖</span><span class="eo" onclick="ins('😣')">😣</span><span class="eo" onclick="ins('😞')">😞</span><span class="eo" onclick="ins('😓')">😓</span><span class="eo" onclick="ins('😩')">😩</span><span class="eo" onclick="ins('😫')">😫</span><span class="eo" onclick="ins('🥱')">🥱</span><span class="eo" onclick="ins('😤')">😤</span><span class="eo" onclick="ins('😡')">😡</span><span class="eo" onclick="ins('😠')">😠</span><span class="eo" onclick="ins('🤬')">🤬</span><span class="eo" onclick="ins('😈')">😈</span><span class="eo" onclick="ins('👿')">👿</span><span class="eo" onclick="ins('💀')">💀</span><span class="eo" onclick="ins('☠️')">☠️</span><span class="eo" onclick="ins('💩')">💩</span><span class="eo" onclick="ins('🤡')">🤡</span><span class="eo" onclick="ins('👻')">👻</span><span class="eo" onclick="ins('👽')">👽</span><span class="eo" onclick="ins('🤖')">🤖</span>
       </div>
       <div class="emoji-section hidden" data-category="gestures">
-        <span class="eo" onclick="ins('👋')">👋</span><span class="eo" onclick="ins('🤚')">🤚</span>
-        <span class="eo" onclick="ins('✋')">✋</span><span class="eo" onclick="ins('🖖')">🖖</span>
-        <span class="eo" onclick="ins('👌')">👌</span><span class="eo" onclick="ins('✌️')">✌️</span>
-        <span class="eo" onclick="ins('🤞')">🤞</span><span class="eo" onclick="ins('🤟')">🤟</span>
-        <span class="eo" onclick="ins('🤘')">🤘</span><span class="eo" onclick="ins('🤙')">🤙</span>
-        <span class="eo" onclick="ins('👈')">👈</span><span class="eo" onclick="ins('👉')">👉</span>
-        <span class="eo" onclick="ins('👆')">👆</span><span class="eo" onclick="ins('👇')">👇</span>
-        <span class="eo" onclick="ins('☝️')">☝️</span><span class="eo" onclick="ins('👍')">👍</span>
-        <span class="eo" onclick="ins('👎')">👎</span><span class="eo" onclick="ins('✊')">✊</span>
-        <span class="eo" onclick="ins('👊')">👊</span><span class="eo" onclick="ins('🤛')">🤛</span>
-        <span class="eo" onclick="ins('🤜')">🤜</span><span class="eo" onclick="ins('👏')">👏</span>
-        <span class="eo" onclick="ins('🙌')">🙌</span><span class="eo" onclick="ins('👐')">👐</span>
-        <span class="eo" onclick="ins('🤲')">🤲</span><span class="eo" onclick="ins('🤝')">🤝</span>
-        <span class="eo" onclick="ins('🙏')">🙏</span><span class="eo" onclick="ins('✍️')">✍️</span>
-        <span class="eo" onclick="ins('💅')">💅</span><span class="eo" onclick="ins('💪')">💪</span>
+        <span class="eo" onclick="ins('👋')">👋</span><span class="eo" onclick="ins('🤚')">🤚</span><span class="eo" onclick="ins('✋')">✋</span><span class="eo" onclick="ins('🖖')">🖖</span><span class="eo" onclick="ins('👌')">👌</span><span class="eo" onclick="ins('✌️')">✌️</span><span class="eo" onclick="ins('🤞')">🤞</span><span class="eo" onclick="ins('🤟')">🤟</span><span class="eo" onclick="ins('🤘')">🤘</span><span class="eo" onclick="ins('🤙')">🤙</span><span class="eo" onclick="ins('👈')">👈</span><span class="eo" onclick="ins('👉')">👉</span><span class="eo" onclick="ins('👆')">👆</span><span class="eo" onclick="ins('👇')">👇</span><span class="eo" onclick="ins('☝️')">☝️</span><span class="eo" onclick="ins('👍')">👍</span><span class="eo" onclick="ins('👎')">👎</span><span class="eo" onclick="ins('✊')">✊</span><span class="eo" onclick="ins('👊')">👊</span><span class="eo" onclick="ins('🤛')">🤛</span><span class="eo" onclick="ins('🤜')">🤜</span><span class="eo" onclick="ins('👏')">👏</span><span class="eo" onclick="ins('🙌')">🙌</span><span class="eo" onclick="ins('👐')">👐</span><span class="eo" onclick="ins('🤲')">🤲</span><span class="eo" onclick="ins('🤝')">🤝</span><span class="eo" onclick="ins('🙏')">🙏</span><span class="eo" onclick="ins('✍️')">✍️</span><span class="eo" onclick="ins('💅')">💅</span><span class="eo" onclick="ins('💪')">💪</span>
       </div>
       <div class="emoji-section hidden" data-category="animals">
-        <span class="eo" onclick="ins('🐶')">🐶</span><span class="eo" onclick="ins('🐱')">🐱</span>
-        <span class="eo" onclick="ins('🐭')">🐭</span><span class="eo" onclick="ins('🐹')">🐹</span>
-        <span class="eo" onclick="ins('🐰')">🐰</span><span class="eo" onclick="ins('🦊')">🦊</span>
-        <span class="eo" onclick="ins('🐻')">🐻</span><span class="eo" onclick="ins('🐼')">🐼</span>
-        <span class="eo" onclick="ins('🐨')">🐨</span><span class="eo" onclick="ins('🐯')">🐯</span>
-        <span class="eo" onclick="ins('🦁')">🦁</span><span class="eo" onclick="ins('🐮')">🐮</span>
-        <span class="eo" onclick="ins('🐷')">🐷</span><span class="eo" onclick="ins('🐸')">🐸</span>
-        <span class="eo" onclick="ins('🐵')">🐵</span><span class="eo" onclick="ins('🙈')">🙈</span>
-        <span class="eo" onclick="ins('🙉')">🙉</span><span class="eo" onclick="ins('🙊')">🙊</span>
-        <span class="eo" onclick="ins('🦋')">🦋</span><span class="eo" onclick="ins('🐢')">🐢</span>
-        <span class="eo" onclick="ins('🐬')">🐬</span><span class="eo" onclick="ins('🦄')">🦄</span>
+        <span class="eo" onclick="ins('🐶')">🐶</span><span class="eo" onclick="ins('🐱')">🐱</span><span class="eo" onclick="ins('🐭')">🐭</span><span class="eo" onclick="ins('🐹')">🐹</span><span class="eo" onclick="ins('🐰')">🐰</span><span class="eo" onclick="ins('🦊')">🦊</span><span class="eo" onclick="ins('🐻')">🐻</span><span class="eo" onclick="ins('🐼')">🐼</span><span class="eo" onclick="ins('🐨')">🐨</span><span class="eo" onclick="ins('🐯')">🐯</span><span class="eo" onclick="ins('🦁')">🦁</span><span class="eo" onclick="ins('🐮')">🐮</span><span class="eo" onclick="ins('🐷')">🐷</span><span class="eo" onclick="ins('🐸')">🐸</span><span class="eo" onclick="ins('🐵')">🐵</span><span class="eo" onclick="ins('🙈')">🙈</span><span class="eo" onclick="ins('🙉')">🙉</span><span class="eo" onclick="ins('🙊')">🙊</span><span class="eo" onclick="ins('🦋')">🦋</span><span class="eo" onclick="ins('🐢')">🐢</span><span class="eo" onclick="ins('🐬')">🐬</span><span class="eo" onclick="ins('🦄')">🦄</span>
       </div>
       <div class="emoji-section hidden" data-category="food">
-        <span class="eo" onclick="ins('🍕')">🍕</span><span class="eo" onclick="ins('🍔')">🍔</span>
-        <span class="eo" onclick="ins('🍟')">🍟</span><span class="eo" onclick="ins('🌮')">🌮</span>
-        <span class="eo" onclick="ins('🍣')">🍣</span><span class="eo" onclick="ins('🍜')">🍜</span>
-        <span class="eo" onclick="ins('🍩')">🍩</span><span class="eo" onclick="ins('🎂')">🎂</span>
-        <span class="eo" onclick="ins('☕')">☕</span><span class="eo" onclick="ins('🍺')">🍺</span>
-        <span class="eo" onclick="ins('🍷')">🍷</span><span class="eo" onclick="ins('🥤')">🥤</span>
+        <span class="eo" onclick="ins('🍕')">🍕</span><span class="eo" onclick="ins('🍔')">🍔</span><span class="eo" onclick="ins('🍟')">🍟</span><span class="eo" onclick="ins('🌮')">🌮</span><span class="eo" onclick="ins('🍣')">🍣</span><span class="eo" onclick="ins('🍜')">🍜</span><span class="eo" onclick="ins('🍩')">🍩</span><span class="eo" onclick="ins('🎂')">🎂</span><span class="eo" onclick="ins('☕')">☕</span><span class="eo" onclick="ins('🍺')">🍺</span><span class="eo" onclick="ins('🍷')">🍷</span><span class="eo" onclick="ins('🥤')">🥤</span>
       </div>
       <div class="emoji-section hidden" data-category="travel">
-        <span class="eo" onclick="ins('✈️')">✈️</span><span class="eo" onclick="ins('🚗')">🚗</span>
-        <span class="eo" onclick="ins('🚀')">🚀</span><span class="eo" onclick="ins('🚢')">🚢</span>
-        <span class="eo" onclick="ins('🏖️')">🏖️</span><span class="eo" onclick="ins('🗺️')">🗺️</span>
+        <span class="eo" onclick="ins('✈️')">✈️</span><span class="eo" onclick="ins('🚗')">🚗</span><span class="eo" onclick="ins('🚀')">🚀</span><span class="eo" onclick="ins('🚢')">🚢</span><span class="eo" onclick="ins('🏖️')">🏖️</span><span class="eo" onclick="ins('🗺️')">🗺️</span>
       </div>
       <div class="emoji-section hidden" data-category="symbols">
-        <span class="eo" onclick="ins('❤️')">❤️</span><span class="eo" onclick="ins('🧡')">🧡</span>
-        <span class="eo" onclick="ins('💛')">💛</span><span class="eo" onclick="ins('💚')">💚</span>
-        <span class="eo" onclick="ins('💙')">💙</span><span class="eo" onclick="ins('💜')">💜</span>
-        <span class="eo" onclick="ins('🖤')">🖤</span><span class="eo" onclick="ins('💔')">💔</span>
-        <span class="eo" onclick="ins('✨')">✨</span><span class="eo" onclick="ins('⭐')">⭐</span>
-        <span class="eo" onclick="ins('🔥')">🔥</span><span class="eo" onclick="ins('💯')">💯</span>
-        <span class="eo" onclick="ins('✅')">✅</span><span class="eo" onclick="ins('❌')">❌</span>
-        <span class="eo" onclick="ins('⚡')">⚡</span><span class="eo" onclick="ins('🌈')">🌈</span>
+        <span class="eo" onclick="ins('❤️')">❤️</span><span class="eo" onclick="ins('🧡')">🧡</span><span class="eo" onclick="ins('💛')">💛</span><span class="eo" onclick="ins('💚')">💚</span><span class="eo" onclick="ins('💙')">💙</span><span class="eo" onclick="ins('💜')">💜</span><span class="eo" onclick="ins('🖤')">🖤</span><span class="eo" onclick="ins('💔')">💔</span><span class="eo" onclick="ins('✨')">✨</span><span class="eo" onclick="ins('⭐')">⭐</span><span class="eo" onclick="ins('🔥')">🔥</span><span class="eo" onclick="ins('💯')">💯</span><span class="eo" onclick="ins('✅')">✅</span><span class="eo" onclick="ins('❌')">❌</span><span class="eo" onclick="ins('⚡')">⚡</span><span class="eo" onclick="ins('🌈')">🌈</span>
       </div>
     </div>
   </div>
-  <div class="iarea">
+  <!-- FIX: iarea no longer has display:none inline — controlled via .active class -->
+  <div class="iarea" id="iarea">
     <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
     <input type="file" id="imgInpDirect" accept="image/*" capture="environment" style="display:none" onchange="handleDirectUpload(this)">
     <button class="isb" onclick="toggleAttachMenu()" title="Attach" id="attachBtn">📎</button>
@@ -538,10 +438,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button onclick="sendMultipleImages();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📂 Multiple Photos</button>
     </div>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
+    <!-- FIX: Enter key handler is robust and handles both send and edit -->
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
       oninput="autoR(this);doTyping();"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(editingMsgId){saveEdit();}else{sendMsg();}}"></textarea>
-    <button class="sndbtn" onclick="sendMsg()">➤</button>
+      onkeydown="handleMsgKeydown(event)"></textarea>
+    <button class="sndbtn" id="sndBtn" onclick="handleSendClick()">➤</button>
   </div>
 </main>
 <!-- Image Preview Modal -->
@@ -566,12 +467,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="tool-btn" onclick="drawFilter('cool')" title="Cool">❄️</button>
     <button class="tool-btn" onclick="downloadPreview()" title="Save to device">💾</button>
   </div>
-  <!-- Caption input -->
   <div style="padding:0 20px 10px;display:flex;gap:8px;align-items:center;">
     <input id="imgCaption" type="text" placeholder="Add a caption (optional)…"
       style="flex:1;padding:10px 14px;background:var(--inp);border:1px solid var(--ibdr);border-radius:20px;color:var(--txt);font-size:14px;outline:none;font-family:var(--font-b);">
   </div>
-  <!-- Quality selector -->
   <div style="padding:0 20px 10px;display:flex;align-items:center;gap:10px;">
     <span style="font-size:12px;color:var(--mute);">Quality:</span>
     <select id="imgQuality" style="background:var(--inp);border:1px solid var(--ibdr);color:var(--txt);border-radius:8px;padding:4px 8px;font-size:12px;">
@@ -616,8 +515,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
     <div class="profile-actions">
       <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
-      <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
-      <button class="profile-action-btn" onclick="startVideoCall()">📹 Video Call</button>
+      <button class="profile-action-btn" onclick="closeProfileView();startVoiceCall()">📞 Voice Call</button>
+      <button class="profile-action-btn" onclick="closeProfileView();startVideoCall()">📹 Video Call</button>
     </div>
   </div>
 </div>
@@ -666,7 +565,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="closebtn" onclick="closeSettings()">✕</button>
   </div>
   <div class="sbody">
-    <!-- Profile -->
     <div class="ssec">
       <div class="ssec-t">My Profile</div>
       <div class="pcard">
@@ -678,7 +576,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
       <div class="ef"><label>Display Name</label><input class="ei" id="eun" value="{{ user.username }}"></div>
       <div class="ef"><label>Bio</label><input class="ei" id="ebio" placeholder="Tell people about yourself..."></div>
-      <!-- ── Relationship Status now lives here inside the profile section ── -->
       <div class="ef">
         <label>Relationship Status</label>
         <select class="ei" id="erel" style="cursor:pointer;">
@@ -691,7 +588,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
       </div>
     </div>
-    <!-- Appearance -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Appearance</div>
       <div class="srow">
@@ -699,35 +595,33 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="tog on" id="tDark" onclick="toggleTheme()"></button>
       </div>
     </div>
-    <!-- Notifications -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Notifications</div>
       <div class="srow">
         <div class="sleft"><div class="sic gr">🔔</div><div><div class="slb">Sound Alerts</div><div class="sdb">Play sound on new messages</div></div></div>
         <button class="tog on" id="tSound" onclick="toggleSetting('sound','tSound')"></button>
       </div>
+      <div class="srow" style="margin-top:6px;">
+        <div class="sleft"><div class="sic gr">📳</div><div><div class="slb">Push Notifications</div><div class="sdb">Browser notifications for messages</div></div></div>
+        <button class="tog" id="tPush" onclick="togglePushNotif()"></button>
+      </div>
     </div>
-    <!-- Blocklist -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Blocklist</div>
       <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
         <div class="sleft">
           <div class="sic re">🚫</div>
-          <div>
-            <div class="slb">Blocked Users</div>
-            <div class="sdb">Manage blocked friends</div>
-          </div>
+          <div><div class="slb">Blocked Users</div><div class="sdb">Manage blocked friends</div></div>
         </div>
         <span style="color:var(--sub);font-size:14px;">›</span>
       </div>
     </div>
-    <!-- Account -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Account</div>
       <button class="dangbtn" onclick="logout()">🚪 Log Out</button>
     </div>
-  </div><!-- /sbody -->
-</div><!-- /sdraw -->
+  </div>
+</div>
 <div class="tstack" id="tstack"></div>
 <!-- Blocklist Modal -->
 <div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
@@ -744,7 +638,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <button class="savebtn" onclick="openAddBlockModal()" style="position:fixed;bottom:80px;right:30px;width:auto;padding:12px 20px;border-radius:50px;box-shadow:var(--shad);">➕ Block User</button>
 </div>
-<!-- Add Block Modal -->
 <div class="profile-overlay" id="addBlockOverlay" onclick="closeAddBlock()"></div>
 <div class="profile-modal" id="addBlockModal">
   <div class="profile-header">
@@ -819,7 +712,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="savebtn" onclick="createStory()">📸 Post Story</button>
   </div>
 </div>
+
+<style>
+/* Hide call/search/pin buttons when no chat is open */
+.chat-only { display: none !important; }
+.chat-active .chat-only { display: flex !important; }
+</style>
+
 <script>
+// ══════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function switchEmojiCat(cat){
   document.querySelectorAll('.emoji-cat').forEach(c=>c.classList.remove('active'));
@@ -827,21 +730,50 @@ function switchEmojiCat(cat){
   document.querySelectorAll('.emoji-section').forEach(s=>s.classList.add('hidden'));
   document.querySelector(`.emoji-section[data-category="${cat}"]`).classList.remove('hidden');
 }
+
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
 const ME_ID = {{ user_id }};
 const ME_NAME = '{{ user.username }}';
-let socket=null,currentChatId=null,currentFriendId=null,friends=[],pendingReqs=[],searchTimer=null,typingTimer=null;
-let prefs={theme:'dark',sound:true};
-let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
 
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let socket = null;
+let currentChatId = null;
+let currentFriendId = null;
+let friends = [];
+let pendingReqs = [];
+let searchTimer = null;
+let typingTimer = null;
+let prefs = {theme:'dark', sound:true, push:false};
+let replyToMsg = null;
+let contextMsg = null;
+let onlineUsers = new Set();
+let editingMsgId = null;
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
 (function boot(){
-  loadPrefs();connectSocket();loadFriends();loadRequests();
-  document.addEventListener('click',hideCtxMenu);
+  loadPrefs();
+  connectSocket();
+  loadFriends();
+  loadRequests();
+  updateNotifBtn();
+  document.addEventListener('click', hideCtxMenu);
 })();
+
+// ══════════════════════════════════════════
+// PREFERENCES
+// ══════════════════════════════════════════
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
   applyTheme();
   document.getElementById('tDark').classList.toggle('on',prefs.theme==='dark');
   document.getElementById('tSound').classList.toggle('on',prefs.sound);
+  document.getElementById('tPush').classList.toggle('on',prefs.push&&Notification.permission==='granted');
 }
 function savePrefs(){localStorage.setItem('hpz_prefs',JSON.stringify(prefs));}
 function applyTheme(){document.documentElement.setAttribute('data-theme',prefs.theme);}
@@ -857,8 +789,90 @@ function toggleSetting(key,btnId){
   document.getElementById(btnId).classList.toggle('on',prefs[key]);
   savePrefs();
 }
+
+// ══════════════════════════════════════════
+// FIX 3: PUSH NOTIFICATIONS
+// ══════════════════════════════════════════
+function updateNotifBtn(){
+  const btn = document.getElementById('notifBtn');
+  if(!btn) return;
+  if(Notification.permission === 'granted'){
+    btn.textContent = '🔔';
+    btn.title = 'Notifications enabled';
+    btn.classList.add('on');
+    prefs.push = true;
+    document.getElementById('tPush').classList.add('on');
+  } else {
+    btn.textContent = '🔕';
+    btn.title = 'Click to enable notifications';
+    btn.classList.remove('on');
+  }
+}
+
+async function requestNotifPermission(){
+  if(!('Notification' in window)){
+    toast('Your browser does not support notifications','err');
+    return;
+  }
+  if(Notification.permission === 'granted'){
+    toast('🔔 Notifications already enabled!','ok');
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    toast('Notifications blocked — please allow them in browser settings','err');
+    return;
+  }
+  const result = await Notification.requestPermission();
+  if(result === 'granted'){
+    prefs.push = true;
+    savePrefs();
+    updateNotifBtn();
+    toast('🔔 Notifications enabled!','ok');
+    // Send a test notification
+    new Notification('HPZ Messenger', {
+      body: 'Notifications are now enabled! 🎉',
+      icon: '/logo'
+    });
+  } else {
+    toast('Notification permission denied','err');
+  }
+}
+
+function togglePushNotif(){
+  if(Notification.permission !== 'granted'){
+    requestNotifPermission();
+  } else {
+    prefs.push = !prefs.push;
+    document.getElementById('tPush').classList.toggle('on', prefs.push);
+    savePrefs();
+    toast(prefs.push ? '🔔 Push notifications on' : '🔕 Push notifications off', 'info');
+  }
+}
+
+function sendPushNotif(title, body, tag){
+  if(!prefs.push) return;
+  if(Notification.permission !== 'granted') return;
+  // Only notify when tab is not focused or chat is different
+  if(document.hasFocus() && currentChatId === tag) return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: '/logo',
+      tag,          // deduplicates per-chat
+      renotify: true
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    // Auto-close after 5s
+    setTimeout(() => n.close(), 5000);
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
 function openSettings(){document.getElementById('sov').classList.add('open');document.getElementById('sdraw').classList.add('open');}
 function closeSettings(){document.getElementById('sov').classList.remove('open');document.getElementById('sdraw').classList.remove('open');}
+
 async function saveProfile(){
   const un=document.getElementById('eun').value.trim();
   const bio=document.getElementById('ebio').value.trim();
@@ -867,69 +881,165 @@ async function saveProfile(){
     const r=await fetch('/api/profile',{method:'PUT',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username:un,bio,relationship_status:rel})});
     const d=await r.json();
-    if(d.success){
-      document.getElementById('snm').textContent=un||ME_NAME;
-      toast('✅ Profile saved!','ok');
-    }else toast(d.error||'Failed','err');
+    if(d.success){document.getElementById('snm').textContent=un||ME_NAME;toast('✅ Profile saved!','ok');}
+    else toast(d.error||'Failed','err');
   }catch(e){toast('Failed','err');}
 }
-function connectSocket(){
-  socket=io({withCredentials:true,transports:['polling','websocket']});
-  socket.on('connect',()=>{if(currentChatId)socket.emit('join_chat',{chat_id:currentChatId});});
-  socket.emit('mark_all_read',{chat_id:cid});
-  // ── Read receipt: when receiver reads, update sender's dot to orange ──
-socket.on('receipt_update',(data)=>{
-  // data = {msg_id, read_by}
-  const dot=document.querySelector(`.receipt[data-msg-id="${data.msg_id}"]`);
-  if(dot){
-    dot.classList.remove('delivered');
-    dot.classList.add('seen');
-    dot.title='Seen';
-  }
-});
 
-socket.on('new_message',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)appendMsg(msg);if(prefs.sound&&msg.sender_id!==ME_ID)beep();updatePrev(msg);});
-  socket.on('message_edited',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)updateMsgInDOM(msg);});
-  socket.on('message_deleted',(data)=>{if(currentChatId&&data.chat_id===currentChatId){const el=document.querySelector(`[data-msg-id="${data.id}"]`);if(el)el.remove();}});
-  socket.on('message_pinned',(data)=>{if(currentChatId&&data.chat_id===currentChatId){const el=document.querySelector(`[data-msg-id="${data.id}"] .bub`);if(el)el.classList.toggle('pinned',data.is_pinned);updatePinnedBanner();}});
-  socket.on('message_reaction',(data)=>{if(currentChatId&&data.chat_id===currentChatId)updateMsgInDOM(data.message);});
-  socket.on('user_online',(data)=>{if(data.online)onlineUsers.add(data.user_id);else onlineUsers.delete(data.user_id);updateOnlineStatus();});
-  socket.on('typing_start',({username})=>showTyping(username));
-  socket.on('typing_stop',hideTyping);
-  socket.on('error',(e)=>toast(e.message||'Socket error','err'));
+// ══════════════════════════════════════════
+// SOCKET
+// ══════════════════════════════════════════
+function connectSocket(){
+  socket = io({withCredentials:true, transports:['polling','websocket']});
+
+  socket.on('connect', ()=>{
+    if(currentChatId) socket.emit('join_chat', {chat_id:currentChatId});
+  });
+
+  // FIX: receipt_update outside connect callback
+  socket.on('receipt_update', (data)=>{
+    const dot = document.querySelector(`.receipt[data-msg-id="${data.msg_id}"]`);
+    if(dot){dot.classList.remove('delivered');dot.classList.add('seen');dot.title='Seen';}
+  });
+
+  socket.on('new_message', (msg)=>{
+    if(currentChatId && msg.chat_id === currentChatId){
+      appendMsg(msg);
+      // Mark as read immediately if this chat is open
+      if(msg.sender_id !== ME_ID && socket?.connected){
+        socket.emit('mark_read', {chat_id:currentChatId, msg_id:msg.id});
+      }
+    }
+    // FIX: push notification for messages in other chats or when tab is not focused
+    if(msg.sender_id !== ME_ID){
+      if(prefs.sound) beep();
+      sendPushNotif(
+        `${msg.sender_username || 'New message'}`,
+        msg.message_type === 'image' ? '📷 Sent a photo' : msg.content,
+        msg.chat_id
+      );
+    }
+    updatePrev(msg);
+  });
+
+  socket.on('message_edited', (msg)=>{
+    if(currentChatId && msg.chat_id===currentChatId) updateMsgInDOM(msg);
+  });
+
+  socket.on('message_deleted', (data)=>{
+    if(currentChatId && data.chat_id===currentChatId){
+      const el=document.querySelector(`[data-msg-id="${data.id}"]`);
+      if(el) el.remove();
+    }
+  });
+
+  socket.on('message_pinned', (data)=>{
+    if(currentChatId && data.chat_id===currentChatId){
+      const el=document.querySelector(`[data-msg-id="${data.id}"] .bub`);
+      if(el) el.classList.toggle('pinned',data.is_pinned);
+      updatePinnedBanner();
+    }
+  });
+
+  socket.on('message_reaction', (data)=>{
+    if(currentChatId && data.chat_id===currentChatId) updateMsgInDOM(data.message);
+  });
+
+  socket.on('user_online', (data)=>{
+    if(data.online) onlineUsers.add(data.user_id);
+    else onlineUsers.delete(data.user_id);
+    updateOnlineStatus();
+  });
+
+  socket.on('typing_start', ({username})=>showTyping(username));
+  socket.on('typing_stop', hideTyping);
+  socket.on('error', (e)=>toast(e.message||'Socket error','err'));
+
+  // FIX: notify on incoming call
+  socket.on('incoming_call_notif', (data)=>{
+    sendPushNotif(
+      `📞 Incoming ${data.call_type} call`,
+      `${data.caller_name} is calling you`,
+      'call'
+    );
+  });
+
   setupCallListeners();
 }
-function sendMsg(){
-  const inp=document.getElementById('msgInput');const c=inp.value.trim();if(!c)return;
-  if(!socket?.connected){toast('Not connected','err');return;}
-  if(!currentChatId){toast('Select a chat first','err');return;}
-  const data={chat_id:currentChatId,content:c,message_type:'text'};
-  if(replyToMsg)data.reply_to_id=replyToMsg.id;
-  socket.emit('send_message',data);inp.value='';inp.style.height='';closeEmoji();cancelReply();
+
+// ══════════════════════════════════════════
+// FIX 1: ENTER KEY + SEND BUTTON
+// ══════════════════════════════════════════
+function handleMsgKeydown(event){
+  if(event.key === 'Enter' && !event.shiftKey){
+    event.preventDefault();
+    if(editingMsgId){
+      saveEdit();
+    } else {
+      sendMsg();
+    }
+  }
 }
+
+function handleSendClick(){
+  if(editingMsgId){
+    saveEdit();
+  } else {
+    sendMsg();
+  }
+}
+
+function sendMsg(){
+  const inp = document.getElementById('msgInput');
+  const c = inp.value.trim();
+  if(!c) return;
+  if(!socket?.connected){toast('Not connected — please wait','err');return;}
+  if(!currentChatId){toast('Select a chat first','err');return;}
+  const data = {chat_id:currentChatId, content:c, message_type:'text'};
+  if(replyToMsg) data.reply_to_id = replyToMsg.id;
+  socket.emit('send_message', data);
+  inp.value = '';
+  inp.style.height = '';
+  closeEmoji();
+  cancelReply();
+}
+
+// ══════════════════════════════════════════
+// MESSAGES
+// ══════════════════════════════════════════
 async function loadMsgs(chatId){
   try{
     const r=await fetch(`/api/messages/${chatId}`);const d=await r.json();
     const area=document.getElementById('marea');area.innerHTML='';
-    if(!d.success||!d.messages.length){area.innerHTML='<div class="ces"><div class="big">👋</div><h3>Say hello!</h3><p>No messages yet</p></div>';return;}
+    if(!d.success||!d.messages.length){
+      area.innerHTML='<div class="ces"><div class="big">👋</div><h3>Say hello!</h3><p>No messages yet</p></div>';
+      return;
+    }
     let ld='';
-    d.messages.forEach(m=>{const dy=dayLabel(m.created_at);if(dy!==ld){area.insertAdjacentHTML('beforeend',`<div class="daydiv"><span>${dy}</span></div>`);ld=dy;}appendMsg(m,false);});
+    d.messages.forEach(m=>{
+      const dy=dayLabel(m.created_at);
+      if(dy!==ld){area.insertAdjacentHTML('beforeend',`<div class="daydiv"><span>${dy}</span></div>`);ld=dy;}
+      appendMsg(m,false);
+    });
     scrollBot();updatePinnedBanner();
+    // Mark all as read when opening chat
+    if(socket?.connected) socket.emit('mark_all_read', {chat_id:chatId});
   }catch(e){console.error(e);}
 }
-function appendMsg(msg,scroll=true){
-  const area=document.getElementById('marea');const em=area.querySelector('.ces');if(em)em.remove();
+
+function appendMsg(msg, scroll=true){
+  const area=document.getElementById('marea');
+  const em=area.querySelector('.ces');if(em)em.remove();
   const isSent=msg.sender_id===ME_ID;
   const g=document.createElement('div');
   g.className=`mgrp ${isSent?'sent':'recv'}`;
   g.setAttribute('data-msg-id',msg.id);
   let inner='';
-  if(!isSent)inner+=`<div class="mfrom">${esc(msg.sender_username)}</div>`;
+  if(!isSent) inner+=`<div class="mfrom">${esc(msg.sender_username)}</div>`;
   let body='';
   if(msg.reply_to){
     body+=`<div class="reply-prev"><div class="reply-prev-from">${esc(msg.reply_to.sender_username)}</div><div class="reply-prev-text">${esc(msg.reply_to.content)}</div></div>`;
   }
-  // ── Image: if content is a JSON array it's a photo strip, else single photo ──
   if(msg.message_type==='image'){
     let urls=[];
     try{urls=JSON.parse(msg.content);if(!Array.isArray(urls))urls=[];}catch(e){}
@@ -938,14 +1048,14 @@ function appendMsg(msg,scroll=true){
     if(urls.length===1){
       body+=`<img src="${urls[0]}" alt="photo" onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')" style="cursor:zoom-in;border-radius:10px;max-width:100%;display:block;" loading="lazy">${cap}`;
     } else {
-      // Scrollable photo strip for multiple images
       const thumbs=urls.map((u,i)=>`<img src="${u}" alt="photo ${i+1}" onclick="openImgViewer('${u}','')" loading="lazy">`).join('');
       body+=`<div class="photo-strip">${thumbs}</div>${cap}`;
     }
+  } else if(!msg.is_deleted){
+    body+=esc(msg.content).replace(/\n/g,'<br>');
+  } else {
+    body+='<em style="opacity:.5">[Message deleted]</em>';
   }
-  else if(!msg.is_deleted){body+=esc(msg.content).replace(/\n/g,'<br>');}
-  else{body+='<em style="opacity:.5">[Message deleted]</em>';}
-  // ── Receipt circle — only on sent messages ──
   const receiptClass=isSent?(msg.read_by>0?'seen':'delivered'):'';
   const receiptDot=isSent&&!msg.is_deleted?`<span class="receipt ${receiptClass}" data-msg-id="${msg.id}" title="${receiptClass==='seen'?'Seen':'Delivered'}"></span>`:'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
@@ -966,59 +1076,83 @@ function appendMsg(msg,scroll=true){
     }
     inner+=`</div>`;
   }
-  g.innerHTML=inner;area.appendChild(g);
-  if(scroll)scrollBot();
-  // Mark incoming messages as read
-  if(!isSent&&currentChatId)socket.emit('mark_read',{chat_id:currentChatId,msg_id:msg.id});
-}
-function updateMsgInDOM(msg){const el=document.querySelector(`[data-msg-id="${msg.id}"]`);if(!el)return;el.outerHTML='';appendMsg(msg,false);}
-function scrollBot(){const a=document.getElementById('marea');a.scrollTop=a.scrollHeight;}
-async function uploadImg(inp){
-  const f=inp.files[0];if(!f)return;
-  if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
-  showImagePreview(f);
-  inp.value='';
+  g.innerHTML=inner;
+  area.appendChild(g);
+  if(scroll) scrollBot();
 }
 
-// ── Attach menu ──
+function updateMsgInDOM(msg){
+  const el=document.querySelector(`[data-msg-id="${msg.id}"]`);
+  if(!el) return;
+  el.outerHTML='';
+  appendMsg(msg,false);
+}
+function scrollBot(){const a=document.getElementById('marea');a.scrollTop=a.scrollHeight;}
+
+// ══════════════════════════════════════════
+// FIX 2: CALL BUTTONS — openChat now adds .chat-active
+// ══════════════════════════════════════════
+function openChat(fid, fname, chatId){
+  if(!chatId) chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
+  currentChatId=chatId;
+  currentFriendId=fid;
+  document.getElementById('chav').textContent=fname[0].toUpperCase();
+  document.getElementById('chnm').textContent=fname;
+  const isOnline=onlineUsers.has(fid);
+  document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
+  document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
+  // FIX: reveal header buttons and input area via class
+  document.querySelector('.main').classList.add('chat-active');
+  document.getElementById('iarea').classList.add('active');
+  renderFriends();
+  loadMsgs(chatId);
+  if(socket?.connected) socket.emit('join_chat',{chat_id:chatId});
+  clearSearch();
+  if(window.innerWidth<=720) closeSB();
+  if(window.innerWidth>720) document.getElementById('msgInput').focus();
+}
+
+// Call starters — now clearly wired
+async function startVoiceCall(){
+  if(!currentFriendId){toast('Open a chat first','err');return;}
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(!f){toast('Friend not found','err');return;}
+  await doCall(f,'voice');
+}
+async function startVideoCall(){
+  if(!currentFriendId){toast('Open a chat first','err');return;}
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(!f){toast('Friend not found','err');return;}
+  await doCall(f,'video');
+}
+
+// ══════════════════════════════════════════
+// IMAGE UPLOAD
+// ══════════════════════════════════════════
 function toggleAttachMenu(){
   const m=document.getElementById('attachMenu');
   m.style.display=m.style.display==='flex'?'none':'flex';
 }
-function closeAttachMenu(){
-  document.getElementById('attachMenu').style.display='none';
-}
+function closeAttachMenu(){document.getElementById('attachMenu').style.display='none';}
 document.addEventListener('click',e=>{
   if(!e.target.closest('#attachBtn')&&!e.target.closest('#attachMenu'))closeAttachMenu();
 });
-
-// ── Pick from gallery ──
 function pickFromGallery(){
   if(!currentChatId){toast('Select a chat first','err');return;}
   document.getElementById('imgInp').removeAttribute('capture');
   document.getElementById('imgInp').click();
 }
-
-// ── Take photo with camera ──
 function takePhoto(){
   if(!currentChatId){toast('Select a chat first','err');return;}
   document.getElementById('imgInp').setAttribute('capture','environment');
   document.getElementById('imgInp').click();
 }
-
-// ── Send multiple images at once ──
 function sendMultipleImages(){
   if(!currentChatId){toast('Select a chat first','err');return;}
   const inp=document.getElementById('imgInpDirect');
   inp.setAttribute('multiple','');
   inp.click();
 }
-
-function triggerImageSelect(){
-  if(!currentChatId){toast('Select a chat first','err');return;}
-  document.getElementById('imgInp').click();
-}
-
 async function directUploadImage(file){
   if(!currentChatId){toast('Select a chat first','err');return;}
   const fd=new FormData();fd.append('image',file);
@@ -1030,43 +1164,31 @@ async function directUploadImage(file){
     else toast(d.error||'Upload failed','err');
   }catch(e){toast('Upload failed','err');}
 }
-
 async function handleDirectUpload(inp){
   const files=Array.from(inp.files);
   if(!files.length)return;
   if(files.length===1){showImagePreview(files[0]);}
-  else{
-    // Multiple files — upload all directly with progress
-    toast('Sending '+files.length+' photos...','info');
-    for(const f of files){await directUploadImage(f);}
-  }
+  else{toast('Sending '+files.length+' photos...','info');for(const f of files){await directUploadImage(f);}}
   inp.value='';
 }
 
-// ── Image preview state ──
 let imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1,filter:'none',cropping:false,cropStart:null,cropRect:null};
 
 function previewImage(inp){
   const f=inp.files[0];if(!f)return;
   if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
-  showImagePreview(f);
-  inp.value='';
+  showImagePreview(f);inp.value='';
 }
-
 function showImagePreview(f){
-  imgPreviewData.file=f;
-  imgPreviewData.rotation=0;imgPreviewData.flipH=1;imgPreviewData.flipV=1;
-  imgPreviewData.filter='none';imgPreviewData.cropping=false;imgPreviewData.cropRect=null;
+  imgPreviewData.file=f;imgPreviewData.rotation=0;imgPreviewData.flipH=1;imgPreviewData.flipV=1;imgPreviewData.filter='none';imgPreviewData.cropping=false;imgPreviewData.cropRect=null;
   const reader=new FileReader();
   reader.onload=e=>{
     const img=new Image();
     img.onload=()=>{
       imgPreviewData.img=img;
       const canvas=document.getElementById('imgPreviewCanvas');
-      imgPreviewData.canvas=canvas;
-      imgPreviewData.ctx=canvas.getContext('2d');
-      drawImageOnCanvas();
-      updateSizeLabel();
+      imgPreviewData.canvas=canvas;imgPreviewData.ctx=canvas.getContext('2d');
+      drawImageOnCanvas();updateSizeLabel();
       document.getElementById('imgCaption').value='';
       document.getElementById('imgPreviewOverlay').classList.add('show');
       document.getElementById('imgPreviewModal').classList.add('show');
@@ -1075,7 +1197,6 @@ function showImagePreview(f){
   };
   reader.readAsDataURL(f);
 }
-
 function drawImageOnCanvas(){
   const{canvas,ctx,img,rotation,flipH,flipV,filter}=imgPreviewData;
   if(!canvas||!img)return;
@@ -1086,203 +1207,97 @@ function drawImageOnCanvas(){
   const rotated=rotation===90||rotation===-90||rotation===270;
   canvas.width=rotated?h:w;canvas.height=rotated?w:h;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.translate(canvas.width/2,canvas.height/2);
-  ctx.rotate(angle);ctx.scale(flipH,flipV);
-  // Apply filter
+  ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(angle);ctx.scale(flipH,flipV);
   if(filter==='grayscale')ctx.filter='grayscale(100%)';
   else if(filter==='warm')ctx.filter='saturate(1.4) brightness(1.05) sepia(0.2)';
   else if(filter==='cool')ctx.filter='saturate(0.9) brightness(1.05) hue-rotate(20deg)';
   else ctx.filter='none';
-  ctx.drawImage(img,-w/2,-h/2,w,h);
-  ctx.restore();
-  ctx.filter='none';
-  // Draw crop overlay if cropping
+  ctx.drawImage(img,-w/2,-h/2,w,h);ctx.restore();ctx.filter='none';
   if(imgPreviewData.cropping&&imgPreviewData.cropRect){
     const r=imgPreviewData.cropRect;
-    ctx.fillStyle='rgba(0,0,0,0.45)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.clearRect(r.x,r.y,r.w,r.h);
-    ctx.strokeStyle='#7c6aff';ctx.lineWidth=2;
-    ctx.strokeRect(r.x,r.y,r.w,r.h);
-    // Corner handles
-    const hs=8;
-    [[r.x,r.y],[r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h]].forEach(([cx,cy])=>{
-      ctx.fillStyle='#7c6aff';ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs);
-    });
+    ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#7c6aff';ctx.lineWidth=2;ctx.strokeRect(r.x,r.y,r.w,r.h);
+    const hs=8;[[r.x,r.y],[r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h]].forEach(([cx,cy])=>{ctx.fillStyle='#7c6aff';ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs);});
   }
   setTimeout(updateSizeLabel,100);
 }
-
 function drawFilter(f){imgPreviewData.filter=f;drawImageOnCanvas();}
 function rotateImage(deg){imgPreviewData.rotation=(imgPreviewData.rotation+deg+360)%360;drawImageOnCanvas();}
 function flipImage(dir){if(dir==='h')imgPreviewData.flipH*=-1;else imgPreviewData.flipV*=-1;drawImageOnCanvas();}
-
-// ── Crop ──
 function startCrop(){
-  imgPreviewData.cropping=true;
-  const{canvas}=imgPreviewData;
-  const p=0.15;
-  imgPreviewData.cropRect={x:canvas.width*p,y:canvas.height*p,w:canvas.width*(1-2*p),h:canvas.height*(1-2*p)};
+  imgPreviewData.cropping=true;const{canvas}=imgPreviewData;
+  const p=0.15;imgPreviewData.cropRect={x:canvas.width*p,y:canvas.height*p,w:canvas.width*(1-2*p),h:canvas.height*(1-2*p)};
   drawImageOnCanvas();
-  document.getElementById('cropBtn').style.display='none';
-  document.getElementById('cropConfirmBtn').style.display='';
-  document.getElementById('cropCancelBtn').style.display='';
-  // Allow drag to resize crop rect
+  document.getElementById('cropBtn').style.display='none';document.getElementById('cropConfirmBtn').style.display='';document.getElementById('cropCancelBtn').style.display='';
   let dragging=false,dragCorner=null,dragStart=null;
-  canvas.onmousedown=canvas.ontouchstart=ev=>{
-    const pos=getCanvasPos(ev,canvas);
-    dragCorner=getNearestCorner(pos);
-    dragging=true;dragStart=pos;ev.preventDefault();
-  };
+  canvas.onmousedown=canvas.ontouchstart=ev=>{const pos=getCanvasPos(ev,canvas);dragCorner=getNearestCorner(pos);dragging=true;dragStart=pos;ev.preventDefault();};
   canvas.onmousemove=canvas.ontouchmove=ev=>{
-    if(!dragging)return;
-    const pos=getCanvasPos(ev,canvas);
-    const r=imgPreviewData.cropRect;
-    const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;
-    if(dragCorner==='tl'){r.x+=dx;r.y+=dy;r.w-=dx;r.h-=dy;}
-    else if(dragCorner==='tr'){r.y+=dy;r.w+=dx;r.h-=dy;}
-    else if(dragCorner==='bl'){r.x+=dx;r.w-=dx;r.h+=dy;}
-    else if(dragCorner==='br'){r.w+=dx;r.h+=dy;}
-    else{r.x+=dx;r.y+=dy;}
-    r.w=Math.max(40,r.w);r.h=Math.max(40,r.h);
-    dragStart=pos;drawImageOnCanvas();ev.preventDefault();
+    if(!dragging)return;const pos=getCanvasPos(ev,canvas);const r=imgPreviewData.cropRect;const dx=pos.x-dragStart.x,dy=pos.y-dragStart.y;
+    if(dragCorner==='tl'){r.x+=dx;r.y+=dy;r.w-=dx;r.h-=dy;}else if(dragCorner==='tr'){r.y+=dy;r.w+=dx;r.h-=dy;}else if(dragCorner==='bl'){r.x+=dx;r.w-=dx;r.h+=dy;}else if(dragCorner==='br'){r.w+=dx;r.h+=dy;}else{r.x+=dx;r.y+=dy;}
+    r.w=Math.max(40,r.w);r.h=Math.max(40,r.h);dragStart=pos;drawImageOnCanvas();ev.preventDefault();
   };
   canvas.onmouseup=canvas.ontouchend=()=>{dragging=false;};
 }
-function getCanvasPos(ev,canvas){
-  const rect=canvas.getBoundingClientRect();
-  const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
-  const src=ev.touches?ev.touches[0]:ev;
-  return{x:(src.clientX-rect.left)*scaleX,y:(src.clientY-rect.top)*scaleY};
-}
-function getNearestCorner(pos){
-  const r=imgPreviewData.cropRect;
-  const corners={tl:{x:r.x,y:r.y},tr:{x:r.x+r.w,y:r.y},bl:{x:r.x,y:r.y+r.h},br:{x:r.x+r.w,y:r.y+r.h}};
-  let nearest='move',minD=30;
-  Object.entries(corners).forEach(([k,v])=>{
-    const d=Math.hypot(pos.x-v.x,pos.y-v.y);
-    if(d<minD){minD=d;nearest=k;}
-  });
-  return nearest;
-}
+function getCanvasPos(ev,canvas){const rect=canvas.getBoundingClientRect();const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;const src=ev.touches?ev.touches[0]:ev;return{x:(src.clientX-rect.left)*scaleX,y:(src.clientY-rect.top)*scaleY};}
+function getNearestCorner(pos){const r=imgPreviewData.cropRect;const corners={tl:{x:r.x,y:r.y},tr:{x:r.x+r.w,y:r.y},bl:{x:r.x,y:r.y+r.h},br:{x:r.x+r.w,y:r.y+r.h}};let nearest='move',minD=30;Object.entries(corners).forEach(([k,v])=>{const d=Math.hypot(pos.x-v.x,pos.y-v.y);if(d<minD){minD=d;nearest=k;}});return nearest;}
 function confirmCrop(){
-  const{canvas,ctx,cropRect}=imgPreviewData;
-  if(!cropRect)return;
-  // Extract cropped region to a new canvas
-  const tmp=document.createElement('canvas');
-  tmp.width=Math.abs(cropRect.w);tmp.height=Math.abs(cropRect.h);
+  const{canvas,ctx,cropRect}=imgPreviewData;if(!cropRect)return;
+  const tmp=document.createElement('canvas');tmp.width=Math.abs(cropRect.w);tmp.height=Math.abs(cropRect.h);
   tmp.getContext('2d').drawImage(canvas,cropRect.x,cropRect.y,cropRect.w,cropRect.h,0,0,cropRect.w,cropRect.h);
-  // Replace main canvas with cropped
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  canvas.width=tmp.width;canvas.height=tmp.height;
-  ctx.drawImage(tmp,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);canvas.width=tmp.width;canvas.height=tmp.height;ctx.drawImage(tmp,0,0);
   cancelCrop();
 }
 function cancelCrop(){
   imgPreviewData.cropping=false;imgPreviewData.cropRect=null;
   const c=imgPreviewData.canvas;c.onmousedown=c.onmousemove=c.onmouseup=c.ontouchstart=c.ontouchmove=c.ontouchend=null;
-  document.getElementById('cropBtn').style.display='';
-  document.getElementById('cropConfirmBtn').style.display='none';
-  document.getElementById('cropCancelBtn').style.display='none';
+  document.getElementById('cropBtn').style.display='';document.getElementById('cropConfirmBtn').style.display='none';document.getElementById('cropCancelBtn').style.display='none';
   drawImageOnCanvas();
 }
-
-// ── File size estimate label ──
 function updateSizeLabel(){
-  const canvas=document.getElementById('imgPreviewCanvas');
-  if(!canvas)return;
+  const canvas=document.getElementById('imgPreviewCanvas');if(!canvas)return;
   const q=parseFloat(document.getElementById('imgQuality').value)||0.75;
-  canvas.toBlob(blob=>{
-    if(!blob)return;
-    const kb=Math.round(blob.size/1024);
-    const label=kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';
-    document.getElementById('imgSizeLabel').textContent='~'+label;
-  },'image/jpeg',q);
+  canvas.toBlob(blob=>{if(!blob)return;const kb=Math.round(blob.size/1024);const label=kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';document.getElementById('imgSizeLabel').textContent='~'+label;},'image/jpeg',q);
 }
-document.addEventListener('DOMContentLoaded',()=>{
-  const q=document.getElementById('imgQuality');
-  if(q)q.addEventListener('change',updateSizeLabel);
-});
-
-// ── Download preview ──
-function downloadPreview(){
-  const canvas=document.getElementById('imgPreviewCanvas');
-  const a=document.createElement('a');
-  a.href=canvas.toDataURL('image/jpeg',0.95);
-  a.download='photo.jpg';a.click();
-}
-
+document.addEventListener('DOMContentLoaded',()=>{const q=document.getElementById('imgQuality');if(q)q.addEventListener('change',updateSizeLabel);});
+function downloadPreview(){const canvas=document.getElementById('imgPreviewCanvas');const a=document.createElement('a');a.href=canvas.toDataURL('image/jpeg',0.95);a.download='photo.jpg';a.click();}
 function closeImagePreview(){
-  document.getElementById('imgPreviewOverlay').classList.remove('show');
-  document.getElementById('imgPreviewModal').classList.remove('show');
-  cancelCrop();
-  imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1,filter:'none',cropping:false,cropStart:null,cropRect:null};
+  document.getElementById('imgPreviewOverlay').classList.remove('show');document.getElementById('imgPreviewModal').classList.remove('show');
+  cancelCrop();imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1,filter:'none',cropping:false,cropStart:null,cropRect:null};
 }
-
 async function sendEditedImage(){
   const{canvas}=imgPreviewData;if(!canvas)return;
   const q=parseFloat(document.getElementById('imgQuality').value)||0.75;
   const caption=document.getElementById('imgCaption').value.trim();
   canvas.toBlob(async blob=>{
-    const fd=new FormData();fd.append('image',blob,'photo.jpg');
-    toast('Sending...','info');
-    try{
-      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
-      const d=await r.json();
-      if(d.success){
-        socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption});
-        closeImagePreview();
-        toast('Photo sent! 📸','ok');
-      }else toast(d.error||'Upload failed','err');
+    const fd=new FormData();fd.append('image',blob,'photo.jpg');toast('Sending...','info');
+    try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();
+      if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption});closeImagePreview();toast('Photo sent! 📸','ok');}
+      else toast(d.error||'Upload failed','err');
     }catch(e){toast('Upload failed','err');}
   },'image/jpeg',q);
 }
 
-// ── Full-size image viewer ──
+// ── Image viewer ──
 let viewerCurrentUrl='';
 function openImgViewer(url,caption){
   viewerCurrentUrl=url;
   document.getElementById('imgViewerImg').src=url;
-  // Reset zoom when opening
   document.getElementById('imgViewerImg').classList.remove('zoomed');
   document.getElementById('imgViewerCaption').textContent=caption||'';
   document.getElementById('imgViewerOverlay').style.display='flex';
 }
-function closeImgViewer(){
-  document.getElementById('imgViewerOverlay').style.display='none';
-  document.getElementById('imgViewerImg').src='';
-}
-// Tap/click to zoom image in viewer
+function closeImgViewer(){document.getElementById('imgViewerOverlay').style.display='none';document.getElementById('imgViewerImg').src='';}
 document.addEventListener('DOMContentLoaded',()=>{
   const vi=document.getElementById('imgViewerImg');
-  if(vi){
-    vi.addEventListener('click',e=>{
-      e.stopPropagation();
-      vi.classList.toggle('zoomed');
-    });
-  }
-  // Swipe down to close
+  if(vi)vi.addEventListener('click',e=>{e.stopPropagation();vi.classList.toggle('zoomed');});
   const ov=document.getElementById('imgViewerOverlay');
-  if(ov){
-    let sy=0;
-    ov.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});
-    ov.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-sy>80)closeImgViewer();},{passive:true});
-  }
+  if(ov){let sy=0;ov.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});ov.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-sy>80)closeImgViewer();},{passive:true});}
 });
-function downloadImg(){
-  if(!viewerCurrentUrl)return;
-  const a=document.createElement('a');
-  a.href=viewerCurrentUrl;
-  a.download='photo.jpg';
-  a.target='_blank';
-  a.click();
-}
-// Swipe down to close image viewer on mobile
-(()=>{let sy=0;const ov=document.getElementById('imgViewerOverlay');if(!ov)return;ov.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;},{passive:true});ov.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-sy>80)closeImgViewer();},{passive:true});})();
+function downloadImg(){if(!viewerCurrentUrl)return;const a=document.createElement('a');a.href=viewerCurrentUrl;a.download='photo.jpg';a.target='_blank';a.click();}
 
-
-
+// ══════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════
 let currentProfileData=null;
 function showFriendProfile(){
   if(!currentFriendId)return;
@@ -1298,377 +1313,131 @@ function showFriendProfile(){
 }
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
-// ═══════ WEBRTC CALLS ═══════
+
+// ══════════════════════════════════════════
+// WEBRTC CALLS
+// ══════════════════════════════════════════
 const STUN={iceServers:[
-  {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'},
-  {urls:'stun:stun2.l.google.com:19302'},
-  {urls:'stun:stun3.l.google.com:19302'},
+  {urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'},{urls:'stun:stun3.l.google.com:19302'},
   {urls:'stun:stun4.l.google.com:19302'}
 ]};
-
-// ── State — always reset via resetCd() ──
 let cd={};
-function resetCd(){
-  cd={
-    active:false,type:null,muted:false,videoOff:false,
-    localStream:null,pc:null,
-    callerId:null,calleeId:null,calleeName:null,
-    pending:[],incoming:null,
-    ringTimer:null,timerInterval:null,
-    startTime:null,startTimeStr:null,duration:0
-  };
-}
+function resetCd(){cd={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,calleeName:null,pending:[],incoming:null,ringTimer:null,timerInterval:null,startTime:null,startTimeStr:null,duration:0};}
 resetCd();
-
-// ── Time ──
-function nowStr(){
-  const d=new Date(),h=d.getHours(),m=d.getMinutes();
-  return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM');
-}
-function fmtDur(s){
-  if(!s||s<1)return '0s';
-  if(s<60)return s+'s';
-  const m=Math.floor(s/60),r=s%60;
-  return r?m+'m '+r+'s':m+'m';
-}
-
-// ── Status text ──
+function nowStr(){const d=new Date(),h=d.getHours(),m=d.getMinutes();return(h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM');}
+function fmtDur(s){if(!s||s<1)return'0s';if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;return r?m+'m '+r+'s':m+'m';}
 function setStatus(t){const e=document.getElementById('callStatus');if(e)e.textContent=t;}
-
-// ── Timer ──
 function startCallTimer(){
-  if(cd.timerInterval)return;
-  cd.startTime=Date.now();cd.duration=0;cd.startTimeStr=nowStr();
-  const el=document.getElementById('callTimer');
-  if(el)el.style.display='block';
-  cd.timerInterval=setInterval(()=>{
-    cd.duration=Math.floor((Date.now()-cd.startTime)/1000);
-    const el=document.getElementById('callTimer');
-    if(el)el.textContent=String(Math.floor(cd.duration/60)).padStart(2,'0')+':'+String(cd.duration%60).padStart(2,'0');
-  },1000);
+  if(cd.timerInterval)return;cd.startTime=Date.now();cd.duration=0;cd.startTimeStr=nowStr();
+  const el=document.getElementById('callTimer');if(el)el.style.display='block';
+  cd.timerInterval=setInterval(()=>{cd.duration=Math.floor((Date.now()-cd.startTime)/1000);const el=document.getElementById('callTimer');if(el)el.textContent=String(Math.floor(cd.duration/60)).padStart(2,'0')+':'+String(cd.duration%60).padStart(2,'0');},1000);
 }
-function stopCallTimer(){
-  clearInterval(cd.timerInterval);
-  const el=document.getElementById('callTimer');
-  if(el){el.style.display='none';el.textContent='00:00';}
-}
-
-// ── Chat log ──
+function stopCallTimer(){clearInterval(cd.timerInterval);const el=document.getElementById('callTimer');if(el){el.style.display='none';el.textContent='00:00';}}
 function appendCallMsg(type,dur,startT){
   const area=document.getElementById('marea');if(!area)return;
-  const div=document.createElement('div');
-  const endT=nowStr(),st=startT||endT;
-  if(type==='missed'){
-    div.className='call-msg missed';
-    div.innerHTML='📵 Missed call · '+endT;
-  }else{
-    div.className='call-msg answered';
-    div.innerHTML=(type==='video'?'📹 Video':'📞 Voice')+' call · '+st+' – '+endT+' ('+fmtDur(dur)+')';
-  }
+  const div=document.createElement('div');const endT=nowStr(),st=startT||endT;
+  if(type==='missed'){div.className='call-msg missed';div.innerHTML='📵 Missed call · '+endT;}
+  else{div.className='call-msg answered';div.innerHTML=(type==='video'?'📹 Video':'📞 Voice')+' call · '+st+' – '+endT+' ('+fmtDur(dur)+')';}
   area.appendChild(div);area.scrollTop=area.scrollHeight;
 }
-
-// ── Modal UI ──
 function showCallModal(name,status,isVideo){
   document.getElementById('callAvatar').textContent=name[0].toUpperCase();
-  document.getElementById('callName').textContent=name;
-  document.getElementById('callStatus').textContent=status;
+  document.getElementById('callName').textContent=name;document.getElementById('callStatus').textContent=status;
   document.getElementById('callVideo').style.display=isVideo?'flex':'none';
   document.getElementById('videoBtn').style.display=isVideo?'inline-flex':'none';
-  document.getElementById('muteBtn').textContent='🎤';
-  document.getElementById('muteBtn').classList.remove('muted');
-  document.getElementById('callOverlay').classList.add('show');
-  document.getElementById('callModal').classList.add('show');
+  document.getElementById('muteBtn').textContent='🎤';document.getElementById('muteBtn').classList.remove('muted');
+  document.getElementById('callOverlay').classList.add('show');document.getElementById('callModal').classList.add('show');
 }
-function hideCallModal(){
-  document.getElementById('callOverlay').classList.remove('show');
-  document.getElementById('callModal').classList.remove('show');
-}
+function hideCallModal(){document.getElementById('callOverlay').classList.remove('show');document.getElementById('callModal').classList.remove('show');}
 function showIncomingCall(name,type){
   document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
   document.getElementById('incomingCallName').textContent=name;
   document.getElementById('incomingCallType').textContent=type==='video'?'📹 Incoming video call...':'📞 Incoming voice call...';
-  document.getElementById('incomingCallOverlay').classList.add('show');
-  document.getElementById('incomingCallModal').classList.add('show');
+  document.getElementById('incomingCallOverlay').classList.add('show');document.getElementById('incomingCallModal').classList.add('show');
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    function ring(){
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.frequency.value=520;
-      g.gain.setValueAtTime(0.4,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-      o.start();o.stop(ctx.currentTime+0.5);
-    }
+    function ring(){const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=520;g.gain.setValueAtTime(0.4,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);o.start();o.stop(ctx.currentTime+0.5);}
     ring();cd.ringTimer=setInterval(ring,1200);
   }catch(e){}
 }
-function hideIncomingCall(){
-  document.getElementById('incomingCallOverlay').classList.remove('show');
-  document.getElementById('incomingCallModal').classList.remove('show');
-  clearInterval(cd.ringTimer);cd.ringTimer=null;
-}
-
-// ── Unlock AudioContext — MUST call on every user tap ──
-async function unlockAudio(){
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    if(ctx.state==='suspended')await ctx.resume();
-    const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();
-    s.buffer=b;s.connect(ctx.destination);s.start(0);
-  }catch(e){}
-}
-
-// ── Get media with multiple fallbacks ──
+function hideIncomingCall(){document.getElementById('incomingCallOverlay').classList.remove('show');document.getElementById('incomingCallModal').classList.remove('show');clearInterval(cd.ringTimer);cd.ringTimer=null;}
+async function unlockAudio(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')await ctx.resume();const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);}catch(e){}}
 async function getMedia(type){
   const list=type==='video'
-    ?[
-      {video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000}},
-      {video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},
-      {video:true,audio:true},
-      {audio:true,video:false}
-     ]
-    :[
-      {audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000},video:false},
-      {audio:{echoCancellation:true,noiseSuppression:true},video:false},
-      {audio:true,video:false}
-     ];
+    ?[{video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000}},{video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},{video:true,audio:true},{audio:true,video:false}]
+    :[{audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000},video:false},{audio:{echoCancellation:true,noiseSuppression:true},video:false},{audio:true,video:false}];
   let err;
-  for(const c of list){
-    try{return await navigator.mediaDevices.getUserMedia(c);}
-    catch(e){
-      err=e;
-      if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;
-    }
-  }
+  for(const c of list){try{return await navigator.mediaDevices.getUserMedia(c);}catch(e){err=e;if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;}}
   throw err;
 }
-
-// ── Attach remote audio to a hidden <audio> element ──
 function attachAudio(stream){
-  let el=document.getElementById('remoteAudio');
-  if(el)el.remove();
-  el=document.createElement('audio');
-  el.id='remoteAudio';
-  el.autoplay=true;
-  el.setAttribute('playsinline','');
-  el.muted=false;
-  el.volume=1.0;
-  el.style.display='none';
-  document.body.appendChild(el);
-  el.srcObject=stream;
-  // Retry play with increasing delays
-  let attempt=0;
-  function tryPlay(){
-    el.muted=false;el.volume=1.0;
-    el.play().catch(()=>{
-      if(attempt++<20)setTimeout(tryPlay,300);
-    });
-  }
-  tryPlay();
+  let el=document.getElementById('remoteAudio');if(el)el.remove();
+  el=document.createElement('audio');el.id='remoteAudio';el.autoplay=true;el.setAttribute('playsinline','');el.muted=false;el.volume=1.0;el.style.display='none';document.body.appendChild(el);el.srcObject=stream;
+  let attempt=0;function tryPlay(){el.muted=false;el.volume=1.0;el.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});}tryPlay();
 }
-
-// ── Attach remote video ──
 function attachVideo(stream){
-  const rv=document.getElementById('remoteVideo');
-  if(!rv)return;
-  rv.srcObject=stream;
-  rv.setAttribute('playsinline','');
-  rv.muted=true; // video el must be muted for autoplay; audio from <audio> el
-  let attempt=0;
-  function tryPlay(){
-    rv.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});
-  }
-  tryPlay();
+  const rv=document.getElementById('remoteVideo');if(!rv)return;rv.srcObject=stream;rv.setAttribute('playsinline','');rv.muted=true;
+  let attempt=0;function tryPlay(){rv.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});}tryPlay();
 }
-
-// ── Build RTCPeerConnection ──
 function makePc(targetId){
   if(cd.pc){try{cd.pc.close();}catch(e){}}
-  const pc=new RTCPeerConnection(STUN);
-  cd.pc=pc;
-  cd.pending=[];
-
-  // Relay our ICE candidates to the other side
-  pc.onicecandidate=e=>{
-    if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});
-  };
-
-  // Receive remote audio/video tracks
-  // Use separate MediaStreams per kind for maximum compatibility
-  const audioStream=new MediaStream();
-  const videoStream=new MediaStream();
-
+  const pc=new RTCPeerConnection(STUN);cd.pc=pc;cd.pending=[];
+  pc.onicecandidate=e=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
+  const audioStream=new MediaStream();const videoStream=new MediaStream();
   pc.ontrack=e=>{
     const track=e.track;
-    if(track.kind==='audio'){
-      audioStream.addTrack(track);
-      attachAudio(audioStream);
-    }
-    if(track.kind==='video'){
-      videoStream.addTrack(track);
-      attachVideo(videoStream);
-    }
+    if(track.kind==='audio'){audioStream.addTrack(track);attachAudio(audioStream);}
+    if(track.kind==='video'){videoStream.addTrack(track);attachVideo(videoStream);}
   };
-
-  // ICE state → update UI and start timer
   pc.oniceconnectionstatechange=()=>{
     const s=pc.iceConnectionState;
-    if(s==='connected'||s==='completed'){
-      setStatus('Connected ✅  ·  '+nowStr());
-      startCallTimer();
-    }else if(s==='checking'){
-      setStatus('Connecting...');
-    }else if(s==='failed'){
-      toast('❌ Connection failed','err');
-      endCall();
-    }else if(s==='disconnected'){
-      setStatus('Reconnecting...');
-      setTimeout(()=>{if(cd.pc&&cd.pc.iceConnectionState==='disconnected')endCall();},6000);
-    }
+    if(s==='connected'||s==='completed'){setStatus('Connected ✅  ·  '+nowStr());startCallTimer();}
+    else if(s==='checking'){setStatus('Connecting...');}
+    else if(s==='failed'){toast('❌ Connection failed','err');endCall();}
+    else if(s==='disconnected'){setStatus('Reconnecting...');setTimeout(()=>{if(cd.pc&&cd.pc.iceConnectionState==='disconnected')endCall();},6000);}
   };
-
   return pc;
 }
-
-// ── Apply queued ICE candidates after remote desc is set ──
 async function flushPending(){
   if(!cd.pc?.remoteDescription?.type)return;
   const q=[...cd.pending];cd.pending=[];
   for(const c of q){try{await cd.pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
 }
-
-// ── Error message helper ──
 function mediaErr(e){
-  toast('❌ '+(
-    e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — allow it in your browser settings':
-    e.name==='NotFoundError'?'No microphone/camera found on this device':
-    e.name==='NotReadableError'?'Mic/camera is being used by another app':
-    !window.isSecureContext?'Calls require HTTPS':
-    'Could not start call: '+e.message
-  ),'err');
+  toast('❌ '+(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — allow it in browser settings':e.name==='NotFoundError'?'No mic/camera found':e.name==='NotReadableError'?'Mic/camera in use by another app':!window.isSecureContext?'Calls require HTTPS':'Could not start call: '+e.message),'err');
 }
-
-// ── Public call starters ──
-async function startVoiceCall(){
-  if(!currentFriendId){toast('Open a chat first','err');return;}
-  const f=friends.find(x=>x.id===currentFriendId);
-  if(f)await doCall(f,'voice');
-}
-async function startVideoCall(){
-  if(!currentFriendId){toast('Open a chat first','err');return;}
-  const f=friends.find(x=>x.id===currentFriendId);
-  if(f)await doCall(f,'video');
-}
-
-// ── CALLER: build offer ──
 async function doCall(friend,type){
   if(cd.active){toast(friend.username+' is in another call','info');return;}
   await unlockAudio();
   try{
     cd.active=true;cd.type=type;cd.calleeId=friend.id;cd.calleeName=friend.username;
-
-    const stream=await getMedia(type);
-    cd.localStream=stream;
-
-    if(type==='video'){
-      const lv=document.getElementById('localVideo');
-      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;
-      lv.play().catch(()=>{});
-    }
-
-    const pc=makePc(friend.id);
-    // Pass stream reference so receiver gets e.streams[0]
-    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-
-    const offer=await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
+    const stream=await getMedia(type);cd.localStream=stream;
+    if(type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});}
+    const pc=makePc(friend.id);stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);
     showCallModal(friend.username,'Calling...',type==='video');
-    socket.emit('call_offer',{
-      callee_id:friend.id,
-      offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},
-      call_type:type
-    });
-  }catch(e){
-    mediaErr(e);
-    cleanupCall();
-  }
+    socket.emit('call_offer',{callee_id:friend.id,offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},call_type:type});
+  }catch(e){mediaErr(e);cleanupCall();}
 }
-
-// ── RECEIVER: accept ──
 async function acceptCall(){
-  await unlockAudio();
-  hideIncomingCall();
-  const d=cd.incoming;
-  if(!d){cleanupCall();return;}
+  await unlockAudio();hideIncomingCall();
+  const d=cd.incoming;if(!d){cleanupCall();return;}
   try{
     cd.active=true;cd.type=d.call_type;cd.calleeId=d.caller_id;cd.calleeName=d.caller_name;
-
-    const stream=await getMedia(d.call_type);
-    cd.localStream=stream;
-
-    if(d.call_type==='video'){
-      const lv=document.getElementById('localVideo');
-      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;
-      lv.play().catch(()=>{});
-    }
-
-    const pc=makePc(d.caller_id);
-    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-
-    // EXACT ORDER: remote → flush ICE → answer → local → send
-    await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
-    await flushPending();
-    const answer=await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-
+    const stream=await getMedia(d.call_type);cd.localStream=stream;
+    if(d.call_type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});}
+    const pc=makePc(d.caller_id);stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+    await pc.setRemoteDescription(new RTCSessionDescription(d.offer));await flushPending();
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
     showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
-    socket.emit('call_answer',{
-      caller_id:d.caller_id,
-      answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},
-      accepted:true
-    });
-  }catch(e){
-    mediaErr(e);
-    rejectCall();
-  }
+    socket.emit('call_answer',{caller_id:d.caller_id,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},accepted:true});
+  }catch(e){mediaErr(e);rejectCall();}
 }
-
-// ── RECEIVER: reject ──
-function rejectCall(){
-  hideIncomingCall();
-  if(cd.incoming)socket.emit('call_answer',{caller_id:cd.incoming.caller_id,accepted:false});
-  cleanupCall();
-}
-
-// ── Controls ──
-function toggleMute(){
-  cd.muted=!cd.muted;
-  const btn=document.getElementById('muteBtn');
-  btn.classList.toggle('muted',cd.muted);
-  btn.textContent=cd.muted?'🔇':'🎤';
-  if(cd.localStream)cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
-}
-function toggleVideo(){
-  cd.videoOff=!cd.videoOff;
-  const btn=document.getElementById('videoBtn');
-  btn.classList.toggle('muted',cd.videoOff);
-  btn.textContent=cd.videoOff?'📷':'📹';
-  if(cd.localStream)cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
-}
-
-// ── End call (user pressed hang up) ──
-function endCall(){
-  const tid=cd.calleeId||cd.callerId;
-  if(tid)socket.emit('call_end',{target_id:tid});
-  const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
-  cleanupCall();
-  appendCallMsg(type,dur,startT);
-}
-
-// ── Full cleanup — always use resetCd() so state is truly fresh ──
+function rejectCall(){hideIncomingCall();if(cd.incoming)socket.emit('call_answer',{caller_id:cd.incoming.caller_id,accepted:false});cleanupCall();}
+function toggleMute(){cd.muted=!cd.muted;const btn=document.getElementById('muteBtn');btn.classList.toggle('muted',cd.muted);btn.textContent=cd.muted?'🔇':'🎤';if(cd.localStream)cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);}
+function toggleVideo(){cd.videoOff=!cd.videoOff;const btn=document.getElementById('videoBtn');btn.classList.toggle('muted',cd.videoOff);btn.textContent=cd.videoOff?'📷':'📹';if(cd.localStream)cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);}
+function endCall(){const tid=cd.calleeId||cd.callerId;if(tid)socket.emit('call_end',{target_id:tid});const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;cleanupCall();appendCallMsg(type,dur,startT);}
 function cleanupCall(){
   stopCallTimer();
   if(cd.localStream){cd.localStream.getTracks().forEach(t=>t.stop());cd.localStream=null;}
@@ -1676,80 +1445,71 @@ function cleanupCall(){
   const ra=document.getElementById('remoteAudio');if(ra)ra.remove();
   const rv=document.getElementById('remoteVideo');if(rv)rv.srcObject=null;
   const lv=document.getElementById('localVideo');if(lv)lv.srcObject=null;
-  hideCallModal();
-  hideIncomingCall();
-  resetCd(); // ← complete fresh state, ready for next call immediately
+  hideCallModal();hideIncomingCall();resetCd();
 }
-
-// ── Socket listeners ──
 function setupCallListeners(){
-
   socket.on('incoming_call',data=>{
-    if(cd.active){
-      // Busy — tell caller
-      socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,busy:true});
-      return;
-    }
+    if(cd.active){socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,busy:true});return;}
     cd.incoming=data;
     showIncomingCall(data.caller_name,data.call_type);
+    // FIX: push notification for incoming call
+    sendPushNotif(`📞 Incoming ${data.call_type} call`,`${data.caller_name} is calling you`,'call');
   });
-
   socket.on('call_accepted',async data=>{
     if(!cd.pc)return;
-    try{
-      await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-      await flushPending();
-      setStatus('Connecting...');
-    }catch(e){
-      toast('❌ Call setup failed','err');
-      endCall();
-    }
+    try{await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));await flushPending();setStatus('Connecting...');}
+    catch(e){toast('❌ Call setup failed','err');endCall();}
   });
-
   socket.on('call_rejected',data=>{
     const name=data.callee_name||'User';
-    const msg=data.busy?name+' is in another call':name+' declined the call';
-    toast(msg,'info');
+    toast(data.busy?name+' is in another call':name+' declined the call','info');
     cleanupCall();
   });
-
   socket.on('ice_candidate',async data=>{
     if(!cd.pc||!data.candidate)return;
-    if(!cd.pc.remoteDescription?.type){
-      cd.pending.push(data.candidate);
-    }else{
-      try{await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}
-    }
+    if(!cd.pc.remoteDescription?.type){cd.pending.push(data.candidate);}
+    else{try{await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}}
   });
-
   socket.on('call_ended',()=>{
     const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
-    cleanupCall();
-    appendCallMsg(type,dur,startT);
+    cleanupCall();appendCallMsg(type,dur,startT);
   });
-
-  socket.on('call_error',data=>{
-    toast(data.message||'Call failed','err');
-    cleanupCall();
-  });
+  socket.on('call_error',data=>{toast(data.message||'Call failed','err');cleanupCall();});
 }
 
-
-
-
-
-
-
+// ══════════════════════════════════════════
+// REPLY / EDIT
+// ══════════════════════════════════════════
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
 function cancelReply(){replyToMsg=null;document.getElementById('replyBar').classList.remove('show');}
-let editingMsgId=null;
-function startEdit(id,content){editingMsgId=id;const inp=document.getElementById('msgInput');inp.value=content.replace(/<br>/g,'\n');inp.focus();toast('✏️ Editing message - press Enter to save','info');}
-async function saveEdit(){
-  if(!editingMsgId)return;const inp=document.getElementById('msgInput');const content=inp.value.trim();if(!content)return;
-  try{const r=await fetch(`/api/messages/${editingMsgId}/edit`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});const d=await r.json();if(d.success){inp.value='';inp.style.height='';editingMsgId=null;toast('✅ Message updated','ok');}else toast(d.error,'err');}catch(e){toast('Failed','err');}
+
+function startEdit(id,content){
+  editingMsgId=id;
+  const inp=document.getElementById('msgInput');
+  inp.value=content.replace(/<br>/g,'\n');
+  inp.focus();
+  // Visual cue: change send button
+  document.getElementById('sndBtn').textContent='✓';
+  document.getElementById('sndBtn').style.background='#22c55e';
+  toast('✏️ Editing — press Enter or ✓ to save','info');
 }
+async function saveEdit(){
+  if(!editingMsgId)return;
+  const inp=document.getElementById('msgInput');const content=inp.value.trim();if(!content)return;
+  try{
+    const r=await fetch(`/api/messages/${editingMsgId}/edit`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});
+    const d=await r.json();
+    if(d.success){
+      inp.value='';inp.style.height='';editingMsgId=null;
+      document.getElementById('sndBtn').textContent='➤';
+      document.getElementById('sndBtn').style.background='';
+      toast('✅ Message updated','ok');
+    }else toast(d.error,'err');
+  }catch(e){toast('Failed','err');}
+}
+
 async function confirmDelete(id){if(!confirm('Delete this message?'))return;try{const r=await fetch(`/api/messages/${id}/delete`,{method:'DELETE'});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
-async function togglePin(id){try{const r=await fetch(`/api/messages/${id}/pin`,{method:'POST'});const d=await r.json();if(d.success){toast(d.is_pinned?'📌 Message pinned':'📌 Message unpinned','info');updatePinnedBanner();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function togglePin(id){try{const r=await fetch(`/api/messages/${id}/pin`,{method:'POST'});const d=await r.json();if(d.success){toast(d.is_pinned?'📌 Pinned':'📌 Unpinned','info');updatePinnedBanner();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
 async function updatePinnedBanner(){
   if(!currentChatId)return;
   try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();const banner=document.getElementById('pinnedBanner');if(d.success&&d.messages.length>0){document.getElementById('pinnedText').textContent=d.messages.length===1?'1 pinned message':`${d.messages.length} pinned messages`;banner.classList.add('show');}else banner.classList.remove('show');}catch(e){}
@@ -1758,6 +1518,10 @@ async function showPinned(){
   if(!currentChatId)return;
   try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();if(d.success&&d.messages.length>0){const list=d.messages.map(m=>`• ${m.content.substring(0,60)}`).join('\n');alert(`Pinned Messages:\n\n${list}`);}else toast('No pinned messages','info');}catch(e){toast('Failed','err');}
 }
+
+// ══════════════════════════════════════════
+// REACTIONS & CONTEXT MENU
+// ══════════════════════════════════════════
 function showReactPicker(id,event){
   event.stopPropagation();const picker=document.createElement('div');picker.className='react-picker show';picker.style.position='fixed';picker.style.left=`${event.clientX}px`;picker.style.top=`${event.clientY-100}px`;
   ['❤️','😂','😮','😢','👍','🎉'].forEach(emoji=>{const btn=document.createElement('div');btn.className='react-emoji';btn.textContent=emoji;btn.onclick=()=>{reactTo(id,emoji);picker.remove();};picker.appendChild(btn);});
@@ -1770,6 +1534,10 @@ function replyToMsgCtx(){if(!contextMsg)return;const el=document.querySelector(`
 function editMsgCtx(){if(!contextMsg||!contextMsg.isSent)return;const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);if(el){const bubText=el.querySelector('.bub')?.textContent?.trim()||'';startEdit(contextMsg.id,bubText.split('\n')[0]);}hideCtxMenu();}
 function pinMsgCtx(){if(!contextMsg)return;togglePin(contextMsg.id);hideCtxMenu();}
 function deleteMsgCtx(){if(!contextMsg||!contextMsg.isSent)return;confirmDelete(contextMsg.id);hideCtxMenu();}
+
+// ══════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════
 function toggleSearch(){document.getElementById('searchPanel').classList.toggle('open');if(document.getElementById('searchPanel').classList.contains('open'))document.getElementById('msgSearch').focus();}
 let searchMsgTimer=null;
 function searchMsgs(q){clearTimeout(searchMsgTimer);if(!q.trim()){document.getElementById('searchResults').innerHTML='';return;}searchMsgTimer=setTimeout(()=>doSearchMsgs(q),300);}
@@ -1778,10 +1546,18 @@ async function doSearchMsgs(q){
   try{const r=await fetch(`/api/messages/search/${currentChatId}?q=${encodeURIComponent(q)}`);const d=await r.json();const results=document.getElementById('searchResults');if(!d.success||!d.messages.length){results.innerHTML='<div class="lempty" style="padding:12px;">No results</div>';return;}results.innerHTML=d.messages.map(m=>`<div class="search-msg" onclick="scrollToMsg(${m.id})"><div class="search-msg-from">${esc(m.sender_username)}</div><div class="search-msg-content">${esc(m.content)}</div><div class="search-msg-time">${fmtTime(m.created_at)}</div></div>`).join('');}catch(e){}
 }
 function scrollToMsg(id){const el=document.querySelector(`[data-msg-id="${id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(124,106,255,.2)';setTimeout(()=>el.style.background='',2000);}}
+
+// ══════════════════════════════════════════
+// EMOJI
+// ══════════════════════════════════════════
 function toggleEmoji(){document.getElementById('epick').classList.toggle('open');}
 function closeEmoji(){document.getElementById('epick').classList.remove('open');}
 function ins(e){document.getElementById('msgInput').value+=e;document.getElementById('msgInput').focus();}
-document.addEventListener('click',(e)=>{if(!e.target.closest('.epick')&&!e.target.closest('.isb'))closeEmoji();});
+document.addEventListener('click',(e)=>{if(!e.target.closest('.epick')&&!e.target.closest('.isb[onclick*="toggleEmoji"]'))closeEmoji();});
+
+// ══════════════════════════════════════════
+// MESSAGE ACTION BUTTONS
+// ══════════════════════════════════════════
 document.addEventListener('click',(e)=>{
   const btn=e.target.closest('.msg-act');if(!btn)return;
   const action=btn.dataset.action,msgId=parseInt(btn.dataset.msgId);
@@ -1802,6 +1578,10 @@ document.getElementById('marea').addEventListener('touchstart',(e)=>{
   const timer=setTimeout(()=>{if(target){const msgId=parseInt(target.dataset.msgId);const from=target.querySelector('.mfrom')?.textContent||ME_NAME;const content=bub.textContent.trim().split('\n')[0];setReply(msgId,from,content.substring(0,50));if(navigator.vibrate)navigator.vibrate(50);}},500);
   const clear=()=>clearTimeout(timer);document.addEventListener('touchend',clear,{once:true});document.addEventListener('touchmove',clear,{once:true});
 });
+
+// ══════════════════════════════════════════
+// FRIENDS & SEARCH
+// ══════════════════════════════════════════
 function handleSearch(q){
   clearTimeout(searchTimer);const p=document.getElementById('srPanel');
   if(!q.trim()){p.classList.remove('open');return;}
@@ -1843,16 +1623,7 @@ async function addFriend(uid){try{const r=await fetch('/api/friends/request',{me
 async function acceptReq(reqId){try{const r=await fetch('/api/friends/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});const d=await r.json();if(d.success){toast('Friend added! 🎉','ok');await loadFriends();await loadRequests();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
 async function rejectReq(reqId){try{await fetch('/api/friends/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});await loadRequests();}catch(e){}}
 async function quickAccept(userId){let rq=pendingReqs.find(r=>r.user_id===userId);if(!rq){await loadRequests();rq=pendingReqs.find(r=>r.user_id===userId);}if(rq)await acceptReq(rq.request_id);}
-function openChat(fid,fname,chatId){
-  if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
-  currentChatId=chatId;currentFriendId=fid;
-  document.getElementById('chav').textContent=fname[0].toUpperCase();document.getElementById('chnm').textContent=fname;
-  const isOnline=onlineUsers.has(fid);document.getElementById('chsub').textContent=isOnline?'Online':'Friend';document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
-  document.getElementById('videoCallBtn').style.display='block';document.getElementById('voiceCallBtn').style.display='block';document.getElementById('searchBtn').style.display='block';document.getElementById('pinnedBtn').style.display='block';
-  document.querySelector('.iarea').style.display='flex';
-  renderFriends();loadMsgs(chatId);if(socket?.connected)socket.emit('join_chat',{chat_id:chatId});clearSearch();
-  if(window.innerWidth<=720)closeSB();if(window.innerWidth>720)document.getElementById('msgInput').focus();
-}
+
 function doTyping(){if(!currentChatId||!socket?.connected)return;socket.emit('typing_start',{chatId:currentChatId});clearTimeout(typingTimer);typingTimer=setTimeout(()=>socket.emit('typing_stop',{chatId:currentChatId}),2000);}
 function showTyping(name){document.getElementById('tytxt').textContent=`${name} is typing`;document.getElementById('tybar').style.display='flex';}
 function hideTyping(){document.getElementById('tybar').style.display='none';}
@@ -1862,12 +1633,23 @@ function clearSearch(){document.getElementById('sinp').value='';document.getElem
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mov').classList.toggle('show');}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mov').classList.remove('show');}
 async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
 function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
+
+// ══════════════════════════════════════════
+// TIME HELPERS
+// ══════════════════════════════════════════
 function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
 function fmtTime(iso){const d=toL(iso),now=new Date();const h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM',hh=String(h%12||12);const t=`${hh}:${m} ${ap}`;if(d.toDateString()===now.toDateString())return t;const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return`Yesterday ${t}`;return`${d.getMonth()+1}/${d.getDate()} ${t}`;}
 function relTime(iso){const s=(Date.now()-toL(iso).getTime())/1000;if(s<60)return'now';if(s<3600)return`${Math.floor(s/60)}m`;if(s<86400)return`${Math.floor(s/3600)}h`;return`${Math.floor(s/86400)}d`;}
 function dayLabel(iso){const d=toL(iso),now=new Date();if(d.toDateString()===now.toDateString())return'Today';const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return'Yesterday';return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
-// ═══════ BLOCKLIST ═══════
+
+// ══════════════════════════════════════════
+// BLOCKLIST
+// ══════════════════════════════════════════
 async function openBlocklist(){document.getElementById('blocklistOv').classList.add('open');document.getElementById('blocklistDraw').classList.add('open');await loadBlocklist();}
 function closeBlocklist(){document.getElementById('blocklistOv').classList.remove('open');document.getElementById('blocklistDraw').classList.remove('open');}
 async function loadBlocklist(){
@@ -1876,19 +1658,19 @@ async function loadBlocklist(){
 }
 function openAddBlockModal(){document.getElementById('addBlockOverlay').classList.add('show');document.getElementById('addBlockModal').classList.add('show');loadFriendsToBlock();}
 function closeAddBlock(){document.getElementById('addBlockOverlay').classList.remove('show');document.getElementById('addBlockModal').classList.remove('show');}
-async function loadFriendsToBlock(){
-  const list=document.getElementById('friendsToBlockList');if(!friends.length){list.innerHTML='<p style="color:var(--mute);">No friends to block</p>';return;}
-  list.innerHTML=friends.map(f=>`<div class="srow" style="margin-bottom:6px;cursor:pointer;" onclick="blockUser(${f.id})"><div class="sleft"><div class="av sm">${f.username[0].toUpperCase()}</div><div><div class="slb">${esc(f.username)}</div></div></div><span style="color:var(--sub);">›</span></div>`).join('');
-}
-async function blockUser(userId){if(!confirm('Block this user? They won\'t be able to message you.'))return;try{const r=await fetch('/api/blocklist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User blocked','ok');closeAddBlock();loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
+async function loadFriendsToBlock(){const list=document.getElementById('friendsToBlockList');if(!friends.length){list.innerHTML='<p style="color:var(--mute);">No friends to block</p>';return;}list.innerHTML=friends.map(f=>`<div class="srow" style="margin-bottom:6px;cursor:pointer;" onclick="blockUser(${f.id})"><div class="sleft"><div class="av sm">${f.username[0].toUpperCase()}</div><div><div class="slb">${esc(f.username)}</div></div></div><span style="color:var(--sub);">›</span></div>`).join('');}
+async function blockUser(userId){if(!confirm('Block this user?'))return;try{const r=await fetch('/api/blocklist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User blocked','ok');closeAddBlock();loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
 async function unblockUser(userId){if(!confirm('Unblock this user?'))return;try{const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User unblocked','ok');loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
-// ═══════ STORIES ═══════
+
+// ══════════════════════════════════════════
+// STORIES
+// ══════════════════════════════════════════
 let currentStories=[],currentStoryIndex=0,currentStoryUserId=null;
-async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesBar(d.stories);}catch(e){console.error('Failed to load stories',e);}}
+async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesBar(d.stories);}catch(e){}}
 function renderStoriesBar(stories){
   const container=document.getElementById('storiesScroll');
   if(!stories||stories.length===0){container.innerHTML='<div class="lempty" style="padding:12px;font-size:11px;">No stories yet</div>';return;}
-  container.innerHTML=stories.map(s=>`<div class="story-circle ${s.has_unviewed?'unviewed':''}" onclick="openStory(${s.user_id})" style="cursor:pointer;text-align:center;margin:0 8px;"><div class="av" style="border:2px solid ${s.has_unviewed?'var(--brand)':'var(--bdr)'};">${s.username[0].toUpperCase()}</div><div style="font-size:10px;margin-top:4px;color:var(--txt);">${esc(s.username)}</div></div>`).join('');
+  container.innerHTML=stories.map(s=>`<div onclick="openStory(${s.user_id})" style="cursor:pointer;text-align:center;margin:0 8px;"><div class="av" style="border:2px solid ${s.has_unviewed?'var(--brand)':'var(--bdr)'};">${s.username[0].toUpperCase()}</div><div style="font-size:10px;margin-top:4px;color:var(--txt);">${esc(s.username)}</div></div>`).join('');
 }
 async function openStory(userId){
   try{const r=await fetch('/api/stories/friends');const d=await r.json();if(!d.success)return;const userStories=d.stories.find(s=>s.user_id===userId);if(!userStories||!userStories.stories.length)return;currentStories=userStories.stories;currentStoryIndex=0;currentStoryUserId=userId;showStory();}catch(e){toast('Failed to load story','err');}
@@ -1900,10 +1682,10 @@ function showStory(){
   if(story.media_url){imgEl.src=story.media_url;imgEl.style.display='block';textEl.style.display='none';}else{textEl.textContent=story.content;textEl.style.display='block';imgEl.style.display='none';}
   document.getElementById('storyOverlay').classList.add('show');document.getElementById('storyModal').classList.add('show');
   fetch(`/api/stories/${story.id}/view`,{method:'POST'});
-  if(story.is_own){loadStoryViewers(story.id);}else{document.getElementById('storyViewers').innerHTML='';}
+  if(story.is_own)loadStoryViewers(story.id);else document.getElementById('storyViewers').innerHTML='';
 }
 async function loadStoryViewers(storyId){try{const r=await fetch(`/api/stories/${storyId}/viewers`);const d=await r.json();if(d.success)document.getElementById('storyViewers').innerHTML=`👁️ Viewed by ${d.count} ${d.count===1?'person':'people'}`;}catch(e){}}
-function prevStory(){if(currentStoryIndex>0){currentStoryIndex--;showStory();}else{toast('This is the first story','info');}}
+function prevStory(){if(currentStoryIndex>0){currentStoryIndex--;showStory();}else toast('This is the first story','info');}
 function nextStory(){if(currentStoryIndex<currentStories.length-1){currentStoryIndex++;showStory();}else{closeStoryViewer();}}
 function closeStoryViewer(){document.getElementById('storyOverlay').classList.remove('show');document.getElementById('storyModal').classList.remove('show');loadStories();}
 function openCreateStoryModal(){document.getElementById('createStoryOverlay').classList.add('show');document.getElementById('createStoryModal').classList.add('show');document.getElementById('storyPrivacy').value='friends';toggleStoryType();}
@@ -1916,9 +1698,9 @@ async function createStory(){
   if(type==='text'){content=document.getElementById('storyTextContent').value.trim();if(!content){toast('Please enter story content','err');return;}}
   else{const file=document.getElementById('storyImageFile').files[0];if(!file){toast('Please select an image','err');return;}const fd=new FormData();fd.append('image',file);try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();if(!d.success){toast('Image upload failed','err');return;}mediaUrl=d.url;}catch(e){toast('Upload failed','err');return;}}
   let customUsers=[];if(privacy==='custom'){customUsers=Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));if(!customUsers.length){toast('Select at least one friend','err');return;}}
-  try{const r=await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,media_url:mediaUrl,media_type:type==='image'?'image':'text',privacy,custom_users:customUsers})});const d=await r.json();if(d.success){toast('✅ Story posted!','ok');closeCreateStory();loadStories();}else{toast(d.error||'Failed to post story','err');}}catch(e){toast('Failed to post story','err');}
+  try{const r=await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,media_url:mediaUrl,media_type:type==='image'?'image':'text',privacy,custom_users:customUsers})});const d=await r.json();if(d.success){toast('✅ Story posted!','ok');closeCreateStory();loadStories();}else toast(d.error||'Failed to post story','err');}catch(e){toast('Failed to post story','err');}
 }
-setTimeout(loadStories,1000);
+setTimeout(loadStories, 1000);
 </script>
 </body>
 </html>
