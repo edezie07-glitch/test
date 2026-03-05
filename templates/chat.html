@@ -1186,6 +1186,23 @@ function connectSocket(){
   socket.on('typing_stop', hideTyping);
   socket.on('error', (e)=>toast(e.message||'Socket error','err'));
 
+  // Real-time friend request received
+  socket.on('new_friend_request', (data)=>{
+    toast(`👋 ${data.username} sent you a friend request!`, 'info');
+    loadRequests();
+    sendPushNotif('New Friend Request', `${data.username} wants to be friends`, 'friend_req');
+  });
+
+  // Friend accepted our request — reload friend list instantly
+  socket.on('friend_request_accepted', (data)=>{
+    toast(`🎉 ${data.username} accepted your friend request!`, 'ok');
+    loadFriends();
+    sendPushNotif('Friend Request Accepted', `${data.username} is now your friend`, 'friend_acc');
+  });
+
+  // We got blocked / friendship removed by other side
+  socket.on('friend_removed', ()=>{ loadFriends(); });
+
   // FIX: notify on incoming call
   socket.on('incoming_call_notif', (data)=>{
     sendPushNotif(
