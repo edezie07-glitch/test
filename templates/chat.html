@@ -821,6 +821,18 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 <script>
+// Auto-include credentials for all /api fetch calls
+const _origFetch = window.fetch;
+window.fetch = function(url, opts={}) {
+  if(typeof url === 'string' && url.startsWith('/api')) {
+    opts = {...opts, credentials: 'include'};
+    if(!opts.headers) opts.headers = {};
+    if(!(opts.headers instanceof Headers) && !opts.headers['Content-Type'] && !(opts.body instanceof FormData)) {
+      // don't override if already set
+    }
+  }
+  return _origFetch(url, opts);
+};
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function switchEmojiCat(cat){
   document.querySelectorAll('.emoji-cat').forEach(c=>c.classList.remove('active'));
@@ -912,6 +924,11 @@ function connectSocket(){
   socket.on('typing_start',({username})=>showTyping(username));
   socket.on('typing_stop',hideTyping);
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
+  socket.on('friend_request_accepted',(data)=>{
+    toast(data.username+' accepted your friend request! 🎉','ok');
+    loadFriends();
+  });
+
   socket.on('missed_call_notify',(data)=>{
     showNotification(data.caller_name,'📵 Missed call');
     if(prefs.sound)beep();
@@ -1993,7 +2010,18 @@ function closeSB(){
   document.getElementById('mov').classList.remove('show');
 }
 
-async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
+async function logout(){
+  try{
+    await fetch('/api/auth/logout',{method:'POST',credentials:'include'});
+  }catch(e){}
+  // Clear all client state
+  if(socket){socket.disconnect();socket=null;}
+  // Clear any cached storage
+  try{localStorage.clear();}catch(e){}
+  try{sessionStorage.clear();}catch(e){}
+  // Hard redirect — no back button cache
+  window.location.replace('/');
+}
 function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
 function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
 function fmtTime(iso){const d=toL(iso),now=new Date();const h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM',hh=String(h%12||12);const t=`${hh}:${m} ${ap}`;if(d.toDateString()===now.toDateString())return t;const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return`Yesterday ${t}`;return`${d.getMonth()+1}/${d.getDate()} ${t}`;}
