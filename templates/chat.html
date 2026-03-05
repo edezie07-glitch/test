@@ -513,6 +513,10 @@ button, .crow, .clp-tab, .eo, .reaction, .pill, .crow-ctx-item,
       <input class="sinp" id="sinpMobile" type="text" placeholder="Search users…" oninput="handleSearch(this.value)" autocomplete="off">
     </div>
   </div>
+  <!-- Mobile search results — shown below search bar -->
+  <div id="srPanelM" style="display:none;flex-direction:column;background:var(--sb2);border-bottom:1px solid var(--bdr);max-height:60vh;overflow-y:auto;">
+    <div id="srListM" style="padding:4px 0;"></div>
+  </div>
   <div class="archive-row" onclick="showArchive()">
     <div class="ar-icon">🗄️</div>
     <span>Archived Chats</span>
@@ -2342,19 +2346,58 @@ document.getElementById('marea').addEventListener('touchstart',(e)=>{
 // FRIENDS & SEARCH
 // ══════════════════════════════════════════
 function handleSearch(q){
-  clearTimeout(searchTimer);const p=document.getElementById('srPanel');
-  if(!q.trim()){p.classList.remove('open');return;}
-  p.classList.add('open');document.getElementById('srList').innerHTML='<div class="lempty" style="padding:12px;">Searching…</div>';
-  searchTimer=setTimeout(()=>doSearch(q),280);
+  clearTimeout(searchTimer);
+  // Desktop panel
+  const p = document.getElementById('srPanel');
+  // Mobile panel
+  const pm = document.getElementById('srPanelM');
+  if(!q.trim()){
+    if(p) p.classList.remove('open');
+    if(pm){ pm.style.display='none'; pm.querySelector('#srListM').innerHTML=''; }
+    return;
+  }
+  const loading = '<div class="lempty" style="padding:12px;">Searching…</div>';
+  if(p){ p.classList.add('open'); document.getElementById('srList').innerHTML=loading; }
+  if(pm){ pm.style.display='flex'; document.getElementById('srListM').innerHTML=loading; }
+  searchTimer = setTimeout(()=>doSearch(q), 280);
 }
 async function doSearch(q){
-  try{const r=await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);const d=await r.json();const list=document.getElementById('srList');if(!d.success||!d.results.length){list.innerHTML='<div class="lempty" style="padding:12px;">No users found</div>';return;}list.innerHTML=d.results.map(u=>`<div class="sr-row"><div class="sr-l"><div class="av sm">${u.username[0].toUpperCase()}</div><div><div class="sr-nm">${esc(u.username)}</div><div class="sr-st">${u.is_online?'Online':esc(u.status)}</div></div></div>${srBtn(u)}</div>`).join('');}catch(e){console.error(e);}
+  try{
+    const r = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+    const d = await r.json();
+    // Build HTML for results
+    let html;
+    if(!d.success || !d.results || !d.results.length){
+      html = '<div class="lempty" style="padding:12px;">No users found</div>';
+    } else {
+      html = d.results.map(u=>`
+        <div class="sr-row">
+          <div class="sr-l">
+            <div class="av sm">${u.username[0].toUpperCase()}</div>
+            <div>
+              <div class="sr-nm">${esc(u.username)}</div>
+              <div class="sr-st">${u.is_online?'🟢 Online':esc(u.status||'')}</div>
+            </div>
+          </div>
+          ${srBtn(u)}
+        </div>`).join('');
+    }
+    // Render into whichever panel is visible
+    const desktopList = document.getElementById('srList');
+    const mobileList  = document.getElementById('srListM');
+    if(desktopList) desktopList.innerHTML = html;
+    if(mobileList)  mobileList.innerHTML  = html;
+  } catch(e){ console.error('Search error:', e); }
 }
 function srBtn(u){
-  if(u.relationship==='friend')return`<button class="pill p-msg" onclick="openChat(${u.id},'${esc(u.username)}')">Message</button>`;
-  if(u.relationship==='request_sent')return`<button class="pill p-pend" disabled>Pending</button>`;
-  if(u.relationship==='request_received')return`<button class="pill p-ok" onclick="quickAccept(${u.id})">Accept</button>`;
-  return`<button class="pill p-add" onclick="addFriend(${u.id})">Add Friend</button>`;
+  const cid = u.chat_id || '';
+  if(u.relationship==='friend')
+    return `<button class="pill p-msg" onclick="openChat(${u.id},'${esc(u.username)}','${cid}');clearSearch();">Message</button>`;
+  if(u.relationship==='request_sent')
+    return `<button class="pill p-pend" disabled>Pending</button>`;
+  if(u.relationship==='request_received')
+    return `<button class="pill p-ok" onclick="quickAccept(${u.id});clearSearch();">Accept</button>`;
+  return `<button class="pill p-add" onclick="addFriend(${u.id})">Add Friend</button>`;
 }
 async function loadFriends(){try{const r=await fetch('/api/friends');const d=await r.json();if(d.success){friends=d.friends;renderFriends();}}catch(e){}}
 function buildCrowEl(f){
@@ -2413,7 +2456,16 @@ function renderRequests(){
   const list=document.getElementById('rqList');if(!pendingReqs.length){list.innerHTML='<div class="lempty" style="padding:12px;">No pending requests</div>';return;}
   list.innerHTML=pendingReqs.map(r=>`<div class="req-row"><div class="req-usr"><div class="av sm">${r.username[0].toUpperCase()}</div><div><div class="req-nm">${esc(r.username)}</div><div class="req-wh">${r.time_ago||''}</div></div></div><div class="req-ac"><button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button><button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button></div></div>`).join('');
 }
-function toggleP(id){const p=document.getElementById(id);p.classList.toggle('open');document.getElementById('rqBtn').classList.toggle('on',p.classList.contains('open'));if(id!=='srPanel')document.getElementById('srPanel').classList.remove('open');}
+function toggleP(id){
+  const p=document.getElementById(id); if(!p) return;
+  p.classList.toggle('open');
+  // rqBtn only exists on desktop — guard it
+  const btn=document.getElementById('rqBtn');
+  if(btn) btn.classList.toggle('on', p.classList.contains('open'));
+  if(id!=='srPanel'){
+    const srP=document.getElementById('srPanel'); if(srP) srP.classList.remove('open');
+  }
+}
 async function addFriend(uid){try{const r=await fetch('/api/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to_user_id:uid})});const d=await r.json();if(d.success){toast('Friend request sent! 🎉','ok');clearSearch();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
 async function acceptReq(reqId){try{const r=await fetch('/api/friends/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});const d=await r.json();if(d.success){toast('Friend added! 🎉','ok');await loadFriends();await loadRequests();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
 async function rejectReq(reqId){try{await fetch('/api/friends/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});await loadRequests();}catch(e){}}
@@ -2425,10 +2477,12 @@ function hideTyping(){document.getElementById('tybar').style.display='none';}
 function beep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.value=880;g.gain.setValueAtTime(.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}catch(e){}}
 function autoR(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,110)+'px';}
 function clearSearch(){
-  document.getElementById('sinp').value='';
-  const m=document.getElementById('sinpMobile');if(m)m.value='';
-  document.getElementById('srPanel').classList.remove('open');
-  document.getElementById('srList').innerHTML='';
+  const sinp=document.getElementById('sinp'); if(sinp) sinp.value='';
+  const sinpM=document.getElementById('sinpMobile'); if(sinpM) sinpM.value='';
+  const srP=document.getElementById('srPanel'); if(srP) srP.classList.remove('open');
+  const srL=document.getElementById('srList'); if(srL) srL.innerHTML='';
+  const srPM=document.getElementById('srPanelM'); if(srPM) srPM.style.display='none';
+  const srLM=document.getElementById('srListM'); if(srLM) srLM.innerHTML='';
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mov').classList.toggle('show');}
 function closeSB(){document.getElementById('sidebar').classList.remove('open');document.getElementById('mov').classList.remove('show');}
