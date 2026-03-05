@@ -1130,6 +1130,75 @@ def handle_call_end(data):
         socketio.emit('call_ended', {'by_user_id': user_id}, room=sid)
 
 # ============================================================
+# READ RECEIPTS
+# ============================================================
+
+@socketio.on('mark_read')
+def handle_mark_read(data):
+    """Mark a single message as read and notify the sender."""
+    if 'user_id' not in session:
+        return
+    reader_id = session['user_id']
+    msg_id = data.get('msg_id')
+    if not msg_id:
+        return
+    msg = Message.query.get(msg_id)
+    if not msg or msg.sender_id == reader_id:
+        return
+    # Avoid duplicate read records
+    existing = MessageRead.query.filter_by(message_id=msg_id, user_id=reader_id).first()
+    if not existing:
+        read = MessageRead(message_id=msg_id, user_id=reader_id)
+        db.session.add(read)
+        db.session.commit()
+    # Count reads
+    read_count = MessageRead.query.filter_by(message_id=msg_id).count()
+    # Notify sender so their dot turns orange
+    sender_sid = get_sid(msg.sender_id)
+    if sender_sid:
+        socketio.emit('receipt_update', {
+            'msg_id': msg_id,
+            'read_by': read_count
+        }, room=sender_sid)
+
+@socketio.on('mark_all_read')
+def handle_mark_all_read(data):
+    """Mark all unread messages in a chat as read when user opens the chat."""
+    if 'user_id' not in session:
+        return
+    reader_id = session['user_id']
+    chat_id = data.get('chat_id')
+    if not chat_id:
+        return
+    # Get all messages in this chat not sent by this user and not yet read
+    already_read = db.session.query(MessageRead.message_id).filter_by(user_id=reader_id).subquery()
+    unread = Message.query.filter(
+        Message.chat_id == chat_id,
+        Message.sender_id != reader_id,
+        ~Message.id.in_(already_read)
+    ).all()
+    if not unread:
+        return
+    sender_ids = set()
+    for msg in unread:
+        read = MessageRead(message_id=msg.id, user_id=reader_id)
+        db.session.add(read)
+        sender_ids.add(msg.sender_id)
+    db.session.commit()
+    # Notify each sender that their messages were seen
+    for sid_user in sender_ids:
+        sender_sid = get_sid(sid_user)
+        if sender_sid:
+            # Send update for each message
+            for msg in unread:
+                if msg.sender_id == sid_user:
+                    read_count = MessageRead.query.filter_by(message_id=msg.id).count()
+                    socketio.emit('receipt_update', {
+                        'msg_id': msg.id,
+                        'read_by': read_count
+                    }, room=sender_sid)
+
+# ============================================================
 # RUN SERVER
 # ============================================================
 if __name__ == '__main__':
