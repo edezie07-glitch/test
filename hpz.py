@@ -1012,18 +1012,29 @@ def shutdown_session(exception=None):
 # ============================================================
 # WEBRTC SIGNALING EVENTS
 # ============================================================
+
+def get_sid(user_id):
+    """Get socket ID for a user if they are online. Always uses int key."""
+    uid = int(user_id)
+    if uid in online_users:
+        return online_users[uid]['sid']
+    return None
+
 @socketio.on('call_offer')
 def handle_call_offer(data):
+    """Caller sends SDP offer to receiver."""
     if 'user_id' not in session:
         return
-    caller_id = session['user_id']
+    caller_id = session['user_id']  # always int from session
     try:
         callee_id = int(data.get('callee_id', 0))
     except (ValueError, TypeError):
-        emit('call_error', {'message': 'Invalid callee'})
+        emit('call_error', {'message': 'Invalid user'})
         return
-    offer = data.get('offer')
-    call_type = data.get('call_type', 'voice')
+
+    if not callee_id:
+        emit('call_error', {'message': 'Invalid user'})
+        return
 
     caller = User.query.get(caller_id)
     if not caller:
@@ -1033,20 +1044,21 @@ def handle_call_offer(data):
         emit('call_error', {'message': 'Not friends'})
         return
 
-    if callee_id in online_users:
-        callee_sid = online_users[callee_id]['sid']
+    sid = get_sid(callee_id)
+    if sid:
         socketio.emit('incoming_call', {
             'caller_id': caller_id,
             'caller_name': caller.username,
-            'caller_avatar': caller.avatar_url,
-            'offer': offer,
-            'call_type': call_type
-        }, room=callee_sid)
+            'caller_avatar': caller.avatar_url or '',
+            'offer': data.get('offer'),
+            'call_type': data.get('call_type', 'voice')
+        }, room=sid)
     else:
         emit('call_error', {'message': 'User is offline'})
 
 @socketio.on('call_answer')
 def handle_call_answer(data):
+    """Receiver accepts or rejects the call."""
     if 'user_id' not in session:
         return
     callee_id = session['user_id']
@@ -1054,29 +1066,31 @@ def handle_call_answer(data):
         caller_id = int(data.get('caller_id', 0))
     except (ValueError, TypeError):
         return
-    answer = data.get('answer')
-    accepted = data.get('accepted', False)
 
     callee = User.query.get(callee_id)
     if not callee:
         return
 
-    if caller_id in online_users:
-        caller_sid = online_users[caller_id]['sid']
-        if accepted:
-            socketio.emit('call_accepted', {
-                'callee_id': callee_id,
-                'callee_name': callee.username,
-                'answer': answer
-            }, room=caller_sid)
-        else:
-            socketio.emit('call_rejected', {
-                'callee_id': callee_id,
-                'callee_name': callee.username
-            }, room=caller_sid)
+    accepted = data.get('accepted', False)
+    sid = get_sid(caller_id)
+    if not sid:
+        return
+
+    if accepted:
+        socketio.emit('call_accepted', {
+            'callee_id': callee_id,
+            'callee_name': callee.username,
+            'answer': data.get('answer')
+        }, room=sid)
+    else:
+        socketio.emit('call_rejected', {
+            'callee_id': callee_id,
+            'callee_name': callee.username
+        }, room=sid)
 
 @socketio.on('ice_candidate')
 def handle_ice_candidate(data):
+    """Relay ICE candidate from one peer to the other."""
     if 'user_id' not in session:
         return
     sender_id = session['user_id']
@@ -1084,17 +1098,17 @@ def handle_ice_candidate(data):
         target_id = int(data.get('target_id', 0))
     except (ValueError, TypeError):
         return
-    candidate = data.get('candidate')
 
-    if target_id in online_users:
-        target_sid = online_users[target_id]['sid']
+    sid = get_sid(target_id)
+    if sid:
         socketio.emit('ice_candidate', {
             'sender_id': sender_id,
-            'candidate': candidate
-        }, room=target_sid)
+            'candidate': data.get('candidate')
+        }, room=sid)
 
 @socketio.on('call_end')
 def handle_call_end(data):
+    """Notify the other party that the call has ended."""
     if 'user_id' not in session:
         return
     user_id = session['user_id']
@@ -1103,11 +1117,9 @@ def handle_call_end(data):
     except (ValueError, TypeError):
         return
 
-    if target_id in online_users:
-        target_sid = online_users[target_id]['sid']
-        socketio.emit('call_ended', {
-            'by_user_id': user_id
-        }, room=target_sid)
+    sid = get_sid(target_id)
+    if sid:
+        socketio.emit('call_ended', {'by_user_id': user_id}, room=sid)
 
 # ============================================================
 # RUN SERVER
