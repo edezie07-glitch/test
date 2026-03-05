@@ -47,7 +47,9 @@ socketio = SocketIO(
     cors_allowed_origins="*",
     async_mode='gevent',
     logger=False,
-    engineio_logger=False
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25
 )
 # Online users tracking: {user_id: {'sid': socket_id, 'last_seen': datetime}}
 online_users = {}
@@ -1128,4 +1130,4 @@ def handle_call_end(data):
 # ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
