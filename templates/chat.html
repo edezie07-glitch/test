@@ -837,6 +837,8 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
 (function boot(){
   loadPrefs();connectSocket();setupCallListeners();loadFriends();loadRequests();setTimeout(requestNotifPermission,2000);
   document.addEventListener('click',hideCtxMenu);
+  const mtog=document.getElementById('mtogBtn');
+  if(mtog)mtog.addEventListener('click',toggleSB);
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -1998,7 +2000,7 @@ function closeSB(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mov').classList.remove('show');
 }
-document.getElementById('mtogBtn').addEventListener('click', toggleSB);
+
 async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
 function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
 function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
