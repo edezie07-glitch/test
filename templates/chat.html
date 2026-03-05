@@ -163,7 +163,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .react-picker.show{display:flex;}
 .react-emoji{font-size:20px;cursor:pointer;padding:4px;border-radius:6px;transition:background var(--trans);}
 .react-emoji:hover{background:var(--hov);}
-.bub img{max-width:240px;max-height:240px;border-radius:8px;display:block;cursor:pointer;margin-bottom:4px;}
+.bub img{max-width:260px;max-height:260px;border-radius:10px;display:block;cursor:zoom-in;margin-bottom:4px;}
+/* Scrollable photo strip */
+.photo-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;max-width:320px;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent;}
+.photo-strip::-webkit-scrollbar{height:4px;}
+.photo-strip::-webkit-scrollbar-track{background:transparent;}
+.photo-strip::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:4px;}
+.photo-strip img{width:110px;height:110px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;transition:opacity .15s;}
+.photo-strip img:hover{opacity:.88;}
+/* Read receipt circle */
+.receipt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:5px;vertical-align:middle;flex-shrink:0;transition:background .4s;}
+.receipt.delivered{background:rgba(255,180,100,.45);border:1.5px solid rgba(255,150,60,.5);}
+.receipt.seen{background:#ff8c00;border:1.5px solid #e07800;box-shadow:0 0 4px rgba(255,140,0,.5);}
+/* Row wrapper for time + receipt */
+.msg-foot{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;}
+.mts{font-size:11px;opacity:.65;white-space:nowrap;}
 .mts{font-size:10px;display:block;margin-top:4px;}
 .mgrp.sent .mts{color:rgba(255,255,255,.55);text-align:right;}
 .mgrp.recv .mts{color:var(--mute);}
@@ -867,7 +881,19 @@ async function saveProfile(){
 function connectSocket(){
   socket=io({withCredentials:true,transports:['polling','websocket']});
   socket.on('connect',()=>{if(currentChatId)socket.emit('join_chat',{chat_id:currentChatId});});
-  socket.on('new_message',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)appendMsg(msg);if(prefs.sound&&msg.sender_id!==ME_ID)beep();updatePrev(msg);});
+  socket.emit('mark_all_read',{chat_id:cid});
+  // ── Read receipt: when receiver reads, update sender's dot to orange ──
+socket.on('receipt_update',(data)=>{
+  // data = {msg_id, read_by}
+  const dot=document.querySelector(`.receipt[data-msg-id="${data.msg_id}"]`);
+  if(dot){
+    dot.classList.remove('delivered');
+    dot.classList.add('seen');
+    dot.title='Seen';
+  }
+});
+
+socket.on('new_message',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)appendMsg(msg);if(prefs.sound&&msg.sender_id!==ME_ID)beep();updatePrev(msg);});
   socket.on('message_edited',(msg)=>{if(currentChatId&&msg.chat_id===currentChatId)updateMsgInDOM(msg);});
   socket.on('message_deleted',(data)=>{if(currentChatId&&data.chat_id===currentChatId){const el=document.querySelector(`[data-msg-id="${data.id}"]`);if(el)el.remove();}});
   socket.on('message_pinned',(data)=>{if(currentChatId&&data.chat_id===currentChatId){const el=document.querySelector(`[data-msg-id="${data.id}"] .bub`);if(el)el.classList.toggle('pinned',data.is_pinned);updatePinnedBanner();}});
@@ -899,29 +925,56 @@ async function loadMsgs(chatId){
 function appendMsg(msg,scroll=true){
   const area=document.getElementById('marea');const em=area.querySelector('.ces');if(em)em.remove();
   const isSent=msg.sender_id===ME_ID;
-  const g=document.createElement('div');g.className=`mgrp ${isSent?'sent':'recv'}`;g.setAttribute('data-msg-id',msg.id);
+  const g=document.createElement('div');
+  g.className=`mgrp ${isSent?'sent':'recv'}`;
+  g.setAttribute('data-msg-id',msg.id);
   let inner='';
   if(!isSent)inner+=`<div class="mfrom">${esc(msg.sender_username)}</div>`;
   let body='';
-  if(msg.reply_to){body+=`<div class="reply-prev"><div class="reply-prev-from">${esc(msg.reply_to.sender_username)}</div><div class="reply-prev-text">${esc(msg.reply_to.content)}</div></div>`;}
+  if(msg.reply_to){
+    body+=`<div class="reply-prev"><div class="reply-prev-from">${esc(msg.reply_to.sender_username)}</div><div class="reply-prev-text">${esc(msg.reply_to.content)}</div></div>`;
+  }
+  // ── Image: if content is a JSON array it's a photo strip, else single photo ──
   if(msg.message_type==='image'){
-    const cap=msg.caption?`<div style="font-size:12px;color:var(--mute);margin-top:4px;padding:0 2px;">${esc(msg.caption)}</div>`:'';
-    body+=`<img src="${msg.content}" alt="photo" onclick="openImgViewer('${msg.content}','${(msg.caption||'')}' )" style="cursor:zoom-in;border-radius:10px;max-width:100%;display:block;" loading="lazy">${cap}`;
+    let urls=[];
+    try{urls=JSON.parse(msg.content);if(!Array.isArray(urls))urls=[];}catch(e){}
+    if(urls.length===0&&msg.content)urls=[msg.content];
+    const cap=msg.caption?`<div style="font-size:12px;color:var(--mute);margin-top:5px;padding:0 2px;">${esc(msg.caption)}</div>`:'';
+    if(urls.length===1){
+      body+=`<img src="${urls[0]}" alt="photo" onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')" style="cursor:zoom-in;border-radius:10px;max-width:100%;display:block;" loading="lazy">${cap}`;
+    } else {
+      // Scrollable photo strip for multiple images
+      const thumbs=urls.map((u,i)=>`<img src="${u}" alt="photo ${i+1}" onclick="openImgViewer('${u}','')" loading="lazy">`).join('');
+      body+=`<div class="photo-strip">${thumbs}</div>${cap}`;
+    }
   }
   else if(!msg.is_deleted){body+=esc(msg.content).replace(/\n/g,'<br>');}
   else{body+='<em style="opacity:.5">[Message deleted]</em>';}
+  // ── Receipt circle — only on sent messages ──
+  const receiptClass=isSent?(msg.read_by>0?'seen':'delivered'):'';
+  const receiptDot=isSent&&!msg.is_deleted?`<span class="receipt ${receiptClass}" data-msg-id="${msg.id}" title="${receiptClass==='seen'?'Seen':'Delivered'}"></span>`:'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
   inner+=`<div class="${bubClass}" oncontextmenu="showCtxMenu(event,${msg.id},${isSent})">`;
-  inner+=body;inner+=`<span class="mts">${fmtTime(msg.created_at)}</span>`;
-  if(isSent&&!msg.is_deleted){inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button></div>`;}
-  else if(!isSent&&!msg.is_deleted){inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button></div>`;}
+  inner+=body;
+  inner+=`<div class="msg-foot"><span class="mts">${fmtTime(msg.created_at)}</span>${receiptDot}</div>`;
+  if(isSent&&!msg.is_deleted){
+    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button></div>`;
+  } else if(!isSent&&!msg.is_deleted){
+    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button></div>`;
+  }
   inner+=`</div>`;
   if(msg.reactions&&Object.keys(msg.reactions).length>0){
     inner+=`<div class="reactions">`;
-    for(const[emoji,count]of Object.entries(msg.reactions)){const userReacted=msg.user_reactions&&msg.user_reactions.includes(emoji);inner+=`<div class="reaction${userReacted?' user-reacted':''}" data-emoji="${emoji}"><span>${emoji}</span><span class="count">${count}</span></div>`;}
+    for(const[emoji,count]of Object.entries(msg.reactions)){
+      const userReacted=msg.user_reactions&&msg.user_reactions.includes(emoji);
+      inner+=`<div class="reaction${userReacted?' user-reacted':''}" data-emoji="${emoji}"><span>${emoji}</span><span class="count">${count}</span></div>`;
+    }
     inner+=`</div>`;
   }
-  g.innerHTML=inner;area.appendChild(g);if(scroll)scrollBot();
+  g.innerHTML=inner;area.appendChild(g);
+  if(scroll)scrollBot();
+  // Mark incoming messages as read
+  if(!isSent&&currentChatId)socket.emit('mark_read',{chat_id:currentChatId,msg_id:msg.id});
 }
 function updateMsgInDOM(msg){const el=document.querySelector(`[data-msg-id="${msg.id}"]`);if(!el)return;el.outerHTML='';appendMsg(msg,false);}
 function scrollBot(){const a=document.getElementById('marea');a.scrollTop=a.scrollHeight;}
