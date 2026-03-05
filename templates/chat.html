@@ -182,18 +182,24 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .reply-bar-text{font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
 .reply-bar-close{width:24px;height:24px;border:none;background:transparent;color:var(--mute);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
 .reply-bar-close:hover{color:var(--txt);}
-.epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:100;box-shadow:var(--shad);max-height:400px;}
+.epick{position:absolute;bottom:62px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);display:none;flex-direction:column;width:320px;z-index:500;box-shadow:var(--shad);max-height:400px;}
 .epick.open{display:flex;}
-.emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;}
-.emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);overflow-x:auto;}
-.emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);flex-shrink:0;}
+.emoji-grid{padding:10px;overflow-y:auto;max-height:320px;display:flex;flex-wrap:wrap;gap:5px;-webkit-overflow-scrolling:touch;}
+.emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.emoji-cat{padding:8px 12px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:20px;transition:background var(--trans);flex-shrink:0;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;}
 .emoji-cat:hover{background:var(--hov);}
 .emoji-cat.active{background:rgba(124,106,255,.15);color:var(--brand);}
 .emoji-section{display:flex;flex-wrap:wrap;gap:5px;width:100%;}
 .emoji-section.hidden{display:none;}
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
+@media(max-width:720px){
+  .epick{left:0;right:0;width:100%;border-radius:var(--radius) var(--radius) 0 0;bottom:100%;max-height:50vh;z-index:500;}
+  .emoji-grid{max-height:calc(50vh - 60px);}
+}
 /* FIX: iarea always flex, visibility controlled by active-chat class on main */
+.attach-btn{display:flex;align-items:center;gap:10px;padding:13px 16px;background:none;border:none;color:var(--txt);font-size:15px;cursor:pointer;border-radius:10px;width:100%;text-align:left;font-family:var(--font-b);min-height:48px;transition:background var(--trans);}
+.attach-btn:hover,.attach-btn:active{background:var(--hov);}
 .iarea{padding:16px 14px 24px;padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));background:var(--hdr);border-top:1px solid var(--bdr);display:none;align-items:flex-end;gap:8px;position:relative;transition:background .25s,border-color .25s;}
 .iarea.active{display:flex;}
 .isb{width:42px;height:42px;border-radius:50%;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background var(--trans),color var(--trans);margin-bottom:2px;}
@@ -430,6 +436,45 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .crow-ctx-item:hover{background:var(--hov);}
 .crow-ctx-item.danger{color:#ef4444;}
 .crow-ctx-item.danger:hover{background:rgba(239,68,68,.1);}
+/* ═══════════════════════════════════════════════
+   MOBILE FIXES — touch targets, tap delay, highlights
+═══════════════════════════════════════════════ */
+/* Remove 300ms tap delay on ALL tappable elements */
+* { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+/* Restore scroll ability for scrollable containers */
+.marea, .clist, .clp-body, .sbody, .arch-list, .spanel, .emoji-grid,
+.stories-scroll, .photo-strip, .sdraw, textarea, input[type="text"],
+.img-preview-body { touch-action: pan-y; }
+textarea { touch-action: pan-y; }
+/* Prevent text selection on tap for buttons */
+button, .crow, .clp-tab, .eo, .reaction, .pill, .crow-ctx-item,
+.ctx-item, .conv-dd-item, .search-msg, .sr-row, .srow, .req-row,
+.bub, .arch-item, .archive-row { -webkit-user-select: none; user-select: none; }
+/* Minimum 44×44px touch targets on mobile */
+@media(max-width:720px){
+  .ib { width:44px; height:44px; border-radius:11px; font-size:17px; }
+  .isb { width:46px; height:46px; }
+  .sndbtn { width:50px; height:50px; }
+  .chdr-btn { width:40px; height:40px; border-radius:10px; font-size:16px; }
+  .back-btn { width:44px; height:44px; font-size:26px; }
+  .closebtn { width:36px; height:36px; }
+  .call-control-btn { width:64px; height:64px; font-size:26px; }
+  .pill { padding:8px 14px; font-size:13px; }
+  .crow { padding:12px 14px; min-height:60px; }
+  .clp-tab { padding:13px 0; font-size:14px; }
+  /* Prevent accidental zoom on input focus */
+  input, textarea, select { font-size:16px !important; }
+  /* Bigger emoji picker emojis */
+  .eo { font-size:24px; padding:5px; }
+  /* Bigger message action buttons */
+  .msg-act { width:36px; height:36px; font-size:17px; }
+}
+/* Active states for touch feedback */
+.ib:active, .isb:active, .chdr-btn:active, .back-btn:active,
+.pill:active, .clp-tab:active, .crow:active,
+.crow-ctx-item:active, .ctx-item:active { opacity: 0.7; }
+.sndbtn:active { transform: scale(0.92) !important; }
+.call-control-btn:active { transform: scale(0.9) !important; }
 /* Back button for mobile chat view */
 .back-btn{display:none;width:36px;height:36px;border-radius:10px;border:none;background:transparent;color:var(--txt);font-size:22px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;margin-right:4px;}
 /* Mobile: show chat list page */
@@ -605,10 +650,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
     <input type="file" id="imgInpDirect" accept="image/*" capture="environment" style="display:none" onchange="handleDirectUpload(this)">
     <button class="isb" onclick="toggleAttachMenu()" title="Attach" id="attachBtn">📎</button>
-    <div id="attachMenu" style="position:absolute;bottom:70px;left:10px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:8px;display:none;flex-direction:column;gap:6px;z-index:200;box-shadow:var(--shad);min-width:170px;">
-      <button onclick="pickFromGallery();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">🖼️ Gallery</button>
-      <button onclick="takePhoto();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📷 Take Photo</button>
-      <button onclick="sendMultipleImages();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📂 Multiple Photos</button>
+    <div id="attachMenu" style="position:absolute;bottom:70px;left:10px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:8px;display:none;flex-direction:column;gap:6px;z-index:500;box-shadow:var(--shad);min-width:180px;">
+      <button class="attach-btn" onclick="pickFromGallery();closeAttachMenu();">🖼️ Gallery</button>
+      <button class="attach-btn" onclick="takePhoto();closeAttachMenu();">📷 Take Photo</button>
+      <button class="attach-btn" onclick="sendMultipleImages();closeAttachMenu();">📂 Multiple Photos</button>
     </div>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <!-- FIX: Enter key handler is robust and handles both send and edit -->
@@ -1286,7 +1331,8 @@ function openChat(fid, fname, chatId){
   const isOnline=onlineUsers.has(fid);
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
   document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
-  document.querySelector('.main').classList.add('chat-active');
+  const mainEl=document.querySelector('.main');
+  mainEl.classList.add('chat-active','chat-open');
   document.getElementById('iarea').classList.add('active');
   clearUnreadBadge(fid);
   renderFriends();
@@ -1295,7 +1341,8 @@ function openChat(fid, fname, chatId){
   clearSearch();
   if(window.innerWidth<=720){
     document.getElementById('chatListPage').style.display='none';
-    document.querySelector('.main').style.display='flex';
+    // CSS .main.chat-open{display:flex} handles this, but also set explicitly for safety
+    mainEl.style.display='flex';
   } else {
     document.getElementById('msgInput').focus();
   }
@@ -2372,10 +2419,11 @@ function closeSB(){document.getElementById('sidebar').classList.remove('open');d
 // MOBILE NAVIGATION
 // ══════════════════════════════════════════
 function goBackToList(){
-  document.querySelector('.main').classList.remove('chat-open');
-  document.querySelector('.main').style.display='none';
+  const mainEl=document.querySelector('.main');
+  mainEl.classList.remove('chat-open','chat-active');
+  mainEl.style.display=''; // let CSS take over
   document.getElementById('chatListPage').style.display='flex';
-  currentChatId=null;currentFriendId=null;
+  currentChatId=null; currentFriendId=null;
   renderFriends();
 }
 
