@@ -379,7 +379,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <!-- MAIN -->
 <main class="main">
   <div class="chdr">
-    <button id="mtogBtn" class="mtog-chdr" aria-label="Menu">☰</button>
+    <button id="mtogBtn" class="mtog-chdr" onclick="toggleSB()" aria-label="Menu">☰</button>
     <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
     <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
       <div class="chdr-nm" id="chnm">HPZ Messenger</div>
@@ -835,10 +835,12 @@ let prefs={theme:'dark',sound:true};
 let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
 
 (function boot(){
-  loadPrefs();connectSocket();setupCallListeners();loadFriends();loadRequests();setTimeout(requestNotifPermission,2000);
+  loadPrefs();
+  connectSocket();
+  loadFriends();
+  loadRequests();
+  setTimeout(requestNotifPermission,2000);
   document.addEventListener('click',hideCtxMenu);
-  const mtog=document.getElementById('mtogBtn');
-  if(mtog)mtog.addEventListener('click',toggleSB);
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -884,24 +886,20 @@ function connectSocket(){
       socket.emit('join_chat',{chat_id:currentChatId});
       socket.emit('mark_all_read',{chat_id:currentChatId});
     }
-    requestNotifPermission();
   });
 
-  // Read receipt — sender's dot turns orange when other person reads
   socket.on('receipt_update',(data)=>{
     const dot=document.querySelector(`.receipt[data-msg-id="${data.msg_id}"]`);
-    if(dot){ dot.classList.remove('delivered'); dot.classList.add('seen'); dot.title='Seen'; }
+    if(dot){dot.classList.remove('delivered');dot.classList.add('seen');dot.title='Seen';}
   });
 
-  // New message — show in chat, beep, browser notification, update sidebar
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
       appendMsg(msg);
-    } else {
-      // Message in background chat — show browser notification
-      showNotification(msg.sender_username, msg.message_type==='image'?'📷 Photo':msg.content);
+    }else{
+      showNotification(msg.sender_username,msg.message_type==='image'?'📷 Photo':msg.content);
     }
-    if(prefs.sound&&msg.sender_id!==ME_ID) beep();
+    if(prefs.sound&&msg.sender_id!==ME_ID)beep();
     updatePrev(msg);
     updateUnreadBadge(msg);
   });
@@ -914,21 +912,16 @@ function connectSocket(){
   socket.on('typing_start',({username})=>showTyping(username));
   socket.on('typing_stop',hideTyping);
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
-
-  // Missed call notification from server
-  socket.on('missed_call',(data)=>{
+  socket.on('missed_call_notify',(data)=>{
     showNotification(data.caller_name,'📵 Missed call');
-    if(prefs.sound) beep();
-    // Add missed call bubble if this chat is open
-    if(currentChatId){
-      const parts=currentChatId.split('-').map(Number);
-      if(parts.includes(data.caller_id)){
-        appendCallMsg('missed',0,null,true);
-      }
-    }
+    if(prefs.sound)beep();
+    appendCallMsg('missed',0,null,true);
+    toast('📵 Missed call from '+data.caller_name,'err');
   });
 
+  setupCallListeners();
 }
+
 function sendMsg(){
   const inp=document.getElementById('msgInput');
   const txt=inp.value.trim();
