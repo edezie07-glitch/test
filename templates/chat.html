@@ -240,6 +240,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
 .mtog{display:none;position:fixed;top:10px;left:10px;z-index:1500;width:42px;height:42px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:20px;cursor:pointer;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.mtog-chdr{display:none;width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--txt);font-size:20px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;margin-right:6px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 /* Image Preview Modal */
 .img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;}
 .img-preview-overlay.show{display:block;}
@@ -301,13 +302,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #incomingCallModal .av{animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 16px rgba(34,197,94,0);}}
 @media(max-width:720px){
-  .mtog{display:flex;}
+  .mtog-chdr{display:flex;}
   .mov{display:none;}
   .mov.show{display:block;}
   .sidebar{position:fixed;left:0;top:0;height:100%;z-index:720;width:280px;transform:translateX(-100%);transition:transform .28s ease;}
   .sidebar.open{transform:translateX(0);}
   .main{width:100%;position:relative;z-index:1;}
-  .chdr{padding-left:56px;}
+  .chdr{padding-left:10px;}
   .bub{max-width:80%;}
   .sdraw{width:100%;}
   .img-preview-modal{width:95%;max-height:95vh;border-radius:16px;}
@@ -334,7 +335,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </head>
 <body>
 <div class="mov" id="mov" onclick="closeSB()"></div>
-<button class="mtog" id="mtogBtn" style="touch-action:manipulation;">☰</button>
 <!-- Context Menu -->
 <div class="ctx-menu" id="ctxMenu">
   <div class="ctx-item" onclick="replyToMsgCtx()">↩️ Reply</div>
@@ -379,6 +379,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <!-- MAIN -->
 <main class="main">
   <div class="chdr">
+    <button id="mtogBtn" class="mtog-chdr" onclick="toggleSB()" aria-label="Menu">☰</button>
     <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
     <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
       <div class="chdr-nm" id="chnm">HPZ Messenger</div>
