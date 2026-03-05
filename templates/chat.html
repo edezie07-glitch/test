@@ -934,81 +934,77 @@ function showFriendProfile(){
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
 // ═══════ WEBRTC CALLS ═══════
-const STUN = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' }
-  ]
-};
+const STUN={iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'},
+  {urls:'stun:stun3.l.google.com:19302'},
+  {urls:'stun:stun4.l.google.com:19302'}
+]};
 
-// ── Single state object ──
-let cd = {
-  active:false, type:null, muted:false, videoOff:false,
-  localStream:null, pc:null,
-  callerId:null, calleeId:null,
-  pending:[],       // ICE candidates queued before remote desc is set
-  incoming:null,    // incoming call data
-  ringTimer:null,
-  timerInterval:null, startTime:null, startTimeStr:null, duration:0,
-  remoteAudioStream: new MediaStream(),
-  remoteVideoStream: new MediaStream()
-};
+// ── State — always reset via resetCd() ──
+let cd={};
+function resetCd(){
+  cd={
+    active:false,type:null,muted:false,videoOff:false,
+    localStream:null,pc:null,
+    callerId:null,calleeId:null,calleeName:null,
+    pending:[],incoming:null,
+    ringTimer:null,timerInterval:null,
+    startTime:null,startTimeStr:null,duration:0
+  };
+}
+resetCd();
 
-// ── Helpers ──
+// ── Time ──
 function nowStr(){
   const d=new Date(),h=d.getHours(),m=d.getMinutes();
-  const ap=h>=12?'PM':'AM',hh=h%12||12;
-  return hh+':'+String(m).padStart(2,'0')+' '+ap;
+  return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM');
 }
 function fmtDur(s){
+  if(!s||s<1)return '0s';
   if(s<60)return s+'s';
   const m=Math.floor(s/60),r=s%60;
-  return r>0?m+'m '+r+'s':m+'m';
+  return r?m+'m '+r+'s':m+'m';
 }
-function setStatus(t){ const e=document.getElementById('callStatus');if(e)e.textContent=t; }
+
+// ── Status text ──
+function setStatus(t){const e=document.getElementById('callStatus');if(e)e.textContent=t;}
 
 // ── Timer ──
 function startCallTimer(){
   if(cd.timerInterval)return;
-  cd.startTime=Date.now(); cd.duration=0; cd.startTimeStr=nowStr();
+  cd.startTime=Date.now();cd.duration=0;cd.startTimeStr=nowStr();
   const el=document.getElementById('callTimer');
   if(el)el.style.display='block';
   cd.timerInterval=setInterval(()=>{
     cd.duration=Math.floor((Date.now()-cd.startTime)/1000);
-    const m=String(Math.floor(cd.duration/60)).padStart(2,'0');
-    const s=String(cd.duration%60).padStart(2,'0');
     const el=document.getElementById('callTimer');
-    if(el)el.textContent=m+':'+s;
+    if(el)el.textContent=String(Math.floor(cd.duration/60)).padStart(2,'0')+':'+String(cd.duration%60).padStart(2,'0');
   },1000);
 }
 function stopCallTimer(){
-  clearInterval(cd.timerInterval); cd.timerInterval=null;
+  clearInterval(cd.timerInterval);
   const el=document.getElementById('callTimer');
   if(el){el.style.display='none';el.textContent='00:00';}
 }
 
-// ── Call log in chat ──
-function appendCallMsg(type,dur){
-  const area=document.getElementById('marea');
-  if(!area)return;
+// ── Chat log ──
+function appendCallMsg(type,dur,startT){
+  const area=document.getElementById('marea');if(!area)return;
   const div=document.createElement('div');
-  const endT=nowStr(), startT=cd.startTimeStr||endT;
+  const endT=nowStr(),st=startT||endT;
   if(type==='missed'){
     div.className='call-msg missed';
     div.innerHTML='📵 Missed call · '+endT;
-  } else {
+  }else{
     div.className='call-msg answered';
-    const icon=type==='video'?'📹 Video':'📞 Voice';
-    div.innerHTML=icon+' call · '+startT+' – '+endT+' ('+fmtDur(dur)+')';
+    div.innerHTML=(type==='video'?'📹 Video':'📞 Voice')+' call · '+st+' – '+endT+' ('+fmtDur(dur)+')';
   }
-  area.appendChild(div);
-  area.scrollTop=area.scrollHeight;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;
 }
 
-// ── UI show/hide ──
+// ── Modal UI ──
 function showCallModal(name,status,isVideo){
   document.getElementById('callAvatar').textContent=name[0].toUpperCase();
   document.getElementById('callName').textContent=name;
@@ -1016,6 +1012,7 @@ function showCallModal(name,status,isVideo){
   document.getElementById('callVideo').style.display=isVideo?'flex':'none';
   document.getElementById('videoBtn').style.display=isVideo?'inline-flex':'none';
   document.getElementById('muteBtn').textContent='🎤';
+  document.getElementById('muteBtn').classList.remove('muted');
   document.getElementById('callOverlay').classList.add('show');
   document.getElementById('callModal').classList.add('show');
 }
@@ -1023,337 +1020,316 @@ function hideCallModal(){
   document.getElementById('callOverlay').classList.remove('show');
   document.getElementById('callModal').classList.remove('show');
 }
-function showIncomingCall(name,type,callerId){
+function showIncomingCall(name,type){
   document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
   document.getElementById('incomingCallName').textContent=name;
-  document.getElementById('incomingCallType').textContent=
-    type==='video'?'📹 Incoming video call...':'📞 Incoming voice call...';
+  document.getElementById('incomingCallType').textContent=type==='video'?'📹 Incoming video call...':'📞 Incoming voice call...';
   document.getElementById('incomingCallOverlay').classList.add('show');
   document.getElementById('incomingCallModal').classList.add('show');
-  cd.callerId=callerId;
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     function ring(){
       const o=ctx.createOscillator(),g=ctx.createGain();
       o.connect(g);g.connect(ctx.destination);
-      o.frequency.value=480;
-      g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
-      o.start();o.stop(ctx.currentTime+0.6);
+      o.frequency.value=520;
+      g.gain.setValueAtTime(0.4,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      o.start();o.stop(ctx.currentTime+0.5);
     }
-    ring(); cd.ringTimer=setInterval(ring,1400);
+    ring();cd.ringTimer=setInterval(ring,1200);
   }catch(e){}
 }
 function hideIncomingCall(){
   document.getElementById('incomingCallOverlay').classList.remove('show');
   document.getElementById('incomingCallModal').classList.remove('show');
-  clearInterval(cd.ringTimer); cd.ringTimer=null;
+  clearInterval(cd.ringTimer);cd.ringTimer=null;
 }
 
-// ── Unlock AudioContext on user gesture (mobile requirement) ──
+// ── Unlock AudioContext — MUST call on every user tap ──
 async function unlockAudio(){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
     if(ctx.state==='suspended')await ctx.resume();
-    const b=ctx.createBuffer(1,1,22050);
-    const s=ctx.createBufferSource();
-    s.buffer=b; s.connect(ctx.destination); s.start(0);
+    const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();
+    s.buffer=b;s.connect(ctx.destination);s.start(0);
   }catch(e){}
 }
 
-// ── Get mic/camera with fallbacks for all devices ──
+// ── Get media with multiple fallbacks ──
 async function getMedia(type){
-  const tries = type==='video'
-    ? [
-        {video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:{echoCancellation:true,noiseSuppression:true}},
-        {video:true, audio:true},
-        {video:false, audio:true}
-      ]
-    : [
-        {audio:{echoCancellation:true,noiseSuppression:true}, video:false},
-        {audio:true, video:false}
-      ];
-  let lastErr;
-  for(const constraints of tries){
-    try{ return await navigator.mediaDevices.getUserMedia(constraints); }
+  const list=type==='video'
+    ?[
+      {video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000}},
+      {video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},
+      {video:true,audio:true},
+      {audio:true,video:false}
+     ]
+    :[
+      {audio:{echoCancellation:true,noiseSuppression:true,sampleRate:48000},video:false},
+      {audio:{echoCancellation:true,noiseSuppression:true},video:false},
+      {audio:true,video:false}
+     ];
+  let err;
+  for(const c of list){
+    try{return await navigator.mediaDevices.getUserMedia(c);}
     catch(e){
-      lastErr=e;
-      if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') throw e;
+      err=e;
+      if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;
     }
   }
-  throw lastErr;
+  throw err;
 }
 
-// ── Handle mic/camera errors with clear messages ──
-function mediaError(e){
-  const msg =
-    (e.name==='NotAllowedError'||e.name==='PermissionDeniedError') ? 'Mic/camera blocked — tap Allow in browser settings' :
-    e.name==='NotFoundError' ? 'No microphone found on this device' :
-    e.name==='NotReadableError' ? 'Mic/camera is in use by another app' :
-    !window.isSecureContext ? 'Calls require HTTPS' :
-    'Could not access mic/camera: '+e.message;
-  toast('❌ '+msg,'err');
+// ── Attach remote audio to a hidden <audio> element ──
+function attachAudio(stream){
+  let el=document.getElementById('remoteAudio');
+  if(el)el.remove();
+  el=document.createElement('audio');
+  el.id='remoteAudio';
+  el.autoplay=true;
+  el.setAttribute('playsinline','');
+  el.muted=false;
+  el.volume=1.0;
+  el.style.display='none';
+  document.body.appendChild(el);
+  el.srcObject=stream;
+  // Retry play with increasing delays
+  let attempt=0;
+  function tryPlay(){
+    el.muted=false;el.volume=1.0;
+    el.play().catch(()=>{
+      if(attempt++<20)setTimeout(tryPlay,300);
+    });
+  }
+  tryPlay();
 }
 
-// ── Setup RTCPeerConnection ──
+// ── Attach remote video ──
+function attachVideo(stream){
+  const rv=document.getElementById('remoteVideo');
+  if(!rv)return;
+  rv.srcObject=stream;
+  rv.setAttribute('playsinline','');
+  rv.muted=true; // video el must be muted for autoplay; audio from <audio> el
+  let attempt=0;
+  function tryPlay(){
+    rv.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});
+  }
+  tryPlay();
+}
+
+// ── Build RTCPeerConnection ──
 function makePc(targetId){
+  if(cd.pc){try{cd.pc.close();}catch(e){}}
   const pc=new RTCPeerConnection(STUN);
   cd.pc=pc;
   cd.pending=[];
-  // Fresh streams for this call
-  cd.remoteAudioStream=new MediaStream();
-  cd.remoteVideoStream=new MediaStream();
 
-  // Send ICE candidates to the other peer via socket
-  pc.onicecandidate=(e)=>{
-    if(e.candidate){
-      socket.emit('ice_candidate',{target_id:targetId, candidate:e.candidate});
-    }
+  // Relay our ICE candidates to the other side
+  pc.onicecandidate=e=>{
+    if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});
   };
 
-  // Track incoming remote tracks — called once per track
-  pc.ontrack=(e)=>{
+  // Receive remote audio/video tracks
+  // Use separate MediaStreams per kind for maximum compatibility
+  const audioStream=new MediaStream();
+  const videoStream=new MediaStream();
+
+  pc.ontrack=e=>{
     const track=e.track;
-
     if(track.kind==='audio'){
-      // Add audio track to dedicated audio stream
-      cd.remoteAudioStream.addTrack(track);
-      // Set up or update the hidden <audio> element
-      let audio=document.getElementById('remoteAudio');
-      if(!audio){
-        audio=document.createElement('audio');
-        audio.id='remoteAudio';
-        audio.setAttribute('autoplay','');
-        audio.setAttribute('playsinline','');
-        audio.style.display='none';
-        document.body.appendChild(audio);
-      }
-      audio.srcObject=cd.remoteAudioStream;
-      audio.muted=false;
-      audio.volume=1.0;
-      // Play with retry — mobile browsers block autoplay
-      (function tryPlay(){
-        audio.play().catch(()=>setTimeout(tryPlay,300));
-      })();
+      audioStream.addTrack(track);
+      attachAudio(audioStream);
     }
-
     if(track.kind==='video'){
-      // Add video track to dedicated video stream
-      cd.remoteVideoStream.addTrack(track);
-      const rv=document.getElementById('remoteVideo');
-      if(rv){
-        rv.srcObject=cd.remoteVideoStream;
-        rv.setAttribute('playsinline','');
-        rv.muted=true; // MUST be muted for mobile autoplay — audio comes from <audio> element
-        (function tryPlayV(){
-          rv.play().catch(()=>setTimeout(tryPlayV,300));
-        })();
-      }
+      videoStream.addTrack(track);
+      attachVideo(videoStream);
     }
   };
 
-  // Update call status from ICE connection state
+  // ICE state → update UI and start timer
   pc.oniceconnectionstatechange=()=>{
     const s=pc.iceConnectionState;
     if(s==='connected'||s==='completed'){
       setStatus('Connected ✅  ·  '+nowStr());
       startCallTimer();
-    } else if(s==='checking'){
+    }else if(s==='checking'){
       setStatus('Connecting...');
-    } else if(s==='failed'){
-      toast('❌ Connection failed — check your network','err');
+    }else if(s==='failed'){
+      toast('❌ Connection failed','err');
       endCall();
-    } else if(s==='disconnected'){
+    }else if(s==='disconnected'){
       setStatus('Reconnecting...');
-      setTimeout(()=>{ if(cd.pc&&cd.pc.iceConnectionState==='disconnected') endCall(); },6000);
+      setTimeout(()=>{if(cd.pc&&cd.pc.iceConnectionState==='disconnected')endCall();},6000);
     }
   };
 
   return pc;
 }
 
-// ── Flush ICE candidates queued before remote description was set ──
+// ── Apply queued ICE candidates after remote desc is set ──
 async function flushPending(){
-  if(!cd.pc||!cd.pc.remoteDescription||!cd.pc.remoteDescription.type) return;
-  for(const c of cd.pending){
-    try{ await cd.pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){}
-  }
-  cd.pending=[];
+  if(!cd.pc?.remoteDescription?.type)return;
+  const q=[...cd.pending];cd.pending=[];
+  for(const c of q){try{await cd.pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
 }
 
-// ── Public: start voice/video call ──
+// ── Error message helper ──
+function mediaErr(e){
+  toast('❌ '+(
+    e.name==='NotAllowedError'||e.name==='PermissionDeniedError'?'Mic/camera blocked — allow it in your browser settings':
+    e.name==='NotFoundError'?'No microphone/camera found on this device':
+    e.name==='NotReadableError'?'Mic/camera is being used by another app':
+    !window.isSecureContext?'Calls require HTTPS':
+    'Could not start call: '+e.message
+  ),'err');
+}
+
+// ── Public call starters ──
 async function startVoiceCall(){
   if(!currentFriendId){toast('Open a chat first','err');return;}
-  const f=friends.find(f=>f.id===currentFriendId);
-  if(f) await doCall(f,'voice');
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(f)await doCall(f,'voice');
 }
 async function startVideoCall(){
   if(!currentFriendId){toast('Open a chat first','err');return;}
-  const f=friends.find(f=>f.id===currentFriendId);
-  if(f) await doCall(f,'video');
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(f)await doCall(f,'video');
 }
 
-// ── Caller: create offer and send to receiver ──
+// ── CALLER: build offer ──
 async function doCall(friend,type){
-  if(cd.active){toast('Already in a call','err');return;}
+  if(cd.active){toast(friend.username+' is in another call','info');return;}
   await unlockAudio();
   try{
-    cd.active=true; cd.type=type; cd.calleeId=friend.id;
+    cd.active=true;cd.type=type;cd.calleeId=friend.id;cd.calleeName=friend.username;
 
     const stream=await getMedia(type);
     cd.localStream=stream;
 
-    // Show local video preview
     if(type==='video'){
       const lv=document.getElementById('localVideo');
-      lv.srcObject=stream;
-      lv.setAttribute('playsinline','');
-      lv.muted=true;
+      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;
       lv.play().catch(()=>{});
     }
 
     const pc=makePc(friend.id);
-
-    // IMPORTANT: add tracks WITH the stream reference
-    // This ensures receiver's ontrack fires with e.streams[0] populated
+    // Pass stream reference so receiver gets e.streams[0]
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
 
-    // Create offer
     const offer=await pc.createOffer();
     await pc.setLocalDescription(offer);
 
     showCallModal(friend.username,'Calling...',type==='video');
-
-    // Send SDP offer to receiver through server
     socket.emit('call_offer',{
-      callee_id: friend.id,
-      offer: {type:pc.localDescription.type, sdp:pc.localDescription.sdp},
-      call_type: type
+      callee_id:friend.id,
+      offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},
+      call_type:type
     });
-
   }catch(e){
-    mediaError(e);
+    mediaErr(e);
     cleanupCall();
   }
 }
 
-// ── Receiver: accept incoming call ──
+// ── RECEIVER: accept ──
 async function acceptCall(){
   await unlockAudio();
   hideIncomingCall();
   const d=cd.incoming;
-  if(!d)return;
+  if(!d){cleanupCall();return;}
   try{
-    cd.active=true; cd.type=d.call_type; cd.calleeId=d.caller_id;
+    cd.active=true;cd.type=d.call_type;cd.calleeId=d.caller_id;cd.calleeName=d.caller_name;
 
     const stream=await getMedia(d.call_type);
     cd.localStream=stream;
 
     if(d.call_type==='video'){
       const lv=document.getElementById('localVideo');
-      lv.srcObject=stream;
-      lv.setAttribute('playsinline','');
-      lv.muted=true;
+      lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;
       lv.play().catch(()=>{});
     }
 
     const pc=makePc(d.caller_id);
-
-    // Add local tracks WITH stream ref before setRemoteDescription
     stream.getTracks().forEach(t=>pc.addTrack(t,stream));
 
-    // CRITICAL ORDER:
-    // 1. setRemoteDescription (the offer from caller)
-    // 2. flush any ICE candidates that arrived early
-    // 3. createAnswer
-    // 4. setLocalDescription
-    // 5. send answer back
+    // EXACT ORDER: remote → flush ICE → answer → local → send
     await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
     await flushPending();
-
     const answer=await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
     showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
-
     socket.emit('call_answer',{
-      caller_id: d.caller_id,
-      answer: {type:pc.localDescription.type, sdp:pc.localDescription.sdp},
-      accepted: true
+      caller_id:d.caller_id,
+      answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},
+      accepted:true
     });
-
   }catch(e){
-    mediaError(e);
+    mediaErr(e);
     rejectCall();
   }
 }
 
-// ── Receiver: decline incoming call ──
+// ── RECEIVER: reject ──
 function rejectCall(){
   hideIncomingCall();
-  if(cd.incoming) socket.emit('call_answer',{caller_id:cd.incoming.caller_id, accepted:false});
-  cd.incoming=null;
+  if(cd.incoming)socket.emit('call_answer',{caller_id:cd.incoming.caller_id,accepted:false});
+  cleanupCall();
 }
 
-// ── In-call controls ──
+// ── Controls ──
 function toggleMute(){
   cd.muted=!cd.muted;
   const btn=document.getElementById('muteBtn');
   btn.classList.toggle('muted',cd.muted);
   btn.textContent=cd.muted?'🔇':'🎤';
-  if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
+  if(cd.localStream)cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
 }
 function toggleVideo(){
   cd.videoOff=!cd.videoOff;
   const btn=document.getElementById('videoBtn');
   btn.classList.toggle('muted',cd.videoOff);
   btn.textContent=cd.videoOff?'📷':'📹';
-  if(cd.localStream) cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
+  if(cd.localStream)cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
 }
 
-// ── End call ──
+// ── End call (user pressed hang up) ──
 function endCall(){
-  const targetId=cd.calleeId||cd.callerId;
-  if(targetId) socket.emit('call_end',{target_id:targetId});
-  const dur=cd.duration||0, type=cd.type||'voice';
+  const tid=cd.calleeId||cd.callerId;
+  if(tid)socket.emit('call_end',{target_id:tid});
+  const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
   cleanupCall();
-  appendCallMsg(type,dur);
+  appendCallMsg(type,dur,startT);
 }
 
-// ── Clean up all call state ──
+// ── Full cleanup — always use resetCd() so state is truly fresh ──
 function cleanupCall(){
   stopCallTimer();
-  if(cd.localStream) cd.localStream.getTracks().forEach(t=>t.stop());
-  if(cd.pc){ try{cd.pc.close();}catch(e){} }
-  const ra=document.getElementById('remoteAudio'); if(ra)ra.remove();
-  const rv=document.getElementById('remoteVideo'); if(rv)rv.srcObject=null;
-  const lv=document.getElementById('localVideo'); if(lv)lv.srcObject=null;
+  if(cd.localStream){cd.localStream.getTracks().forEach(t=>t.stop());cd.localStream=null;}
+  if(cd.pc){try{cd.pc.close();}catch(e){}cd.pc=null;}
+  const ra=document.getElementById('remoteAudio');if(ra)ra.remove();
+  const rv=document.getElementById('remoteVideo');if(rv)rv.srcObject=null;
+  const lv=document.getElementById('localVideo');if(lv)lv.srcObject=null;
   hideCallModal();
   hideIncomingCall();
-  cd={
-    active:false, type:null, muted:false, videoOff:false,
-    localStream:null, pc:null, callerId:null, calleeId:null,
-    pending:[], incoming:null, ringTimer:null,
-    timerInterval:null, startTime:null, startTimeStr:null, duration:0,
-    remoteAudioStream:new MediaStream(), remoteVideoStream:new MediaStream()
-  };
+  resetCd(); // ← complete fresh state, ready for next call immediately
 }
 
-// ── All socket events for call signaling ──
+// ── Socket listeners ──
 function setupCallListeners(){
 
-  socket.on('incoming_call',(data)=>{
+  socket.on('incoming_call',data=>{
     if(cd.active){
-      // Already busy — auto decline
-      socket.emit('call_answer',{caller_id:data.caller_id, accepted:false});
+      // Busy — tell caller
+      socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,busy:true});
       return;
     }
     cd.incoming=data;
-    showIncomingCall(data.caller_name, data.call_type, data.caller_id);
+    showIncomingCall(data.caller_name,data.call_type);
   });
 
-  // Caller receives this when receiver accepted
-  socket.on('call_accepted',async(data)=>{
+  socket.on('call_accepted',async data=>{
     if(!cd.pc)return;
     try{
       await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
@@ -1365,35 +1341,35 @@ function setupCallListeners(){
     }
   });
 
-  // Caller receives this when receiver declined
-  socket.on('call_rejected',(data)=>{
-    toast((data.callee_name||'User')+' declined the call','info');
+  socket.on('call_rejected',data=>{
+    const name=data.callee_name||'User';
+    const msg=data.busy?name+' is in another call':name+' declined the call';
+    toast(msg,'info');
     cleanupCall();
   });
 
-  // Both sides receive ICE candidates from each other
-  socket.on('ice_candidate',async(data)=>{
+  socket.on('ice_candidate',async data=>{
     if(!cd.pc||!data.candidate)return;
-    // If remote description not set yet, queue it
-    if(!cd.pc.remoteDescription||!cd.pc.remoteDescription.type){
+    if(!cd.pc.remoteDescription?.type){
       cd.pending.push(data.candidate);
-    } else {
-      try{ await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate)); }catch(e){}
+    }else{
+      try{await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}
     }
   });
 
-  // Other side hung up
   socket.on('call_ended',()=>{
-    const dur=cd.duration||0, type=cd.type||'voice';
+    const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
     cleanupCall();
-    appendCallMsg(type,dur);
+    appendCallMsg(type,dur,startT);
   });
 
-  socket.on('call_error',(data)=>{
+  socket.on('call_error',data=>{
     toast(data.message||'Call failed','err');
     cleanupCall();
   });
 }
+
+
 
 
 
