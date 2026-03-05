@@ -332,7 +332,12 @@ def search_users():
         if are_friends(uid, u.id): rel = 'friend'
         elif FriendRequest.query.filter_by(from_user_id=uid, to_user_id=u.id, status='pending').first(): rel = 'request_sent'
         elif FriendRequest.query.filter_by(from_user_id=u.id, to_user_id=uid, status='pending').first(): rel = 'request_received'
-        results.append({**u.to_dict(), 'relationship':rel, 'is_online':is_online(u.id)})
+        results.append({
+            **u.to_dict(),
+            'relationship': rel,
+            'is_online': is_online(u.id),
+            'chat_id': get_chat_id(uid, u.id) if rel == 'friend' else ''
+        })
     return jsonify({'success':True,'results':results})
 
 @app.route('/api/profile', methods=['GET'])
