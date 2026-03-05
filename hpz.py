@@ -106,6 +106,7 @@ class Message(db.Model):
     message_type = db.Column(db.String(20), default='text')
     reply_to_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=True)
     is_edited = db.Column(db.Boolean, default=False)
+    caption = db.Column(db.String(500), nullable=True)
     is_deleted = db.Column(db.Boolean, default=False)
     is_pinned = db.Column(db.Boolean, default=False)
     edited_at = db.Column(db.DateTime, nullable=True)
@@ -262,7 +263,8 @@ def format_message(msg, user_id):
         'reactions': reaction_counts,
         'user_reactions': user_reactions,
         'read_by': len(reads),
-        'reply_to': reply_msg
+        'reply_to': reply_msg,
+        'caption': msg.caption or ''
     }
 
 # ============================================================
@@ -946,6 +948,7 @@ def handle_send_message(data):
     content = data.get('content', '').strip()
     message_type = data.get('message_type', 'text')
     reply_to_id = data.get('reply_to_id')
+    caption = data.get('caption', '').strip() if message_type == 'image' else None
 
     if not content or not chat_id:
         return
@@ -969,7 +972,8 @@ def handle_send_message(data):
             sender_id=user_id,
             content=content,
             message_type=message_type,
-            reply_to_id=reply_to_id
+            reply_to_id=reply_to_id,
+            caption=caption
         )
         db.session.add(msg)
         db.session.commit()
