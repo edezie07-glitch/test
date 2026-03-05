@@ -342,6 +342,50 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="ctx-item" onclick="pinMsgCtx()">📌 Pin</div>
   <div class="ctx-item danger" onclick="deleteMsgCtx()">🗑️ Delete</div>
 </div>
+<!-- MOBILE CHAT LIST PAGE -->
+<div class="chat-list-page" id="chatListPage">
+  <div class="clp-header">
+    <div class="clp-title">💬 HPZ</div>
+    <div class="clp-btns">
+      <button class="ib" id="rqBtn2" onclick="toggleP('rqPanel2')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge2">0</span></button>
+      <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
+    </div>
+  </div>
+  <div class="clp-search">
+    <div class="sinp-w">
+      <span class="sinp-ic">🔍</span>
+      <input class="sinp" id="sinpMobile" type="text" placeholder="Search users…" oninput="handleSearch(this.value)" autocomplete="off">
+    </div>
+  </div>
+  <!-- Archive row -->
+  <div class="archive-row" onclick="showArchive()">
+    <div class="ar-icon">🗄️</div>
+    <span>Archived Chats</span>
+    <span id="archiveBadge" style="margin-left:auto;background:var(--hov);color:var(--mute);font-size:11px;padding:2px 8px;border-radius:20px;display:none;"></span>
+  </div>
+  <!-- Tabs: All / Unread -->
+  <div class="clp-tabs">
+    <div class="clp-tab active" id="tabAll" onclick="switchTab('all')">All</div>
+    <div class="clp-tab" id="tabUnread" onclick="switchTab('unread')">Unread</div>
+    <div class="clp-tab" id="tabArchive" onclick="switchTab('archive')" style="display:none;">Archived</div>
+  </div>
+  <!-- Friend requests panel -->
+  <div class="spanel" id="rqPanel2">
+    <div class="ptitle">Friend Requests</div>
+    <div id="rqList2"><div class="lempty" style="padding:12px;">No pending requests</div></div>
+  </div>
+  <!-- Chat list body -->
+  <div class="clp-body" id="clpBody">
+    <div class="lempty" id="clpEmpty" style="padding:40px 20px;">👥<br><br>No conversations yet<br><span style="font-size:12px;">Search for friends above</span></div>
+  </div>
+</div>
+<!-- 3-dot context menu for chat rows -->
+<div class="crow-ctx" id="crowCtx">
+  <div class="crow-ctx-item" onclick="crowCtxAction('open')">💬 Open Chat</div>
+  <div class="crow-ctx-item" onclick="crowCtxAction('archive')">🗄️ Archive</div>
+  <div class="crow-ctx-item" onclick="crowCtxAction('profile')">👤 View Profile</div>
+  <div class="crow-ctx-item danger" onclick="crowCtxAction('block')">🚫 Block</div>
+</div>
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sh">
@@ -380,6 +424,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <main class="main">
   <div class="chdr">
     <button id="mtogBtn" class="mtog-chdr" onclick="toggleSB()" aria-label="Menu">☰</button>
+    <button class="back-btn" id="backBtn" onclick="goBackToList()" aria-label="Back">‹</button>
     <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
     <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
       <div class="chdr-nm" id="chnm">HPZ Messenger</div>
@@ -403,7 +448,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <span class="pin-text" id="pinnedText">1 pinned message</span>
   </div>
   <div class="marea" id="marea">
-    <div class="ces"><div class="big">💬</div><h3>No chat open</h3><p>Select a friend from the sidebar</p></div>
+    <div class="ces" id="welcomeScreen">
+      <div class="big">💬</div>
+      <h3>Welcome to HPZ</h3>
+      <p>Select a conversation from the sidebar to start chatting</p>
+    </div>
   </div>
   <div class="tybar" id="tybar" style="display:none;">
     <div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>
@@ -1906,20 +1955,71 @@ async function loadFriends(){try{const r=await fetch('/api/friends');const d=awa
 function renderFriends(){
   const list=document.getElementById('clist');const empty=document.getElementById('cempty');
   list.querySelectorAll('.crow').forEach(e=>e.remove());
-  if(!friends.length){empty.style.display='';return;}empty.style.display='none';
+  if(!friends.length){empty.style.display='';renderMobileChatList();return;}empty.style.display='none';
   friends.forEach(f=>{
-    const el=document.createElement('div');el.className=`crow${currentChatId===f.chat_id?' active':''}`;el.onclick=()=>openChat(f.id,f.username,f.chat_id);
-    const isOnline=onlineUsers.has(f.id);
-    el.setAttribute('data-fid', f.id);
-    const uCount=(unreadCounts[f.id]||0)+(f.unread_count||0);
-    el.innerHTML=`<div class="av" style="position:relative;">${isOnline?'<div class="online-dot"></div>':''}${f.username[0].toUpperCase()}</div><div class="cmeta"><div class="cnrow"><span class="cuname">${esc(f.username)}</span></div><div class="cprev">${f.last_message?esc(f.last_message):'No messages yet'}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:36px;"><span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;">${uCount>9?'9+':uCount}</span>${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''}</div>`;
+    const el=buildCrowEl(f);
     list.appendChild(el);
   });
+  renderMobileChatList();
+}
+
+function buildCrowEl(f){
+  const isOnline=onlineUsers.has(f.id);
+  const uCount=(unreadCounts[f.id]||0)+(f.unread_count||0);
+  const el=document.createElement('div');
+  el.className=`crow${currentChatId===f.chat_id?' active':''}`;
+  el.setAttribute('data-fid',f.id);
+  el.innerHTML=`
+    <div class="av" style="position:relative;">${isOnline?'<div class="online-dot"></div>':''}${f.username[0].toUpperCase()}</div>
+    <div class="cmeta">
+      <div class="cnrow"><span class="cuname">${esc(f.username)}</span></div>
+      <div class="cprev">${f.last_message?esc(f.last_message):'No messages yet'}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:36px;margin-right:28px;">
+      <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;">${uCount>9?'9+':uCount}</span>
+      ${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''}
+    </div>
+    <button class="crow-menu-btn" onclick="openCrowCtx(event,${f.id})" title="More">⋯</button>
+  `;
+  // Click to open chat
+  el.addEventListener('click', e=>{
+    if(e.target.closest('.crow-menu-btn'))return;
+    openChat(f.id,f.username,f.chat_id);
+  });
+  // Long press for mobile
+  let pressTimer;
+  el.addEventListener('touchstart',e=>{
+    if(e.target.closest('.crow-menu-btn'))return;
+    pressTimer=setTimeout(()=>{ openCrowCtx(e.touches[0],f.id); },500);
+  },{passive:true});
+  el.addEventListener('touchend',()=>clearTimeout(pressTimer));
+  el.addEventListener('touchmove',()=>clearTimeout(pressTimer));
+  return el;
 }
 function updateOnlineStatus(){if(currentFriendId&&onlineUsers.has(currentFriendId)){document.getElementById('chsub').textContent='Online';document.getElementById('chsub').classList.add('online');}else if(currentFriendId){document.getElementById('chsub').textContent='Friend';document.getElementById('chsub').classList.remove('online');}renderFriends();}
 function updatePrev(){loadFriends();}
 async function loadRequests(){
-  try{const r=await fetch('/api/friends/requests');const d=await r.json();if(!d.success)return;pendingReqs=d.received||[];const b=document.getElementById('rqBadge');if(pendingReqs.length){b.textContent=pendingReqs.length;b.classList.remove('hidden');}else b.classList.add('hidden');renderRequests();}catch(e){}
+  try{
+    const r=await fetch('/api/friends/requests');
+    const d=await r.json();
+    if(!d.success)return;
+    pendingReqs=d.received||[];
+    // Update both badges (desktop + mobile)
+    ['rqBadge','rqBadge2'].forEach(id=>{
+      const b=document.getElementById(id);
+      if(!b)return;
+      if(pendingReqs.length){b.textContent=pendingReqs.length;b.classList.remove('hidden');}
+      else b.classList.add('hidden');
+    });
+    renderRequests();
+    renderRequests2();
+  }catch(e){}
+}
+function renderRequests2(){
+  const list=document.getElementById('rqList2');
+  if(!list)return;
+  if(!pendingReqs.length){list.innerHTML='<div class="lempty" style="padding:12px;">No pending requests</div>';return;}
+  list.innerHTML=pendingReqs.map(r=>`<div class="req-row"><div class="req-usr"><div class="av sm">${r.username[0].toUpperCase()}</div><div><div class="req-nm">${esc(r.username)}</div><div class="req-wh">${r.time_ago||''}</div></div></div><div class="req-ac"><button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button><button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button></div></div>`).join('');
 }
 function renderRequests(){
   const list=document.getElementById('rqList');if(!pendingReqs.length){list.innerHTML='<div class="lempty" style="padding:12px;">No pending requests</div>';return;}
@@ -1933,15 +2033,29 @@ async function quickAccept(userId){let rq=pendingReqs.find(r=>r.user_id===userId
 function openChat(fid,fname,chatId){
   if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
   currentChatId=chatId;currentFriendId=fid;
-  document.getElementById('chav').textContent=fname[0].toUpperCase();document.getElementById('chnm').textContent=fname;
-  const isOnline=onlineUsers.has(fid);document.getElementById('chsub').textContent=isOnline?'Online':'Friend';document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
-  document.getElementById('videoCallBtn').style.display='block';document.getElementById('voiceCallBtn').style.display='block';document.getElementById('searchBtn').style.display='block';document.getElementById('pinnedBtn').style.display='block';
+  document.getElementById('chav').textContent=fname[0].toUpperCase();
+  document.getElementById('chnm').textContent=fname;
+  const isOnline=onlineUsers.has(fid);
+  document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
+  document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
+  document.getElementById('videoCallBtn').style.display='block';
+  document.getElementById('voiceCallBtn').style.display='block';
+  document.getElementById('searchBtn').style.display='block';
+  document.getElementById('pinnedBtn').style.display='block';
   document.querySelector('.iarea').style.display='flex';
   clearUnreadBadge(fid);
-  renderFriends();loadMsgs(chatId);
+  renderFriends();
+  loadMsgs(chatId);
   if(socket){socket.emit('join_chat',{chat_id:chatId});socket.emit('mark_all_read',{chat_id:chatId});}
   clearSearch();
-  if(window.innerWidth<=720)closeSB();if(window.innerWidth>720)document.getElementById('msgInput').focus();
+  // Mobile: hide chat list, show chat view
+  if(window.innerWidth<=720){
+    document.getElementById('chatListPage').style.display='none';
+    document.querySelector('.main').classList.add('chat-open');
+    document.querySelector('.main').style.display='flex';
+  } else {
+    document.getElementById('msgInput').focus();
+  }
 }
 function doTyping(){if(!currentChatId||!socket?.connected)return;socket.emit('typing_start',{chatId:currentChatId});clearTimeout(typingTimer);typingTimer=setTimeout(()=>socket.emit('typing_stop',{chatId:currentChatId}),2000);}
 function showTyping(name){document.getElementById('tytxt').textContent=`${name} is typing`;document.getElementById('tybar').style.display='flex';}
@@ -2000,7 +2114,12 @@ function renderUnreadBadge(fid){
   el.style.display=count>0?'flex':'none';
 }
 function autoR(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,110)+'px';}
-function clearSearch(){document.getElementById('sinp').value='';document.getElementById('srPanel').classList.remove('open');document.getElementById('srList').innerHTML='';}
+function clearSearch(){
+  document.getElementById('sinp').value='';
+  const m=document.getElementById('sinpMobile');if(m)m.value='';
+  document.getElementById('srPanel').classList.remove('open');
+  document.getElementById('srList').innerHTML='';
+}
 function toggleSB(){
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('mov').classList.toggle('show');
@@ -2008,6 +2127,85 @@ function toggleSB(){
 function closeSB(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mov').classList.remove('show');
+}
+
+// ── Go back to chat list (mobile) ──
+function goBackToList(){
+  document.querySelector('.main').classList.remove('chat-open');
+  document.querySelector('.main').style.display='';
+  document.getElementById('chatListPage').style.display='flex';
+  currentChatId=null;currentFriendId=null;
+  renderFriends();
+}
+
+// ── Render mobile chat list ──
+let currentTab='all';
+const archivedChats=new Set(JSON.parse(localStorage.getItem('hpz_archive')||'[]'));
+
+function renderMobileChatList(){
+  if(window.innerWidth>720)return;
+  const body=document.getElementById('clpBody');
+  const empty=document.getElementById('clpEmpty');
+  if(!body)return;
+  body.querySelectorAll('.crow').forEach(e=>e.remove());
+  let list=friends.filter(f=>currentTab==='archive'?archivedChats.has(f.id):!archivedChats.has(f.id));
+  if(currentTab==='unread') list=list.filter(f=>(unreadCounts[f.id]||0)+(f.unread_count||0)>0);
+  if(!list.length){empty.style.display='';return;}
+  empty.style.display='none';
+  list.forEach(f=>{
+    const el=buildCrowEl(f);
+    body.appendChild(el);
+  });
+  // Archive badge
+  const ab=document.getElementById('archiveBadge');
+  if(ab){ab.textContent=archivedChats.size;ab.style.display=archivedChats.size?'':'none';}
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tabAll').classList.toggle('active',tab==='all');
+  document.getElementById('tabUnread').classList.toggle('active',tab==='unread');
+  document.getElementById('tabArchive').classList.toggle('active',tab==='archive');
+  renderMobileChatList();
+}
+
+function showArchive(){
+  document.getElementById('tabArchive').style.display='';
+  switchTab('archive');
+}
+
+// ── 3-dot context menu ──
+let crowCtxFid=null;
+function openCrowCtx(e,fid){
+  crowCtxFid=fid;
+  const menu=document.getElementById('crowCtx');
+  const x=e.clientX||e.pageX||window.innerWidth/2;
+  const y=e.clientY||e.pageY||200;
+  menu.style.left=(Math.min(x,window.innerWidth-170))+'px';
+  menu.style.top=(Math.min(y,window.innerHeight-180))+'px';
+  menu.classList.add('show');
+  // archive label
+  const archItem=menu.querySelector('[onclick*=archive]');
+  if(archItem) archItem.textContent=archivedChats.has(fid)?'📤 Unarchive':'🗄️ Archive';
+  setTimeout(()=>document.addEventListener('click',closeCrowCtx,{once:true}),10);
+}
+function closeCrowCtx(){document.getElementById('crowCtx').classList.remove('show');}
+function crowCtxAction(action){
+  const fid=crowCtxFid;
+  closeCrowCtx();
+  if(!fid)return;
+  const f=friends.find(x=>x.id===fid);
+  if(!f)return;
+  if(action==='open') openChat(f.id,f.username,f.chat_id);
+  else if(action==='archive'){
+    if(archivedChats.has(fid))archivedChats.delete(fid);
+    else archivedChats.add(fid);
+    localStorage.setItem('hpz_archive',JSON.stringify([...archivedChats]));
+    renderFriends();
+    toast(archivedChats.has(fid)?'Chat archived 🗄️':'Chat unarchived','ok');
+  }
+  else if(action==='profile'){currentFriendId=fid;showFriendProfile();}
+  else if(action==='block') blockUser(fid);
 }
 
 async function logout(){
