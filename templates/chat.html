@@ -653,3 +653,283 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="sndbtn" onclick="sendMsg()">➤</button>
   </div>
 </main>
+<!-- Image Preview Modal -->
+<div class="img-preview-overlay" id="imgPreviewOverlay"></div>
+<div class="img-preview-modal" id="imgPreviewModal">
+  <div class="img-preview-header">
+    <h3 id="imgPreviewTitle">Send Photo</h3>
+    <button class="closebtn" onclick="closeImagePreview()">✕</button>
+  </div>
+  <div class="img-preview-body"><canvas id="imgPreviewCanvas"></canvas></div>
+  <div class="img-preview-tools">
+    <button class="tool-btn" onclick="rotateImage(-90)" title="Rotate left">↶</button>
+    <button class="tool-btn" onclick="rotateImage(90)" title="Rotate right">↷</button>
+    <button class="tool-btn" onclick="flipImage('h')" title="Flip">↔️</button>
+    <button class="tool-btn" onclick="flipImage('v')" title="Flip vertical">↕️</button>
+    <button class="tool-btn" onclick="startCrop()" title="Crop" id="cropBtn">✂️</button>
+    <button class="tool-btn" onclick="confirmCrop()" title="Confirm crop" id="cropConfirmBtn" style="display:none;background:var(--brand);color:#fff;">✓</button>
+    <button class="tool-btn" onclick="cancelCrop()" title="Cancel crop" id="cropCancelBtn" style="display:none;">✗</button>
+    <button class="tool-btn" onclick="drawFilter('none')" title="Original">🌅</button>
+    <button class="tool-btn" onclick="drawFilter('grayscale')" title="B&W">⬛</button>
+    <button class="tool-btn" onclick="drawFilter('warm')" title="Warm">🔆</button>
+    <button class="tool-btn" onclick="drawFilter('cool')" title="Cool">❄️</button>
+    <button class="tool-btn" onclick="downloadPreview()" title="Save to device">💾</button>
+  </div>
+  <div style="padding:0 20px 10px;display:flex;gap:8px;align-items:center;">
+    <input id="imgCaption" type="text" placeholder="Add a caption (optional)…"
+      style="flex:1;padding:10px 14px;background:var(--inp);border:1px solid var(--ibdr);border-radius:20px;color:var(--txt);font-size:14px;outline:none;font-family:var(--font-b);">
+  </div>
+  <div style="padding:0 20px 10px;display:flex;align-items:center;gap:10px;">
+    <span style="font-size:12px;color:var(--mute);">Quality:</span>
+    <select id="imgQuality" style="background:var(--inp);border:1px solid var(--ibdr);color:var(--txt);border-radius:8px;padding:4px 8px;font-size:12px;">
+      <option value="0.95">High</option>
+      <option value="0.75" selected>Medium</option>
+      <option value="0.5">Low (faster)</option>
+    </select>
+    <span id="imgSizeLabel" style="font-size:11px;color:var(--mute);margin-left:auto;"></span>
+  </div>
+  <div class="img-preview-footer">
+    <button class="cancel-btn" onclick="closeImagePreview()">Cancel</button>
+    <button class="send-btn" onclick="sendEditedImage()">Send 📤</button>
+  </div>
+</div>
+<!-- Full-size image viewer -->
+<div id="imgViewerOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:1100;display:none;flex-direction:column;align-items:center;justify-content:center;" onclick="closeImgViewer()">
+  <button onclick="closeImgViewer();event.stopPropagation();" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:42px;height:42px;border-radius:50%;cursor:pointer;">✕</button>
+  <button id="imgViewerDownload" onclick="event.stopPropagation();downloadImg();" style="position:absolute;top:18px;left:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;width:42px;height:42px;border-radius:50%;cursor:pointer;" title="Download">💾</button>
+  <img id="imgViewerImg" src="" style="max-width:95vw;max-height:88vh;object-fit:contain;border-radius:8px;user-select:none;" draggable="false">
+  <div id="imgViewerCaption" style="margin-top:14px;color:rgba(255,255,255,.8);font-size:14px;max-width:80vw;text-align:center;"></div>
+</div>
+<!-- Profile View Modal -->
+<div class="profile-overlay" id="profileOverlay" onclick="closeProfileView()"></div>
+<div class="profile-modal" id="profileModal">
+  <div class="profile-header">
+    <h3>Profile</h3>
+    <button class="closebtn" onclick="closeProfileView()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="profile-avatar-large">
+      <div class="av" id="profileAvLarge" style="width:120px;height:120px;font-size:48px;border-radius:24px;">U</div>
+    </div>
+    <h2 id="profileName">Username</h2>
+    <p id="profileStatus" style="color:var(--sub);margin:8px 0;">Available</p>
+    <div class="profile-bio-section">
+      <h4>Bio</h4>
+      <p id="profileBio" style="color:var(--txt);margin-top:8px;">No bio yet</p>
+    </div>
+    <div class="profile-bio-section" style="margin-top:12px;">
+      <h4>Relationship Status</h4>
+      <p id="profileRelationship" style="color:var(--txt);margin-top:8px;">Prefer not to say</p>
+    </div>
+    <div class="profile-actions">
+      <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
+      <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
+      <button class="profile-action-btn" onclick="startVideoCall()">📹 Video Call</button>
+    </div>
+  </div>
+</div>
+<!-- Incoming Call Modal -->
+<div class="call-overlay" id="incomingCallOverlay"></div>
+<div class="call-modal" id="incomingCallModal">
+  <div class="call-content">
+    <div class="call-avatar">
+      <div class="av" id="incomingCallAvatar" style="width:80px;height:80px;font-size:32px;border-radius:18px;margin:0 auto;">U</div>
+    </div>
+    <h2 id="incomingCallName">Username</h2>
+    <p id="incomingCallType">Incoming voice call...</p>
+    <div class="call-controls">
+      <button class="call-control-btn end" onclick="rejectCall()" title="Reject">📵</button>
+      <button class="call-control-btn" onclick="acceptCall()" style="background:#22c55e;color:#fff;" title="Accept">📞</button>
+    </div>
+  </div>
+</div>
+<!-- Active Call Modal -->
+<div class="call-overlay" id="callOverlay"></div>
+<div class="call-modal" id="callModal">
+  <div class="call-content">
+    <div class="call-avatar">
+      <div class="av" id="callAvatar" style="width:100px;height:100px;font-size:40px;border-radius:20px;margin:0 auto;">U</div>
+    </div>
+    <h2 id="callName">Username</h2>
+    <p id="callStatus">Calling...</p>
+    <p id="callTimer" style="font-size:22px;font-weight:700;color:#fff;letter-spacing:2px;margin:0;display:none;">00:00</p>
+    <div id="callVideo" style="display:none;margin:20px 0;justify-content:center;gap:10px;">
+      <video id="localVideo" autoplay muted playsinline style="width:180px;height:135px;border-radius:12px;object-fit:cover;"></video>
+      <video id="remoteVideo" autoplay playsinline style="width:320px;height:240px;border-radius:12px;object-fit:cover;"></video>
+    </div>
+    <div class="call-controls">
+      <button class="call-control-btn mute" id="muteBtn" onclick="toggleMute()" title="Mute">🎤</button>
+      <button class="call-control-btn video" id="videoBtn" onclick="toggleVideo()" title="Video" style="display:none;">📹</button>
+      <button class="call-control-btn end" onclick="endCall()">📞</button>
+    </div>
+  </div>
+</div>
+<!-- SETTINGS DRAWER -->
+<div class="sov" id="sov" onclick="closeSettings()"></div>
+<div class="sdraw" id="sdraw">
+  <div class="shead">
+    <span style="font-size:20px;">⚙️</span>
+    <h2>Settings</h2>
+    <button class="closebtn" onclick="closeSettings()">✕</button>
+  </div>
+  <div class="sbody">
+    <!-- Profile -->
+    <div class="ssec">
+      <div class="ssec-t">My Profile</div>
+      <div class="pcard">
+        <div class="av xl" id="sav">{{ user.username[0]|upper }}</div>
+        <div class="pinfo">
+          <div class="pname" id="snm">{{ user.username }}</div>
+          <div class="pstat" id="sst">Available</div>
+        </div>
+      </div>
+      <div class="ef"><label>Display Name</label><input class="ei" id="eun" value="{{ user.username }}"></div>
+      <div class="ef"><label>Bio</label><input class="ei" id="ebio" placeholder="Tell people about yourself..."></div>
+      <div class="ef">
+        <label>Relationship Status</label>
+        <select class="ei" id="erel" style="cursor:pointer;">
+          <option value="Prefer not to say">Prefer not to say</option>
+          <option value="Single">Single</option>
+          <option value="Married">Married</option>
+        </select>
+      </div>
+      <div class="ef">
+        <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
+      </div>
+    </div>
+    <!-- Appearance -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Appearance</div>
+      <div class="srow">
+        <div class="sleft"><div class="sic pu">🌙</div><div><div class="slb">Dark Mode</div><div class="sdb">Toggle dark / light theme</div></div></div>
+        <button class="tog on" id="tDark" onclick="toggleTheme()"></button>
+      </div>
+    </div>
+    <!-- Notifications -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Notifications</div>
+      <div class="srow">
+        <div class="sleft"><div class="sic gr">🔔</div><div><div class="slb">Sound Alerts</div><div class="sdb">Play sound on new messages</div></div></div>
+        <button class="tog on" id="tSound" onclick="toggleSetting('sound','tSound')"></button>
+      </div>
+    </div>
+    <!-- ADDED: Archive in settings -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Chats</div>
+      <div class="srow" onclick="closeSettings();openArchivePage();" style="cursor:pointer;">
+        <div class="sleft">
+          <div class="sic" style="background:rgba(124,106,255,.12);">🗄️</div>
+          <div><div class="slb">Archived Chats</div><div class="sdb">View and unarchive conversations</div></div>
+        </div>
+        <span style="color:var(--sub);font-size:14px;">›</span>
+      </div>
+    </div>
+    <!-- Blocklist -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Privacy</div>
+      <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
+        <div class="sleft">
+          <div class="sic re">🚫</div>
+          <div><div class="slb">Blocked Users</div><div class="sdb">Manage blocked friends</div></div>
+        </div>
+        <span style="color:var(--sub);font-size:14px;">›</span>
+      </div>
+    </div>
+    <!-- Account -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Account</div>
+      <button class="dangbtn" onclick="logout()">🚪 Log Out</button>
+    </div>
+  </div>
+</div>
+<div class="tstack" id="tstack"></div>
+<!-- Blocklist Modal -->
+<div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
+<div class="sdraw" id="blocklistDraw">
+  <div class="shead">
+    <span style="font-size:20px;">🚫</span>
+    <h2>Blocked Users</h2>
+    <button class="closebtn" onclick="closeBlocklist()">✕</button>
+  </div>
+  <div class="sbody">
+    <div id="blocklistBody" style="padding:20px;">
+      <div class="lempty">Loading...</div>
+    </div>
+  </div>
+  <button class="savebtn" onclick="openAddBlockModal()" style="position:fixed;bottom:80px;right:30px;width:auto;padding:12px 20px;border-radius:50px;box-shadow:var(--shad);">➕ Block User</button>
+</div>
+<!-- Add Block Modal -->
+<div class="profile-overlay" id="addBlockOverlay" onclick="closeAddBlock()"></div>
+<div class="profile-modal" id="addBlockModal">
+  <div class="profile-header">
+    <h3>Block a Friend</h3>
+    <button class="closebtn" onclick="closeAddBlock()">✕</button>
+  </div>
+  <div class="profile-body">
+    <p style="color:var(--sub);margin-bottom:20px;">Select a friend to block</p>
+    <div id="friendsToBlockList" style="max-height:300px;overflow-y:auto;"></div>
+  </div>
+</div>
+<!-- Story Viewer Modal -->
+<div class="profile-overlay" id="storyOverlay" onclick="closeStoryViewer()"></div>
+<div class="profile-modal" id="storyModal" style="max-width:500px;">
+  <div class="profile-header">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;">
+      <div class="av sm" id="storyUserAvatar">U</div>
+      <div>
+        <h3 id="storyUsername" style="margin:0;">Username</h3>
+        <p style="font-size:11px;color:var(--mute);margin:0;" id="storyTime">2h ago</p>
+      </div>
+    </div>
+    <button class="closebtn" onclick="closeStoryViewer()">✕</button>
+  </div>
+  <div class="profile-body" style="padding:0;background:var(--bg);">
+    <div id="storyContent" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
+      <img id="storyImage" style="max-width:100%;max-height:500px;border-radius:12px;display:none;">
+      <p id="storyText" style="padding:40px;font-size:18px;text-align:center;color:var(--txt);"></p>
+    </div>
+  </div>
+  <div style="padding:15px;border-top:1px solid var(--bdr);display:flex;gap:10px;" id="storyActions">
+    <button class="profile-action-btn" onclick="prevStory()" style="flex:1;">← Previous</button>
+    <button class="profile-action-btn" onclick="nextStory()" style="flex:1;">Next →</button>
+  </div>
+  <div style="padding:10px 15px;border-top:1px solid var(--bdr);font-size:12px;color:var(--mute);text-align:center;" id="storyViewers"></div>
+</div>
+<!-- Create Story Modal -->
+<div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
+<div class="profile-modal" id="createStoryModal" style="max-width:450px;">
+  <div class="profile-header">
+    <h3>Create Story</h3>
+    <button class="closebtn" onclick="closeCreateStory()">✕</button>
+  </div>
+  <div class="profile-body">
+    <div class="ef">
+      <label>Story Type</label>
+      <select class="ei" id="storyType" onchange="toggleStoryType()">
+        <option value="text">Text Only</option>
+        <option value="image">Image</option>
+      </select>
+    </div>
+    <div class="ef" id="storyTextInput">
+      <label>Your Story</label>
+      <textarea class="ei" id="storyTextContent" rows="4" placeholder="What's on your mind?" style="resize:vertical;"></textarea>
+    </div>
+    <div class="ef" id="storyImageInput" style="display:none;">
+      <label>Upload Image</label>
+      <input type="file" class="ei" id="storyImageFile" accept="image/*" style="padding:8px;">
+    </div>
+    <div class="ef">
+      <label>Privacy</label>
+      <select class="ei" id="storyPrivacy">
+        <option value="friends">Friends</option>
+        <option value="public">Public</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="ef" id="customPrivacySection" style="display:none;">
+      <label>Select Friends</label>
+      <div id="customFriendsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
+    </div>
+    <button class="savebtn" onclick="createStory()">📸 Post Story</button>
+  </div>
+</div>
