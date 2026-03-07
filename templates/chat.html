@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>HPZ Messenger</title>
+<title>Hepozy</title>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -115,7 +115,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .dangbtn{width:100%;padding:11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font-b);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--trans);margin-top:2px;}
 .dangbtn:hover{background:rgba(239,68,68,.18);}
 /* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:visible;overflow-x:hidden;background:var(--chat);transition:background .25s;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--chat);transition:background .25s;}
 .chdr{padding:13px 18px;min-height:62px;background:var(--hdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;transition:background .25s,border-color .25s;}
 .chdr-info{flex:1;min-width:0;}
 .chdr-nm{font-family:var(--font-h);font-size:15px;font-weight:700;color:var(--txt);}
@@ -131,7 +131,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .pinned-banner .pin-icon{color:var(--warn);font-size:14px;}
 .pinned-banner .pin-text{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Message Area */
-.marea{flex:1;overflow:visible;overflow-x:hidden;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;}
+.marea{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;scrollbar-width:none;-ms-overflow-style:none;}
 .clist{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none;-ms-overflow-style:none;}
 .clist::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}
 .daydiv{text-align:center;margin:10px 0 5px;}
@@ -648,7 +648,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <!-- ADDED: Mobile chat list page (first screen on mobile) -->
 <div class="chat-list-page" id="chatListPage">
   <div class="clp-header">
-    <div class="clp-title">💬 HPZ</div>
+    <div class="clp-title"><a href="/" onclick="location.reload();return false;" title="Refresh" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--txt);"><img src="/logo" alt="Hepozy" style="width:32px;height:32px;object-fit:cover;border-radius:50%;cursor:pointer;" onerror="this.style.display='none'"><span>Hepozy</span></a></div>
     <div class="clp-btns">
       <button class="ib" style="position:relative;" onclick="toggleP('rqPanelClp')" title="Requests">🔔<span class="nbadge hidden" id="rqBadgeClp">0</span></button>
       <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
@@ -700,7 +700,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <aside class="sidebar" id="sidebar">
   <div class="sh">
     <div class="sh-top">
-      <div class="brand"><img src="/logo" alt="HPZ Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;"></div>
+      <div class="brand"><a href="/" onclick="location.reload();return false;" title="Refresh"><img src="/logo" alt="Hepozy Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'"></a></div>
       <div class="hbtns">
         <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
         <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
@@ -1306,11 +1306,35 @@ function connectSocket(){
     toast(data.username+' accepted your friend request! 🎉','ok');
     loadFriends();
   });
+  socket.on('friend_request_received',(data)=>{
+    // New friend request arrived — update badge + list instantly, no refresh needed
+    loadRequests();
+    showInAppNotif(data.username, '👋 sent you a friend request', null);
+    if(prefs.sound) beep();
+  });
+  socket.on('new_story',(data)=>{
+    // A friend just posted a story — reload the story bar instantly
+    loadStories();
+    showInAppNotif(data.username, '📖 posted a new story', null);
+  });
+  // Friend request rejected — update your sent requests list quietly
+  socket.on('friend_request_rejected',(data)=>{
+    toast(data.username+' declined your friend request','info');
+  });
+  // Story deleted by a friend — refresh story bar
+  socket.on('story_deleted',(data)=>{
+    loadStories();
+  });
+  // A friend updated their profile/avatar — refresh friend list so name/avatar is current
+  socket.on('profile_updated',(data)=>{
+    loadFriends();
+  });
   socket.on('missed_call_notify',(data)=>{
+    showInAppNotif(data.caller_name,'📵 Missed call',null);
     showNotification(data.caller_name,'📵 Missed call');
+    toast('📵 Missed call from '+data.caller_name,'err');
     if(prefs.sound)beep();
     appendCallMsg('missed',0,null,true);
-    toast('📵 Missed call from '+data.caller_name,'err');
   });
   setupCallListeners();
 }
@@ -1434,7 +1458,7 @@ function updateMsgInDOM(msg){
     bub.classList.add('edited');
   }
 }
-function scrollBot(){}
+function scrollBot(){const a=document.getElementById('marea');if(a)a.scrollTop=a.scrollHeight;}
 async function uploadImg(inp){
   const f=inp.files[0];if(!f)return;
   if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
@@ -1967,7 +1991,7 @@ function setupCallListeners(){
     catch(e){toast('❌ Call setup failed','err');endCall();}
   });
   socket.on('call_rejected',data=>{const name=data.callee_name||'User';const msg=data.busy?name+' is in another call':name+' declined the call';toast(msg,'info');cleanupCall();});
-  socket.on('missed_call_notify',data=>{showInAppNotif(data.caller_name,'📵 Missed call',null);if(prefs.sound)beep();appendCallMsg('missed',0,null,true);});
+  // missed_call_notify handled in connectSocket above
   socket.on('ice_candidate',async data=>{
     if(!cd.pc||!data.candidate)return;
     if(!cd.pc.remoteDescription?.type){cd.pending.push(data.candidate);}
