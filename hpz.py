@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime, timezone, timedelta
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, session, redirect, send_from_directory
+from flask import Flask, render_template, request, jsonify, session, redirect, send_from_directory, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
@@ -13,13 +13,39 @@ from sqlalchemy import or_, and_
 # APP CONFIGURATION
 # ============================================================
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or os.urandom(32)
+# ── Stable SECRET_KEY: use env var, or generate once and persist to a file ──
+# os.urandom(32) on every restart invalidates all sessions — never use it in prod
+def _get_secret_key():
+    env_key = os.environ.get('SECRET_KEY')
+    if env_key:
+        return env_key
+    # Persist a generated key so restarts don't invalidate sessions
+    key_file = os.path.join(BASE_DIR, '.secret_key')
+    try:
+        if os.path.exists(key_file):
+            with open(key_file, 'r') as f:
+                k = f.read().strip()
+                if len(k) >= 32:
+                    return k
+        import secrets
+        k = secrets.token_hex(32)
+        with open(key_file, 'w') as f:
+            f.write(k)
+        return k
+    except Exception:
+        # Fallback: fixed key for single-process dev (still better than urandom)
+        return 'hpz-dev-key-change-in-production-via-SECRET_KEY-env-var'
+
+app.config['SECRET_KEY'] = _get_secret_key()
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_NAME'] = 'hpz_session'
 app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('RENDER'))
+app.config['SESSION_COOKIE_PATH'] = '/'
+# Never share session across subdomains
+app.config['SESSION_COOKIE_DOMAIN'] = None
 app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 # Database configuration
 database_url = os.environ.get('DATABASE_URL', '')
@@ -293,23 +319,30 @@ def server_error(e):
 # ============================================================
 # PAGE ROUTES
 # ============================================================
+def _no_cache(response):
+    """Prevent browser from caching authenticated pages."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/')
 def index():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         if user:
-            return redirect('/chat')
+            return _no_cache(redirect('/chat'))
         session.clear()
-    return render_template('login.html')
+    return _no_cache(make_response(render_template('login.html')))
 
 @app.route('/register')
 def register_page():
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         if user:
-            return redirect('/chat')
+            return _no_cache(redirect('/chat'))
         session.clear()
-    return render_template('register.html')
+    return _no_cache(make_response(render_template('register.html')))
 
 @app.route('/chat')
 @login_required
@@ -317,7 +350,8 @@ def chat():
     user = User.query.get(session['user_id'])
     if not user:
         return redirect('/')
-    return render_template('chat.html', user=user, user_id=user.id)
+    resp = make_response(render_template('chat.html', user=user, user_id=user.id))
+    return _no_cache(resp)
 
 @app.route('/logo')
 def serve_logo():
@@ -373,9 +407,14 @@ def logout():
         del online_users[user_id]
     session.clear()
     response = jsonify({'success': True, 'message': 'Logged out'})
+    # Delete cookie with all possible path/domain combos to ensure it's gone
+    response.delete_cookie('hpz_session', path='/')
+    response.delete_cookie('session', path='/')
     response.delete_cookie('hpz_session')
     response.delete_cookie('session')
-    return response
+    # Explicitly expire it
+    response.set_cookie('hpz_session', '', expires=0, max_age=0, path='/')
+    return _no_cache(response)
 
 # ============================================================
 # USER & PROFILE API
