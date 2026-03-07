@@ -366,9 +366,12 @@ def chat():
 
 @app.route('/logo')
 def serve_logo():
-    logo_path = os.path.join(BASE_DIR, 'static', 'logo.png')
-    if os.path.exists(logo_path):
-        return send_from_directory(os.path.join(BASE_DIR, 'static'), 'logo.png')
+    templates_dir = os.path.join(BASE_DIR, 'templates')
+    static_dir = os.path.join(BASE_DIR, 'static')
+    for d, fname in [(templates_dir, 'hepozy_logo.jpg'), (templates_dir, 'hepozy_logo.png'),
+                     (static_dir, 'hepozy_logo.jpg'), (static_dir, 'logo.png'), (static_dir, 'logo.jpg')]:
+        if os.path.exists(os.path.join(d, fname)):
+            return send_from_directory(d, fname)
     return '', 404
 
 # ============================================================
@@ -488,6 +491,21 @@ def update_profile():
         user.relationship_status = data['relationship_status']
     try:
         db.session.commit()
+        # Notify online friends of profile update so their friend list refreshes
+        uid = session['user_id']
+        friendships = Friendship.query.filter(
+            or_(Friendship.user1_id == uid, Friendship.user2_id == uid)
+        ).all()
+        for f in friendships:
+            fid = f.user2_id if f.user1_id == uid else f.user1_id
+            sid = get_sid(fid)
+            if sid:
+                socketio.emit('profile_updated', {
+                    'user_id': uid,
+                    'username': user.username,
+                    'avatar_url': user.avatar_url or '',
+                    'status': user.status or ''
+                }, room=sid)
         return jsonify({'success': True, 'user': user.to_dict()})
     except Exception as e:
         db.session.rollback()
@@ -509,6 +527,21 @@ def upload_avatar():
         user = User.query.get(session['user_id'])
         user.avatar_url = f'/static/uploads/{filename}'
         db.session.commit()
+        # Notify friends of avatar change
+        uid = session['user_id']
+        friendships = Friendship.query.filter(
+            or_(Friendship.user1_id == uid, Friendship.user2_id == uid)
+        ).all()
+        for f in friendships:
+            fid = f.user2_id if f.user1_id == uid else f.user1_id
+            sid = get_sid(fid)
+            if sid:
+                socketio.emit('profile_updated', {
+                    'user_id': uid,
+                    'username': user.username,
+                    'avatar_url': user.avatar_url or '',
+                    'status': user.status or ''
+                }, room=sid)
         return jsonify({'success': True, 'avatar_url': user.avatar_url})
     except Exception as e:
         db.session.rollback()
@@ -585,6 +618,16 @@ def send_friend_request():
         req = FriendRequest(from_user_id=from_user_id, to_user_id=to_user_id)
         db.session.add(req)
         db.session.commit()
+        # Notify recipient instantly via socket
+        sender = User.query.get(from_user_id)
+        recipient_sid = get_sid(to_user_id)
+        if recipient_sid and sender:
+            socketio.emit('friend_request_received', {
+                'request_id': req.id,
+                'from_user_id': from_user_id,
+                'username': sender.username,
+                'avatar_url': sender.avatar_url or ''
+            }, room=recipient_sid)
         return jsonify({'success': True, 'message': 'Friend request sent'})
     except Exception as e:
         db.session.rollback()
@@ -629,6 +672,14 @@ def reject_friend_request():
     try:
         req.status = 'rejected'
         db.session.commit()
+        # Notify sender their request was rejected
+        rejecter = User.query.get(user_id)
+        sender_sid = get_sid(req.from_user_id)
+        if sender_sid and rejecter:
+            socketio.emit('friend_request_rejected', {
+                'user_id': user_id,
+                'username': rejecter.username
+            }, room=sender_sid)
         return jsonify({'success': True, 'message': 'Friend request rejected'})
     except Exception as e:
         db.session.rollback()
@@ -848,6 +899,24 @@ def create_story():
             for allowed_user_id in custom_users:
                 db.session.add(StoryPrivacy(story_id=story.id, allowed_user_id=allowed_user_id))
         db.session.commit()
+        # Notify online friends instantly via socket
+        poster = User.query.get(user_id)
+        friendships = Friendship.query.filter(
+            or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
+        ).all()
+        notify_ids = [f.user2_id if f.user1_id == user_id else f.user1_id for f in friendships]
+        if privacy == 'custom':
+            notify_ids = [uid for uid in notify_ids if uid in [int(u) for u in custom_users]]
+        for fid in notify_ids:
+            sid = get_sid(fid)
+            if sid:
+                socketio.emit('new_story', {
+                    'user_id': user_id,
+                    'username': poster.username if poster else '',
+                    'story_id': story.id,
+                    'media_type': media_type,
+                    'content': content[:80] if content else ''
+                }, room=sid)
         return jsonify({'success': True, 'story_id': story.id, 'message': 'Story created'})
     except Exception as e:
         db.session.rollback()
@@ -928,10 +997,20 @@ def delete_story(story_id):
     if not story or story.user_id != user_id:
         return jsonify({'success': False, 'error': 'Story not found'}), 404
     try:
+        poster_id = story.user_id
         StoryView.query.filter_by(story_id=story_id).delete()
         StoryPrivacy.query.filter_by(story_id=story_id).delete()
         db.session.delete(story)
         db.session.commit()
+        # Notify online friends story was removed so they refresh story bar
+        friendships = Friendship.query.filter(
+            or_(Friendship.user1_id == poster_id, Friendship.user2_id == poster_id)
+        ).all()
+        for f in friendships:
+            fid = f.user2_id if f.user1_id == poster_id else f.user1_id
+            sid = get_sid(fid)
+            if sid:
+                socketio.emit('story_deleted', {'user_id': poster_id}, room=sid)
         return jsonify({'success': True, 'message': 'Story deleted'})
     except Exception as e:
         db.session.rollback()
