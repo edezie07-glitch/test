@@ -420,8 +420,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .mgrp.recv .vm-dur{color:var(--mute);}
 /* Recording pulse */
 .rec-btn{position:relative;}
-.rec-timer{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:#ef4444;white-space:nowrap;display:none;font-weight:600;}
-.rec-btn.recording .rec-timer{display:block;}
+
 .rec-btn.recording{background:rgba(239,68,68,.15)!important;color:#ef4444!important;}
 .rec-btn.recording::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #ef4444;animation:recpulse 1s infinite;}
 @keyframes recpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.15);}}
@@ -464,6 +463,35 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .swipe-reply-hint{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0;transition:opacity .2s;font-size:18px;pointer-events:none;}
 .mgrp.swiping .swipe-reply-hint{opacity:1;}
 
+
+/* ── VOICE PREVIEW MODAL ── */
+.vp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;}
+.vp-overlay.show{display:block;}
+.vp-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px 32px;z-index:1201;display:none;flex-direction:column;gap:16px;}
+.vp-modal.show{display:flex;}
+.vp-title{font-size:15px;font-weight:700;color:var(--txt);text-align:center;}
+.vp-waveform{display:flex;align-items:center;gap:12px;background:var(--inp);border-radius:14px;padding:14px;}
+.vp-playbtn{width:44px;height:44px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.wv-track{flex:1;height:36px;position:relative;cursor:pointer;border-radius:4px;overflow:hidden;}
+.wv-bars{display:flex;align-items:center;gap:2px;height:100%;padding:0 2px;}
+.wv-bar{width:3px;border-radius:2px;background:var(--bdr);flex-shrink:0;transition:background .2s;}
+.wv-progress-mask{position:absolute;top:0;left:0;height:100%;width:0%;overflow:hidden;pointer-events:none;}
+.wv-progress-bars{display:flex;align-items:center;gap:2px;height:100%;padding:0 2px;}
+.wv-progress-bar{width:3px;border-radius:2px;background:var(--brand);flex-shrink:0;}
+.vp-dur{font-size:13px;font-weight:600;color:var(--mute);min-width:36px;text-align:right;}
+.vp-actions{display:flex;gap:10px;}
+.vp-cancel{flex:1;padding:13px;border:none;border-radius:12px;background:var(--hov);color:var(--txt);font-size:14px;font-weight:600;cursor:pointer;}
+.vp-send{flex:1;padding:13px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+.vp-send:hover{background:var(--brand-dk);}
+/* Recording state indicator */
+.rec-btn.recording{background:rgba(239,68,68,.15)!important;color:#ef4444!important;position:relative;}
+.rec-btn.recording::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #ef4444;animation:recpulse 1s infinite;}
+@keyframes recpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.15);}}
+.rec-live{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.92);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;z-index:300;pointer-events:none;}
+.rec-live.show{display:flex;}
+.rec-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:recpulse 1s infinite;}
+
+@keyframes heartPop{0%{opacity:1;transform:translate(-50%,-50%) scale(0);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.4);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2);}}
 </style>
 </head>
 <body>
@@ -576,7 +604,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button class="chdr-btn" id="gsearchBtn" onclick="openGlobalSearch()" title="Search all chats">🔎</button>
       <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
       <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
-      <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
+      <!-- Search is accessible via ☰ menu -->
+      <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;visibility:hidden;position:absolute;">🔍</button>
       <button class="chdr-btn" id="pinnedBtn" onclick="showPinned()" title="Pinned messages" style="display:none;">📌</button>
       <!-- ADDED: conversation 3-line menu -->
       <button class="conv3-btn chdr-btn" id="conv3Btn" onclick="openConv3Menu(event)" title="More options" style="display:none;">☰</button>
@@ -732,7 +761,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button onclick="takePhoto();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📷 Take Photo</button>
       <button onclick="sendMultipleImages();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📂 Multiple Photos</button>
     </div>
-    <button class="isb rec-btn" id="recBtn" onmousedown="startRecording(event)" ontouchstart="startRecording(event)" onmouseup="stopRecording()" ontouchend="stopRecording()" title="Hold to record voice">🎙️<span class="rec-timer" id="recTimerEl">0:00</span></button>
+    <button class="isb rec-btn" id="recBtn" onclick="toggleRecording()" title="Record voice message">🎙️</button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
       oninput="autoR(this);doTyping();"
@@ -1209,9 +1238,9 @@ function appendMsg(msg,scroll=true){
   inner+=body;
   inner+=`<div class="msg-foot"><span class="mts">${fmtTime(msg.created_at)}</span>${receiptDot}</div>`;
   if(isSent&&!msg.is_deleted){
-    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}">↪️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button></div>`;
+    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}" title="Reply">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}" title="Forward">↪️</button><button class="msg-act react-trigger" data-action="react" data-msg-id="${msg.id}" title="Add reaction">😊</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}" title="Edit">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}" title="Pin">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}" title="Delete">🗑️</button></div>`;
   } else if(!isSent&&!msg.is_deleted){
-    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}">↪️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button></div>`;
+    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}" title="Reply">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}" title="Forward">↪️</button><button class="msg-act react-trigger" data-action="react" data-msg-id="${msg.id}" title="Add reaction">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}" title="Pin">📌</button></div>`;
   }
   inner+=`</div>`;
   if(msg.reactions&&Object.keys(msg.reactions).length>0){
@@ -1787,11 +1816,7 @@ async function showPinned(){
   if(!currentChatId)return;
   try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();if(d.success&&d.messages.length>0){const list=d.messages.map(m=>`• ${m.content.substring(0,60)}`).join('\n');alert(`Pinned Messages:\n\n${list}`);}else toast('No pinned messages','info');}catch(e){toast('Failed','err');}
 }
-function showReactPicker(id,event){
-  event.stopPropagation();const picker=document.createElement('div');picker.className='react-picker show';picker.style.position='fixed';picker.style.left=`${event.clientX}px`;picker.style.top=`${event.clientY-100}px`;
-  ['❤️','😂','😮','😢','👍','🎉'].forEach(emoji=>{const btn=document.createElement('div');btn.className='react-emoji';btn.textContent=emoji;btn.onclick=()=>{reactTo(id,emoji);picker.remove();};picker.appendChild(btn);});
-  document.body.appendChild(picker);setTimeout(()=>picker.remove(),5000);
-}
+// showReactPicker: see full implementation in batch1 section
 async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
 function showCtxMenu(event,id,isSent){event.preventDefault();event.stopPropagation();contextMsg={id,isSent};const menu=document.getElementById('ctxMenu');menu.style.left=`${event.clientX}px`;menu.style.top=`${event.clientY}px`;menu.classList.add('show');}
 function hideCtxMenu(e){const menu=document.getElementById('ctxMenu');if(!e||!e.target.closest('#ctxMenu'))menu.classList.remove('show');}
@@ -1827,11 +1852,30 @@ document.addEventListener('click',(e)=>{
   }
 });
 document.addEventListener('click',(e)=>{const reaction=e.target.closest('.reaction');if(!reaction)return;const msgEl=reaction.closest('[data-msg-id]');if(!msgEl)return;const msgId=parseInt(msgEl.dataset.msgId);const emoji=reaction.querySelector('span')?.textContent;if(emoji)reactTo(msgId,emoji);});
-document.getElementById('marea').addEventListener('touchstart',(e)=>{
-  const bub=e.target.closest('.bub');if(!bub)return;const target=bub.closest('[data-msg-id]');
-  const timer=setTimeout(()=>{if(target){const msgId=parseInt(target.dataset.msgId);const from=target.querySelector('.mfrom')?.textContent||ME_NAME;const content=bub.textContent.trim().split('\n')[0];setReply(msgId,from,content.substring(0,50));if(navigator.vibrate)navigator.vibrate(50);}},500);
-  const clear=()=>clearTimeout(timer);document.addEventListener('touchend',clear,{once:true});document.addEventListener('touchmove',clear,{once:true});
-});
+// Double-tap a message to react with ❤️
+(function(){
+  let lastTap={id:null,time:0};
+  document.getElementById('marea').addEventListener('click',e=>{
+    const bub=e.target.closest('.bub');if(!bub)return;
+    const msgEl=bub.closest('[data-msg-id]');if(!msgEl)return;
+    const msgId=parseInt(msgEl.dataset.msgId);
+    const now=Date.now();
+    if(lastTap.id===msgId&&now-lastTap.time<350){
+      // Double tap — react ❤️
+      reactTo(msgId,'❤️');
+      // Flash heart animation
+      const heart=document.createElement('div');
+      heart.textContent='❤️';
+      heart.style.cssText='position:absolute;font-size:36px;pointer-events:none;z-index:999;animation:heartPop .6s ease forwards;left:'+e.offsetX+'px;top:'+e.offsetY+'px;transform:translate(-50%,-50%)';
+      bub.style.position='relative';
+      bub.appendChild(heart);
+      setTimeout(()=>heart.remove(),650);
+      lastTap={id:null,time:0};
+    } else {
+      lastTap={id:msgId,time:now};
+    }
+  });
+})();
 function handleSearch(q){
   clearTimeout(searchTimer);
   const pDesktop=document.getElementById('srPanel');
@@ -2007,7 +2051,7 @@ function openChat(fid,fname,chatId){
   const isOnline=onlineUsers.has(fid);
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
   document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
-  ['videoCallBtn','voiceCallBtn','searchBtn','pinnedBtn','conv3Btn'].forEach(id=>{
+  ['videoCallBtn','voiceCallBtn','pinnedBtn','conv3Btn'].forEach(id=>{
     document.getElementById(id).style.display='block';
   });
   document.querySelector('.iarea').style.display='flex';
@@ -2236,9 +2280,6 @@ function crowCtxConvDo(action){
   else if(action==='search'){toggleSearch();}
   else if(action==='pinned-msgs'){showPinned();}
   else if(action==='pin-chat'){if(currentChatId)togglePinChat(currentChatId);}
-  else if(action==='pinchat'){
-    if(currentChatId)togglePinChat(currentChatId);
-  }
   else if(action==='archive'){
     if(!currentFriendId)return;
     if(archivedChats.has(currentFriendId)){archivedChats.delete(currentFriendId);toast('Chat unarchived','ok');}
@@ -2387,61 +2428,148 @@ setTimeout(loadStories,1000);
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — VOICE MESSAGES
 // ═══════════════════════════════════════════════════════════
+// ── Voice recording state ──
 let mediaRecorder=null, recChunks=[], recStartTime=null, recTimer=null;
+let recStream=null, voiceBlob=null, voicePreviewAudio=null, vpDuration=0;
+let isRecording=false;
 
-function startRecording(e){
-  e.preventDefault();
+function toggleRecording(){
   if(!currentChatId){toast('Open a chat first','err');return;}
-  if(mediaRecorder&&mediaRecorder.state==='recording')return;
+  if(isRecording) stopRecording();
+  else startRecording();
+}
+
+function startRecording(){
+  if(isRecording)return;
+  if(!navigator.mediaDevices?.getUserMedia){toast('Microphone not supported','err');return;}
   navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-    recChunks=[];
-    mediaRecorder=new MediaRecorder(stream,{mimeType:MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/ogg'});
-    mediaRecorder.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    recStream=stream; recChunks=[]; isRecording=true;
+    const mimeType=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':
+                   MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/ogg';
+    mediaRecorder=new MediaRecorder(stream,{mimeType});
+    mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recChunks.push(e.data);};
     mediaRecorder.onstop=()=>{
       stream.getTracks().forEach(t=>t.stop());
-      const blob=new Blob(recChunks,{type:mediaRecorder.mimeType||'audio/webm'});
-      sendVoiceMessage(blob);
+      isRecording=false;
+      voiceBlob=new Blob(recChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+      vpDuration=Math.round((Date.now()-recStartTime)/1000);
+      if(voiceBlob.size<1000){toast('Recording too short','info');resetRecBtn();return;}
+      openVoicePreview();
     };
-    mediaRecorder.start();
+    mediaRecorder.start(100); // collect every 100ms
     recStartTime=Date.now();
-    const timerEl=document.getElementById('recTimerEl');
+    // UI: show recording state
+    const btn=document.getElementById('recBtn');
+    btn.classList.add('recording');
+    btn.textContent='⏹';
+    btn.title='Tap to stop recording';
+    // Live indicator
+    const live=document.getElementById('recLive');
+    live.classList.add('show');
     clearInterval(recTimer);
     recTimer=setInterval(()=>{
       const s=Math.floor((Date.now()-recStartTime)/1000);
-      if(timerEl)timerEl.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-    },1000);
-    const btn=document.getElementById('recBtn');
-    btn.classList.add('recording');
-    btn.title='Release to send';
-    // Update duration display
-    recTimer=setInterval(()=>{
-      const s=Math.floor((Date.now()-recStartTime)/1000);
-      btn.textContent=s+'s';
-    },1000);
+      const el=document.getElementById('recLiveTimer');
+      if(el)el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    },500);
   }).catch(err=>{
+    isRecording=false;
     toast('Microphone access denied','err');
     console.error(err);
   });
-  // Stop on mouseup / touchend globally
-  const stop=()=>stopRecording();
-  document.addEventListener('mouseup',stop,{once:true});
-  document.addEventListener('touchend',stop,{once:true});
 }
 
 function stopRecording(){
   clearInterval(recTimer);
-  const btn=document.getElementById('recBtn');
-  btn.classList.remove('recording');
-  btn.innerHTML='🎙️<span class="rec-timer" id="recTimerEl">0:00</span>';
-  btn.title='Hold to record voice';
-  if(mediaRecorder&&mediaRecorder.state==='recording'){
-    mediaRecorder.stop();
+  const live=document.getElementById('recLive');
+  live.classList.remove('show');
+  if(mediaRecorder&&mediaRecorder.state!=='inactive'){
+    mediaRecorder.stop(); // triggers onstop → openVoicePreview
+  } else {
+    isRecording=false;
+    resetRecBtn();
   }
 }
 
-async function sendVoiceMessage(blob){
-  if(blob.size<500){toast('Recording too short','info');return;}
-  const dur=Math.round((Date.now()-recStartTime)/1000);
+function resetRecBtn(){
+  const btn=document.getElementById('recBtn');
+  btn.classList.remove('recording');
+  btn.textContent='🎙️';
+  btn.title='Record voice message';
+  isRecording=false;
+}
+
+// ── Voice Preview Modal ──
+function openVoicePreview(){
+  resetRecBtn();
+  if(!voiceBlob)return;
+  // Build waveform bars
+  const BAR_COUNT=36;
+  const bars=Array.from({length:BAR_COUNT},(_,i)=>{
+    const h=25+(Math.sin(i*0.7)*15+Math.cos(i*1.3)*10+30); // pseudo-random look
+    return `<div class="wv-bar" style="height:${Math.round(h)}%"></div>`;
+  }).join('');
+  const pbars=Array.from({length:BAR_COUNT},(_,i)=>{
+    const h=25+(Math.sin(i*0.7)*15+Math.cos(i*1.3)*10+30);
+    return `<div class="wv-progress-bar" style="height:${Math.round(h)}%"></div>`;
+  }).join('');
+  document.getElementById('vpBars').innerHTML=bars;
+  document.getElementById('vpProgressBars').innerHTML=pbars;
+  document.getElementById('vpProgressMask').style.width='0%';
+  // Duration label
+  const fmtDur=s=>s>=60?Math.floor(s/60)+':'+String(s%60).padStart(2,'0'):s+'s';
+  document.getElementById('vpDur').textContent=fmtDur(vpDuration);
+  // Create preview audio
+  if(voicePreviewAudio){voicePreviewAudio.pause();voicePreviewAudio=null;}
+  const url=URL.createObjectURL(voiceBlob);
+  voicePreviewAudio=new Audio(url);
+  voicePreviewAudio.addEventListener('timeupdate',()=>{
+    const pct=(voicePreviewAudio.currentTime/(voicePreviewAudio.duration||1))*100;
+    document.getElementById('vpProgressMask').style.width=pct+'%';
+    const rem=Math.max(0,Math.round((voicePreviewAudio.duration||0)-voicePreviewAudio.currentTime));
+    document.getElementById('vpDur').textContent=fmtDur(rem||vpDuration);
+  });
+  voicePreviewAudio.addEventListener('ended',()=>{
+    document.getElementById('vpPlayBtn').textContent='▶';
+    document.getElementById('vpProgressMask').style.width='0%';
+    document.getElementById('vpDur').textContent=fmtDur(vpDuration);
+  });
+  document.getElementById('vpOverlay').classList.add('show');
+  document.getElementById('vpModal').classList.add('show');
+}
+
+function toggleVoicePreviewPlay(){
+  if(!voicePreviewAudio)return;
+  const btn=document.getElementById('vpPlayBtn');
+  if(voicePreviewAudio.paused){voicePreviewAudio.play();btn.textContent='⏸';}
+  else{voicePreviewAudio.pause();btn.textContent='▶';}
+}
+
+function seekVoicePreview(e){
+  if(!voicePreviewAudio)return;
+  const track=document.getElementById('vpTrack');
+  const rect=track.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  voicePreviewAudio.currentTime=pct*(voicePreviewAudio.duration||0);
+}
+
+function cancelVoicePreview(){
+  if(voicePreviewAudio){voicePreviewAudio.pause();voicePreviewAudio=null;}
+  voiceBlob=null; vpDuration=0;
+  document.getElementById('vpOverlay').classList.remove('show');
+  document.getElementById('vpModal').classList.remove('show');
+}
+
+function reRecord(){
+  cancelVoicePreview();
+  startRecording();
+}
+
+async function sendVoicePreview(){
+  if(!voiceBlob||!currentChatId){toast('Nothing to send','err');return;}
+  const dur=vpDuration;
+  const blob=voiceBlob;
+  cancelVoicePreview();
   toast('Sending voice message…','info');
   const fd=new FormData();
   fd.append('audio',blob,'voice.webm');
@@ -2449,12 +2577,7 @@ async function sendVoiceMessage(blob){
     const r=await fetch('/api/upload/audio',{method:'POST',body:fd});
     const d=await r.json();
     if(d.success){
-      socket.emit('send_message',{
-        chat_id:currentChatId,
-        content:d.url,
-        message_type:'audio',
-        duration:dur
-      });
+      socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'audio',duration:dur});
     }else toast(d.error||'Upload failed','err');
   }catch(e){toast('Upload failed','err');}
 }
@@ -2643,22 +2766,33 @@ setTimeout(loadPinnedChats,500);
 const REACTION_EMOJIS=[
   '❤️','😂','😮','😢','👍','🎉','🔥','👏','😍','🙏',
   '😭','🥹','😅','🤣','💀','🫶','💯','✨','🤔','😤',
-  '😡','🥰','😎','🤩','🤮','🫠','😴','🥳','👀','💪'
+  '😡','🥰','😎','🤩','💪','🥳','👀','😴','🫠','🤮'
 ];
+const QUICK_REACTS=['❤️','😂','😮','😢','👍','🎉'];
 
 function showReactPicker(id, event){
   event.stopPropagation();
-  // Remove any existing picker
   document.querySelectorAll('.react-full-picker').forEach(p=>p.remove());
   const picker=document.createElement('div');
   picker.className='react-full-picker';
-  picker.innerHTML=`<div class="grid">${REACTION_EMOJIS.map(e=>`<div class="re" onclick="reactTo(${id},'${e}');this.closest('.react-full-picker').remove();">${e}</div>`).join('')}</div>`;
-  // Position near the event
-  const x=Math.min(event.clientX-130,window.innerWidth-270);
-  const y=Math.max(event.clientY-180,10);
+  picker.innerHTML=`
+    <div style="display:flex;gap:4px;justify-content:center;margin-bottom:8px;border-bottom:1px solid var(--bdr);padding-bottom:8px;">
+      ${QUICK_REACTS.map(e=>`<div class="re" style="font-size:26px;" onclick="reactTo(${id},'${e}');this.closest('.react-full-picker').remove();">${e}</div>`).join('')}
+    </div>
+    <div class="grid">${REACTION_EMOJIS.map(e=>`<div class="re" onclick="reactTo(${id},'${e}');this.closest('.react-full-picker').remove();">${e}</div>`).join('')}</div>
+  `;
+  // Smart position — above the message, centered
+  const msgEl=document.querySelector(`[data-msg-id="${id}"]`);
+  let x=event.clientX-130, y=event.clientY-240;
+  if(msgEl){
+    const r=msgEl.getBoundingClientRect();
+    x=Math.max(4, Math.min(r.left, window.innerWidth-274));
+    y=Math.max(4, r.top-240);
+  }
   picker.style.left=x+'px';
   picker.style.top=y+'px';
   document.body.appendChild(picker);
+  requestAnimationFrame(()=>picker.style.opacity='1');
   setTimeout(()=>document.addEventListener('click',()=>picker.remove(),{once:true}),50);
 }
 
@@ -2704,6 +2838,29 @@ function showReactPicker(id, event){
 })();
 
 </script>
+<!-- VOICE PREVIEW MODAL -->
+<div class="vp-overlay" id="vpOverlay" onclick="cancelVoicePreview()"></div>
+<div class="vp-modal" id="vpModal">
+  <div class="vp-title">🎙️ Voice Message</div>
+  <div class="vp-waveform">
+    <button class="vp-playbtn" id="vpPlayBtn" onclick="toggleVoicePreviewPlay()">▶</button>
+    <div class="wv-track" id="vpTrack" onclick="seekVoicePreview(event)">
+      <div class="wv-bars" id="vpBars"></div>
+      <div class="wv-progress-mask" id="vpProgressMask">
+        <div class="wv-progress-bars" id="vpProgressBars"></div>
+      </div>
+    </div>
+    <span class="vp-dur" id="vpDur">0:00</span>
+  </div>
+  <div class="vp-actions">
+    <button class="vp-cancel" onclick="cancelVoicePreview()">🗑️ Discard</button>
+    <button class="vp-cancel" onclick="reRecord()">🔄 Re-record</button>
+    <button class="vp-send" onclick="sendVoicePreview()">Send 📤</button>
+  </div>
+</div>
+<!-- RECORDING LIVE INDICATOR -->
+<div class="rec-live" id="recLive"><div class="rec-dot"></div><span id="recLiveTimer">0:00</span> — Tap 🎙️ to stop</div>
+
 <!-- FORWARD MODAL -->
 <div class="fwd-modal-ov" id="fwdOv" onclick="closeFwdModal()"></div>
 <div class="fwd-modal" id="fwdModal">
