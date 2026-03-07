@@ -402,6 +402,68 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 @media(max-width:720px){
   .iarea{padding-bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 16px));}
 }
+
+/* ── VOICE MESSAGE ── */
+.voice-msg{display:flex;align-items:center;gap:10px;min-width:200px;max-width:280px;}
+.vm-play{width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.vm-play:hover{background:var(--brand-dk);}
+.vm-bar{flex:1;height:4px;background:rgba(255,255,255,.25);border-radius:4px;position:relative;cursor:pointer;overflow:hidden;}
+.vm-bar-fill{height:100%;background:rgba(255,255,255,.8);border-radius:4px;width:0%;transition:width .1s linear;}
+.vm-dur{font-size:11px;color:rgba(255,255,255,.7);white-space:nowrap;min-width:32px;font-variant-numeric:tabular-nums;}
+/* Waveform track */
+.wv-track{flex:1;height:36px;position:relative;cursor:pointer;display:flex;align-items:center;}
+.wv-bars{display:flex;align-items:center;gap:2px;width:100%;height:28px;position:relative;z-index:1;}
+.wv-bar{flex:1;background:rgba(255,255,255,.35);border-radius:2px;min-height:3px;transition:background .15s;}
+.wv-progress{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.22);pointer-events:none;z-index:0;transition:width .1s linear;}
+.mgrp.recv .wv-bar{background:rgba(124,106,255,.3);}
+.mgrp.recv .wv-progress{background:rgba(124,106,255,.12);}
+.mgrp.recv .vm-dur{color:var(--mute);}
+/* Recording pulse */
+.rec-btn{position:relative;}
+.rec-timer{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:#ef4444;white-space:nowrap;display:none;font-weight:600;}
+.rec-btn.recording .rec-timer{display:block;}
+.rec-btn.recording{background:rgba(239,68,68,.15)!important;color:#ef4444!important;}
+.rec-btn.recording::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #ef4444;animation:recpulse 1s infinite;}
+@keyframes recpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.15);}}
+/* ── FORWARD MODAL ── */
+.fwd-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;}
+.fwd-modal-ov.show{display:block;}
+.fwd-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:20px;z-index:1201;max-height:70vh;display:none;flex-direction:column;}
+.fwd-modal.show{display:flex;}
+.fwd-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.fwd-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.fwd-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s;}
+.fwd-row:hover{background:var(--hov);}
+.fwd-row.selected{background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.3);}
+.fwd-row .av{flex-shrink:0;}
+.fwd-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--bdr);margin-left:auto;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;}
+.fwd-row.selected .fwd-chk{background:var(--brand);border-color:var(--brand);color:#fff;}
+/* ── FORWARD LABEL on message ── */
+.fwd-label{font-size:10px;color:var(--mute);margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+/* ── GLOBAL SEARCH ── */
+.gsearch-modal{position:fixed;inset:0;z-index:1200;background:var(--bg);display:none;flex-direction:column;}
+.gsearch-modal.show{display:flex;}
+.gsearch-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);}
+.gsearch-inp{flex:1;background:var(--inp);border:1px solid var(--ibdr);border-radius:20px;padding:10px 16px;color:var(--txt);font-size:14px;outline:none;}
+.gsearch-body{flex:1;overflow-y:auto;padding:12px;}
+.gs-result{padding:12px 14px;border-radius:12px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:6px;}
+.gs-result:hover{background:var(--hov);border-color:var(--bdr);}
+.gs-from{font-size:11px;font-weight:700;color:var(--brand);margin-bottom:3px;}
+.gs-chat{font-size:10px;color:var(--mute);margin-bottom:4px;}
+.gs-content{font-size:13px;color:var(--txt);}
+.gs-time{font-size:10px;color:var(--mute);margin-top:3px;}
+/* ── PINNED CHATS ── */
+.crow.pinned-chat{border-left:3px solid var(--brand);}
+.crow.pinned-chat .cuname::before{content:'📌 ';font-size:10px;}
+/* ── ENHANCED REACTIONS ── */
+.react-full-picker{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:500;width:260px;}
+.react-full-picker .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;}
+.react-full-picker .re{font-size:22px;cursor:pointer;text-align:center;padding:6px;border-radius:8px;transition:background .12s,transform .12s;}
+.react-full-picker .re:hover{background:var(--hov);transform:scale(1.2);}
+/* ── SWIPE TO REPLY indicator ── */
+.swipe-reply-hint{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0;transition:opacity .2s;font-size:18px;pointer-events:none;}
+.mgrp.swiping .swipe-reply-hint{opacity:1;}
+
 </style>
 </head>
 <body>
@@ -511,6 +573,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="chdr-sub" id="chsub">Select a conversation</div>
     </div>
     <div class="chdr-actions">
+      <button class="chdr-btn" id="gsearchBtn" onclick="openGlobalSearch()" title="Search all chats">🔎</button>
       <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
       <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
       <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
@@ -669,6 +732,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button onclick="takePhoto();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📷 Take Photo</button>
       <button onclick="sendMultipleImages();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📂 Multiple Photos</button>
     </div>
+    <button class="isb rec-btn" id="recBtn" onmousedown="startRecording(event)" ontouchstart="startRecording(event)" onmouseup="stopRecording()" ontouchend="stopRecording()" title="Hold to record voice">🎙️<span class="rec-timer" id="recTimerEl">0:00</span></button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
       oninput="autoR(this);doTyping();"
@@ -1109,12 +1173,14 @@ function appendMsg(msg,scroll=true){
   const g=document.createElement('div');
   g.className=`mgrp ${isSent?'sent':'recv'}`;
   g.setAttribute('data-msg-id',msg.id);
-  let inner='';
+  let inner='<span class="swipe-reply-hint">↩</span>';
   if(!isSent)inner+=`<div class="mfrom">${esc(msg.sender_username)}</div>`;
   let body='';
   if(msg.reply_to){
     body+=`<div class="reply-prev"><div class="reply-prev-from">${esc(msg.reply_to.sender_username)}</div><div class="reply-prev-text">${esc(msg.reply_to.content)}</div></div>`;
   }
+  // Forwarded label
+  if(msg.is_forwarded){body+='<div class="fwd-label">↪ Forwarded</div>';}
   if(msg.message_type==='image'){
     let urls=[];
     try{urls=JSON.parse(msg.content);if(!Array.isArray(urls))urls=[];}catch(e){}
@@ -1126,6 +1192,9 @@ function appendMsg(msg,scroll=true){
       const thumbs=urls.map((u,i)=>`<img src="${u}" alt="photo ${i+1}" onclick="openImgViewer('${u}','')" loading="lazy">`).join('');
       body+=`<div class="photo-strip">${thumbs}</div>${cap}`;
     }
+  }
+  else if(msg.message_type==='audio'){
+    body+=renderVoiceMsg(msg,isSent);
   }
   else if(!msg.is_deleted){body+=esc(msg.content).replace(/\n/g,'<br>');}
   else{body+='<em style="opacity:.5">[Message deleted]</em>';}
@@ -1140,9 +1209,9 @@ function appendMsg(msg,scroll=true){
   inner+=body;
   inner+=`<div class="msg-foot"><span class="mts">${fmtTime(msg.created_at)}</span>${receiptDot}</div>`;
   if(isSent&&!msg.is_deleted){
-    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button></div>`;
+    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}">↪️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}">🗑️</button></div>`;
   } else if(!isSent&&!msg.is_deleted){
-    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button></div>`;
+    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}">↪️</button><button class="msg-act" data-action="react" data-msg-id="${msg.id}">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}">📌</button></div>`;
   }
   inner+=`</div>`;
   if(msg.reactions&&Object.keys(msg.reactions).length>0){
@@ -1750,6 +1819,7 @@ document.addEventListener('click',(e)=>{
   const msgFrom=msgEl.querySelector('.mfrom')?.textContent||ME_NAME;
   switch(action){
     case 'reply':setReply(msgId,msgFrom,msgContent.substring(0,50));break;
+    case 'forward':openForward(msgId);break;
     case 'edit':startEdit(msgId,msgContent.split('\n')[0]);break;
     case 'pin':togglePin(msgId);break;
     case 'delete':confirmDelete(msgId);break;
@@ -1804,15 +1874,34 @@ function saveArchive(){localStorage.setItem('hpz_archive',JSON.stringify([...arc
 
 // ── renderFriends: desktop sidebar + mobile chat list ──
 function renderFriends(){
-  // Desktop sidebar
+  // Desktop sidebar — pinned chats at top
   const list=document.getElementById('clist');
   const empty=document.getElementById('cempty');
   list.querySelectorAll('.crow').forEach(e=>e.remove());
-  const visibleFriends=friends.filter(f=>!archivedChats.has(f.id));
+  let visibleFriends=friends.filter(f=>!archivedChats.has(f.id));
+  // Sort: pinned first, then by last message time
+  visibleFriends.sort((a,b)=>{
+    const aCid=a.chat_id||[Math.min(a.id,ME_ID),Math.max(a.id,ME_ID)].join('-');
+    const bCid=b.chat_id||[Math.min(b.id,ME_ID),Math.max(b.id,ME_ID)].join('-');
+    const aPin=pinnedChatIds&&pinnedChatIds.has(aCid)?1:0;
+    const bPin=pinnedChatIds&&pinnedChatIds.has(bCid)?1:0;
+    if(bPin!==aPin)return bPin-aPin;
+    return 0; // keep server order otherwise
+  });
+  // Sort: pinned first
+  visibleFriends.sort((a,b)=>{
+    const ap=pinnedChatIds.has(a.chat_id||'')?0:1;
+    const bp=pinnedChatIds.has(b.chat_id||'')?0:1;
+    return ap-bp;
+  });
   if(!visibleFriends.length){empty.style.display='';}
   else{
     empty.style.display='none';
-    visibleFriends.forEach(f=>list.appendChild(buildCrowEl(f)));
+    visibleFriends.forEach(f=>{
+      const el=buildCrowEl(f);
+      if(pinnedChatIds.has(f.chat_id||''))el.classList.add('pinned-chat');
+      list.appendChild(el);
+    });
   }
   renderMobileChatList();
 }
@@ -1822,7 +1911,8 @@ function buildCrowEl(f){
   const isOnline=onlineUsers.has(f.id);
   const uCount=(unreadCounts[f.id]||0)+(f.unread_count||0);
   const el=document.createElement('div');
-  el.className=`crow${currentChatId===f.chat_id?' active':''}`;
+  const isPin=pinnedChatIds&&pinnedChatIds.has(f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-'));
+  el.className=`crow${currentChatId===f.chat_id?' active':''}${isPin?' pinned-chat':''}`;
   el.setAttribute('data-fid',f.id);
   el.innerHTML=`
     <div class="av" style="position:relative;">
@@ -2078,8 +2168,11 @@ function openCrowCtxAt(x,y,fid){
   const menu=document.getElementById('crowCtx');
   const f=friends.find(fr=>fr.id===fid);
   const isArchived=f&&archivedChats.has(fid);
+  const cidRow2=f&&f.chat_id?f.chat_id:[Math.min(fid,ME_ID),Math.max(fid,ME_ID)].join('-');
+  const isPinnedRow=pinnedChatIds&&pinnedChatIds.has(cidRow2);
   menu.innerHTML=`
     <div class="crow-ctx-item" onclick="crowCtxDo('open')">💬 Open Chat</div>
+    <div class="crow-ctx-item" onclick="crowCtxDo('pin-chat')">${isPinnedRow?'📌 Unpin Chat':'📌 Pin Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxDo('archive')">${isArchived?'📤 Unarchive':'🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxDo('profile')">👤 View Profile</div>
@@ -2103,6 +2196,10 @@ function crowCtxDo(action){
     // If currently viewing this archived chat, go back to list on mobile
     if(window.innerWidth<=720&&currentChatId===f.chat_id&&archivedChats.has(fid))goBackToList();
   }
+  else if(action==='pin-chat'){
+    const cid=f.chat_id||[Math.min(fid,ME_ID),Math.max(fid,ME_ID)].join('-');
+    togglePinChat(cid);
+  }
   else if(action==='profile'){currentFriendId=fid;showFriendProfile();}
 }
 
@@ -2113,13 +2210,15 @@ function openConv3Menu(e){
   if(!currentFriendId)return;
   const f=friends.find(x=>x.id===currentFriendId);
   const isArchived=f&&archivedChats.has(currentFriendId);
+  const isPinned=currentChatId&&pinnedChatIds.has(currentChatId);
   const btn=document.getElementById('conv3Btn');
   const rect=btn.getBoundingClientRect();
   const menu=document.getElementById('crowCtx');
   menu.innerHTML=`
     <div class="crow-ctx-item" onclick="crowCtxConvDo('profile')">👤 View Profile</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned')">📌 Pinned Messages</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('pin-chat')">${isPinned?'📌 Unpin Chat':'📌 Pin Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
   `;
@@ -2135,7 +2234,11 @@ function crowCtxConvDo(action){
   closeCrowCtx();
   if(action==='profile'){showFriendProfile();}
   else if(action==='search'){toggleSearch();}
-  else if(action==='pinned'){showPinned();}
+  else if(action==='pinned-msgs'){showPinned();}
+  else if(action==='pin-chat'){if(currentChatId)togglePinChat(currentChatId);}
+  else if(action==='pinchat'){
+    if(currentChatId)togglePinChat(currentChatId);
+  }
   else if(action==='archive'){
     if(!currentFriendId)return;
     if(archivedChats.has(currentFriendId)){archivedChats.delete(currentFriendId);toast('Chat unarchived','ok');}
@@ -2280,6 +2383,345 @@ async function createStory(){
   try{const r=await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,media_url:mediaUrl,media_type:type==='image'?'image':'text',privacy,custom_users:customUsers})});const d=await r.json();if(d.success){toast('✅ Story posted!','ok');closeCreateStory();loadStories();}else{toast(d.error||'Failed to post story','err');}}catch(e){toast('Failed to post story','err');}
 }
 setTimeout(loadStories,1000);
-</script>
+
+// ═══════════════════════════════════════════════════════════
+// BATCH 1 — VOICE MESSAGES
+// ═══════════════════════════════════════════════════════════
+let mediaRecorder=null, recChunks=[], recStartTime=null, recTimer=null;
+
+function startRecording(e){
+  e.preventDefault();
+  if(!currentChatId){toast('Open a chat first','err');return;}
+  if(mediaRecorder&&mediaRecorder.state==='recording')return;
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    recChunks=[];
+    mediaRecorder=new MediaRecorder(stream,{mimeType:MediaRecorder.isTypeSupported('audio/webm')?'audio/webm':'audio/ogg'});
+    mediaRecorder.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    mediaRecorder.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(recChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+      sendVoiceMessage(blob);
+    };
+    mediaRecorder.start();
+    recStartTime=Date.now();
+    const timerEl=document.getElementById('recTimerEl');
+    clearInterval(recTimer);
+    recTimer=setInterval(()=>{
+      const s=Math.floor((Date.now()-recStartTime)/1000);
+      if(timerEl)timerEl.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    },1000);
+    const btn=document.getElementById('recBtn');
+    btn.classList.add('recording');
+    btn.title='Release to send';
+    // Update duration display
+    recTimer=setInterval(()=>{
+      const s=Math.floor((Date.now()-recStartTime)/1000);
+      btn.textContent=s+'s';
+    },1000);
+  }).catch(err=>{
+    toast('Microphone access denied','err');
+    console.error(err);
+  });
+  // Stop on mouseup / touchend globally
+  const stop=()=>stopRecording();
+  document.addEventListener('mouseup',stop,{once:true});
+  document.addEventListener('touchend',stop,{once:true});
+}
+
+function stopRecording(){
+  clearInterval(recTimer);
+  const btn=document.getElementById('recBtn');
+  btn.classList.remove('recording');
+  btn.innerHTML='🎙️<span class="rec-timer" id="recTimerEl">0:00</span>';
+  btn.title='Hold to record voice';
+  if(mediaRecorder&&mediaRecorder.state==='recording'){
+    mediaRecorder.stop();
+  }
+}
+
+async function sendVoiceMessage(blob){
+  if(blob.size<500){toast('Recording too short','info');return;}
+  const dur=Math.round((Date.now()-recStartTime)/1000);
+  toast('Sending voice message…','info');
+  const fd=new FormData();
+  fd.append('audio',blob,'voice.webm');
+  try{
+    const r=await fetch('/api/upload/audio',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.success){
+      socket.emit('send_message',{
+        chat_id:currentChatId,
+        content:d.url,
+        message_type:'audio',
+        duration:dur
+      });
+    }else toast(d.error||'Upload failed','err');
+  }catch(e){toast('Upload failed','err');}
+}
+
+function renderVoiceMsg(msg,isSent){
+  const dur=msg.duration||0;
+  const fmtd=dur>=60?Math.floor(dur/60)+'m '+String(dur%60).padStart(2,'0')+'s':dur+'s';
+  // Generate pseudo-random waveform bars seeded by msg id for consistency
+  const seed=msg.id||1;
+  const bars=Array.from({length:28},(_,i)=>{
+    const h=20+((seed*7+i*13)%41); // deterministic height 20-60%
+    return `<div class="wv-bar" style="height:${h}%"></div>`;
+  }).join('');
+  return `<div class="voice-msg" data-url="${msg.content}" data-dur="${dur}">
+    <button class="vm-play" onclick="playVoice(this,'${msg.content}')" title="Play">▶</button>
+    <div class="wv-track" onclick="seekVoice(event,this)">
+      <div class="wv-bars">${bars}</div>
+      <div class="wv-progress" style="width:0%"></div>
+    </div>
+    <span class="vm-dur" data-url="${msg.content}">${fmtd}</span>
+  </div>`;
+}
+
+const voicePlayers={};
+function playVoice(btn,url){
+  // Stop any currently playing
+  Object.values(voicePlayers).forEach((a,u)=>{
+    if(!a.paused){a.pause();}
+  });
+  document.querySelectorAll('.vm-play').forEach(b=>{b.textContent='▶';});
+  if(!voicePlayers[url]){
+    voicePlayers[url]=new Audio(url);
+    voicePlayers[url].addEventListener('timeupdate',()=>updateVoiceProgress(url));
+    voicePlayers[url].addEventListener('ended',()=>{
+      btn.textContent='▶';
+      updateVoiceProgress(url,true);
+    });
+  }
+  const a=voicePlayers[url];
+  if(a.paused){a.play().catch(()=>{});btn.textContent='⏸';}
+  else{a.pause();btn.textContent='▶';}
+}
+function updateVoiceProgress(url,reset=false){
+  const a=voicePlayers[url];if(!a)return;
+  const pct=reset?0:(a.currentTime/(a.duration||1))*100;
+  const elapsed=reset?null:a.currentTime;
+  document.querySelectorAll(`.voice-msg[data-url="${CSS.escape(url)}"]`).forEach(el=>{
+    const prog=el.querySelector('.wv-progress');
+    if(prog)prog.style.width=pct+'%';
+    const dur=el.querySelector('.vm-dur');
+    if(dur&&!reset&&elapsed!==null){
+      const rem=Math.max(0,Math.round((a.duration||0)-elapsed));
+      dur.textContent=rem>=60?Math.floor(rem/60)+'m '+String(rem%60).padStart(2,'0')+'s':rem+'s';
+    } else if(dur&&reset){
+      const d=parseInt(el.dataset.dur||0);
+      dur.textContent=d>=60?Math.floor(d/60)+'m '+String(d%60).padStart(2,'0')+'s':d+'s';
+    }
+  });
+}
+function seekVoice(e,track){
+  const vmEl=track.closest('.voice-msg');if(!vmEl)return;
+  const url=vmEl.dataset.url;if(!url||!voicePlayers[url])return;
+  const rect=track.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  voicePlayers[url].currentTime=pct*(voicePlayers[url].duration||0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH 1 — FORWARD MESSAGES
+// ═══════════════════════════════════════════════════════════
+let fwdMsgId=null, fwdSelected=new Set();
+
+function openForward(msgId){
+  fwdMsgId=msgId; fwdSelected.clear();
+  const list=document.getElementById('fwdList');
+  list.innerHTML=friends.filter(f=>!archivedChats.has(f.id)).map(f=>`
+    <div class="fwd-row" id="fwdr-${f.id}" onclick="toggleFwdSelect(${f.id},'${esc(f.chat_id||'')}')">
+      <div class="av">${f.username[0].toUpperCase()}</div>
+      <span style="flex:1;font-size:14px;">${esc(f.username)}</span>
+      <div class="fwd-chk" id="fwdchk-${f.id}"></div>
+    </div>`).join('');
+  document.getElementById('fwdOv').classList.add('show');
+  document.getElementById('fwdModal').classList.add('show');
+}
+function toggleFwdSelect(fid, chatId){
+  const row=document.getElementById('fwdr-'+fid);
+  const chk=document.getElementById('fwdchk-'+fid);
+  const cid=chatId||[Math.min(fid,ME_ID),Math.max(fid,ME_ID)].join('-');
+  if(fwdSelected.has(cid)){fwdSelected.delete(cid);row.classList.remove('selected');chk.textContent='';}
+  else{fwdSelected.add(cid);row.classList.add('selected');chk.textContent='✓';}
+}
+function closeFwdModal(){
+  document.getElementById('fwdOv').classList.remove('show');
+  document.getElementById('fwdModal').classList.remove('show');
+  fwdMsgId=null; fwdSelected.clear();
+}
+async function doForward(){
+  if(!fwdMsgId||!fwdSelected.size){toast('Select at least one chat','info');return;}
+  try{
+    const r=await fetch(`/api/messages/${fwdMsgId}/forward`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_ids:[...fwdSelected]})
+    });
+    const d=await r.json();
+    if(d.success){toast(`Forwarded to ${d.forwarded_to.length} chat${d.forwarded_to.length>1?'s':''}! 📤`,'ok');closeFwdModal();}
+    else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH 1 — GLOBAL SEARCH
+// ═══════════════════════════════════════════════════════════
+let gsTimer=null;
+function openGlobalSearch(){
+  document.getElementById('gsearchModal').classList.add('show');
+  setTimeout(()=>document.getElementById('gsearchInp').focus(),80);
+}
+function closeGlobalSearch(){
+  document.getElementById('gsearchModal').classList.remove('show');
+  document.getElementById('gsearchInp').value='';
+  document.getElementById('gsearchBody').innerHTML='<div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>';
+}
+function doGlobalSearch(q){
+  clearTimeout(gsTimer);
+  if(!q.trim()){
+    document.getElementById('gsearchBody').innerHTML='<div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>';
+    return;
+  }
+  document.getElementById('gsearchBody').innerHTML='<div class="lempty" style="padding-top:40px;">Searching…</div>';
+  gsTimer=setTimeout(async()=>{
+    try{
+      const r=await fetch(`/api/messages/search/global?q=${encodeURIComponent(q)}`);
+      const d=await r.json();
+      const body=document.getElementById('gsearchBody');
+      if(!d.success||!d.results.length){
+        body.innerHTML='<div class="lempty" style="padding-top:40px;">No results found</div>';
+        return;
+      }
+      body.innerHTML=d.results.map(m=>`
+        <div class="gs-result" onclick="jumpToResult('${m.other_id}','${esc(m.other_username)}','${m.chat_id}',${m.id})">
+          <div class="gs-from">${esc(m.sender_username)}</div>
+          <div class="gs-chat">in chat with ${esc(m.other_username)}</div>
+          <div class="gs-content">${esc(m.content)}</div>
+          <div class="gs-time">${fmtTime(m.created_at)}</div>
+        </div>`).join('');
+    }catch(e){document.getElementById('gsearchBody').innerHTML='<div class="lempty">Search failed</div>';}
+  },350);
+}
+function jumpToResult(otherId,otherName,chatId,msgId){
+  closeGlobalSearch();
+  openChat(parseInt(otherId),otherName,chatId);
+  // After messages load, scroll to that message
+  setTimeout(()=>scrollToMsg(msgId),600);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH 1 — PINNED CHATS
+// ═══════════════════════════════════════════════════════════
+let pinnedChatIds=new Set();
+
+async function loadPinnedChats(){
+  try{
+    const r=await fetch('/api/chats/pinned');
+    const d=await r.json();
+    if(d.success){pinnedChatIds=new Set(d.pinned);renderFriends();}
+  }catch(e){}
+}
+async function togglePinChat(chatId){
+  try{
+    const r=await fetch('/api/chats/pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId})});
+    const d=await r.json();
+    if(d.success){
+      if(d.pinned){pinnedChatIds.add(chatId);toast('📌 Chat pinned','ok');}
+      else{pinnedChatIds.delete(chatId);toast('Unpinned','info');}
+      renderFriends();
+    }
+  }catch(e){toast('Failed','err');}
+}
+
+// Load pinned chats on boot
+setTimeout(loadPinnedChats,500);
+
+// ═══════════════════════════════════════════════════════════
+// BATCH 1 — ENHANCED REACTIONS (full emoji picker on long-press)
+// ═══════════════════════════════════════════════════════════
+const REACTION_EMOJIS=[
+  '❤️','😂','😮','😢','👍','🎉','🔥','👏','😍','🙏',
+  '😭','🥹','😅','🤣','💀','🫶','💯','✨','🤔','😤',
+  '😡','🥰','😎','🤩','🤮','🫠','😴','🥳','👀','💪'
+];
+
+function showReactPicker(id, event){
+  event.stopPropagation();
+  // Remove any existing picker
+  document.querySelectorAll('.react-full-picker').forEach(p=>p.remove());
+  const picker=document.createElement('div');
+  picker.className='react-full-picker';
+  picker.innerHTML=`<div class="grid">${REACTION_EMOJIS.map(e=>`<div class="re" onclick="reactTo(${id},'${e}');this.closest('.react-full-picker').remove();">${e}</div>`).join('')}</div>`;
+  // Position near the event
+  const x=Math.min(event.clientX-130,window.innerWidth-270);
+  const y=Math.max(event.clientY-180,10);
+  picker.style.left=x+'px';
+  picker.style.top=y+'px';
+  document.body.appendChild(picker);
+  setTimeout(()=>document.addEventListener('click',()=>picker.remove(),{once:true}),50);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BATCH 1 — SWIPE TO REPLY (mobile)
+// ═══════════════════════════════════════════════════════════
+(function setupSwipeReply(){
+  let startX=0, startY=0, swipingEl=null, swipeTriggered=false;
+  const THRESHOLD=60;
+  document.getElementById('marea').addEventListener('touchstart',e=>{
+    const grp=e.target.closest('.mgrp');
+    if(!grp)return;
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    swipingEl=grp;
+    swipeTriggered=false;
+  },{passive:true});
+  document.getElementById('marea').addEventListener('touchmove',e=>{
+    if(!swipingEl)return;
+    const dx=e.touches[0].clientX-startX;
+    const dy=Math.abs(e.touches[0].clientY-startY);
+    if(dy>30){swipingEl=null;return;} // vertical scroll — ignore
+    if(dx>10&&dx<THRESHOLD+30){
+      swipingEl.style.transform=`translateX(${Math.min(dx,THRESHOLD+20)}px)`;
+      swipingEl.classList.add('swiping');
+    }
+    if(dx>=THRESHOLD&&!swipeTriggered){
+      swipeTriggered=true;
+      if(navigator.vibrate)navigator.vibrate(40);
+      const msgId=parseInt(swipingEl.dataset.msgId);
+      const from=swipingEl.querySelector('.mfrom')?.textContent||ME_NAME;
+      const content=swipingEl.querySelector('.bub')?.textContent?.trim()?.split('\n')[0]?.substring(0,50)||'';
+      setReply(msgId,from,content);
+    }
+  },{passive:true});
+  document.getElementById('marea').addEventListener('touchend',()=>{
+    if(swipingEl){
+      swipingEl.style.transform='';
+      swipingEl.classList.remove('swiping');
+      swipingEl=null;
+    }
+  },{passive:true});
+})();
+
+<!-- FORWARD MODAL -->
+<div class="fwd-modal-ov" id="fwdOv" onclick="closeFwdModal()"></div>
+<div class="fwd-modal" id="fwdModal">
+  <div class="fwd-head">
+    <h3 style="margin:0;font-size:16px;">Forward to...</h3>
+    <button class="closebtn" onclick="closeFwdModal()">✕</button>
+  </div>
+  <div class="fwd-list" id="fwdList"></div>
+  <button class="savebtn" style="margin-top:12px;" onclick="doForward()">Forward 📤</button>
+</div>
+<!-- GLOBAL SEARCH MODAL -->
+<div class="gsearch-modal" id="gsearchModal">
+  <div class="gsearch-head">
+    <button class="closebtn" onclick="closeGlobalSearch()" style="flex-shrink:0;">✕</button>
+    <input class="gsearch-inp" id="gsearchInp" placeholder="Search all messages…" oninput="doGlobalSearch(this.value)" autocomplete="off">
+  </div>
+  <div class="gsearch-body" id="gsearchBody">
+    <div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>
+  </div>
+</div>
 </body>
 </html>
