@@ -114,7 +114,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .dangbtn{width:100%;padding:11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font-b);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--trans);margin-top:2px;}
 .dangbtn:hover{background:rgba(239,68,68,.18);}
 /* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--chat);transition:background .25s;}
+.main{flex:1;display:flex;flex-direction:column;overflow:visible;background:var(--chat);transition:background .25s;}
 .chdr{padding:13px 18px;min-height:62px;background:var(--hdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;transition:background .25s,border-color .25s;}
 .chdr-info{flex:1;min-width:0;}
 .chdr-nm{font-family:var(--font-h);font-size:15px;font-weight:700;color:var(--txt);}
@@ -130,13 +130,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .pinned-banner .pin-icon{color:var(--warn);font-size:14px;}
 .pinned-banner .pin-text{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Message Area */
-.marea{flex:1;overflow-y:scroll;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;scrollbar-width:none;-ms-overflow-style:none;}
-.marea::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}
-.clist{flex:1;overflow-y:scroll;padding:6px 0;scrollbar-width:none;-ms-overflow-style:none;}
+.marea{flex:1;overflow:visible;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;}
+.clist{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none;-ms-overflow-style:none;}
 .clist::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}
 .daydiv{text-align:center;margin:10px 0 5px;}
 .daydiv span{background:rgba(124,106,255,.1);color:var(--mute);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
 .mgrp{display:flex;flex-direction:column;position:relative;}
+.mgrp.has-reactions{padding-bottom:16px;}
 .mgrp.sent{align-items:flex-end;}
 .mgrp.recv{align-items:flex-start;}
 .mgrp+.mgrp{margin-top:4px;}
@@ -144,94 +144,37 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .bub{max-width:64%;padding:10px 14px;border-radius:var(--radius);font-size:15px;line-height:1.55;word-break:break-word;position:relative;transition:background .25s;cursor:pointer;}
 .mgrp.sent .bub{background:var(--sent);color:#fff;border-bottom-right-radius:4px;}
 .mgrp.recv .bub{background:var(--recv);color:var(--txt);border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.1);}
-.bub:hover .msg-actions{opacity:1;}
+
 .bub.pinned::before{content:'📌';position:absolute;top:-8px;right:-8px;font-size:16px;}
 .bub.edited .mts::after{content:' (edited)';opacity:.7;}
 .reply-prev{background:rgba(0,0,0,.15);border-left:3px solid rgba(255,255,255,.3);padding:6px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;}
 .mgrp.recv .reply-prev{background:rgba(0,0,0,.05);border-left-color:var(--brand);}
 .reply-prev-from{font-weight:600;color:var(--brand);margin-bottom:2px;}
 .reply-prev-text{opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.msg-actions{position:absolute;top:-12px;right:8px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:2px;display:flex;gap:2px;opacity:0;transition:opacity var(--trans);box-shadow:var(--shad);z-index:10;}
-.mgrp.sent .msg-actions{right:auto;left:8px;}
-.msg-act{width:28px;height:28px;border:none;background:transparent;color:var(--sub);cursor:pointer;font-size:14px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
-.msg-act:hover{background:var(--hov);color:var(--txt);}
-.reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
-.reaction{background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.2);padding:2px 8px;border-radius:12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all var(--trans);}
-.reaction:hover{background:rgba(124,106,255,.18);}
-.reaction.user-reacted{background:rgba(124,106,255,.25);border-color:rgba(124,106,255,.4);}
-.reaction .count{font-size:11px;font-weight:600;color:var(--txt);}
-/* ── REACTION BAR (Facebook/IG style) ── */
-.react-bar{
-  position:fixed;
-  background:var(--card);
-  border:1px solid var(--bdr);
-  border-radius:999px;
-  padding:8px 10px;
-  display:flex;
-  align-items:center;
-  gap:2px;
-  box-shadow:0 4px 24px rgba(0,0,0,.22);
-  z-index:600;
-  pointer-events:all;
-  transform:scale(0.5) translateY(10px);
-  opacity:0;
-  transform-origin:bottom center;
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1), opacity .15s ease;
-}
-.react-bar.visible{
-  transform:scale(1) translateY(0);
-  opacity:1;
-}
-.react-bar-emoji{
-  width:40px; height:40px;
-  border-radius:50%;
-  border:none;
-  background:transparent;
-  font-size:24px;
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:transform .15s cubic-bezier(.34,1.56,.64,1), background .1s;
-  position:relative;
-  flex-shrink:0;
-}
-.react-bar-emoji:hover, .react-bar-emoji:focus{
-  transform:scale(1.55) translateY(-6px);
-  background:var(--hov);
-  z-index:1;
-}
-.react-bar-emoji.user-picked{
-  transform:scale(1.15);
-}
-.react-bar-emoji .react-label{
-  position:absolute;
-  bottom:calc(100% + 4px);
-  left:50%; transform:translateX(-50%);
-  background:rgba(0,0,0,.75);
-  color:#fff;
-  font-size:10px;
-  padding:2px 6px;
-  border-radius:8px;
-  white-space:nowrap;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .1s;
-  font-family:var(--font-b);
-}
-.react-bar-emoji:hover .react-label{opacity:1;}
-.react-bar-plus{
-  width:36px; height:36px;
-  border-radius:50%;
-  border:1.5px solid var(--bdr);
-  background:var(--hov);
-  color:var(--sub);
-  font-size:18px;
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  transition:transform .15s, background .1s;
-  flex-shrink:0;
-}
-.react-bar-plus:hover{transform:scale(1.15);background:rgba(124,106,255,.15);color:var(--brand);}
 
+/* Reactions sit OUTSIDE the bubble, overlapping slightly so layout doesn't shift */
+.reactions{
+  display:flex;gap:3px;flex-wrap:wrap;
+  position:absolute;bottom:-14px;
+  z-index:5;pointer-events:all;
+}
+.mgrp.sent .reactions{right:8px;}
+.mgrp.recv .reactions{left:8px;}
+.reaction{
+  background:var(--card);
+  border:1.5px solid var(--bdr);
+  padding:1px 6px 1px 4px;
+  border-radius:20px;
+  font-size:12px;
+  cursor:pointer;
+  display:flex;align-items:center;gap:3px;
+  box-shadow:0 1px 4px rgba(0,0,0,.12);
+  transition:transform .1s,border-color .1s;
+  white-space:nowrap;
+}
+.reaction:active{transform:scale(.94);}
+.reaction.user-reacted{border-color:var(--brand);background:rgba(124,106,255,.08);}
+.reaction .count{font-size:11px;font-weight:600;color:var(--sub);}
 /* ── FULL EMOJI PICKER SHEET ── */
 .react-sheet-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.3);display:none;}
 .react-sheet-ov.show{display:block;}
@@ -358,12 +301,87 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .notif-text{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:3px;}
 /* Context Menu */
-.ctx-menu{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:4px;min-width:160px;box-shadow:var(--shad);z-index:1000;display:none;}
-.ctx-menu.show{display:block;}
-.ctx-item{padding:8px 12px;border-radius:6px;font-size:13px;color:var(--txt);cursor:pointer;display:flex;align-items:center;gap:8px;transition:background var(--trans);}
-.ctx-item:hover{background:var(--hov);}
-.ctx-item.danger{color:#ef4444;}
-.ctx-item.danger:hover{background:rgba(239,68,68,.1);}
+/* ── LONG-PRESS MESSAGE SHEET ── */
+.msg-sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;backdrop-filter:blur(2px);}
+.msg-sheet-ov.show{display:block;}
+.msg-sheet{
+  position:fixed;bottom:0;left:50%;
+  transform:translateX(-50%) translateY(105%);
+  width:100%;max-width:480px;
+  background:var(--card);
+  border-radius:20px 20px 0 0;
+  z-index:801;
+  transition:transform .28s cubic-bezier(.34,1.1,.64,1);
+  overflow:hidden;
+  padding-bottom:max(16px,env(safe-area-inset-bottom));
+}
+.msg-sheet.show{transform:translateX(-50%) translateY(0);}
+/* emoji strip at top of sheet */
+.ms-emoji-strip{
+  display:flex;align-items:center;gap:0;
+  padding:14px 12px 10px;
+  border-bottom:1px solid var(--bdr);
+  overflow-x:auto;
+}
+.ms-emoji-strip::-webkit-scrollbar{display:none;}
+.ms-emoji-btn{
+  flex:1;min-width:40px;height:44px;
+  border:none;background:transparent;
+  font-size:26px;cursor:pointer;
+  border-radius:10px;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .1s;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.ms-emoji-btn:active{transform:scale(1.45);}
+.ms-emoji-btn.selected::after{
+  content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--brand);
+}
+.ms-emoji-plus{
+  width:36px;height:36px;flex-shrink:0;
+  border:1.5px solid var(--bdr);background:var(--hov);
+  color:var(--sub);font-size:17px;font-weight:700;
+  border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  margin-left:2px;flex:0 0 36px;
+  transition:background .1s,transform .1s;
+}
+.ms-emoji-plus:active{transform:scale(.9);}
+/* action rows */
+.ms-actions{padding:6px 0;}
+.ms-act{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 20px;
+  font-size:15px;color:var(--txt);
+  cursor:pointer;transition:background .1s;
+  border:none;background:transparent;width:100%;text-align:left;
+}
+.ms-act:active{background:var(--hov);}
+.ms-act.danger{color:#ef4444;}
+.ms-act-icon{font-size:19px;width:26px;text-align:center;flex-shrink:0;}
+/* preview bubble at top of sheet */
+.ms-preview{
+  padding:10px 16px 0;
+  display:flex;align-items:flex-end;gap:8px;
+}
+.ms-preview-bubble{
+  max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background:var(--hov);padding:8px 12px;border-radius:12px;
+  font-size:13px;color:var(--mute);
+}
+/* delete options sub-sheet */
+.del-sheet{
+  position:fixed;bottom:0;left:50%;
+  transform:translateX(-50%) translateY(105%);
+  width:100%;max-width:480px;
+  background:var(--card);border-radius:20px 20px 0 0;
+  z-index:900;padding-bottom:max(16px,env(safe-area-inset-bottom));
+  transition:transform .25s cubic-bezier(.34,1.1,.64,1);
+}
+.del-sheet.show{transform:translateX(-50%) translateY(0);}
+.del-sheet-title{padding:16px 20px 10px;font-size:13px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;}
+
 /* MOBILE */
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
@@ -600,11 +618,29 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <body>
 <div class="mov" id="mov" onclick="closeSB()"></div>
 <!-- Context Menu (message right-click) -->
-<div class="ctx-menu" id="ctxMenu">
-  <div class="ctx-item" onclick="replyToMsgCtx()">↩️ Reply</div>
-  <div class="ctx-item" onclick="editMsgCtx()">✏️ Edit</div>
-  <div class="ctx-item" onclick="pinMsgCtx()">📌 Pin</div>
-  <div class="ctx-item danger" onclick="deleteMsgCtx()">🗑️ Delete</div>
+<!-- LONG-PRESS MESSAGE SHEET -->
+<div class="msg-sheet-ov" id="msgSheetOv" onclick="hideMsgSheet()"></div>
+<div class="msg-sheet" id="msgSheet">
+  <!-- preview strip -->
+  <div class="ms-preview" id="msPreview">
+    <div class="ms-preview-bubble" id="msPreviewText"></div>
+  </div>
+  <!-- emoji strip -->
+  <div class="ms-emoji-strip" id="msEmojiStrip">
+    <!-- filled dynamically -->
+  </div>
+  <!-- actions -->
+  <div class="ms-actions" id="msActions">
+    <!-- filled dynamically -->
+  </div>
+</div>
+<!-- DELETE OPTIONS SHEET -->
+<div class="msg-sheet-ov" id="delSheetOv" onclick="hideDelSheet()"></div>
+<div class="del-sheet" id="delSheet">
+  <div class="del-sheet-title">Delete message?</div>
+  <button class="ms-act danger" onclick="doDeleteForMe()"><span class="ms-act-icon">🗑️</span>Delete for me</button>
+  <button class="ms-act danger" onclick="doDeleteForEveryone()"><span class="ms-act-icon">🗑️</span>Delete for everyone</button>
+  <button class="ms-act" onclick="hideDelSheet()" style="color:var(--mute);"><span class="ms-act-icon">✕</span>Cancel</button>
 </div>
 <!-- ADDED: Shared floating context menu (crow 3-dot + conv 3-line) -->
 <div class="crow-ctx" id="crowCtx"></div>
@@ -1184,7 +1220,7 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   loadFriends();
   loadRequests();
   setTimeout(requestNotifPermission,2000);
-  document.addEventListener('click',hideCtxMenu);
+  // ctx menu replaced by msg sheet
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -1337,20 +1373,19 @@ function appendMsg(msg,scroll=true){
     ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptState==='seen'?'Seen ✓✓':'Delivered ✓'}"></span>`
     :'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
-  inner+=`<div class="${bubClass}" oncontextmenu="showCtxMenu(event,${msg.id},${isSent})">`;
+  // Reactions (max 2 emoji types shown, overlaid outside bubble)
+  const reactEntries=msg.reactions?Object.entries(msg.reactions).slice(0,2):[];
+  const hasReacts=reactEntries.length>0;
+  if(hasReacts)g.classList.add('has-reactions');
+  inner+=`<div class="${bubClass}" oncontextmenu="showMsgSheet(event,${msg.id},${isSent})" data-longpress-id="${msg.id}" data-longpress-sent="${isSent}">`;
   inner+=body;
   inner+=`<div class="msg-foot"><span class="mts">${fmtTime(msg.created_at)}</span>${receiptDot}</div>`;
-  if(isSent&&!msg.is_deleted){
-    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}" title="Reply">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}" title="Forward">↪️</button><button class="msg-act react-trigger" data-action="react" data-msg-id="${msg.id}" title="Add reaction">😊</button><button class="msg-act" data-action="edit" data-msg-id="${msg.id}" title="Edit">✏️</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}" title="Pin">📌</button><button class="msg-act" data-action="delete" data-msg-id="${msg.id}" title="Delete">🗑️</button></div>`;
-  } else if(!isSent&&!msg.is_deleted){
-    inner+=`<div class="msg-actions"><button class="msg-act" data-action="reply" data-msg-id="${msg.id}" title="Reply">↩️</button><button class="msg-act" data-action="forward" data-msg-id="${msg.id}" title="Forward">↪️</button><button class="msg-act react-trigger" data-action="react" data-msg-id="${msg.id}" title="Add reaction">😊</button><button class="msg-act" data-action="pin" data-msg-id="${msg.id}" title="Pin">📌</button></div>`;
-  }
   inner+=`</div>`;
-  if(msg.reactions&&Object.keys(msg.reactions).length>0){
-    inner+=`<div class="reactions">`;
-    for(const[emoji,count]of Object.entries(msg.reactions)){
-      const userReacted=msg.user_reactions&&msg.user_reactions.includes(emoji);
-      inner+=`<div class="reaction${userReacted?' user-reacted':''}" data-emoji="${emoji}"><span>${emoji}</span><span class="count">${count}</span></div>`;
+  if(hasReacts){
+    inner+=`<div class="reactions" id="reacts-${msg.id}">`;
+    for(const[emoji,count]of reactEntries){
+      const ur=msg.user_reactions&&msg.user_reactions.includes(emoji);
+      inner+=`<div class="reaction${ur?' user-reacted':''}" data-emoji="${emoji}" onclick="toggleReactInline(${msg.id},'${emoji}')"><span>${emoji}</span><span class="count">${count}</span></div>`;
     }
     inner+=`</div>`;
   }
@@ -1358,8 +1393,48 @@ function appendMsg(msg,scroll=true){
   if(scroll)scrollBot();
   if(!isSent&&currentChatId)socket.emit('mark_read',{chat_id:currentChatId,msg_id:msg.id});
 }
-function updateMsgInDOM(msg){const el=document.querySelector(`[data-msg-id="${msg.id}"]`);if(!el)return;el.outerHTML='';appendMsg(msg,false);}
-function scrollBot(){const a=document.getElementById('marea');a.scrollTop=a.scrollHeight;}
+function updateMsgInDOM(msg){
+  const el=document.querySelector(`[data-msg-id="${msg.id}"]`);
+  if(!el)return;
+  // If only reaction changed — update reactions div in-place (no layout shift)
+  const reactEntries=msg.reactions?Object.entries(msg.reactions).slice(0,2):[];
+  const hasReacts=reactEntries.length>0;
+  // Update has-reactions class
+  el.classList.toggle('has-reactions',hasReacts);
+  // Remove old reactions div
+  const oldR=el.querySelector('.reactions');if(oldR)oldR.remove();
+  // Inject new reactions
+  if(hasReacts){
+    const rd=document.createElement('div');
+    rd.className='reactions';rd.id='reacts-'+msg.id;
+    reactEntries.forEach(([emoji,count])=>{
+      const ur=msg.user_reactions&&msg.user_reactions.includes(emoji);
+      const d=document.createElement('div');
+      d.className='reaction'+(ur?' user-reacted':'');
+      d.dataset.emoji=emoji;
+      d.onclick=()=>toggleReactInline(msg.id,emoji);
+      d.innerHTML=`<span>${emoji}</span><span class="count">${count}</span>`;
+      rd.appendChild(d);
+    });
+    el.appendChild(rd);
+  }
+  // For edits/deletes — also update the bubble text
+  const bub=el.querySelector('.bub');
+  if(bub&&msg.is_deleted){
+    const body=bub.querySelector('.msg-foot');
+    // keep foot, replace text content
+    const foot=bub.querySelector('.msg-foot');
+    bub.innerHTML='<em style="opacity:.5">[Message deleted]</em>';
+    if(foot)bub.appendChild(foot);
+  } else if(bub&&msg.is_edited&&msg.message_type==='text'){
+    const foot=bub.querySelector('.msg-foot');
+    bub.innerHTML=esc(msg.content).replace(/
+/g,'<br>');
+    if(foot)bub.appendChild(foot);
+    bub.classList.add('edited');
+  }
+}
+function scrollBot(){}
 async function uploadImg(inp){
   const f=inp.files[0];if(!f)return;
   if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
@@ -1909,7 +1984,7 @@ async function saveEdit(){
   if(!editingMsgId)return;const inp=document.getElementById('msgInput');const content=inp.value.trim();if(!content)return;
   try{const r=await fetch(`/api/messages/${editingMsgId}/edit`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});const d=await r.json();if(d.success){inp.value='';inp.style.height='';editingMsgId=null;toast('✅ Message updated','ok');}else toast(d.error,'err');}catch(e){toast('Failed','err');}
 }
-async function confirmDelete(id){if(!confirm('Delete this message?'))return;try{const r=await fetch(`/api/messages/${id}/delete`,{method:'DELETE'});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function confirmDelete(id){openDelSheet(id);}
 async function togglePin(id){try{const r=await fetch(`/api/messages/${id}/pin`,{method:'POST'});const d=await r.json();if(d.success){toast(d.is_pinned?'📌 Message pinned':'📌 Message unpinned','info');updatePinnedBanner();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
 async function updatePinnedBanner(){
   if(!currentChatId)return;
@@ -1921,12 +1996,193 @@ async function showPinned(){
 }
 // showReactPicker: see full implementation in batch1 section
 async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
-function showCtxMenu(event,id,isSent){event.preventDefault();event.stopPropagation();contextMsg={id,isSent};const menu=document.getElementById('ctxMenu');menu.style.left=`${event.clientX}px`;menu.style.top=`${event.clientY}px`;menu.classList.add('show');}
-function hideCtxMenu(e){const menu=document.getElementById('ctxMenu');if(!e||!e.target.closest('#ctxMenu'))menu.classList.remove('show');}
-function replyToMsgCtx(){if(!contextMsg)return;const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);if(el){const from=el.querySelector('.mfrom')?.textContent||ME_NAME;const bubText=el.querySelector('.bub')?.textContent?.trim()||'';setReply(contextMsg.id,from,bubText.split('\n')[0].substring(0,50));}hideCtxMenu();}
-function editMsgCtx(){if(!contextMsg||!contextMsg.isSent)return;const el=document.querySelector(`[data-msg-id="${contextMsg.id}"]`);if(el){const bubText=el.querySelector('.bub')?.textContent?.trim()||'';startEdit(contextMsg.id,bubText.split('\n')[0]);}hideCtxMenu();}
-function pinMsgCtx(){if(!contextMsg)return;togglePin(contextMsg.id);hideCtxMenu();}
-function deleteMsgCtx(){if(!contextMsg||!contextMsg.isSent)return;confirmDelete(contextMsg.id);hideCtxMenu();}
+// ═══════════════════════════════════════════════════════════════════
+// MESSAGE LONG-PRESS SHEET — complete system
+// ═══════════════════════════════════════════════════════════════════
+const SHEET_QUICK  = ['❤️','😂','😮','😢','👍','🎉'];
+const SHEET_ALL    = [
+  '❤️','😂','😮','😢','👍','🎉','🔥','👏','😍','🙏','🥰','😅',
+  '🤣','💀','🫶','💯','✨','🤔','😤','😡','😎','🤩','💪','🥳',
+  '👀','😭','🥹','😴','🫠','😬','🙄','😏','🥺','😳','🤯','😱',
+  '🤗','😇','🤑','😈','👻','🤌','✌️','🤙','💔','💕','⭐','🌈',
+];
+
+let sheetMsg = null; // { id, isSent, el, userReactions }
+let sheetDeleteId = null;
+
+function showMsgSheet(event, msgId, isSent){
+  event.preventDefault(); event.stopPropagation();
+  const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
+  if(!msgEl) return;
+  if(navigator.vibrate) navigator.vibrate(35);
+
+  // Collect current user reactions for this message
+  const reactEls = msgEl.querySelectorAll('.reaction.user-reacted');
+  const userReacted = [...reactEls].map(r=>r.dataset.emoji);
+
+  // Preview text
+  const bub = msgEl.querySelector('.bub');
+  const previewText = bub?.textContent?.trim()?.split('
+')[0]?.substring(0,60) || '';
+
+  // Set up sheet content
+  document.getElementById('msPreviewText').textContent = previewText;
+
+  // Emoji strip
+  const strip = document.getElementById('msEmojiStrip');
+  strip.innerHTML = '';
+  SHEET_QUICK.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.className = 'ms-emoji-btn' + (userReacted.includes(emoji)?' selected':'');
+    btn.textContent = emoji;
+    btn.onclick = () => { reactTo(msgId, emoji); hideMsgSheet(); };
+    strip.appendChild(btn);
+  });
+  // + more
+  const plus = document.createElement('button');
+  plus.className = 'ms-emoji-plus';
+  plus.textContent = '+';
+  plus.title = 'More reactions';
+  plus.onclick = () => { hideMsgSheet(); openAllEmojis(msgId, userReacted); };
+  strip.appendChild(plus);
+
+  // Action rows
+  const acts = document.getElementById('msActions');
+  acts.innerHTML = '';
+
+  const rows = isSent ? [
+    { icon:'↩️', label:'Reply',           fn: ()=>{ const from=ME_NAME; const content=previewText; setReply(msgId,from,content); hideMsgSheet(); }},
+    { icon:'↪️', label:'Forward',         fn: ()=>{ openForward(msgId); hideMsgSheet(); }},
+    { icon:'📋', label:'Copy',            fn: ()=>{ navigator.clipboard?.writeText(previewText)||copyFallback(previewText); toast('Copied','ok'); hideMsgSheet(); }},
+    { icon:'📌', label:'Pin / Unpin',     fn: ()=>{ togglePin(msgId); hideMsgSheet(); }},
+    { icon:'✏️', label:'Edit',            fn: ()=>{ startEdit(msgId, previewText); hideMsgSheet(); }},
+    { icon:'🗑️', label:'Delete',          fn: ()=>{ hideMsgSheet(); openDelSheet(msgId); }, danger:true },
+  ] : [
+    { icon:'↩️', label:'Reply',           fn: ()=>{ const fromEl=msgEl.querySelector('.mfrom'); const from=fromEl?.textContent||''; setReply(msgId,from,previewText); hideMsgSheet(); }},
+    { icon:'↪️', label:'Forward',         fn: ()=>{ openForward(msgId); hideMsgSheet(); }},
+    { icon:'📋', label:'Copy',            fn: ()=>{ navigator.clipboard?.writeText(previewText)||copyFallback(previewText); toast('Copied','ok'); hideMsgSheet(); }},
+    { icon:'📌', label:'Pin / Unpin',     fn: ()=>{ togglePin(msgId); hideMsgSheet(); }},
+  ];
+
+  rows.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'ms-act' + (r.danger?' danger':'');
+    btn.innerHTML = `<span class="ms-act-icon">${r.icon}</span>${r.label}`;
+    btn.onclick = r.fn;
+    acts.appendChild(btn);
+  });
+
+  sheetMsg = { id:msgId, isSent };
+  document.getElementById('msgSheetOv').classList.add('show');
+  requestAnimationFrame(()=>document.getElementById('msgSheet').classList.add('show'));
+}
+
+function hideMsgSheet(){
+  document.getElementById('msgSheet').classList.remove('show');
+  document.getElementById('msgSheetOv').classList.remove('show');
+  sheetMsg = null;
+}
+
+// Delete options sheet
+function openDelSheet(msgId){
+  sheetDeleteId = msgId;
+  document.getElementById('delSheetOv').classList.add('show');
+  requestAnimationFrame(()=>document.getElementById('delSheet').classList.add('show'));
+}
+function hideDelSheet(){
+  document.getElementById('delSheet').classList.remove('show');
+  document.getElementById('delSheetOv').classList.remove('show');
+  sheetDeleteId = null;
+}
+async function doDeleteForMe(){
+  if(!sheetDeleteId) return;
+  hideDelSheet();
+  try{
+    const r=await fetch(`/api/messages/${sheetDeleteId}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({for_everyone:false})});
+    const d=await r.json();
+    if(d.success){
+      const el=document.querySelector(`[data-msg-id="${sheetDeleteId}"]`);
+      if(el)el.remove();
+    } else toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+async function doDeleteForEveryone(){
+  if(!sheetDeleteId) return;
+  hideDelSheet();
+  try{
+    const r=await fetch(`/api/messages/${sheetDeleteId}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({for_everyone:true})});
+    const d=await r.json();
+    if(!d.success)toast(d.error||'Failed','err');
+  }catch(e){toast('Failed','err');}
+}
+
+// All emojis bottom sheet
+let allEmojisMsgId=null;
+function openAllEmojis(msgId, currentReacts=[]){
+  allEmojisMsgId=msgId;
+  const grid=document.getElementById('reactSheetGrid');
+  grid.innerHTML=SHEET_ALL.map(e=>{
+    const sel=currentReacts.includes(e)?'style="outline:2px solid var(--brand);border-radius:10px;"':'';
+    return `<button class="rs-emoji" ${sel} onclick="reactTo(${msgId},'${e}');closeReactSheet();">${e}</button>`;
+  }).join('');
+  document.getElementById('reactSheetOv').classList.add('show');
+  requestAnimationFrame(()=>document.getElementById('reactSheet').classList.add('show'));
+}
+function closeReactSheet(){
+  document.getElementById('reactSheetOv').classList.remove('show');
+  document.getElementById('reactSheet').classList.remove('show');
+  allEmojisMsgId=null;
+}
+
+// Toggle existing reaction pill
+function toggleReactInline(msgId, emoji){
+  reactTo(msgId, emoji);
+}
+
+// Copy fallback for older browsers
+function copyFallback(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  document.execCommand('copy');ta.remove();
+}
+
+// ── Long-press to open sheet (touch + right-click) ──
+(function(){
+  let lpTimer=null, lpEl=null;
+  const START=480; // ms to trigger
+
+  function onDown(e){
+    const bub=e.target.closest('.bub');
+    if(!bub||e.target.closest('.reaction')) return;
+    const msgEl=bub.closest('[data-msg-id]');if(!msgEl) return;
+    const msgId=parseInt(msgEl.dataset.msgId);
+    const isSent=msgEl.classList.contains('sent');
+    lpEl=bub;
+    lpTimer=setTimeout(()=>{
+      lpTimer=null;
+      showMsgSheet({preventDefault:()=>{},stopPropagation:()=>{}},msgId,isSent);
+    },START);
+  }
+  function onUp(){ if(lpTimer){clearTimeout(lpTimer);lpTimer=null;} }
+  function onMove(e){ if(lpTimer){const t=e.touches?.[0];if(t){}else onUp();} }
+
+  const area=document.getElementById('marea');
+  area.addEventListener('touchstart', onDown, {passive:true});
+  area.addEventListener('touchend',   onUp,   {passive:true});
+  area.addEventListener('touchmove',  onMove, {passive:true});
+  area.addEventListener('mousedown',  onDown);
+  area.addEventListener('mouseup',    onUp);
+  // right-click also opens sheet
+  area.addEventListener('contextmenu', e=>{
+    const bub=e.target.closest('.bub');if(!bub)return;
+    const msgEl=bub.closest('[data-msg-id]');if(!msgEl)return;
+    e.preventDefault();e.stopPropagation();
+    showMsgSheet(e, parseInt(msgEl.dataset.msgId), msgEl.classList.contains('sent'));
+  });
+})();
+
+// Old ctx functions replaced — see showMsgSheet below
 function toggleSearch(){document.getElementById('searchPanel').classList.toggle('open');if(document.getElementById('searchPanel').classList.contains('open'))document.getElementById('msgSearch').focus();}
 let searchMsgTimer=null;
 function searchMsgs(q){clearTimeout(searchMsgTimer);if(!q.trim()){document.getElementById('searchResults').innerHTML='';return;}searchMsgTimer=setTimeout(()=>doSearchMsgs(q),300);}
@@ -1939,47 +2195,8 @@ function toggleEmoji(){document.getElementById('epick').classList.toggle('open')
 function closeEmoji(){document.getElementById('epick').classList.remove('open');}
 function ins(e){document.getElementById('msgInput').value+=e;document.getElementById('msgInput').focus();}
 document.addEventListener('click',(e)=>{if(!e.target.closest('.epick')&&!e.target.closest('.isb'))closeEmoji();});
-document.addEventListener('click',(e)=>{
-  const btn=e.target.closest('.msg-act');if(!btn)return;
-  const action=btn.dataset.action,msgId=parseInt(btn.dataset.msgId);
-  const msgEl=btn.closest('[data-msg-id]');if(!msgEl)return;
-  const msgContent=msgEl.querySelector('.bub')?.textContent?.trim()||'';
-  const msgFrom=msgEl.querySelector('.mfrom')?.textContent||ME_NAME;
-  switch(action){
-    case 'reply':setReply(msgId,msgFrom,msgContent.substring(0,50));break;
-    case 'forward':openForward(msgId);break;
-    case 'edit':startEdit(msgId,msgContent.split('\n')[0]);break;
-    case 'pin':togglePin(msgId);break;
-    case 'delete':confirmDelete(msgId);break;
-    case 'react':{ const btn=e.currentTarget; showReactPicker(msgId,{stopPropagation:()=>{},currentTarget:btn,target:btn}); break; }
-  }
-});
-document.addEventListener('click',(e)=>{const reaction=e.target.closest('.reaction');if(!reaction)return;const msgEl=reaction.closest('[data-msg-id]');if(!msgEl)return;const msgId=parseInt(msgEl.dataset.msgId);const emoji=reaction.querySelector('span')?.textContent;if(emoji)reactTo(msgId,emoji);});
-// Double-tap bubble → ❤️ reaction with floating heart
-(function(){
-  let lastTap={id:null,time:0};
-  document.getElementById('marea').addEventListener('click',e=>{
-    // Don't trigger if already interacting with action buttons
-    if(e.target.closest('.msg-actions,.react-bar')) return;
-    const bub=e.target.closest('.bub');if(!bub)return;
-    const msgEl=bub.closest('[data-msg-id]');if(!msgEl)return;
-    const msgId=parseInt(msgEl.dataset.msgId);
-    const now=Date.now();
-    if(lastTap.id===msgId&&now-lastTap.time<400){
-      dismissReactBar();
-      reactTo(msgId,'❤️');
-      const heart=document.createElement('div');
-      heart.textContent='❤️';
-      const bRect=bub.getBoundingClientRect();
-      heart.style.cssText='position:fixed;font-size:42px;pointer-events:none;z-index:999;animation:heartPop .7s ease forwards;left:'+(e.clientX-10)+'px;top:'+(e.clientY-20)+'px;';
-      document.body.appendChild(heart);
-      setTimeout(()=>heart.remove(),750);
-      lastTap={id:null,time:0};
-    } else {
-      lastTap={id:msgId,time:now};
-    }
-  });
-})();
+// msg-act handler removed — long-press sheet handles everything
+// double-tap replaced by long-press sheet
 function handleSearch(q){
   clearTimeout(searchTimer);
   const pDesktop=document.getElementById('srPanel');
@@ -2867,149 +3084,9 @@ setTimeout(loadPinnedChats,500);
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — ENHANCED REACTIONS (full emoji picker on long-press)
 // ═══════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════
-// REACTION BAR — Facebook / Instagram style
-// ═══════════════════════════════════════════════════════════
-const QUICK_REACTS = ['❤️','😂','😮','😢','👍','🎉'];
-const QUICK_LABELS = ['Love','Haha','Wow','Sad','Like','Yay'];
-const ALL_EMOJIS = [
-  '❤️','😂','😮','😢','👍','🎉','🔥','👏','😍','🙏','🥰','😅',
-  '🤣','💀','🫶','💯','✨','🤔','😤','😡','😎','🤩','💪','🥳',
-  '👀','😭','🥹','😴','🫠','🤮','😬','🙄','😏','🥺','😳','🤯',
-  '😱','🤗','🫡','😇','🤑','🤠','🥸','😈','👻','🤌','✌️','🤙',
-  '💔','💕','💞','💓','💗','🌹','⭐','🌈','🎊','🎈','💥','⚡',
-];
+// Old react bar system removed — see new showMsgSheet below
 
-let activeReactBar = null; // { el, msgId, timer }
-let reactSheetMsgId = null;
-
-function showReactPicker(msgId, event){
-  event.stopPropagation();
-  dismissReactBar();
-  _spawnReactBar(msgId, event.currentTarget || event.target);
-}
-
-function _spawnReactBar(msgId, anchorEl){
-  // Build bar
-  const bar = document.createElement('div');
-  bar.className = 'react-bar';
-  bar.dataset.msgId = msgId;
-
-  // 6 quick emoji buttons
-  QUICK_REACTS.forEach((emoji, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'react-bar-emoji';
-    btn.innerHTML = `${emoji}<span class="react-label">${QUICK_LABELS[i]}</span>`;
-    btn.onclick = (e) => { e.stopPropagation(); reactTo(msgId, emoji); dismissReactBar(); };
-    bar.appendChild(btn);
-  });
-
-  // Divider
-  const div = document.createElement('div');
-  div.style.cssText = 'width:1px;height:24px;background:var(--bdr);margin:0 4px;flex-shrink:0;';
-  bar.appendChild(div);
-
-  // + button → full sheet
-  const plus = document.createElement('button');
-  plus.className = 'react-bar-plus';
-  plus.title = 'More reactions';
-  plus.innerHTML = '+';
-  plus.onclick = (e) => { e.stopPropagation(); dismissReactBar(); openReactSheet(msgId); };
-  bar.appendChild(plus);
-
-  // Position: above the message bubble, horizontally near it
-  document.body.appendChild(bar);
-
-  const msgEl = document.querySelector(`[data-msg-id="${msgId}"]`);
-  const isSent = msgEl?.classList.contains('sent');
-  let rect;
-  if(anchorEl?.getBoundingClientRect) rect = anchorEl.getBoundingClientRect();
-  else if(msgEl) rect = msgEl.getBoundingClientRect();
-  else rect = {left:60, top:200, right:window.innerWidth-60, bottom:220};
-
-  const barW = 6*44 + 2 + 40 + 20; // approx
-  let left = isSent
-    ? Math.max(4, rect.right - barW)
-    : Math.max(4, rect.left);
-  left = Math.min(left, window.innerWidth - barW - 4);
-  const top = Math.max(8, rect.top - 64);
-
-  bar.style.left = left + 'px';
-  bar.style.top  = top  + 'px';
-
-  // Animate in
-  requestAnimationFrame(() => bar.classList.add('visible'));
-
-  // Auto-dismiss after 4 s of no interaction
-  const timer = setTimeout(dismissReactBar, 4000);
-  activeReactBar = { el: bar, msgId, timer };
-
-  // Click outside dismisses
-  setTimeout(() => {
-    document.addEventListener('click', _outsideReactBar, { once: true });
-  }, 80);
-}
-
-function _outsideReactBar(e){
-  if(!e.target.closest('.react-bar')) dismissReactBar();
-}
-
-function dismissReactBar(){
-  if(!activeReactBar) return;
-  clearTimeout(activeReactBar.timer);
-  document.removeEventListener('click', _outsideReactBar);
-  const bar = activeReactBar.el;
-  bar.classList.remove('visible');
-  setTimeout(() => bar.remove(), 200);
-  activeReactBar = null;
-}
-
-// ── Full emoji sheet ──
-function openReactSheet(msgId){
-  reactSheetMsgId = msgId;
-  const grid = document.getElementById('reactSheetGrid');
-  grid.innerHTML = ALL_EMOJIS.map(e =>
-    `<button class="rs-emoji" onclick="reactTo(${msgId},'${e}');closeReactSheet();">${e}</button>`
-  ).join('');
-  document.getElementById('reactSheetOv').classList.add('show');
-  document.getElementById('reactSheet').classList.add('show');
-}
-
-function closeReactSheet(){
-  document.getElementById('reactSheetOv').classList.remove('show');
-  document.getElementById('reactSheet').classList.remove('show');
-  reactSheetMsgId = null;
-}
-
-// Long-press on message bubble → show react bar
-(function setupLongPressReact(){
-  let lpTimer = null, lpMsgId = null, lpAnchor = null;
-
-  function onDown(e){
-    const bub = e.target.closest('.bub');
-    if(!bub) return;
-    const msgEl = bub.closest('[data-msg-id]');
-    if(!msgEl) return;
-    lpMsgId = parseInt(msgEl.dataset.msgId);
-    lpAnchor = bub;
-    lpTimer = setTimeout(() => {
-      if(navigator.vibrate) navigator.vibrate(40);
-      dismissReactBar();
-      _spawnReactBar(lpMsgId, lpAnchor);
-      lpTimer = null;
-    }, 480);
-  }
-
-  function onUp(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } }
-
-  const area = document.getElementById('marea');
-  area.addEventListener('touchstart', onDown, { passive: true });
-  area.addEventListener('touchend',   onUp,   { passive: true });
-  area.addEventListener('touchmove',  onUp,   { passive: true });
-  area.addEventListener('mousedown',  onDown);
-  area.addEventListener('mouseup',    onUp);
-  area.addEventListener('mousemove',  onUp);
-})();
+// old long-press replaced by showMsgSheet system
 
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — SWIPE TO REPLY (mobile)
