@@ -614,6 +614,126 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .rec-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:recpulse 1s infinite;}
 
 @keyframes heartPop{0%{opacity:1;transform:translate(-50%,-50%) scale(0);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.4);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2);}}
+
+
+/* ── STORIES ARROW BUTTON + SLIDE-UP PANEL ── */
+/* Arrow button: fixed right edge, vertically centered between header and unread tab */
+.stories-arrow-btn{
+  position:fixed;
+  right:0;
+  top:50%;
+  transform:translateY(-50%);
+  width:22px;
+  height:52px;
+  background:var(--sb2);
+  border:1px solid var(--bdr);
+  border-right:none;
+  border-radius:10px 0 0 10px;
+  display:none; /* shown on mobile only */
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:60;
+  font-size:12px;
+  color:var(--mute);
+  flex-direction:column;
+  gap:2px;
+  box-shadow:-2px 0 8px rgba(0,0,0,.12);
+  -webkit-tap-highlight-color:transparent;
+}
+.stories-arrow-btn span{font-size:8px;writing-mode:vertical-rl;letter-spacing:1px;color:var(--mute);}
+/* Unviewed dot on arrow */
+.stories-arrow-btn .s-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--brand);
+  position:absolute;top:6px;right:4px;
+  display:none;
+}
+.stories-arrow-btn .s-dot.show{display:block;}
+
+/* Stories slide-up panel: 1/4 of screen height from bottom-right */
+.stories-popup-ov{
+  position:fixed;inset:0;
+  background:transparent;
+  z-index:200;
+  display:none;
+}
+.stories-popup-ov.show{display:block;}
+.stories-popup{
+  position:fixed;
+  right:0;
+  bottom:0;
+  width:100%;
+  height:25vh; /* 1/4 of screen */
+  min-height:180px;
+  background:var(--card);
+  border-radius:18px 18px 0 0;
+  border-top:1px solid var(--bdr);
+  border-left:1px solid var(--bdr);
+  box-shadow:-4px -4px 24px rgba(0,0,0,.22);
+  z-index:201;
+  display:flex;
+  flex-direction:column;
+  transform:translateY(105%);
+  transition:transform .3s cubic-bezier(.34,1.1,.64,1);
+  overflow:hidden;
+}
+.stories-popup.show{transform:translateY(0);}
+.stories-popup-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px 6px;
+  flex-shrink:0;
+  border-bottom:1px solid var(--bdr);
+}
+.stories-popup-title{font-size:13px;font-weight:700;color:var(--txt);}
+.stories-popup-close{
+  border:none;background:transparent;
+  color:var(--mute);font-size:18px;cursor:pointer;
+  padding:0 4px;line-height:1;
+}
+.stories-popup-list{
+  flex:1;
+  overflow-y:auto;
+  scrollbar-width:none;
+  padding:6px 0;
+}
+.stories-popup-list::-webkit-scrollbar{display:none;}
+/* Story row inside popup */
+.sp-add-row,.sp-story-row{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 14px;cursor:pointer;
+  transition:background .12s;
+}
+.sp-add-row:active,.sp-story-row:active{background:var(--hov);}
+.sp-av{
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;color:#fff;
+  background:var(--brand);flex-shrink:0;
+  position:relative;
+}
+.sp-av-add{
+  background:var(--hov);
+  border:2px dashed var(--brand);
+  color:var(--brand);font-size:20px;
+}
+/* Gradient ring for unviewed, grey for viewed */
+.sp-ring{
+  position:absolute;inset:-3px;border-radius:50%;
+  border:2.5px solid transparent;
+}
+.sp-ring.unviewed{
+  background:linear-gradient(var(--card),var(--card)) padding-box,
+    linear-gradient(135deg,#f97316,#a855f7,#3b82f6) border-box;
+}
+.sp-ring.viewed{border:2.5px solid var(--bdr);}
+.sp-info .sp-name{font-size:13px;font-weight:600;color:var(--txt);}
+.sp-info .sp-time{font-size:10px;color:var(--mute);margin-top:1px;}
+
+@media(max-width:720px){
+  .stories-arrow-btn{display:flex;}
+}
+
 </style>
 </head>
 <body>
@@ -718,13 +838,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="spanel" id="srPanel">
     <div id="srList"></div>
   </div>
-  <div class="stories-container" id="storiesContainer">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 14px;">
-      <div class="llabel" style="padding:10px 0 3px 0;">Stories</div>
-      <button class="pill p-add" onclick="openCreateStoryModal()" style="padding:3px 8px;font-size:10px;">➕ Add</button>
-    </div>
-    <div class="stories-scroll" id="storiesScroll" style="display:flex;overflow-x:auto;padding:8px 0;"></div>
-  </div>
+
   <div class="clist" id="clist">
     <div class="llabel">Conversations</div>
     <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
@@ -909,6 +1023,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="sndbtn" onclick="sendMsg()">➤</button>
   </div>
 </main>
+
+
 <!-- Image Preview Modal -->
 <div class="img-preview-overlay" id="imgPreviewOverlay"></div>
 <div class="img-preview-modal" id="imgPreviewModal">
@@ -2776,11 +2892,58 @@ async function blockUser(userId){if(!confirm('Block this user? They won\'t be ab
 async function unblockUser(userId){if(!confirm('Unblock this user?'))return;try{const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User unblocked','ok');loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
 // ═══════ STORIES ═══════
 let currentStories=[],currentStoryIndex=0,currentStoryUserId=null;
-async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesBar(d.stories);}catch(e){console.error('Failed to load stories',e);}}
+async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesPanel(d.stories);}catch(e){console.error('Failed to load stories',e);}}
+// ── Stories popup system ──
+let _lastStories = [];
+
 function renderStoriesBar(stories){
-  const container=document.getElementById('storiesScroll');
-  if(!stories||stories.length===0){container.innerHTML='<div class="lempty" style="padding:12px;font-size:11px;">No stories yet</div>';return;}
-  container.innerHTML=stories.map(s=>`<div class="story-circle ${s.has_unviewed?'unviewed':''}" onclick="openStory(${s.user_id})" style="cursor:pointer;text-align:center;margin:0 8px;"><div class="av" style="border:2px solid ${s.has_unviewed?'var(--brand)':'var(--bdr)'};">${s.username[0].toUpperCase()}</div><div style="font-size:10px;margin-top:4px;color:var(--txt);">${esc(s.username)}</div></div>`).join('');
+  _lastStories = stories || [];
+  // Build popup list
+  const list = document.getElementById('storiesPopupList');
+  if(!list) return;
+
+  // "Add Story" row always first
+  let html = `<div class="sp-add-row" onclick="openCreateStoryModal();closeStoriesPopup();">
+    <div class="sp-av sp-av-add">+</div>
+    <div class="sp-info">
+      <div class="sp-name">Add Story</div>
+      <div class="sp-time">Share your moment</div>
+    </div>
+  </div>`;
+
+  if(_lastStories.length > 0){
+    html += _lastStories.map(s => {
+      const init = s.username[0].toUpperCase();
+      const ring = s.has_unviewed ? 'unviewed' : 'viewed';
+      const timeStr = s.stories&&s.stories[0] ? relTime(s.stories[0].created_at) : '';
+      return `<div class="sp-story-row" onclick="openStory(${s.user_id});closeStoriesPopup();">
+        <div class="sp-av">
+          <div class="sp-ring ${ring}"></div>
+          ${init}
+        </div>
+        <div class="sp-info">
+          <div class="sp-name">${esc(s.username)}</div>
+          <div class="sp-time">${timeStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  list.innerHTML = html;
+
+  // Show/hide unviewed dot on arrow button
+  const hasUnviewed = _lastStories.some(s => s.has_unviewed);
+  const dot = document.getElementById('storiesUnviewedDot');
+  if(dot) dot.classList.toggle('show', hasUnviewed);
+}
+
+function openStoriesPopup(){
+  document.getElementById('storiesPopupOv').classList.add('show');
+  requestAnimationFrame(()=>document.getElementById('storiesPopup').classList.add('show'));
+}
+function closeStoriesPopup(){
+  document.getElementById('storiesPopup').classList.remove('show');
+  document.getElementById('storiesPopupOv').classList.remove('show');
 }
 async function openStory(userId){
   try{const r=await fetch('/api/stories/friends');const d=await r.json();if(!d.success)return;const userStories=d.stories.find(s=>s.user_id===userId);if(!userStories||!userStories.stories.length)return;currentStories=userStories.stories;currentStoryIndex=0;currentStoryUserId=userId;showStory();}catch(e){toast('Failed to load story','err');}
@@ -3247,6 +3410,22 @@ setTimeout(loadPinnedChats,500);
   <div class="gsearch-body" id="gsearchBody">
     <div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>
   </div>
+</div>
+
+<!-- STORIES ARROW BUTTON (mobile, right edge) -->
+<button class="stories-arrow-btn" id="storiesArrowBtn" onclick="openStoriesPopup()" aria-label="Stories">
+  <span class="s-dot" id="storiesUnviewedDot"></span>
+  ›
+</button>
+
+<!-- STORIES POPUP PANEL -->
+<div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPopup()"></div>
+<div class="stories-popup" id="storiesPopup">
+  <div class="stories-popup-hdr">
+    <span class="stories-popup-title">📖 Stories</span>
+    <button class="stories-popup-close" onclick="closeStoriesPopup()">✕</button>
+  </div>
+  <div class="stories-popup-list" id="storiesPopupList"></div>
 </div>
 </body>
 </html>
