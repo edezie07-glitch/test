@@ -16,12 +16,14 @@ app = Flask(__name__)
 # ── Stable SECRET_KEY: use env var, or generate once and persist to a file ──
 # os.urandom(32) on every restart invalidates all sessions — never use it in prod
 def _get_secret_key():
+    # 1. Always prefer the environment variable (set this in Render dashboard)
     env_key = os.environ.get('SECRET_KEY')
     if env_key:
         return env_key
-    # Persist a generated key so restarts don't invalidate sessions
-    key_file = os.path.join(BASE_DIR, '.secret_key')
+    # 2. Try to persist a key to disk (works locally, fails gracefully on read-only hosts)
     try:
+        base = os.path.dirname(os.path.abspath(__file__))
+        key_file = os.path.join(base, '.secret_key')
         if os.path.exists(key_file):
             with open(key_file, 'r') as f:
                 k = f.read().strip()
@@ -33,8 +35,9 @@ def _get_secret_key():
             f.write(k)
         return k
     except Exception:
-        # Fallback: fixed key for single-process dev (still better than urandom)
-        return 'hpz-dev-key-change-in-production-via-SECRET_KEY-env-var'
+        pass
+    # 3. Stable fallback — set SECRET_KEY env var in Render for real security
+    return 'hpz-fallback-key-set-SECRET_KEY-env-var-in-render-dashboard'
 
 app.config['SECRET_KEY'] = _get_secret_key()
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
