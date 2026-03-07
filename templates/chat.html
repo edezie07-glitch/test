@@ -616,69 +616,34 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 @keyframes heartPop{0%{opacity:1;transform:translate(-50%,-50%) scale(0);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.4);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2);}}
 
 
-/* ── STORIES ARROW BUTTON + SLIDE-UP PANEL ── */
-/* Arrow button: fixed right edge, vertically centered between header and unread tab */
-.stories-arrow-btn{
-  position:fixed;
-  right:0;
-  top:50%;
-  transform:translateY(-50%);
-  width:22px;
-  height:52px;
-  background:var(--sb2);
-  border:1px solid var(--bdr);
-  border-right:none;
-  border-radius:10px 0 0 10px;
-  display:none; /* shown on mobile only */
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  z-index:60;
-  font-size:12px;
-  color:var(--mute);
-  flex-direction:column;
-  gap:2px;
-  box-shadow:-2px 0 8px rgba(0,0,0,.12);
-  -webkit-tap-highlight-color:transparent;
-}
-.stories-arrow-btn span{font-size:8px;writing-mode:vertical-rl;letter-spacing:1px;color:var(--mute);}
-/* Unviewed dot on arrow */
-.stories-arrow-btn .s-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--brand);
-  position:absolute;top:6px;right:4px;
-  display:none;
-}
-.stories-arrow-btn .s-dot.show{display:block;}
 
 /* Stories slide-up panel: 1/4 of screen height from bottom-right */
 .stories-popup-ov{
   position:fixed;inset:0;
-  background:transparent;
+  background:rgba(0,0,0,.3);
   z-index:200;
   display:none;
+  backdrop-filter:blur(1px);
 }
 .stories-popup-ov.show{display:block;}
 .stories-popup{
   position:fixed;
   right:0;
+  top:0;
   bottom:0;
-  width:100%;
-  height:25vh; /* 1/4 of screen */
-  min-height:180px;
+  width:72vw;        /* roughly 3/4 — leaves 1/4 of screen visible on left */
+  max-width:300px;
   background:var(--card);
-  border-radius:18px 18px 0 0;
-  border-top:1px solid var(--bdr);
   border-left:1px solid var(--bdr);
-  box-shadow:-4px -4px 24px rgba(0,0,0,.22);
+  box-shadow:-6px 0 28px rgba(0,0,0,.28);
   z-index:201;
   display:flex;
   flex-direction:column;
-  transform:translateY(105%);
-  transition:transform .3s cubic-bezier(.34,1.1,.64,1);
+  transform:translateX(105%);
+  transition:transform .28s cubic-bezier(.34,1.1,.64,1);
   overflow:hidden;
 }
-.stories-popup.show{transform:translateY(0);}
+.stories-popup.show{transform:translateX(0);}
 .stories-popup-hdr{
   display:flex;align-items:center;justify-content:space-between;
   padding:10px 14px 6px;
@@ -788,10 +753,25 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <!-- Search results panel (mobile) -->
   <div class="spanel" id="srPanelClp"><div id="srListClp"></div></div>
-  <!-- Tabs: All / Unread -->
-  <div class="clp-tabs">
+  <!-- Tabs: All / Unread + Stories arrow -->
+  <div class="clp-tabs" style="position:relative;">
     <div class="clp-tab active" id="tabAll" onclick="switchTab('all')">All</div>
     <div class="clp-tab" id="tabUnread" onclick="switchTab('unread')">Unread</div>
+    <button id="storiesArrowBtn" onclick="openStoriesPanel()" style="
+      position:absolute;right:0;top:0;bottom:0;
+      width:36px;border:none;background:transparent;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;color:var(--brand);cursor:pointer;
+      border-left:1px solid var(--bdr);
+      -webkit-tap-highlight-color:transparent;
+    " title="Stories">
+      <span id="storiesUnviewedDot" style="
+        position:absolute;top:6px;right:6px;
+        width:7px;height:7px;border-radius:50%;
+        background:var(--brand);display:none;
+      "></span>
+      ›
+    </button>
   </div>
   <!-- Chat list body -->
   <div class="clp-body" id="clpBody">
@@ -837,6 +817,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <div class="spanel" id="srPanel">
     <div id="srList"></div>
+  </div>
+  <div class="stories-container" id="storiesContainer" style="flex-shrink:0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 14px;">
+      <div class="llabel" style="padding:10px 0 3px 0;">Stories</div>
+      <button class="pill p-add" onclick="openCreateStoryModal()" style="padding:3px 8px;font-size:10px;">➕ Add</button>
+    </div>
+    <div id="storiesScroll" style="display:flex;overflow-x:auto;padding:8px 6px;gap:4px;scrollbar-width:none;"></div>
   </div>
 
   <div class="clist" id="clist">
@@ -2903,7 +2890,7 @@ function renderStoriesBar(stories){
   if(!list) return;
 
   // "Add Story" row always first
-  let html = `<div class="sp-add-row" onclick="openCreateStoryModal();closeStoriesPopup();">
+  let html = `<div class="sp-add-row" onclick="openCreateStoryModal();closeStoriesPanel();">
     <div class="sp-av sp-av-add">+</div>
     <div class="sp-info">
       <div class="sp-name">Add Story</div>
@@ -2916,7 +2903,7 @@ function renderStoriesBar(stories){
       const init = s.username[0].toUpperCase();
       const ring = s.has_unviewed ? 'unviewed' : 'viewed';
       const timeStr = s.stories&&s.stories[0] ? relTime(s.stories[0].created_at) : '';
-      return `<div class="sp-story-row" onclick="openStory(${s.user_id});closeStoriesPopup();">
+      return `<div class="sp-story-row" onclick="openStory(${s.user_id});closeStoriesPanel();">
         <div class="sp-av">
           <div class="sp-ring ${ring}"></div>
           ${init}
@@ -2934,14 +2921,14 @@ function renderStoriesBar(stories){
   // Show/hide unviewed dot on arrow button
   const hasUnviewed = _lastStories.some(s => s.has_unviewed);
   const dot = document.getElementById('storiesUnviewedDot');
-  if(dot) dot.classList.toggle('show', hasUnviewed);
+  if(dot) dot.style.display = hasUnviewed ? 'block' : 'none';
 }
 
-function openStoriesPopup(){
+function openStoriesPanel(){
   document.getElementById('storiesPopupOv').classList.add('show');
   requestAnimationFrame(()=>document.getElementById('storiesPopup').classList.add('show'));
 }
-function closeStoriesPopup(){
+function closeStoriesPanel(){
   document.getElementById('storiesPopup').classList.remove('show');
   document.getElementById('storiesPopupOv').classList.remove('show');
 }
@@ -3412,18 +3399,12 @@ setTimeout(loadPinnedChats,500);
   </div>
 </div>
 
-<!-- STORIES ARROW BUTTON (mobile, right edge) -->
-<button class="stories-arrow-btn" id="storiesArrowBtn" onclick="openStoriesPopup()" aria-label="Stories">
-  <span class="s-dot" id="storiesUnviewedDot"></span>
-  ›
-</button>
-
 <!-- STORIES POPUP PANEL -->
-<div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPopup()"></div>
+<div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPanel()"></div>
 <div class="stories-popup" id="storiesPopup">
   <div class="stories-popup-hdr">
     <span class="stories-popup-title">📖 Stories</span>
-    <button class="stories-popup-close" onclick="closeStoriesPopup()">✕</button>
+    <button class="stories-popup-close" onclick="closeStoriesPanel()">✕</button>
   </div>
   <div class="stories-popup-list" id="storiesPopupList"></div>
 </div>
