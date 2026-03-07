@@ -2254,7 +2254,25 @@ function srBtn(u){
   if(u.relationship==='request_received')return`<button class="pill p-ok" onclick="quickAccept(${u.id})">Accept</button>`;
   return`<button class="pill p-add" onclick="addFriend(${u.id})">Add Friend</button>`;
 }
-async function loadFriends(){try{const r=await fetch('/api/friends');const d=await r.json();if(d.success){friends=d.friends;renderFriends();}}catch(e){}}
+async function loadFriends(){
+  try{
+    const r=await fetch('/api/friends');
+    const d=await r.json();
+    if(d.success){
+      friends=d.friends;
+      // Seed in-memory unread counts from server ONLY for chats not currently open
+      friends.forEach(f=>{
+        if(currentChatId!==f.chat_id){
+          // Only set if we don't already have a higher in-memory count
+          // (in case messages arrived via socket before this load)
+          const srv=f.unread_count||0;
+          if((unreadCounts[f.id]||0)<srv) unreadCounts[f.id]=srv;
+        }
+      });
+      renderFriends();
+    }
+  }catch(e){}
+}
 
 // ── Archive storage ──
 const archivedChats=new Set(JSON.parse(localStorage.getItem('hpz_archive')||'[]'));
@@ -2297,7 +2315,7 @@ function renderFriends(){
 // ── Build a single crow element ──
 function buildCrowEl(f){
   const isOnline=onlineUsers.has(f.id);
-  const uCount=(unreadCounts[f.id]||0)+(f.unread_count||0);
+  const uCount=unreadCounts[f.id]||0;
   const el=document.createElement('div');
   const isPin=pinnedChatIds&&pinnedChatIds.has(f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-'));
   el.className=`crow${currentChatId===f.chat_id?' active':''}${isPin?' pinned-chat':''}`;
@@ -2344,7 +2362,26 @@ function buildCrowEl(f){
 }
 
 function updateOnlineStatus(){if(currentFriendId&&onlineUsers.has(currentFriendId)){document.getElementById('chsub').textContent='Online';document.getElementById('chsub').classList.add('online');}else if(currentFriendId){document.getElementById('chsub').textContent='Friend';document.getElementById('chsub').classList.remove('online');}renderFriends();}
-function updatePrev(){loadFriends();}
+function updatePrev(msg){
+  if(!msg)return;
+  const parts=msg.chat_id.split('-').map(Number);
+  const fid=parts[0]===ME_ID?parts[1]:parts[0];
+  // Update last message preview in crow row without full reload
+  document.querySelectorAll(`.crow[data-fid="${fid}"] .cprev`).forEach(el=>{
+    let preview='';
+    if(msg.message_type==='image')preview='📷 Photo';
+    else if(msg.message_type==='audio')preview='🎵 Voice message';
+    else if(msg.message_type==='video')preview='🎥 Video';
+    else preview=(msg.content||'').slice(0,50);
+    el.textContent=preview;
+  });
+  document.querySelectorAll(`.crow[data-fid="${fid}"] .cts`).forEach(el=>{
+    el.textContent=relTime(msg.created_at);
+  });
+  // Re-sort friend list so latest chat bubbles to top
+  const f=friends.find(x=>x.id===fid);
+  if(f){f.last_message=msg.content;f.last_message_time=msg.created_at;}
+}
 
 // ── Load requests, sync all badges ──
 async function loadRequests(){
@@ -2489,7 +2526,13 @@ function updateUnreadBadge(msg){
   unreadCounts[fid]=(unreadCounts[fid]||0)+1;
   renderUnreadBadge(fid);
 }
-function clearUnreadBadge(fid){unreadCounts[fid]=0;renderUnreadBadge(fid);}
+function clearUnreadBadge(fid){
+  unreadCounts[fid]=0;
+  renderUnreadBadge(fid);
+  // Also zero out the server-loaded count on the friend object
+  const f=friends.find(x=>x.id===fid);
+  if(f)f.unread_count=0;
+}
 function renderUnreadBadge(fid){
   // Update all crow elements for this friend (desktop + mobile)
   document.querySelectorAll(`.crow[data-fid="${fid}"] .unread-badge`).forEach(el=>{
