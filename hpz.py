@@ -195,6 +195,14 @@ class BlockedUser(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint('blocker_id', 'blocked_id'),)
 
+class PinnedChat(db.Model):
+    __tablename__ = 'pinned_chats'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    chat_id = db.Column(db.String(100), nullable=False)
+    pinned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('user_id', 'chat_id'),)
+
 # ============================================================
 # DATABASE INITIALIZATION
 # ============================================================
@@ -947,6 +955,141 @@ def upload_image():
         return jsonify({'success': True, 'url': f'/static/uploads/{filename}', 'filename': filename})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+AUDIO_EXTENSIONS = {'webm', 'ogg', 'mp3', 'wav', 'm4a', 'aac', 'opus'}
+
+@app.route('/api/upload/audio', methods=['POST'])
+@login_required
+def upload_audio():
+    if 'audio' not in request.files:
+        return jsonify({'success': False, 'error': 'No audio file'}), 400
+    file = request.files['audio']
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'error': 'Empty file'}), 400
+    ext = 'webm'
+    if '.' in (file.filename or ''):
+        candidate = file.filename.rsplit('.', 1)[1].lower()
+        if candidate in AUDIO_EXTENSIONS:
+            ext = candidate
+    filename = f"audio_{session['user_id']}_{uuid.uuid4().hex[:10]}.{ext}"
+    try:
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({'success': True, 'url': f'/static/uploads/{filename}'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/messages/<int:msg_id>/forward', methods=['POST'])
+@login_required
+def forward_message(msg_id):
+    user_id = int(session['user_id'])
+    data = request.get_json() or {}
+    target_chat_ids = data.get('chat_ids', [])
+    if not target_chat_ids:
+        return jsonify({'success': False, 'error': 'No target chats'}), 400
+    original = Message.query.get(msg_id)
+    if not original:
+        return jsonify({'success': False, 'error': 'Message not found'}), 404
+    sender = User.query.get(user_id)
+    forwarded = []
+    for chat_id in target_chat_ids:
+        parts = chat_id.split('-')
+        if len(parts) != 2:
+            continue
+        try:
+            u1, u2 = int(parts[0]), int(parts[1])
+        except ValueError:
+            continue
+        if user_id not in (u1, u2):
+            continue
+        msg = Message(
+            chat_id=chat_id, sender_id=user_id,
+            content=original.content, message_type=original.message_type,
+            caption=original.caption,
+        )
+        db.session.add(msg)
+        db.session.flush()
+        msg_data = {
+            'id': msg.id, 'chat_id': chat_id,
+            'sender_id': user_id, 'sender_username': sender.username,
+            'content': msg.content, 'message_type': msg.message_type,
+            'caption': msg.caption, 'is_forwarded': True,
+            'created_at': msg.created_at.isoformat(),
+            'reply_to': None, 'is_edited': False,
+            'is_deleted': False, 'is_pinned': False,
+            'read_by': 0, 'reactions': {}, 'user_reactions': []
+        }
+        socketio.emit('new_message', msg_data, room=chat_id)
+        forwarded.append(chat_id)
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'forwarded_to': forwarded})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/messages/search/global', methods=['GET'])
+@login_required
+def global_search():
+    user_id = int(session['user_id'])
+    q = request.args.get('q', '').strip()
+    if not q or len(q) < 2:
+        return jsonify({'success': False, 'error': 'Query too short'}), 400
+    friendships = Friendship.query.filter(
+        or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
+    ).all()
+    chat_ids = [get_chat_id(f.user1_id, f.user2_id) for f in friendships]
+    if not chat_ids:
+        return jsonify({'success': True, 'results': []})
+    msgs = Message.query.filter(
+        Message.chat_id.in_(chat_ids),
+        Message.content.ilike(f'%{q}%'),
+        Message.is_deleted == False,
+        Message.message_type == 'text'
+    ).order_by(Message.created_at.desc()).limit(50).all()
+    results = []
+    for m in msgs:
+        s = User.query.get(m.sender_id)
+        parts = m.chat_id.split('-')
+        other_id = int(parts[1]) if int(parts[0]) == user_id else int(parts[0])
+        other = User.query.get(other_id)
+        results.append({
+            'id': m.id, 'chat_id': m.chat_id,
+            'content': m.content,
+            'sender_username': s.username if s else '?',
+            'other_username': other.username if other else '?',
+            'other_id': other_id,
+            'created_at': m.created_at.isoformat(),
+        })
+    return jsonify({'success': True, 'results': results})
+
+@app.route('/api/chats/pin', methods=['POST'])
+@login_required
+def pin_chat():
+    user_id = int(session['user_id'])
+    data = request.get_json() or {}
+    chat_id = data.get('chat_id', '')
+    if not chat_id:
+        return jsonify({'success': False, 'error': 'No chat_id'}), 400
+    existing = PinnedChat.query.filter_by(user_id=user_id, chat_id=chat_id).first()
+    if existing:
+        db.session.delete(existing)
+        db.session.commit()
+        return jsonify({'success': True, 'pinned': False})
+    pin = PinnedChat(user_id=user_id, chat_id=chat_id)
+    db.session.add(pin)
+    try:
+        db.session.commit()
+        return jsonify({'success': True, 'pinned': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/chats/pinned', methods=['GET'])
+@login_required
+def get_pinned_chats():
+    user_id = int(session['user_id'])
+    pins = PinnedChat.query.filter_by(user_id=user_id).all()
+    return jsonify({'success': True, 'pinned': [p.chat_id for p in pins]})
 
 # ============================================================
 # SOCKET.IO EVENTS
