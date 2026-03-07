@@ -222,13 +222,35 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .search-msg-from{font-size:11px;font-weight:600;color:var(--brand);margin-bottom:4px;}
 .search-msg-content{font-size:13px;color:var(--txt);}
 .search-msg-time{font-size:10px;color:var(--mute);margin-top:4px;}
-/* TOAST */
-.tstack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none;}
-.toast{background:var(--card);color:var(--txt);padding:9px 18px;border-radius:24px;font-size:12.5px;font-family:var(--font-b);box-shadow:var(--shad);border:1px solid var(--bdr);opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;}
-.toast.show{opacity:1;transform:translateY(0);}
+/* TOAST — system toasts (ok/err/info) */
+.tstack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+.toast{background:var(--card);color:var(--txt);padding:10px 20px;border-radius:24px;font-size:12.5px;font-family:var(--font-b);box-shadow:0 4px 20px rgba(0,0,0,.18);border:1px solid var(--bdr);opacity:0;transform:translateY(12px) scale(.96);transition:opacity .22s ease,transform .22s ease;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateY(0) scale(1);}
 .toast.ok{border-left:3px solid #22c55e;}
 .toast.err{border-left:3px solid #ef4444;}
 .toast.info{border-left:3px solid var(--brand);}
+/* IN-APP NOTIFICATION BUBBLE — slides in from top */
+.notif-stack{position:fixed;top:14px;right:14px;z-index:9100;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:320px;}
+@media(max-width:720px){.notif-stack{top:10px;right:8px;left:8px;max-width:none;}}
+.notif-bubble{
+  background:var(--card);
+  border:1px solid var(--bdr);
+  border-radius:16px;
+  padding:11px 14px;
+  display:flex;align-items:center;gap:11px;
+  box-shadow:0 6px 28px rgba(0,0,0,.22);
+  pointer-events:auto;cursor:pointer;
+  opacity:0;transform:translateY(-18px) scale(.95);
+  transition:opacity .25s cubic-bezier(.4,0,.2,1),transform .25s cubic-bezier(.4,0,.2,1);
+  min-width:220px;
+}
+.notif-bubble.show{opacity:1;transform:translateY(0) scale(1);}
+.notif-bubble.hide{opacity:0;transform:translateY(-14px) scale(.95);}
+.notif-av{width:38px;height:38px;border-radius:10px;background:var(--brand);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-body{flex:1;min-width:0;}
+.notif-name{font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notif-text{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:3px;}
 /* Context Menu */
 .ctx-menu{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:4px;min-width:160px;box-shadow:var(--shad);z-index:1000;display:none;}
 .ctx-menu.show{display:block;}
@@ -844,6 +866,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 <div class="tstack" id="tstack"></div>
+<div class="notif-stack" id="notifStack"></div>
 <!-- Blocklist Modal -->
 <div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
 <div class="sdraw" id="blocklistDraw">
@@ -1012,14 +1035,27 @@ function connectSocket(){
     }
   });
   socket.on('receipt_update',(data)=>{
-    const dot=document.querySelector(`.receipt[data-msg-id="${data.msg_id}"]`);
-    if(dot){dot.classList.remove('delivered');dot.classList.add('seen');dot.title='Seen';}
+    // Update ALL dots for this message (there should only be 1, but be safe)
+    document.querySelectorAll(`.receipt[data-msg-id="${data.msg_id}"]`).forEach(dot=>{
+      dot.classList.remove('delivered');
+      dot.classList.add('seen');
+      dot.title='Seen ✓✓';
+    });
   });
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
       appendMsg(msg);
     }else{
-      showNotification(msg.sender_username,msg.message_type==='image'?'📷 Photo':msg.content);
+      // Build a clean preview for the notification
+      let preview='';
+      if(msg.message_type==='image'){preview='📷 Sent a photo';}
+      else if(msg.message_type==='video'){preview='🎥 Sent a video';}
+      else if(msg.message_type==='audio'){preview='🎵 Sent a voice message';}
+      else{
+        const txt=(msg.content||'').trim();
+        preview=txt.length>60?txt.slice(0,60)+'…':txt;
+      }
+      if(msg.sender_id!==ME_ID)showInAppNotif(msg.sender_username,preview,msg.chat_id);
     }
     if(prefs.sound&&msg.sender_id!==ME_ID)beep();
     updatePrev(msg);
@@ -1093,8 +1129,12 @@ function appendMsg(msg,scroll=true){
   }
   else if(!msg.is_deleted){body+=esc(msg.content).replace(/\n/g,'<br>');}
   else{body+='<em style="opacity:.5">[Message deleted]</em>';}
-  const receiptClass=isSent?(msg.read_by>0?'seen':'delivered'):'';
-  const receiptDot=isSent&&!msg.is_deleted?`<span class="receipt ${receiptClass}" data-msg-id="${msg.id}" title="${receiptClass==='seen'?'Seen':'Delivered'}"></span>`:'';
+  // Read receipt: 1 dot, sender-only, never on deleted msgs
+  // delivered = light orange hollow, seen = bright solid orange
+  const receiptState=isSent&&!msg.is_deleted?(msg.read_by>0?'seen':'delivered'):null;
+  const receiptDot=receiptState
+    ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptState==='seen'?'Seen ✓✓':'Delivered ✓'}"></span>`
+    :'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
   inner+=`<div class="${bubClass}" oncontextmenu="showCtxMenu(event,${msg.id},${isSent})">`;
   inner+=body;
@@ -1651,7 +1691,7 @@ function setupCallListeners(){
     catch(e){toast('❌ Call setup failed','err');endCall();}
   });
   socket.on('call_rejected',data=>{const name=data.callee_name||'User';const msg=data.busy?name+' is in another call':name+' declined the call';toast(msg,'info');cleanupCall();});
-  socket.on('missed_call_notify',data=>{showNotification(data.caller_name,'📵 Missed call');if(prefs.sound)beep();appendCallMsg('missed',0,null,true);toast('📵 Missed call from '+data.caller_name,'err');});
+  socket.on('missed_call_notify',data=>{showInAppNotif(data.caller_name,'📵 Missed call',null);if(prefs.sound)beep();appendCallMsg('missed',0,null,true);});
   socket.on('ice_candidate',async data=>{
     if(!cd.pc||!data.candidate)return;
     if(!cd.pc.remoteDescription?.type){cd.pending.push(data.candidate);}
@@ -1902,12 +1942,65 @@ function showTyping(name){document.getElementById('tytxt').textContent=`${name} 
 function hideTyping(){document.getElementById('tybar').style.display='none';}
 function beep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.value=880;g.gain.setValueAtTime(.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}catch(e){}}
 function requestNotifPermission(){if(!('Notification' in window))return;if(Notification.permission==='default'){Notification.requestPermission().then(p=>{if(p==='granted')toast('🔔 Notifications enabled','ok');});}}
-function showNotification(title,body){
-  if(!prefs.sound)return;
-  toast('💬 '+title+': '+body,'info');
-  if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
-    try{const n=new Notification(title,{body,icon:'/logo',tag:'hpz-msg',renotify:true,silent:false});n.onclick=()=>{window.focus();n.close();};setTimeout(()=>n.close(),5000);}catch(e){}
+// ── In-app notification bubble (slides in from top-right) ──
+let _notifTimer={};
+function showInAppNotif(name,text,chatId){
+  const stack=document.getElementById('notifStack');
+  // Deduplicate: if same sender already showing, update it
+  const existing=stack.querySelector(`[data-notif-chat="${CSS.escape(chatId||'')}"]`);
+  if(existing){
+    existing.querySelector('.notif-text').textContent=text;
+    clearTimeout(_notifTimer[chatId]);
+    _notifTimer[chatId]=setTimeout(()=>dismissNotif(existing),4000);
+    return;
   }
+  const el=document.createElement('div');
+  el.className='notif-bubble';
+  el.setAttribute('data-notif-chat',chatId||'');
+  el.innerHTML=`
+    <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
+    <div class="notif-body">
+      <div class="notif-name">${esc(name)}</div>
+      <div class="notif-text">${esc(text)}</div>
+    </div>
+    <div class="notif-time">${nowNotifTime()}</div>
+  `;
+  // Click to open that chat
+  el.addEventListener('click',()=>{
+    dismissNotif(el);
+    const f=friends.find(fr=>{
+      const cid=fr.chat_id||[Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
+      return cid===chatId;
+    });
+    if(f)openChat(f.id,f.username,f.chat_id);
+  });
+  stack.appendChild(el);
+  // Animate in
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  // Also fire OS notification if tab is hidden
+  if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
+    try{
+      const n=new Notification(name,{body:text,icon:'/logo',tag:'hpz-'+chatId,renotify:true,silent:!prefs.sound});
+      n.onclick=()=>{window.focus();n.close();};
+      setTimeout(()=>n.close(),6000);
+    }catch(e){}
+  }
+  // Auto-dismiss after 4s
+  _notifTimer[chatId]=setTimeout(()=>dismissNotif(el),4000);
+}
+function dismissNotif(el){
+  if(!el||!el.parentNode)return;
+  el.classList.add('hide');
+  el.classList.remove('show');
+  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el);},280);
+}
+function nowNotifTime(){
+  const d=new Date(),h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');
+  return (h%12||12)+':'+m+(h>=12?' PM':' AM');
+}
+// Keep legacy showNotification for missed calls etc.
+function showNotification(title,body){
+  showInAppNotif(title,body,null);
 }
 const unreadCounts={};
 function updateUnreadBadge(msg){
@@ -2113,7 +2206,24 @@ async function logout(){
   // Replace history entry so back button can't return to chat
   window.location.replace('/');
 }
-function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
+function toast(msg,type='',dur=2800){
+  const s=document.getElementById('tstack');
+  // Don't stack duplicate toasts
+  for(const existing of s.children){
+    if(existing.dataset.msg===msg){
+      clearTimeout(existing._t);
+      existing._t=setTimeout(()=>{existing.classList.remove('show');setTimeout(()=>existing.remove(),240);},dur);
+      return;
+    }
+  }
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.textContent=msg;
+  el.dataset.msg=msg;
+  s.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  el._t=setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),240);},dur);
+}
 function toL(iso){const s=iso.endsWith('Z')||iso.includes('+')?iso:iso+'Z';return new Date(s);}
 function fmtTime(iso){const d=toL(iso),now=new Date();const h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');const ap=h>=12?'PM':'AM',hh=String(h%12||12);const t=`${hh}:${m} ${ap}`;if(d.toDateString()===now.toDateString())return t;const y=new Date(now);y.setDate(now.getDate()-1);if(d.toDateString()===y.toDateString())return`Yesterday ${t}`;return`${d.getMonth()+1}/${d.getDate()} ${t}`;}
 function relTime(iso){const s=(Date.now()-toL(iso).getTime())/1000;if(s<60)return'now';if(s<3600)return`${Math.floor(s/60)}m`;if(s<86400)return`${Math.floor(s/3600)}h`;return`${Math.floor(s/86400)}d`;}
