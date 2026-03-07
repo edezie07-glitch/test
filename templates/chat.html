@@ -164,16 +164,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .react-emoji:hover{background:var(--hov);}
 .bub img{max-width:260px;max-height:260px;border-radius:10px;display:block;cursor:zoom-in;margin-bottom:4px;}
 /* Scrollable photo strip */
-.photo-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;max-width:320px;scrollbar-width:thin;scrollbar-color:var(--bdr) transparent;}
-.photo-strip::-webkit-scrollbar{height:4px;}
+.photo-strip{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;max-width:min(320px,75vw);-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:rgba(124,106,255,.4) transparent;cursor:grab;}
+.photo-strip:active{cursor:grabbing;}
+.photo-strip::-webkit-scrollbar{height:3px;}
 .photo-strip::-webkit-scrollbar-track{background:transparent;}
-.photo-strip::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:4px;}
-.photo-strip img{width:110px;height:110px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;transition:opacity .15s;}
-.photo-strip img:hover{opacity:.88;}
-/* Read receipt circle */
-.receipt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:5px;vertical-align:middle;flex-shrink:0;transition:background .4s;}
-.receipt.delivered{background:rgba(255,180,100,.45);border:1.5px solid rgba(255,150,60,.5);}
-.receipt.seen{background:#ff8c00;border:1.5px solid #e07800;box-shadow:0 0 4px rgba(255,140,0,.5);}
+.photo-strip::-webkit-scrollbar-thumb{background:rgba(124,106,255,.35);border-radius:4px;}
+.photo-strip img{width:120px;height:120px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;scroll-snap-align:start;transition:opacity .15s,transform .15s;}
+.photo-strip img:hover{opacity:.88;transform:scale(1.02);}
+/* Read receipt circle — light orange=delivered, bright orange=seen */
+.receipt{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:6px;vertical-align:middle;flex-shrink:0;transition:background .5s,box-shadow .5s;}
+.receipt.delivered{background:rgba(255,190,120,.35);border:2px solid rgba(255,160,80,.5);}
+.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 5px rgba(255,136,0,.55);}
 /* Row wrapper for time + receipt */
 .msg-foot{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;}
 .mts{font-size:11px;opacity:.65;white-space:nowrap;display:block;margin-top:4px;}
@@ -2098,9 +2099,18 @@ function unarchiveFromPage(fid,e){
 
 async function logout(){
   try{await fetch('/api/auth/logout',{method:'POST',credentials:'include'});}catch(e){}
-  if(socket){socket.disconnect();socket=null;}
+  if(socket){try{socket.disconnect();}catch(e){}socket=null;}
+  // Nuke all client-side cookies
+  try{
+    document.cookie.split(';').forEach(c=>{
+      const name=c.split('=')[0].trim();
+      document.cookie=name+'=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      document.cookie=name+'=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain='+location.hostname;
+    });
+  }catch(e){}
   try{localStorage.clear();}catch(e){}
   try{sessionStorage.clear();}catch(e){}
+  // Replace history entry so back button can't return to chat
   window.location.replace('/');
 }
 function toast(msg,type=''){const s=document.getElementById('tstack');const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=msg;s.appendChild(el);requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220);},2800);}
