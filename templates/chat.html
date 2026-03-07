@@ -1500,20 +1500,60 @@ async function getMedia(type){
 }
 function attachAudio(stream){
   let el=document.getElementById('remoteAudio');if(el)el.remove();
-  el=document.createElement('audio');el.id='remoteAudio';el.autoplay=true;el.setAttribute('playsinline','');el.muted=false;el.volume=1.0;el.style.display='none';document.body.appendChild(el);
-  el.srcObject=stream;let attempt=0;
-  function tryPlay(){el.muted=false;el.volume=1.0;el.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});}tryPlay();
+  el=document.createElement('audio');
+  el.id='remoteAudio';
+  el.autoplay=true;
+  el.setAttribute('playsinline','');
+  el.setAttribute('webkit-playsinline','');
+  el.muted=false;
+  el.volume=1.0;
+  el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+  document.body.appendChild(el);
+  // Set srcObject AFTER appending to DOM
+  el.srcObject=stream;
+  let attempt=0;
+  function tryPlay(){
+    el.muted=false;
+    el.volume=1.0;
+    const p=el.play();
+    if(p&&p.catch){
+      p.catch(err=>{
+        console.warn('[audio] play attempt',attempt,'failed:',err.name);
+        if(attempt++<30)setTimeout(tryPlay,400);
+      });
+    }
+  }
+  // Small delay so srcObject is fully set before play
+  setTimeout(tryPlay,100);
+  // Also try again when the stream gets a new active audio track
+  stream.addEventListener('addtrack',()=>{
+    el.srcObject=stream;
+    setTimeout(tryPlay,100);
+  });
 }
 function attachVideo(stream){
-  const rv=document.getElementById('remoteVideo');if(!rv)return;rv.srcObject=stream;rv.setAttribute('playsinline','');rv.muted=true;let attempt=0;
-  function tryPlay(){rv.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});}tryPlay();
+  const rv=document.getElementById('remoteVideo');if(!rv)return;
+  rv.srcObject=stream;
+  rv.setAttribute('playsinline','');
+  rv.setAttribute('webkit-playsinline','');
+  // Do NOT mute the video element — audio comes from the <audio> el
+  rv.muted=true;
+  let attempt=0;
+  function tryPlay(){rv.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});}
+  setTimeout(tryPlay,100);
 }
 function makePc(targetId){
   if(cd.pc){try{cd.pc.close();}catch(e){}}
   const pc=new RTCPeerConnection(STUN);cd.pc=pc;cd.pending=[];
   pc.onicecandidate=e=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
-  const audioStream=new MediaStream();const videoStream=new MediaStream();
-  pc.ontrack=e=>{const track=e.track;if(track.kind==='audio'){audioStream.addTrack(track);attachAudio(audioStream);}if(track.kind==='video'){videoStream.addTrack(track);attachVideo(videoStream);}};
+  const remoteStream=new MediaStream();
+  pc.ontrack=e=>{
+    const track=e.track;
+    if(!remoteStream.getTracks().find(t=>t.id===track.id))remoteStream.addTrack(track);
+    if(track.kind==='audio')attachAudio(remoteStream);
+    if(track.kind==='video')attachVideo(remoteStream);
+    track.onunmute=()=>{if(track.kind==='audio')attachAudio(remoteStream);};
+  };
   pc.onconnectionstatechange=()=>{
     const s=pc.connectionState;
     if(s==='connected'){setStatus('Connected ✅  ·  '+nowStr());startCallTimer();}
@@ -1554,7 +1594,27 @@ async function doCall(friend,type){
   }catch(e){mediaErr(e);cleanupCall();}
 }
 async function acceptCall(){
-  await unlockAudio();hideIncomingCall();const d=cd.incoming;if(!d){cleanupCall();return;}
+  // Create and play a silent audio element IMMEDIATELY on user tap
+  // This unlocks the audio context before any async work
+  try{
+    let primeEl=document.getElementById('remoteAudio');
+    if(primeEl)primeEl.remove();
+    primeEl=document.createElement('audio');
+    primeEl.id='remoteAudio';
+    primeEl.autoplay=true;
+    primeEl.muted=false;
+    primeEl.volume=1.0;
+    primeEl.setAttribute('playsinline','');
+    primeEl.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+    document.body.appendChild(primeEl);
+    // Play silence to unlock
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    if(ctx.state==='suspended')await ctx.resume();
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();src.buffer=buf;src.connect(ctx.destination);src.start(0);
+  }catch(e){}
+  await unlockAudio();
+  hideIncomingCall();const d=cd.incoming;if(!d){cleanupCall();return;}
   try{
     cd.active=true;cd.type=d.call_type;cd.calleeId=d.caller_id;cd.calleeName=d.caller_name;
     const stream=await getMedia(d.call_type);cd.localStream=stream;
