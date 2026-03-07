@@ -969,6 +969,18 @@ def view_story(story_id):
     try:
         db.session.add(StoryView(story_id=story_id, viewer_id=user_id))
         db.session.commit()
+        # Notify story owner instantly via socket
+        owner_sid = get_sid(story.user_id)
+        if owner_sid:
+            viewer = User.query.get(user_id)
+            # Get updated view count
+            view_count = StoryView.query.filter_by(story_id=story_id).count()
+            socketio.emit('story_viewed', {
+                'story_id': story_id,
+                'viewer_id': user_id,
+                'viewer_username': viewer.username if viewer else '',
+                'view_count': view_count
+            }, room=owner_sid)
         return jsonify({'success': True, 'message': 'Story viewed'})
     except Exception as e:
         db.session.rollback()
