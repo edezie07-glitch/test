@@ -11,6 +11,7 @@
 [data-theme="light"]{--bg:#f2f2fa;--sb:#fff;--sb2:#f7f7fd;--card:#fff;--inp:#f7f7fd;--recv:#fff;--sent:var(--brand);--hov:rgba(0,0,0,.04);--act:rgba(124,106,255,.1);--bdr:rgba(0,0,0,.07);--txt:#1a1a2e;--sub:rgba(0,0,0,.45);--mute:rgba(0,0,0,.3);--chat:#eaeaf4;--hdr:#fff;--ibdr:rgba(0,0,0,.12);--shad:0 4px 24px rgba(0,0,0,.1);--scr:rgba(124,106,255,.4);--online:#22c55e;--warn:#fb923c;}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
+body{overflow-x:hidden;}
 body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;color:var(--txt);transition:background .25s,color .25s;}
 ::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:transparent;}
 /* SIDEBAR */
@@ -114,7 +115,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .dangbtn{width:100%;padding:11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font-b);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--trans);margin-top:2px;}
 .dangbtn:hover{background:rgba(239,68,68,.18);}
 /* MAIN */
-.main{flex:1;display:flex;flex-direction:column;overflow:visible;background:var(--chat);transition:background .25s;}
+.main{flex:1;display:flex;flex-direction:column;overflow:visible;overflow-x:hidden;background:var(--chat);transition:background .25s;}
 .chdr{padding:13px 18px;min-height:62px;background:var(--hdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;transition:background .25s,border-color .25s;}
 .chdr-info{flex:1;min-width:0;}
 .chdr-nm{font-family:var(--font-h);font-size:15px;font-weight:700;color:var(--txt);}
@@ -130,7 +131,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .pinned-banner .pin-icon{color:var(--warn);font-size:14px;}
 .pinned-banner .pin-text{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Message Area */
-.marea{flex:1;overflow:visible;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;}
+.marea{flex:1;overflow:visible;overflow-x:hidden;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;}
 .clist{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none;-ms-overflow-style:none;}
 .clist::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}
 .daydiv{text-align:center;margin:10px 0 5px;}
@@ -1428,8 +1429,7 @@ function updateMsgInDOM(msg){
     if(foot)bub.appendChild(foot);
   } else if(bub&&msg.is_edited&&msg.message_type==='text'){
     const foot=bub.querySelector('.msg-foot');
-    bub.innerHTML=esc(msg.content).replace(/
-/g,'<br>');
+    bub.innerHTML=esc(msg.content).replace(/\n/g,'<br>');
     if(foot)bub.appendChild(foot);
     bub.classList.add('edited');
   }
@@ -2022,8 +2022,7 @@ function showMsgSheet(event, msgId, isSent){
 
   // Preview text
   const bub = msgEl.querySelector('.bub');
-  const previewText = bub?.textContent?.trim()?.split('
-')[0]?.substring(0,60) || '';
+  const previewText = bub?.textContent?.trim()?.split('\n')[0]?.substring(0,60) || '';
 
   // Set up sheet content
   document.getElementById('msPreviewText').textContent = previewText;
