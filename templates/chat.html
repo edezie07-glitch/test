@@ -280,27 +280,47 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .toast.err{border-left:3px solid #ef4444;}
 .toast.info{border-left:3px solid var(--brand);}
 /* IN-APP NOTIFICATION BUBBLE — slides in from top */
-.notif-stack{position:fixed;top:14px;right:14px;z-index:9100;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:320px;}
-@media(max-width:720px){.notif-stack{top:10px;right:8px;left:8px;max-width:none;}}
+.notif-stack{
+  position:fixed;top:12px;right:12px;
+  z-index:99999;  /* always on top of everything */
+  display:flex;flex-direction:column;gap:8px;
+  pointer-events:none;
+  width:min(320px, calc(100vw - 24px));
+}
 .notif-bubble{
   background:var(--card);
   border:1px solid var(--bdr);
-  border-radius:16px;
-  padding:11px 14px;
+  border-left:3.5px solid var(--brand);
+  border-radius:14px;
+  padding:11px 13px;
   display:flex;align-items:center;gap:11px;
-  box-shadow:0 6px 28px rgba(0,0,0,.22);
+  box-shadow:0 8px 32px rgba(0,0,0,.28);
   pointer-events:auto;cursor:pointer;
-  opacity:0;transform:translateY(-18px) scale(.95);
-  transition:opacity .25s cubic-bezier(.4,0,.2,1),transform .25s cubic-bezier(.4,0,.2,1);
-  min-width:220px;
+  opacity:0;
+  transform:translateX(110%);
+  transition:opacity .22s ease, transform .28s cubic-bezier(.34,1.1,.64,1);
+  width:100%;
 }
-.notif-bubble.show{opacity:1;transform:translateY(0) scale(1);}
-.notif-bubble.hide{opacity:0;transform:translateY(-14px) scale(.95);}
-.notif-av{width:38px;height:38px;border-radius:10px;background:var(--brand);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-bubble.show{opacity:1;transform:translateX(0);}
+.notif-bubble.hide{opacity:0;transform:translateX(110%);}
+.notif-av{
+  width:40px;height:40px;border-radius:12px;
+  background:var(--brand);color:#fff;
+  font-size:16px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
 .notif-body{flex:1;min-width:0;}
 .notif-name{font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .notif-text{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:3px;}
+.notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:2px;}
+.notif-close{
+  width:20px;height:20px;border-radius:50%;border:none;
+  background:var(--hov);color:var(--mute);
+  font-size:12px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;pointer-events:auto;
+}
 /* Context Menu */
 /* ── LONG-PRESS MESSAGE SHEET ── */
 .msg-sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;backdrop-filter:blur(2px);}
@@ -1427,6 +1447,13 @@ function connectSocket(){
   // Story deleted by a friend — refresh story bar
   socket.on('story_deleted',(data)=>{
     loadStories();
+  });
+  // Someone viewed YOUR story — update view count live
+  socket.on('story_viewed',(data)=>{
+    showInAppNotif(data.viewer_username, '👁️ viewed your story', null);
+    // If story viewer section is currently open, refresh it
+    const viewersEl = document.getElementById('storyViewers');
+    if(viewersEl && viewersEl.innerHTML !== '') loadStoryViewers(data.story_id);
   });
   // A friend updated their profile/avatar — refresh friend list so name/avatar is current
   socket.on('profile_updated',(data)=>{
@@ -2562,49 +2589,59 @@ function beep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext
 function requestNotifPermission(){if(!('Notification' in window))return;if(Notification.permission==='default'){Notification.requestPermission().then(p=>{if(p==='granted')toast('🔔 Notifications enabled','ok');});}}
 // ── In-app notification bubble (slides in from top-right) ──
 let _notifTimer={};
-function showInAppNotif(name,text,chatId){
-  const stack=document.getElementById('notifStack');
-  // Deduplicate: if same sender already showing, update it
-  const existing=stack.querySelector(`[data-notif-chat="${CSS.escape(chatId||'')}"]`);
+function showInAppNotif(name, text, chatId){
+  const stack = document.getElementById('notifStack');
+  const key = chatId || ('__'+name);
+
+  // Deduplicate: if same chat already showing, just update text + reset timer
+  const existing = stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
   if(existing){
-    existing.querySelector('.notif-text').textContent=text;
-    clearTimeout(_notifTimer[chatId]);
-    _notifTimer[chatId]=setTimeout(()=>dismissNotif(existing),4000);
+    existing.querySelector('.notif-text').textContent = text;
+    existing.querySelector('.notif-time').textContent = nowNotifTime();
+    clearTimeout(_notifTimer[key]);
+    _notifTimer[key] = setTimeout(()=>dismissNotif(existing), 5000);
     return;
   }
-  const el=document.createElement('div');
-  el.className='notif-bubble';
-  el.setAttribute('data-notif-chat',chatId||'');
-  el.innerHTML=`
+
+  const el = document.createElement('div');
+  el.className = 'notif-bubble';
+  el.setAttribute('data-notif-key', key);
+  el.innerHTML = `
     <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
     <div class="notif-body">
       <div class="notif-name">${esc(name)}</div>
       <div class="notif-text">${esc(text)}</div>
     </div>
     <div class="notif-time">${nowNotifTime()}</div>
+    <button class="notif-close" onclick="event.stopPropagation();dismissNotif(this.closest('.notif-bubble'));">✕</button>
   `;
-  // Click to open that chat
-  el.addEventListener('click',()=>{
+
+  // Tap bubble → open chat
+  el.addEventListener('click', ()=>{
     dismissNotif(el);
-    const f=friends.find(fr=>{
-      const cid=fr.chat_id||[Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
-      return cid===chatId;
+    if(!chatId) return;
+    const f = friends.find(fr=>{
+      const cid = fr.chat_id || [Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
+      return cid === chatId;
     });
-    if(f)openChat(f.id,f.username,f.chat_id);
+    if(f) openChat(f.id, f.username, f.chat_id);
   });
+
   stack.appendChild(el);
-  // Animate in
+  // Force reflow then animate in from right
   requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
-  // Also fire OS notification if tab is hidden
-  if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
+
+  // OS notification (always try, not just when hidden)
+  if('Notification' in window && Notification.permission === 'granted'){
     try{
-      const n=new Notification(name,{body:text,icon:'/logo',tag:'hpz-'+chatId,renotify:true,silent:!prefs.sound});
-      n.onclick=()=>{window.focus();n.close();};
-      setTimeout(()=>n.close(),6000);
+      const n = new Notification(name, {body:text, icon:'/logo', tag:'hpz-'+key, renotify:true, silent:!prefs.sound});
+      n.onclick = ()=>{ window.focus(); n.close(); };
+      setTimeout(()=>n.close(), 6000);
     }catch(e){}
   }
-  // Auto-dismiss after 4s
-  _notifTimer[chatId]=setTimeout(()=>dismissNotif(el),4000);
+
+  // Auto-dismiss after 5s
+  _notifTimer[key] = setTimeout(()=>dismissNotif(el), 5000);
 }
 function dismissNotif(el){
   if(!el||!el.parentNode)return;
@@ -2963,7 +3000,52 @@ function showStory(){
   fetch(`/api/stories/${story.id}/view`,{method:'POST'});
   if(story.is_own){loadStoryViewers(story.id);}else{document.getElementById('storyViewers').innerHTML='';}
 }
-async function loadStoryViewers(storyId){try{const r=await fetch(`/api/stories/${storyId}/viewers`);const d=await r.json();if(d.success)document.getElementById('storyViewers').innerHTML=`👁️ Viewed by ${d.count} ${d.count===1?'person':'people'}`;}catch(e){}}
+async function loadStoryViewers(storyId){
+  const el = document.getElementById('storyViewers');
+  if(!el) return;
+  try{
+    const r = await fetch(`/api/stories/${storyId}/viewers`);
+    const d = await r.json();
+    if(!d.success){ el.innerHTML=''; return; }
+    if(d.count === 0){ el.innerHTML='<div style="font-size:12px;color:var(--mute);padding:6px 0;">No views yet</div>'; return; }
+    // Count badge + avatar row
+    const avatars = d.viewers.slice(0,6).map(v=>
+      `<div title="${esc(v.username)}" style="width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--card);margin-right:-6px;">${v.username[0].toUpperCase()}</div>`
+    ).join('');
+    const names = d.viewers.slice(0,3).map(v=>esc(v.username)).join(', ')
+                  + (d.count > 3 ? ` +${d.count-3} more` : '');
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;" onclick="showViewersList(${storyId})">
+      <div style="display:flex;padding-left:6px;">${avatars}</div>
+      <div style="margin-left:8px;">
+        <div style="font-size:12px;font-weight:600;color:var(--txt);">👁️ ${d.count} ${d.count===1?'view':'views'}</div>
+        <div style="font-size:11px;color:var(--mute);">${names}</div>
+      </div>
+    </div>`;
+    el._viewers = d.viewers; // cache for modal
+  }catch(e){}
+}
+
+function showViewersList(storyId){
+  const el = document.getElementById('storyViewers');
+  if(!el||!el._viewers) return;
+  const list = el._viewers.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${v.username[0].toUpperCase()}</div>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--txt);">${esc(v.username)}</div>
+      <div style="font-size:11px;color:var(--mute);">${relTime(v.viewed_at)}</div>
+    </div>
+  </div>`).join('');
+  // Reuse del-sheet pattern for a quick modal
+  const sheet = document.getElementById('delSheet');
+  const ov    = document.getElementById('delSheetOv');
+  sheet.innerHTML = `<div style="padding:14px 16px 8px;font-size:14px;font-weight:700;color:var(--txt);display:flex;justify-content:space-between;align-items:center;">
+    👁️ Viewers (${el._viewers.length})
+    <button onclick="hideDelSheet()" style="border:none;background:transparent;font-size:20px;color:var(--mute);cursor:pointer;">✕</button>
+  </div>
+  <div style="overflow-y:auto;max-height:60vh;padding-bottom:16px;">${list}</div>`;
+  ov.classList.add('show');
+  requestAnimationFrame(()=>sheet.classList.add('show'));
+}
 function prevStory(){if(currentStoryIndex>0){currentStoryIndex--;showStory();}else{toast('This is the first story','info');}}
 function nextStory(){if(currentStoryIndex<currentStories.length-1){currentStoryIndex++;showStory();}else{closeStoryViewer();}}
 function closeStoryViewer(){document.getElementById('storyOverlay').classList.remove('show');document.getElementById('storyModal').classList.remove('show');loadStories();}
@@ -2973,11 +3055,36 @@ function toggleStoryType(){const type=document.getElementById('storyType').value
 document.getElementById('storyPrivacy')?.addEventListener('change',function(){document.getElementById('customPrivacySection').style.display=this.value==='custom'?'block':'none';if(this.value==='custom')loadCustomFriendsList();});
 function loadCustomFriendsList(){const list=document.getElementById('customFriendsList');list.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;"><span>${esc(f.username)}</span></label>`).join('');}
 async function createStory(){
-  const type=document.getElementById('storyType').value;const privacy=document.getElementById('storyPrivacy').value;let content='',mediaUrl='';
-  if(type==='text'){content=document.getElementById('storyTextContent').value.trim();if(!content){toast('Please enter story content','err');return;}}
-  else{const file=document.getElementById('storyImageFile').files[0];if(!file){toast('Please select an image','err');return;}const fd=new FormData();fd.append('image',file);try{const r=await fetch('/api/upload/image',{method:'POST',body:fd});const d=await r.json();if(!d.success){toast('Image upload failed','err');return;}mediaUrl=d.url;}catch(e){toast('Upload failed','err');return;}}
-  let customUsers=[];if(privacy==='custom'){customUsers=Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));if(!customUsers.length){toast('Select at least one friend','err');return;}}
-  try{const r=await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content,media_url:mediaUrl,media_type:type==='image'?'image':'text',privacy,custom_users:customUsers})});const d=await r.json();if(d.success){toast('✅ Story posted!','ok');closeCreateStory();loadStories();}else{toast(d.error||'Failed to post story','err');}}catch(e){toast('Failed to post story','err');}
+  const btn = document.querySelector('#createStoryModal .savebtn');
+  if(btn){btn.disabled=true;btn.textContent='Posting...';}
+  const type = document.getElementById('storyType').value;
+  const privacy = document.getElementById('storyPrivacy').value;
+  let content = '', mediaUrl = '', mediaType = 'text';
+  try{
+    if(type === 'text'){
+      content = document.getElementById('storyTextContent').value.trim();
+      if(!content){ toast('Please write something','err'); return; }
+    } else {
+      const file = document.getElementById('storyImageFile').files[0];
+      if(!file){ toast('Please select an image','err'); return; }
+      const fd = new FormData(); fd.append('image', file);
+      const up = await fetch('/api/upload/image',{method:'POST',body:fd});
+      const ud = await up.json();
+      if(!ud.success){ toast('Image upload failed: '+(ud.error||''),'err'); return; }
+      mediaUrl = ud.url; mediaType = 'image';
+    }
+    let customUsers = [];
+    if(privacy === 'custom'){
+      customUsers = Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));
+      if(!customUsers.length){ toast('Select at least one friend','err'); return; }
+    }
+    const r = await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({content, media_url:mediaUrl, media_type:mediaType, privacy, custom_users:customUsers})});
+    const d = await r.json();
+    if(d.success){ toast('✅ Story posted!','ok'); closeCreateStory(); loadStories(); }
+    else toast(d.error||'Failed to post story','err');
+  } catch(e){ toast('Failed: '+e.message,'err'); }
+  finally{ if(btn){btn.disabled=false;btn.textContent='📸 Post Story';} }
 }
 setTimeout(loadStories,1000);
 
