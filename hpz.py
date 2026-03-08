@@ -169,6 +169,8 @@ class Story(db.Model):
     content = db.Column(db.String(500))
     media_url = db.Column(db.String(500))
     media_type = db.Column(db.String(20), default='text')
+    audio_url = db.Column(db.String(500), default='')
+    audio_name = db.Column(db.String(200), default='')
     privacy = db.Column(db.String(20), default='friends')
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at = db.Column(db.DateTime)
@@ -884,6 +886,8 @@ def create_story():
     content = data.get('content', '')
     media_url = data.get('media_url', '')
     media_type = data.get('media_type', 'text')
+    audio_url = data.get('audio_url', '')
+    audio_name = data.get('audio_name', '')
     privacy = data.get('privacy', 'friends')
     custom_users = data.get('custom_users', [])
     if not content and not media_url:
@@ -891,7 +895,8 @@ def create_story():
     try:
         story = Story(
             user_id=user_id, content=content, media_url=media_url,
-            media_type=media_type, privacy=privacy,
+            media_type=media_type, audio_url=audio_url, audio_name=audio_name,
+            privacy=privacy,
             expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
         )
         db.session.add(story)
@@ -952,7 +957,7 @@ def get_friends_stories():
             stories_by_user[friend_id] = {
                 'user_id': friend_id, 'username': user.username, 'avatar_url': user.avatar_url,
                 'has_unviewed': unviewed,
-                'stories': [{'id': s.id, 'content': s.content, 'media_url': s.media_url, 'media_type': s.media_type, 'created_at': s.created_at.isoformat(), 'expires_at': s.expires_at.isoformat(), 'is_own': s.user_id == user_id, 'username': user.username} for s in visible_stories]
+                'stories': [{'id': s.id, 'content': s.content, 'media_url': s.media_url, 'media_type': s.media_type, 'audio_url': getattr(s,'audio_url',''), 'audio_name': getattr(s,'audio_name',''), 'created_at': s.created_at.isoformat(), 'expires_at': s.expires_at.isoformat(), 'is_own': s.user_id == user_id, 'username': user.username} for s in visible_stories]
             }
     return jsonify({'success': True, 'stories': list(stories_by_user.values())})
 
