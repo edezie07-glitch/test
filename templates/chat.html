@@ -717,20 +717,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 @media(max-width:720px){
   .stories-arrow-btn{display:flex;}
-  /* Story viewer fullscreen on mobile */
-  #storyModal{
-    width:100%!important;
-    max-width:100%!important;
-    height:100dvh;
-    max-height:100dvh!important;
-    border-radius:0!important;
-    top:0!important;
-    left:0!important;
-    transform:translate(0,0) scale(1)!important;
-    margin:0;
-  }
-  #storyModal.show{transform:translate(0,0) scale(1)!important;opacity:1!important;}
-  #storyContent{min-height:60vw!important;}
+  /* story viewer is now its own fullscreen div */
 }
 
 </style>
@@ -1265,29 +1252,95 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 <!-- Story Viewer Modal -->
-<div class="profile-overlay" id="storyOverlay" onclick="closeStoryViewer()"></div>
-<div class="profile-modal" id="storyModal" style="max-width:500px;width:96%;">
-  <div class="profile-header">
-    <div style="display:flex;align-items:center;gap:10px;flex:1;">
-      <div class="av sm" id="storyUserAvatar">U</div>
-      <div>
-        <h3 id="storyUsername" style="margin:0;">Username</h3>
-        <p style="font-size:11px;color:var(--mute);margin:0;" id="storyTime">2h ago</p>
-      </div>
+<!-- FULLSCREEN STORY VIEWER -->
+<div id="storyViewer" style="
+  display:none;
+  position:fixed;inset:0;
+  background:#000;
+  z-index:5000;
+  flex-direction:column;
+  touch-action:none;
+">
+  <!-- Progress bars -->
+  <div id="storyProgress" style="
+    display:flex;gap:3px;padding:10px 12px 6px;
+    position:absolute;top:0;left:0;right:0;z-index:2;
+  "></div>
+
+  <!-- Header -->
+  <div style="
+    position:absolute;top:28px;left:0;right:0;z-index:2;
+    display:flex;align-items:center;gap:10px;padding:0 14px;
+  ">
+    <div id="storyUserAvatar" style="
+      width:38px;height:38px;border-radius:50%;
+      background:var(--brand);color:#fff;
+      font-size:16px;font-weight:700;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;border:2px solid rgba(255,255,255,.4);
+    ">U</div>
+    <div style="flex:1;">
+      <div id="storyUsername" style="font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);">Username</div>
+      <div id="storyTime" style="font-size:11px;color:rgba(255,255,255,.7);">2h ago</div>
     </div>
-    <button class="closebtn" onclick="closeStoryViewer()">✕</button>
-  </div>
-  <div class="profile-body" style="padding:0;background:var(--bg);">
-    <div id="storyContent" style="min-height:400px;display:flex;align-items:center;justify-content:center;">
-      <img id="storyImage" style="max-width:100%;max-height:500px;border-radius:12px;display:none;">
-      <p id="storyText" style="padding:40px;font-size:18px;text-align:center;color:var(--txt);"></p>
+    <!-- Owner-only controls -->
+    <div id="storyOwnerBtns" style="display:none;gap:6px;align-items:center;">
+      <button onclick="editStoryPrivacy()" style="
+        border:none;background:rgba(255,255,255,.18);color:#fff;
+        border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;
+      ">🔒 Privacy</button>
+      <button onclick="deleteCurrentStory()" style="
+        border:none;background:rgba(239,68,68,.75);color:#fff;
+        border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;
+      ">🗑️</button>
     </div>
+    <button onclick="closeStoryViewer()" style="
+      border:none;background:rgba(0,0,0,.3);color:#fff;
+      border-radius:50%;width:34px;height:34px;font-size:20px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      -webkit-tap-highlight-color:transparent;
+    ">✕</button>
   </div>
-  <div style="padding:15px;border-top:1px solid var(--bdr);display:flex;gap:10px;" id="storyActions">
-    <button class="profile-action-btn" onclick="prevStory()" style="flex:1;">← Previous</button>
-    <button class="profile-action-btn" onclick="nextStory()" style="flex:1;">Next →</button>
+
+  <!-- Story content — tap left/right to navigate -->
+  <div id="storyContent" style="
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  ">
+    <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;">
+    <p id="storyText" style="
+      font-size:22px;font-weight:600;color:#fff;
+      text-align:center;padding:40px 24px;
+      text-shadow:0 2px 12px rgba(0,0,0,.8);
+      line-height:1.5;display:none;
+    "></p>
   </div>
-  <div style="padding:10px 15px;border-top:1px solid var(--bdr);font-size:12px;color:var(--mute);text-align:center;" id="storyViewers"></div>
+
+  <!-- Tap zones: left = prev, right = next -->
+  <div style="position:absolute;inset:0;display:flex;z-index:1;">
+    <div style="flex:1;cursor:pointer;" onclick="prevStory()"></div>
+    <div style="flex:1;cursor:pointer;" onclick="nextStory()"></div>
+  </div>
+
+  <!-- Bottom: viewers (owner only) -->
+  <div id="storyViewers" style="
+    position:absolute;bottom:0;left:0;right:0;z-index:2;
+    padding:12px 16px 24px;
+    background:linear-gradient(transparent,rgba(0,0,0,.7));
+  "></div>
+</div>
+
+<!-- Privacy edit sheet for own story -->
+<div class="del-sheet-ov" id="privacySheetOv" onclick="closePrivacySheet()"></div>
+<div class="del-sheet" id="privacySheet">
+  <div style="padding:14px 16px 8px;font-size:15px;font-weight:700;color:var(--txt);">🔒 Story Privacy</div>
+  <div style="padding:0 8px 16px;display:flex;flex-direction:column;gap:6px;">
+    <button onclick="setStoryPrivacy('public')"    class="del-opt" style="justify-content:flex-start;gap:10px;">🌍 <span>Public — everyone</span></button>
+    <button onclick="setStoryPrivacy('friends')"   class="del-opt" style="justify-content:flex-start;gap:10px;">👥 <span>Friends only</span></button>
+    <button onclick="setStoryPrivacy('custom')"    class="del-opt" style="justify-content:flex-start;gap:10px;">✏️ <span>Custom</span></button>
+    <button onclick="closePrivacySheet()" style="margin-top:4px;padding:12px;border-radius:12px;border:none;background:var(--hov);color:var(--mute);font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+  </div>
 </div>
 <!-- Create Story Modal -->
 <div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
@@ -3047,14 +3100,70 @@ async function openStory(userId){
     showStory();
   }catch(e){ toast('Failed to load story','err'); }
 }
+// ── Progress bar timer ──
+let _storyTimer = null;
+const STORY_DURATION = 5000; // 5s per story
+
 function showStory(){
-  if(!currentStories.length)return;const story=currentStories[currentStoryIndex];
-  document.getElementById('storyUsername').textContent=story.username;document.getElementById('storyTime').textContent=relTime(story.created_at);document.getElementById('storyUserAvatar').textContent=story.username[0].toUpperCase();
-  const imgEl=document.getElementById('storyImage');const textEl=document.getElementById('storyText');
-  if(story.media_url){imgEl.src=story.media_url;imgEl.style.display='block';textEl.style.display='none';}else{textEl.textContent=story.content;textEl.style.display='block';imgEl.style.display='none';}
-  document.getElementById('storyOverlay').classList.add('show');document.getElementById('storyModal').classList.add('show');
+  if(!currentStories.length) return;
+  const story = currentStories[currentStoryIndex];
+
+  // Show the viewer
+  const viewer = document.getElementById('storyViewer');
+  viewer.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // Fill header
+  document.getElementById('storyUsername').textContent = story.username;
+  document.getElementById('storyTime').textContent = relTime(story.created_at);
+  document.getElementById('storyUserAvatar').textContent = story.username[0].toUpperCase();
+
+  // Content
+  const imgEl  = document.getElementById('storyImage');
+  const textEl = document.getElementById('storyText');
+  if(story.media_url){
+    imgEl.src = story.media_url;
+    imgEl.style.display = 'block';
+    textEl.style.display = 'none';
+  } else {
+    textEl.textContent = story.content;
+    textEl.style.display = 'block';
+    imgEl.style.display = 'none';
+  }
+
+  // Owner controls: delete + privacy
+  const ownerBtns = document.getElementById('storyOwnerBtns');
+  if(story.is_own){
+    ownerBtns.style.display = 'flex';
+  } else {
+    ownerBtns.style.display = 'none';
+    document.getElementById('storyViewers').innerHTML = '';
+  }
+
+  // Progress bars
+  const prog = document.getElementById('storyProgress');
+  prog.innerHTML = currentStories.map((_,i) =>
+    `<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden;">
+      <div id="spb${i}" style="height:100%;background:#fff;width:${i<currentStoryIndex?'100':i===currentStoryIndex?'0':'0'}%;transition:none;"></div>
+    </div>`
+  ).join('');
+
+  // Animate current bar
+  clearTimeout(_storyTimer);
+  const bar = document.getElementById(`spb${currentStoryIndex}`);
+  if(bar){
+    requestAnimationFrame(()=>{
+      bar.style.transition = `width ${STORY_DURATION}ms linear`;
+      bar.style.width = '100%';
+    });
+  }
+
+  // Auto-advance
+  _storyTimer = setTimeout(()=>nextStory(), STORY_DURATION);
+
+  // Mark viewed + load viewers if own
   fetch(`/api/stories/${story.id}/view`,{method:'POST'});
-  if(story.is_own){loadStoryViewers(story.id);}else{document.getElementById('storyViewers').innerHTML='';}
+  if(story.is_own) loadStoryViewers(story.id);
 }
 async function loadStoryViewers(storyId){
   const el = document.getElementById('storyViewers');
@@ -3102,9 +3211,71 @@ function showViewersList(storyId){
   ov.classList.add('show');
   requestAnimationFrame(()=>sheet.classList.add('show'));
 }
-function prevStory(){if(currentStoryIndex>0){currentStoryIndex--;showStory();}else{toast('This is the first story','info');}}
-function nextStory(){if(currentStoryIndex<currentStories.length-1){currentStoryIndex++;showStory();}else{closeStoryViewer();}}
-function closeStoryViewer(){document.getElementById('storyOverlay').classList.remove('show');document.getElementById('storyModal').classList.remove('show');loadStories();}
+function prevStory(){
+  clearTimeout(_storyTimer);
+  if(currentStoryIndex > 0){ currentStoryIndex--; showStory(); }
+  // if at first, just restart it
+  else { currentStoryIndex = 0; showStory(); }
+}
+function nextStory(){
+  clearTimeout(_storyTimer);
+  if(currentStoryIndex < currentStories.length - 1){ currentStoryIndex++; showStory(); }
+  else { closeStoryViewer(); }
+}
+function closeStoryViewer(){
+  clearTimeout(_storyTimer);
+  document.getElementById('storyViewer').style.display = 'none';
+  document.body.style.overflow = '';
+  loadStories();
+}
+
+// ── Delete own story ──
+async function deleteCurrentStory(){
+  const story = currentStories[currentStoryIndex];
+  if(!story || !story.is_own) return;
+  if(!confirm('Delete this story?')) return;
+  try{
+    const r = await fetch(`/api/stories/${story.id}/delete`,{method:'DELETE'});
+    const d = await r.json();
+    if(d.success){
+      toast('Story deleted','ok');
+      closeStoryViewer();
+    } else {
+      toast(d.error||'Failed to delete','err');
+    }
+  } catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+// ── Edit story privacy ──
+let _privacyStoryId = null;
+function editStoryPrivacy(){
+  const story = currentStories[currentStoryIndex];
+  if(!story||!story.is_own) return;
+  _privacyStoryId = story.id;
+  clearTimeout(_storyTimer); // pause auto-advance while editing
+  document.getElementById('privacySheetOv').classList.add('show');
+  requestAnimationFrame(()=>document.getElementById('privacySheet').classList.add('show'));
+}
+function closePrivacySheet(){
+  document.getElementById('privacySheet').classList.remove('show');
+  document.getElementById('privacySheetOv').classList.remove('show');
+  // resume story timer
+  _storyTimer = setTimeout(()=>nextStory(), STORY_DURATION);
+}
+async function setStoryPrivacy(privacy){
+  if(!_privacyStoryId) return;
+  try{
+    const r = await fetch(`/api/stories/${_privacyStoryId}/privacy`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({privacy})
+    });
+    const d = await r.json();
+    if(d.success){ toast(`Privacy set to ${privacy}`,'ok'); }
+    else toast(d.error||'Failed','err');
+  } catch(e){ toast('Error','err'); }
+  closePrivacySheet();
+}
 function openCreateStoryModal(){document.getElementById('createStoryOverlay').classList.add('show');document.getElementById('createStoryModal').classList.add('show');document.getElementById('storyPrivacy').value='friends';toggleStoryType();}
 function closeCreateStory(){document.getElementById('createStoryOverlay').classList.remove('show');document.getElementById('createStoryModal').classList.remove('show');document.getElementById('storyTextContent').value='';document.getElementById('storyImageFile').value='';}
 function toggleStoryType(){const type=document.getElementById('storyType').value;document.getElementById('storyTextInput').style.display=type==='text'?'block':'none';document.getElementById('storyImageInput').style.display=type==='image'?'block':'none';}
