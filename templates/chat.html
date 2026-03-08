@@ -2949,57 +2949,68 @@ async function blockUser(userId){if(!confirm('Block this user? They won\'t be ab
 async function unblockUser(userId){if(!confirm('Unblock this user?'))return;try{const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User unblocked','ok');loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
 // ═══════ STORIES ═══════
 let currentStories=[],currentStoryIndex=0,currentStoryUserId=null;
-async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesPanel(d.stories);}catch(e){console.error('Failed to load stories',e);}}
+async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesBar(d.stories);}catch(e){console.error('Failed to load stories',e);}}
 // ── Stories popup system ──
 let _lastStories = [];
 
 function renderStoriesBar(stories){
   _lastStories = stories || [];
-  // Build popup list
+
+  // ── Mobile panel: vertical list ──
   const list = document.getElementById('storiesPopupList');
-  if(!list) return;
+  if(list){
+    let html = '';
 
-  // "Add Story" row always first
-  let html = `<div class="sp-add-row" onclick="openCreateStoryModal();closeStoriesPanel();">
-    <div class="sp-av sp-av-add">+</div>
-    <div class="sp-info">
-      <div class="sp-name">Add Story</div>
-      <div class="sp-time">Share your moment</div>
-    </div>
-  </div>`;
+    // My story row at top
+    html += `<div class="sp-add-row" onclick="closeStoriesPanel();openCreateStoryModal();">
+      <div class="sp-av sp-av-add">+</div>
+      <div class="sp-info">
+        <div class="sp-name">Your Story</div>
+        <div class="sp-time">Tap to add</div>
+      </div>
+    </div>`;
 
-  if(_lastStories.length > 0){
-    html += _lastStories.map(s => {
-      const init = s.username[0].toUpperCase();
-      const ring = s.has_unviewed ? 'unviewed' : 'viewed';
-      const timeStr = s.stories&&s.stories[0] ? relTime(s.stories[0].created_at) : '';
-      return `<div class="sp-story-row" onclick="openStory(${s.user_id});closeStoriesPanel();">
-        <div class="sp-av">
-          <div class="sp-ring ${ring}"></div>
-          ${init}
-        </div>
-        <div class="sp-info">
-          <div class="sp-name">${esc(s.username)}</div>
-          <div class="sp-time">${timeStr}</div>
-        </div>
+    if(_lastStories.length > 0){
+      html += _lastStories.map(s => {
+        const init = s.username[0].toUpperCase();
+        const ring = s.has_unviewed ? 'unviewed' : 'viewed';
+        const timeStr = s.stories && s.stories[0] ? relTime(s.stories[0].created_at) : '';
+        const count = s.stories ? s.stories.length : 0;
+        return `<div class="sp-story-row" onclick="closeStoriesPanel();openStory(${s.user_id});">
+          <div class="sp-av">
+            <div class="sp-ring ${ring}"></div>
+            ${init}
+          </div>
+          <div class="sp-info">
+            <div class="sp-name">${esc(s.username)}</div>
+            <div class="sp-time">${count} stor${count===1?'y':'ies'} · ${timeStr}</div>
+          </div>
+          ${s.has_unviewed ? '<div style="width:10px;height:10px;border-radius:50%;background:var(--brand);flex-shrink:0;"></div>' : ''}
+        </div>`;
+      }).join('');
+    } else {
+      html += `<div style="padding:24px 16px;text-align:center;color:var(--mute);font-size:13px;">
+        <div style="font-size:28px;margin-bottom:8px;">📖</div>
+        No stories from friends yet
       </div>`;
-    }).join('');
+    }
+
+    list.innerHTML = html;
   }
 
-  list.innerHTML = html;
-
-  // Also fill desktop sidebar circles (horizontal scroll)
+  // ── Desktop sidebar: horizontal circle scroll ──
   const scroll = document.getElementById('storiesScroll');
   if(scroll){
     let sbHtml = `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:56px;" onclick="openCreateStoryModal()">
-      <div style="width:44px;height:44px;border-radius:50%;background:var(--hov);border:2px dashed var(--brand);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--brand);margin:0 auto;">+</div>
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--hov);border:2px dashed var(--brand);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--brand);margin:0 auto;">+</div>
       <div style="font-size:9px;margin-top:3px;color:var(--mute);">Add</div>
     </div>`;
-    if(_lastStories.length>0){
-      sbHtml += _lastStories.map(s=>{
+    if(_lastStories.length > 0){
+      sbHtml += _lastStories.map(s => {
         const bdr = s.has_unviewed ? 'var(--brand)' : 'var(--bdr)';
+        const bw  = s.has_unviewed ? '2.5px' : '1.5px';
         return `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:56px;" onclick="openStory(${s.user_id})">
-          <div style="width:44px;height:44px;border-radius:50%;background:var(--brand);border:2.5px solid ${bdr};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;margin:0 auto;">${s.username[0].toUpperCase()}</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--brand);border:${bw} solid ${bdr};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;margin:0 auto;">${s.username[0].toUpperCase()}</div>
           <div style="font-size:9px;margin-top:3px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.username)}</div>
         </div>`;
       }).join('');
@@ -3007,7 +3018,7 @@ function renderStoriesBar(stories){
     scroll.innerHTML = sbHtml;
   }
 
-  // Show/hide unviewed dot on arrow button
+  // ── Unviewed dot on arrow button ──
   const hasUnviewed = _lastStories.some(s => s.has_unviewed);
   const dot = document.getElementById('storiesUnviewedDot');
   if(dot) dot.style.display = hasUnviewed ? 'block' : 'none';
