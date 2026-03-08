@@ -425,10 +425,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .send-btn{padding:10px 24px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .send-btn:hover{background:var(--brand-dk);}
 /* Profile View Modal */
-.profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:850;display:none;}
+.profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;}
 .profile-overlay.show{display:block;}
-.profile-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:860;width:90%;max-width:450px;display:none;flex-direction:column;box-shadow:var(--shad);}
-.profile-modal.show{display:flex;}
+.profile-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);background:var(--card);border-radius:20px;z-index:1001;width:92%;max-width:450px;display:none;flex-direction:column;box-shadow:var(--shad);max-height:92vh;overflow-y:auto;transition:transform .2s ease,opacity .2s ease;opacity:0;}
+.profile-modal.show{display:flex;transform:translate(-50%,-50%) scale(1);opacity:1;}
 .profile-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
 .profile-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
 .profile-body{padding:30px;text-align:center;}
@@ -717,6 +717,20 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 @media(max-width:720px){
   .stories-arrow-btn{display:flex;}
+  /* Story viewer fullscreen on mobile */
+  #storyModal{
+    width:100%!important;
+    max-width:100%!important;
+    height:100dvh;
+    max-height:100dvh!important;
+    border-radius:0!important;
+    top:0!important;
+    left:0!important;
+    transform:translate(0,0) scale(1)!important;
+    margin:0;
+  }
+  #storyModal.show{transform:translate(0,0) scale(1)!important;opacity:1!important;}
+  #storyContent{min-height:60vw!important;}
 }
 
 </style>
@@ -1252,7 +1266,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 <!-- Story Viewer Modal -->
 <div class="profile-overlay" id="storyOverlay" onclick="closeStoryViewer()"></div>
-<div class="profile-modal" id="storyModal" style="max-width:500px;">
+<div class="profile-modal" id="storyModal" style="max-width:500px;width:96%;">
   <div class="profile-header">
     <div style="display:flex;align-items:center;gap:10px;flex:1;">
       <div class="av sm" id="storyUserAvatar">U</div>
@@ -1277,26 +1291,45 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 <!-- Create Story Modal -->
 <div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
-<div class="profile-modal" id="createStoryModal" style="max-width:450px;">
+<div class="profile-modal" id="createStoryModal" style="max-width:420px;">
   <div class="profile-header">
-    <h3>Create Story</h3>
+    <h3>📸 New Story</h3>
     <button class="closebtn" onclick="closeCreateStory()">✕</button>
   </div>
-  <div class="profile-body">
-    <div class="ef">
-      <label>Story Type</label>
-      <select class="ei" id="storyType" onchange="toggleStoryType()">
-        <option value="text">Text Only</option>
-        <option value="image">Image</option>
+  <div class="profile-body" style="padding:16px;">
+
+    <!-- Type toggle tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button id="storyTabText" onclick="switchStoryTab('text')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--brand);background:var(--brand);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">📝 Text</button>
+      <button id="storyTabImage" onclick="switchStoryTab('image')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--bdr);background:transparent;color:var(--mute);font-size:13px;font-weight:700;cursor:pointer;">🖼️ Photo</button>
+    </div>
+
+    <!-- Text input -->
+    <div id="storyTextInput">
+      <textarea id="storyTextContent" rows="5" placeholder="What's on your mind?" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:var(--txt);font-size:15px;resize:none;font-family:var(--font-b);outline:none;"></textarea>
+    </div>
+
+    <!-- Image input -->
+    <div id="storyImageInput" style="display:none;">
+      <div id="storyImgPreview" style="display:none;margin-bottom:10px;text-align:center;">
+        <img id="storyImgPreviewEl" style="max-width:100%;max-height:220px;border-radius:12px;object-fit:cover;">
+      </div>
+      <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:32px 16px;border:2px dashed var(--bdr);border-radius:12px;cursor:pointer;color:var(--mute);font-size:14px;" id="storyImgLabel">
+        📷 Tap to choose photo
+        <input type="file" id="storyImageFile" accept="image/*" style="display:none;" onchange="previewStoryImg(this)">
+      </label>
+    </div>
+
+    <!-- Privacy -->
+    <div style="margin-top:14px;">
+      <select id="storyPrivacy" class="ei" style="width:100%;">
+        <option value="friends">👥 Friends only</option>
+        <option value="public">🌐 Public</option>
+        <option value="custom">🔒 Custom</option>
       </select>
     </div>
-    <div class="ef" id="storyTextInput">
-      <label>Your Story</label>
-      <textarea class="ei" id="storyTextContent" rows="4" placeholder="What's on your mind?" style="resize:vertical;"></textarea>
-    </div>
-    <div class="ef" id="storyImageInput" style="display:none;">
-      <label>Upload Image</label>
-      <input type="file" class="ei" id="storyImageFile" accept="image/*" style="padding:8px;">
+    <div id="customPrivacySection" style="display:none;margin-top:10px;">
+      <div id="customFriendsList" style="max-height:130px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
     </div>
     <div class="ef">
       <label>Privacy</label>
@@ -2989,7 +3022,19 @@ function closeStoriesPanel(){
   document.getElementById('storiesPopupOv').classList.remove('show');
 }
 async function openStory(userId){
-  try{const r=await fetch('/api/stories/friends');const d=await r.json();if(!d.success)return;const userStories=d.stories.find(s=>s.user_id===userId);if(!userStories||!userStories.stories.length)return;currentStories=userStories.stories;currentStoryIndex=0;currentStoryUserId=userId;showStory();}catch(e){toast('Failed to load story','err');}
+  // Close stories panel first so modal appears on top cleanly
+  closeStoriesPanel();
+  try{
+    const r=await fetch('/api/stories/friends');
+    const d=await r.json();
+    if(!d.success) return;
+    const userStories=d.stories.find(s=>s.user_id===userId);
+    if(!userStories||!userStories.stories.length){ toast('No stories','info'); return; }
+    currentStories=userStories.stories;
+    currentStoryIndex=0;
+    currentStoryUserId=userId;
+    showStory();
+  }catch(e){ toast('Failed to load story','err'); }
 }
 function showStory(){
   if(!currentStories.length)return;const story=currentStories[currentStoryIndex];
@@ -3530,7 +3575,10 @@ setTimeout(loadPinnedChats,500);
 <div class="stories-popup" id="storiesPopup">
   <div class="stories-popup-hdr">
     <span class="stories-popup-title">📖 Stories</span>
-    <button class="stories-popup-close" onclick="closeStoriesPanel()">✕</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="closeStoriesPanel();openCreateStoryModal();" style="border:none;background:var(--brand);color:#fff;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Add</button>
+      <button class="stories-popup-close" onclick="closeStoriesPanel()">✕</button>
+    </div>
   </div>
   <div class="stories-popup-list" id="storiesPopupList"></div>
 </div>
