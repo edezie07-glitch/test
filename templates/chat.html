@@ -1309,6 +1309,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     overflow:hidden;
   ">
     <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;">
+    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;" playsinline autoplay loop></video>
     <p id="storyText" style="
       font-size:22px;font-weight:600;color:#fff;
       text-align:center;padding:40px 24px;
@@ -1351,10 +1352,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <div class="profile-body" style="padding:16px;">
 
-    <!-- Type toggle tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button id="storyTabText" onclick="switchStoryTab('text')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--brand);background:var(--brand);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">📝 Text</button>
-      <button id="storyTabImage" onclick="switchStoryTab('image')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--bdr);background:transparent;color:var(--mute);font-size:13px;font-weight:700;cursor:pointer;">🖼️ Photo</button>
+    <!-- Tabs: Text / Photo / Video -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button id="storyTabText"  onclick="switchStoryTab('text')"  style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--brand);background:var(--brand);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">📝 Text</button>
+      <button id="storyTabMedia" onclick="switchStoryTab('media')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--bdr);background:transparent;color:var(--mute);font-size:13px;font-weight:700;cursor:pointer;">📷 Photo/Video</button>
     </div>
 
     <!-- Text input -->
@@ -1362,14 +1363,19 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <textarea id="storyTextContent" rows="5" placeholder="What's on your mind?" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:var(--txt);font-size:15px;resize:none;font-family:var(--font-b);outline:none;"></textarea>
     </div>
 
-    <!-- Image input -->
-    <div id="storyImageInput" style="display:none;">
-      <div id="storyImgPreview" style="display:none;margin-bottom:10px;text-align:center;">
-        <img id="storyImgPreviewEl" style="max-width:100%;max-height:220px;border-radius:12px;object-fit:cover;">
+    <!-- Media input (photo OR video) -->
+    <div id="storyMediaInput" style="display:none;">
+      <!-- Preview area -->
+      <div id="storyMediaPreview" style="display:none;margin-bottom:10px;text-align:center;border-radius:12px;overflow:hidden;max-height:240px;">
+        <img id="storyImgPreviewEl" style="max-width:100%;max-height:240px;object-fit:cover;display:none;border-radius:12px;">
+        <video id="storyVidPreviewEl" style="max-width:100%;max-height:240px;object-fit:cover;display:none;border-radius:12px;" controls playsinline></video>
       </div>
-      <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:32px 16px;border:2px dashed var(--bdr);border-radius:12px;cursor:pointer;color:var(--mute);font-size:14px;" id="storyImgLabel">
-        📷 Tap to choose photo
-        <input type="file" id="storyImageFile" accept="image/*" style="display:none;" onchange="previewStoryImg(this)">
+      <!-- Pick file -->
+      <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:28px 16px;border:2px dashed var(--bdr);border-radius:12px;cursor:pointer;color:var(--mute);font-size:14px;" id="storyMediaLabel">
+        <span style="font-size:28px;">📁</span>
+        <span>Tap to choose photo or video</span>
+        <span style="font-size:11px;color:var(--mute);">JPG, PNG, GIF, MP4, MOV, WEBM…</span>
+        <input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="previewStoryMedia(this)">
       </label>
     </div>
 
@@ -1384,19 +1390,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div id="customPrivacySection" style="display:none;margin-top:10px;">
       <div id="customFriendsList" style="max-height:130px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
     </div>
-    <div class="ef">
-      <label>Privacy</label>
-      <select class="ei" id="storyPrivacy">
-        <option value="friends">Friends</option>
-        <option value="public">Public</option>
-        <option value="custom">Custom</option>
-      </select>
-    </div>
-    <div class="ef" id="customPrivacySection" style="display:none;">
-      <label>Select Friends</label>
-      <div id="customFriendsList" style="max-height:150px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
-    </div>
-    <button class="savebtn" onclick="createStory()">📸 Post Story</button>
+
+    <button class="savebtn" onclick="createStory()" style="margin-top:14px;">📸 Post Story</button>
   </div>
 </div>
 <script>
@@ -3120,15 +3115,21 @@ function showStory(){
 
   // Content
   const imgEl  = document.getElementById('storyImage');
+  const vidEl  = document.getElementById('storyVideo');
   const textEl = document.getElementById('storyText');
+  imgEl.style.display='none'; vidEl.style.display='none'; textEl.style.display='none';
   if(story.media_url){
-    imgEl.src = story.media_url;
-    imgEl.style.display = 'block';
-    textEl.style.display = 'none';
+    if(story.media_type === 'video'){
+      vidEl.src = story.media_url;
+      vidEl.style.display = 'block';
+      vidEl.play().catch(()=>{});
+    } else {
+      imgEl.src = story.media_url;
+      imgEl.style.display = 'block';
+    }
   } else {
     textEl.textContent = story.content;
     textEl.style.display = 'block';
-    imgEl.style.display = 'none';
   }
 
   // Owner controls: delete + privacy
@@ -3277,8 +3278,43 @@ async function setStoryPrivacy(privacy){
   closePrivacySheet();
 }
 function openCreateStoryModal(){document.getElementById('createStoryOverlay').classList.add('show');document.getElementById('createStoryModal').classList.add('show');document.getElementById('storyPrivacy').value='friends';toggleStoryType();}
-function closeCreateStory(){document.getElementById('createStoryOverlay').classList.remove('show');document.getElementById('createStoryModal').classList.remove('show');document.getElementById('storyTextContent').value='';document.getElementById('storyImageFile').value='';}
-function toggleStoryType(){const type=document.getElementById('storyType').value;document.getElementById('storyTextInput').style.display=type==='text'?'block':'none';document.getElementById('storyImageInput').style.display=type==='image'?'block':'none';}
+function closeCreateStory(){
+  document.getElementById('createStoryOverlay').classList.remove('show');
+  document.getElementById('createStoryModal').classList.remove('show');
+  const tc = document.getElementById('storyTextContent'); if(tc) tc.value='';
+  const mf = document.getElementById('storyMediaFile');   if(mf) mf.value='';
+  const prev = document.getElementById('storyMediaPreview'); if(prev) prev.style.display='none';
+  switchStoryTab('text'); // reset to text tab
+}
+function toggleStoryType(){}  // legacy — no-op now
+function switchStoryTab(tab){
+  const isText = tab === 'text';
+  document.getElementById('storyTextInput').style.display  = isText ? 'block' : 'none';
+  document.getElementById('storyMediaInput').style.display = isText ? 'none'  : 'block';
+  const tBtn = document.getElementById('storyTabText');
+  const mBtn = document.getElementById('storyTabMedia');
+  if(tBtn){ tBtn.style.background = isText ? 'var(--brand)' : 'transparent'; tBtn.style.color = isText ? '#fff' : 'var(--mute)'; tBtn.style.borderColor = isText ? 'var(--brand)' : 'var(--bdr)'; }
+  if(mBtn){ mBtn.style.background = !isText ? 'var(--brand)' : 'transparent'; mBtn.style.color = !isText ? '#fff' : 'var(--mute)'; mBtn.style.borderColor = !isText ? 'var(--brand)' : 'var(--bdr)'; }
+}
+function previewStoryMedia(input){
+  const file = input.files[0];
+  if(!file) return;
+  const img = document.getElementById('storyImgPreviewEl');
+  const vid = document.getElementById('storyVidPreviewEl');
+  const prev = document.getElementById('storyMediaPreview');
+  const label = document.getElementById('storyMediaLabel');
+  img.style.display='none'; vid.style.display='none';
+  const url = URL.createObjectURL(file);
+  if(file.type.startsWith('video/')){
+    vid.src = url; vid.style.display='block';
+  } else {
+    img.src = url; img.style.display='block';
+  }
+  prev.style.display='block';
+  label.style.padding='8px';
+  label.querySelector('span').textContent = file.name;
+}
+function previewStoryImg(input){ previewStoryMedia(input); } // legacy alias
 document.getElementById('storyPrivacy')?.addEventListener('change',function(){document.getElementById('customPrivacySection').style.display=this.value==='custom'?'block':'none';if(this.value==='custom')loadCustomFriendsList();});
 function loadCustomFriendsList(){const list=document.getElementById('customFriendsList');list.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;"><span>${esc(f.username)}</span></label>`).join('');}
 async function createStory(){
@@ -3286,23 +3322,28 @@ async function createStory(){
   const resetBtn = ()=>{ if(btn){btn.disabled=false;btn.textContent='📸 Post Story';} };
   if(btn){btn.disabled=true;btn.textContent='Posting...';}
 
-  const type    = document.getElementById('storyType')?.value || 'text';
-  const privacy = document.getElementById('storyPrivacy')?.value || 'friends';
+  // figure out which tab is active
+  const textInput  = document.getElementById('storyTextInput');
+  const mediaInput = document.getElementById('storyMediaInput');
+  const isTextTab  = textInput && textInput.style.display !== 'none';
+  const privacy    = document.getElementById('storyPrivacy')?.value || 'friends';
   let content = '', mediaUrl = '', mediaType = 'text';
 
   // ── Validate & collect content ──
-  if(type === 'text'){
+  if(isTextTab){
     content = (document.getElementById('storyTextContent')?.value || '').trim();
     if(!content){ toast('Please write something','err'); resetBtn(); return; }
   } else {
-    const file = document.getElementById('storyImageFile')?.files[0];
-    if(!file){ toast('Please select an image','err'); resetBtn(); return; }
+    const file = document.getElementById('storyMediaFile')?.files[0];
+    if(!file){ toast('Please select a photo or video','err'); resetBtn(); return; }
     try{
-      const fd = new FormData(); fd.append('image', file);
-      const up = await fetch('/api/upload/image',{method:'POST',body:fd});
+      if(btn) btn.textContent = 'Uploading...';
+      const fd = new FormData(); fd.append('media', file);
+      const up = await fetch('/api/upload/media',{method:'POST',body:fd});
       const ud = await up.json();
       if(!ud.success){ toast('Upload failed: '+(ud.error||'unknown'),'err'); resetBtn(); return; }
-      mediaUrl = ud.url; mediaType = 'image';
+      mediaUrl  = ud.url;
+      mediaType = ud.media_type; // 'image' or 'video'
     } catch(e){ toast('Upload error: '+e.message,'err'); resetBtn(); return; }
   }
 
