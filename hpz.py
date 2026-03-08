@@ -1001,6 +1001,25 @@ def get_story_viewers(story_id):
             viewers.append({'user_id': user.id, 'username': user.username, 'avatar_url': user.avatar_url, 'viewed_at': view.viewed_at.isoformat()})
     return jsonify({'success': True, 'count': len(viewers), 'viewers': viewers})
 
+@app.route('/api/stories/<int:story_id>/privacy', methods=['POST'])
+@login_required
+def update_story_privacy(story_id):
+    user_id = session['user_id']
+    story = Story.query.get(story_id)
+    if not story or story.user_id != user_id:
+        return jsonify({'success': False, 'error': 'Not your story'}), 403
+    data = request.get_json()
+    privacy = data.get('privacy','friends')
+    if privacy not in ('public','friends','custom'):
+        return jsonify({'success': False, 'error': 'Invalid privacy'}), 400
+    try:
+        story.privacy = privacy
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/stories/<int:story_id>/delete', methods=['DELETE'])
 @login_required
 def delete_story(story_id):
