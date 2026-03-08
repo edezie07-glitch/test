@@ -2546,141 +2546,277 @@ function hideIncomingCall(){
   clearInterval(cd.ringTimer);cd.ringTimer=null;
   if(cd._ringCtx){try{cd._ringCtx.close();}catch(e){} cd._ringCtx=null;}
 }
-async function unlockAudio(){
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')await ctx.resume();const b=ctx.createBuffer(1,1,22050),s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);s.start(0);}catch(e){}
+// ═══════════════════════════════════════════════════════
+// AUDIO ENGINE — zero echo, clean voice
+// ═══════════════════════════════════════════════════════
+
+// Shared AudioContext — one per session, never recreated
+let _AC = null;
+function getAC(){
+  if(!_AC||_AC.state==='closed'){
+    _AC=new(window.AudioContext||window.webkitAudioContext)({sampleRate:48000,latencyHint:'interactive'});
+  }
+  return _AC;
 }
+
+async function unlockAudio(){
+  try{
+    const ctx=getAC();
+    if(ctx.state==='suspended') await ctx.resume();
+    // Play 10ms of silence to unlock on iOS
+    const buf=ctx.createBuffer(1,ctx.sampleRate/100,ctx.sampleRate);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;src.connect(ctx.destination);src.start();src.stop(ctx.currentTime+.01);
+  }catch(e){}
+}
+
+// Get mic with aggressive hardware-level echo/noise suppression
 async function getMedia(type){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){throw new Error(!window.isSecureContext?'HTTPS_REQUIRED':'NO_MEDIA_DEVICES');}
-  const _a={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+  if(!navigator.mediaDevices?.getUserMedia){
+    throw new Error(!window.isSecureContext?'HTTPS_REQUIRED':'NO_MEDIA_DEVICES');
+  }
+  // Maximum echo suppression constraints — tried in order, fallback each time
+  const audioConstraints={
+    echoCancellation:{ideal:true},
+    echoCancellationType:{ideal:'system'},   // hardware AEC on mobile
+    noiseSuppression:{ideal:true},
+    autoGainControl:{ideal:true},
+    channelCount:{ideal:1},                  // mono — halves echo surface
+    sampleRate:{ideal:48000},
+    sampleSize:{ideal:16},
+    latency:{ideal:0.01}
+  };
+  const videoConstraints={facingMode:'user',width:{ideal:1280},height:{ideal:720}};
   const list=type==='video'
-    ?[{video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:_a},{video:{facingMode:'user'},audio:_a},{video:true,audio:_a},{audio:_a,video:false}]
-    :[{audio:_a,video:false},{audio:true,video:false}];
+    ?[
+      {video:videoConstraints,audio:audioConstraints},
+      {video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}},
+      {video:true,audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}},
+      {audio:{echoCancellation:true,noiseSuppression:true},video:false}
+    ]
+    :[
+      {audio:audioConstraints,video:false},
+      {audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1},video:false},
+      {audio:{echoCancellation:true,noiseSuppression:true},video:false},
+      {audio:true,video:false}
+    ];
   let err;
-  for(const constraints of list){try{return await navigator.mediaDevices.getUserMedia(constraints);}catch(e){err=e;if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;}}
+  for(const con of list){
+    try{ return await navigator.mediaDevices.getUserMedia(con); }
+    catch(e){ err=e; if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') throw e; }
+  }
   throw err;
 }
-function attachAudio(stream){
-  // Guard: if same stream is already playing cleanly, skip
-  const existing=document.getElementById('remoteAudio');
-  if(existing&&existing.srcObject===stream&&!existing.paused&&existing.volume>0){return;}
-  if(existing)existing.remove();
-  const el=document.createElement('audio');
-  el.id='remoteAudio';
-  el.autoplay=true;
-  el.muted=false;
-  el.volume=1.0;
-  el.setAttribute('playsinline','');
-  el.setAttribute('webkit-playsinline','');
-  el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-  document.body.appendChild(el);
-  el.srcObject=stream;
-  let attempt=0;
-  function tryPlay(){
-    el.muted=false;
-    el.volume=1.0;
-    const p=el.play();
-    if(p&&p.catch){
-      p.catch(err=>{
-        if(attempt++<30)setTimeout(tryPlay,400);
-      });
-    }
+
+// Prioritize Opus codec in SDP (best echo handling + lowest latency)
+function preferOpus(sdp){
+  const lines=sdp.split('\n');
+  let opusPayload=null;
+  // Find Opus payload type
+  for(const l of lines){
+    const m=l.match(/a=rtpmap:(\d+) opus\/48000/i);
+    if(m){opusPayload=m[1];break;}
   }
-  setTimeout(tryPlay,100);
-  stream.addEventListener('addtrack',()=>{
-    if(el.srcObject!==stream)el.srcObject=stream;
-    setTimeout(tryPlay,100);
-  });
+  if(!opusPayload) return sdp;
+  // Move Opus to front of m=audio line
+  return lines.map(l=>{
+    if(l.startsWith('m=audio')){
+      const parts=l.split(' ');
+      const codecs=parts.slice(3).filter(p=>p!==opusPayload);
+      return parts.slice(0,3).concat([opusPayload,...codecs]).join(' ');
+    }
+    // Add stereo:0 and useinbandfec:1 to Opus fmtp for better voice
+    if(opusPayload&&l.includes('a=fmtp:'+opusPayload)){
+      return l.trimEnd()+';stereo=0;useinbandfec=1;cbr=1';
+    }
+    return l;
+  }).join('\n');
 }
+
+// Route remote audio through Web Audio API with gain normalization
+// Never uses <audio> srcObject directly — routes via AudioContext to avoid
+// OS-level feedback loop on phones with earpiece/speaker
+let _remoteAudioNode=null;
+function attachAudio(stream){
+  // Tear down previous node cleanly
+  if(_remoteAudioNode){
+    try{_remoteAudioNode.disconnect();}catch(e){}
+    _remoteAudioNode=null;
+  }
+  // Guard: needs at least one active audio track
+  const audioTracks=stream.getAudioTracks();
+  if(!audioTracks.length) return;
+
+  try{
+    const ctx=getAC();
+    if(ctx.state==='suspended') ctx.resume();
+
+    // Source → Dynamics compressor (evens out volume spikes) → Gain → Output
+    const source=ctx.createMediaStreamSource(stream);
+    const compressor=ctx.createDynamicsCompressor();
+    compressor.threshold.value=-24;   // dB — compress above this
+    compressor.knee.value=10;
+    compressor.ratio.value=4;
+    compressor.attack.value=0.003;
+    compressor.release.value=0.15;
+    const gainNode=ctx.createGain();
+    gainNode.gain.value=1.0;
+
+    source.connect(compressor);
+    compressor.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    _remoteAudioNode=gainNode; // keep ref for cleanup
+
+    // Keep a silent <audio> as a keepalive for mobile browsers that
+    // suspend AudioContext when no <audio> is playing
+    let keepalive=document.getElementById('remoteAudio');
+    if(!keepalive){
+      keepalive=document.createElement('audio');
+      keepalive.id='remoteAudio';
+      keepalive.muted=true;   // MUTED — audio goes through Web Audio API, not here
+      keepalive.autoplay=true;
+      keepalive.setAttribute('playsinline','');
+      keepalive.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+      document.body.appendChild(keepalive);
+    }
+    keepalive.srcObject=stream;
+    keepalive.play().catch(()=>{});
+
+  }catch(e){
+    // Fallback: direct <audio> if Web Audio API fails
+    console.warn('[audio] Web Audio failed, falling back',e);
+    let el=document.getElementById('remoteAudio');
+    if(el) el.remove();
+    el=document.createElement('audio');
+    el.id='remoteAudio'; el.autoplay=true; el.muted=false; el.volume=1.0;
+    el.setAttribute('playsinline','');
+    el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+    document.body.appendChild(el);
+    el.srcObject=stream;
+    el.play().catch(()=>{});
+  }
+}
+
 function attachVideo(stream){
-  const rv=document.getElementById('remoteVideo');if(!rv)return;
+  const rv=document.getElementById('remoteVideo'); if(!rv) return;
   rv.srcObject=stream;
+  rv.muted=true;  // CRITICAL — audio ONLY via Web Audio, never via video element
   rv.setAttribute('playsinline','');
   rv.setAttribute('webkit-playsinline','');
-  // Do NOT mute the video element — audio comes from the <audio> el
-  rv.muted=true;
-  let attempt=0;
-  function tryPlay(){rv.play().catch(()=>{if(attempt++<20)setTimeout(tryPlay,300);});}
-  setTimeout(tryPlay,100);
+  let a=0;
+  function tryPlay(){ rv.play().catch(()=>{ if(a++<20) setTimeout(tryPlay,300); }); }
+  setTimeout(tryPlay,80);
 }
+
 function makePc(targetId){
-  if(cd.pc){try{cd.pc.close();}catch(e){}}
-  const pc=new RTCPeerConnection(STUN);cd.pc=pc;cd.pending=[];
-  pc.onicecandidate=e=>{if(e.candidate)socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate});};
+  if(cd.pc){ try{cd.pc.close();}catch(e){} }
+  const pc=new RTCPeerConnection({
+    ...STUN,
+    // Force DTLS — reduces handshake latency
+    bundlePolicy:'max-bundle',
+    rtcpMuxPolicy:'require',
+  });
+  cd.pc=pc; cd.pending=[];
+
+  pc.onicecandidate=e=>{ if(e.candidate) socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate}); };
+
   const remoteStream=new MediaStream();
   let _audioAttached=false;
+
   pc.ontrack=e=>{
     const track=e.track;
-    if(!remoteStream.getTracks().find(t=>t.id===track.id))remoteStream.addTrack(track);
-    if(track.kind==='video')attachVideo(remoteStream);
+    if(!remoteStream.getTracks().find(t=>t.id===track.id)) remoteStream.addTrack(track);
+    if(track.kind==='video') attachVideo(remoteStream);
     if(track.kind==='audio'&&!_audioAttached){
       _audioAttached=true;
       attachAudio(remoteStream);
     }
-    // onunmute: only re-attach if audio element died (not just re-fired)
     track.onunmute=()=>{
-      if(track.kind!=='audio')return;
-      const el=document.getElementById('remoteAudio');
-      if(!el||el.paused||el.ended){
-        _audioAttached=false; // allow re-attach
-        attachAudio(remoteStream);
-        _audioAttached=true;
-      }
+      if(track.kind!=='audio') return;
+      // Re-attach only if audio node was torn down
+      if(!_remoteAudioNode){ _audioAttached=false; attachAudio(remoteStream); _audioAttached=true; }
     };
   };
+
   pc.onconnectionstatechange=()=>{
     const s=pc.connectionState;
-    if(s==='connected'){setStatus('Connected ✅  ·  '+nowStr());startCallTimer();}
-    else if(s==='failed'){if(pc.restartIce)pc.restartIce();setStatus('Reconnecting...');setTimeout(()=>{if(cd.pc&&(cd.pc.connectionState==='failed'||cd.pc.iceConnectionState==='failed')){toast('❌ Connection failed','err');endCall();}},8000);}
-    else if(s==='disconnected'){setStatus('Reconnecting...');}
+    if(s==='connected'){ setStatus('Connected ✅  ·  '+nowStr()); startCallTimer(); }
+    else if(s==='failed'){
+      if(pc.restartIce) pc.restartIce();
+      setStatus('Reconnecting…');
+      setTimeout(()=>{ if(cd.pc&&(cd.pc.connectionState==='failed'||cd.pc.iceConnectionState==='failed')){ toast('❌ Connection failed','err'); endCall(); } },8000);
+    }
+    else if(s==='disconnected'){ setStatus('Reconnecting…'); }
   };
-  pc.oniceconnectionstatechange=()=>{const s=pc.iceConnectionState;if(s==='connected'||s==='completed'){setStatus('Connected ✅  ·  '+nowStr());startCallTimer();}else if(s==='checking'){setStatus('Connecting...');}};
+  pc.oniceconnectionstatechange=()=>{
+    const s=pc.iceConnectionState;
+    if(s==='connected'||s==='completed'){ setStatus('Connected ✅  ·  '+nowStr()); startCallTimer(); }
+    else if(s==='checking'){ setStatus('Connecting…'); }
+  };
   return pc;
 }
+
 async function flushPending(){
-  if(!cd.pc?.remoteDescription?.type)return;
-  const q=[...cd.pending];cd.pending=[];
-  for(const c of q){try{await cd.pc.addIceCandidate(new RTCIceCandidate(c));}catch(e){}}
+  if(!cd.pc?.remoteDescription?.type) return;
+  const q=[...cd.pending]; cd.pending=[];
+  for(const ic of q){ try{ await cd.pc.addIceCandidate(new RTCIceCandidate(ic)); }catch(e){} }
 }
+
 function mediaErr(e){
-  let msg='Could not start call: '+e.message;
-  if(e.message==='HTTPS_REQUIRED'||!window.isSecureContext)msg='Calls require HTTPS';
-  else if(e.message==='NO_MEDIA_DEVICES')msg='Browser does not support calls';
-  else if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')msg='Mic/camera blocked - allow it in browser settings';
-  else if(e.name==='NotFoundError')msg='No microphone found on this device';
-  else if(e.name==='NotReadableError')msg='Mic/camera in use by another app';
-  toast('Call error: '+msg,'err');console.error('[mediaErr]',e.name,e.message);
+  let msg='Could not start call';
+  if(e.message==='HTTPS_REQUIRED'||!window.isSecureContext) msg='Calls require HTTPS';
+  else if(e.message==='NO_MEDIA_DEVICES') msg='Browser does not support calls';
+  else if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') msg='Mic/camera blocked — allow in browser settings';
+  else if(e.name==='NotFoundError') msg='No microphone found';
+  else if(e.name==='NotReadableError') msg='Mic/camera in use by another app';
+  else msg+=(e.message?': '+e.message:'');
+  toast('📞 '+msg,'err');
 }
-async function startVoiceCall(){if(!currentFriendId){toast('Open a chat first','err');return;}const f=friends.find(x=>x.id===currentFriendId);if(f)await doCall(f,'voice');}
-async function startVideoCall(){if(!currentFriendId){toast('Open a chat first','err');return;}const f=friends.find(x=>x.id===currentFriendId);if(f)await doCall(f,'video');}
+
+async function startVoiceCall(){ if(!currentFriendId){toast('Open a chat first','err');return;} const f=friends.find(x=>x.id===currentFriendId); if(f) await doCall(f,'voice'); }
+async function startVideoCall(){ if(!currentFriendId){toast('Open a chat first','err');return;} const f=friends.find(x=>x.id===currentFriendId); if(f) await doCall(f,'video'); }
+
 async function doCall(friend,type){
-  if(cd.active){toast(friend.username+' is in another call','info');return;}
+  if(cd.active){ toast(friend.username+' is busy','info'); return; }
   await unlockAudio();
   try{
-    cd.active=true;cd.type=type;cd.calleeId=friend.id;cd.calleeName=friend.username;
-    const stream=await getMedia(type);cd.localStream=stream;
-    if(type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});}
-    const pc=makePc(friend.id);stream.getTracks().forEach(t=>{if(!pc.getSenders().some(s=>s.track&&s.track.id===t.id))pc.addTrack(t,stream);});
-    const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==='video'});
+    cd.active=true; cd.type=type; cd.calleeId=friend.id; cd.calleeName=friend.username;
+    const stream=await getMedia(type); cd.localStream=stream;
+    if(type==='video'){
+      const lv=document.getElementById('localVideo');
+      if(lv){ lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+    }
+    const pc=makePc(friend.id);
+    stream.getTracks().forEach(t=>{ if(!pc.getSenders().some(s=>s.track?.id===t.id)) pc.addTrack(t,stream); });
+    let offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==='video'});
+    // Inject Opus preference into SDP
+    offer=new RTCSessionDescription({type:offer.type,sdp:preferOpus(offer.sdp)});
     await pc.setLocalDescription(offer);
-    showCallModal(friend.username,'Calling...',type==='video');
+    showCallModal(friend.username,'Calling…',type==='video');
     socket.emit('call_offer',{callee_id:friend.id,offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},call_type:type});
-  }catch(e){mediaErr(e);cleanupCall();}
+  }catch(e){ mediaErr(e); cleanupCall(); }
 }
+
 async function acceptCall(){
-  // Create and play a silent audio element IMMEDIATELY on user tap
-  // This unlocks the audio context before any async work
   await unlockAudio();
-  hideIncomingCall();const d=cd.incoming;if(!d){cleanupCall();return;}
+  hideIncomingCall();
+  const d=cd.incoming; if(!d){ cleanupCall(); return; }
   try{
-    cd.active=true;cd.type=d.call_type;cd.calleeId=d.caller_id;cd.calleeName=d.caller_name;
-    const stream=await getMedia(d.call_type);cd.localStream=stream;
-    if(d.call_type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});}
-    const pc=makePc(d.caller_id);stream.getTracks().forEach(t=>{if(!pc.getSenders().some(s=>s.track&&s.track.id===t.id))pc.addTrack(t,stream);});
-    await pc.setRemoteDescription(new RTCSessionDescription(d.offer));await flushPending();
-    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
-    showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
+    cd.active=true; cd.type=d.call_type; cd.calleeId=d.caller_id; cd.calleeName=d.caller_name;
+    const stream=await getMedia(d.call_type); cd.localStream=stream;
+    if(d.call_type==='video'){
+      const lv=document.getElementById('localVideo');
+      if(lv){ lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+    }
+    const pc=makePc(d.caller_id);
+    stream.getTracks().forEach(t=>{ if(!pc.getSenders().some(s=>s.track?.id===t.id)) pc.addTrack(t,stream); });
+    await pc.setRemoteDescription(new RTCSessionDescription(d.offer)); await flushPending();
+    let answer=await pc.createAnswer();
+    answer=new RTCSessionDescription({type:answer.type,sdp:preferOpus(answer.sdp)});
+    await pc.setLocalDescription(answer);
+    showCallModal(d.caller_name,'Connecting…',d.call_type==='video');
     socket.emit('call_answer',{caller_id:d.caller_id,answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp},accepted:true});
-  }catch(e){mediaErr(e);rejectCall();}
+  }catch(e){ mediaErr(e); rejectCall(); }
 }
 function rejectCall(){hideIncomingCall();if(cd.incoming)socket.emit('call_answer',{caller_id:cd.incoming.caller_id,accepted:false});cleanupCall();}
 function toggleMute(){
@@ -2700,12 +2836,14 @@ function toggleVideo(){
 function endCall(){const tid=cd.calleeId||cd.callerId;const wasMissed=cd.active&&cd.duration===0;if(tid)socket.emit('call_end',{target_id:tid,was_missed:wasMissed});const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;cleanupCall();appendCallMsg(type,dur,startT,false);}
 function cleanupCall(){
   stopCallTimer();
-  if(cd.localStream){cd.localStream.getTracks().forEach(t=>t.stop());cd.localStream=null;}
-  if(cd.pc){try{cd.pc.close();}catch(e){}cd.pc=null;}
-  const ra=document.getElementById('remoteAudio');if(ra)ra.remove();
-  const rv=document.getElementById('remoteVideo');if(rv)rv.srcObject=null;
-  const lv=document.getElementById('localVideo');if(lv)lv.srcObject=null;
-  hideCallModal();hideIncomingCall();resetCd();
+  // Tear down Web Audio node first
+  if(_remoteAudioNode){ try{_remoteAudioNode.disconnect();}catch(e){} _remoteAudioNode=null; }
+  if(cd.localStream){ cd.localStream.getTracks().forEach(t=>t.stop()); cd.localStream=null; }
+  if(cd.pc){ try{cd.pc.close();}catch(e){} cd.pc=null; }
+  const ra=document.getElementById('remoteAudio'); if(ra){ ra.srcObject=null; ra.remove(); }
+  const rv=document.getElementById('remoteVideo'); if(rv) rv.srcObject=null;
+  const lv=document.getElementById('localVideo');  if(lv) lv.srcObject=null;
+  hideCallModal(); hideIncomingCall(); resetCd();
 }
 function setupCallListeners(){
   socket.on('incoming_call',data=>{
