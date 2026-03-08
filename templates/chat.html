@@ -774,6 +774,31 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   background:var(--brand);
   box-shadow:0 0 0 3px rgba(124,106,255,.3);
 }
+/* Slider rows */
+.sc-slider{
+  flex:1;accent-color:var(--brand);
+  height:28px;          /* tall touch target */
+  cursor:pointer;
+  -webkit-appearance:none;
+  appearance:none;
+  background:transparent;
+}
+.sc-slider::-webkit-slider-runnable-track{
+  height:4px;border-radius:2px;
+  background:rgba(255,255,255,.18);
+}
+.sc-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--brand);border:2px solid #fff;
+  margin-top:-8px;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.sc-slider::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.18);}
+.sc-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--brand);border:2px solid #fff;}
+.sc-slider-val{
+  font-size:12px;color:rgba(255,255,255,.55);
+  width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;
+}
 
 </style>
 </head>
@@ -1190,7 +1215,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <p id="callTimer" style="font-size:22px;font-weight:700;color:#fff;letter-spacing:2px;margin:0;display:none;">00:00</p>
     <div id="callVideo" style="display:none;margin:20px 0;justify-content:center;gap:10px;">
       <video id="localVideo" autoplay muted playsinline style="width:180px;height:135px;border-radius:12px;object-fit:cover;"></video>
-      <video id="remoteVideo" autoplay playsinline style="width:320px;height:240px;border-radius:12px;object-fit:cover;"></video>
+      <video id="remoteVideo" autoplay playsinline muted style="width:320px;height:240px;border-radius:12px;object-fit:cover;"></video>
     </div>
     <div class="call-controls">
       <button class="call-control-btn mute" id="muteBtn" onclick="toggleMute()" title="Mute">🎤</button>
@@ -2351,25 +2376,28 @@ async function unlockAudio(){
 }
 async function getMedia(type){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){throw new Error(!window.isSecureContext?'HTTPS_REQUIRED':'NO_MEDIA_DEVICES');}
+  const _a={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
   const list=type==='video'
-    ?[{video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true}},{video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true}},{video:true,audio:true},{audio:true,video:false}]
-    :[{audio:{echoCancellation:true,noiseSuppression:true},video:false},{audio:true,video:false}];
+    ?[{video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:_a},{video:{facingMode:'user'},audio:_a},{video:true,audio:_a},{audio:_a,video:false}]
+    :[{audio:_a,video:false},{audio:true,video:false}];
   let err;
   for(const constraints of list){try{return await navigator.mediaDevices.getUserMedia(constraints);}catch(e){err=e;if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError')throw e;}}
   throw err;
 }
 function attachAudio(stream){
-  let el=document.getElementById('remoteAudio');if(el)el.remove();
-  el=document.createElement('audio');
+  // Guard: if same stream is already playing cleanly, skip
+  const existing=document.getElementById('remoteAudio');
+  if(existing&&existing.srcObject===stream&&!existing.paused&&existing.volume>0){return;}
+  if(existing)existing.remove();
+  const el=document.createElement('audio');
   el.id='remoteAudio';
   el.autoplay=true;
-  el.setAttribute('playsinline','');
-  el.setAttribute('webkit-playsinline','');
   el.muted=false;
   el.volume=1.0;
+  el.setAttribute('playsinline','');
+  el.setAttribute('webkit-playsinline','');
   el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
   document.body.appendChild(el);
-  // Set srcObject AFTER appending to DOM
   el.srcObject=stream;
   let attempt=0;
   function tryPlay(){
@@ -2378,16 +2406,13 @@ function attachAudio(stream){
     const p=el.play();
     if(p&&p.catch){
       p.catch(err=>{
-        console.warn('[audio] play attempt',attempt,'failed:',err.name);
         if(attempt++<30)setTimeout(tryPlay,400);
       });
     }
   }
-  // Small delay so srcObject is fully set before play
   setTimeout(tryPlay,100);
-  // Also try again when the stream gets a new active audio track
   stream.addEventListener('addtrack',()=>{
-    el.srcObject=stream;
+    if(el.srcObject!==stream)el.srcObject=stream;
     setTimeout(tryPlay,100);
   });
 }
@@ -2446,7 +2471,7 @@ async function doCall(friend,type){
     cd.active=true;cd.type=type;cd.calleeId=friend.id;cd.calleeName=friend.username;
     const stream=await getMedia(type);cd.localStream=stream;
     if(type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});}
-    const pc=makePc(friend.id);stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+    const pc=makePc(friend.id);stream.getTracks().forEach(t=>{if(!pc.getSenders().some(s=>s.track&&s.track.id===t.id))pc.addTrack(t,stream);});
     const offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==='video'});
     await pc.setLocalDescription(offer);
     showCallModal(friend.username,'Calling...',type==='video');
@@ -2479,7 +2504,7 @@ async function acceptCall(){
     cd.active=true;cd.type=d.call_type;cd.calleeId=d.caller_id;cd.calleeName=d.caller_name;
     const stream=await getMedia(d.call_type);cd.localStream=stream;
     if(d.call_type==='video'){const lv=document.getElementById('localVideo');lv.srcObject=stream;lv.setAttribute('playsinline','');lv.muted=true;lv.play().catch(()=>{});}
-    const pc=makePc(d.caller_id);stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+    const pc=makePc(d.caller_id);stream.getTracks().forEach(t=>{if(!pc.getSenders().some(s=>s.track&&s.track.id===t.id))pc.addTrack(t,stream);});
     await pc.setRemoteDescription(new RTCSessionDescription(d.offer));await flushPending();
     const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
     showCallModal(d.caller_name,'Connecting...',d.call_type==='video');
@@ -3746,8 +3771,10 @@ function scLoadEditor(){
   // Reset adjust sliders
   ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{const el=$(id);if(el)el.value=100;});
   const _sb=$('SC_slBlur'); if(_sb) _sb.value=0;
+  const _sw=$('SC_slWarm'); if(_sw) _sw.value=0;
   ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{const el=$(id);if(el)el.textContent='100';});
-  const _sbv=$('SC_slBlurVal'); if(_sbv) _sbv.textContent='0';
+  const _sbv=$('SC_slBlurVal'); if(_sbv) _sbv.textContent='0.0';
+  const _swv=$('SC_slWarmVal'); if(_swv) _swv.textContent='0';
   // Reset rotation
   SC.rotation=0; SC.rotStartAngle=0;
   const _img=$('SC_img'); if(_img){_img.style.filter='none'; _img.style.transform='rotate(0deg)';}
