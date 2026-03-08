@@ -1319,6 +1319,155 @@ def handle_typing_stop(data):
 def health():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now(timezone.utc).isoformat()})
 
+# ============================================================
+# ADMIN DASHBOARD — /admin?pw=YOUR_PASSWORD
+# ============================================================
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'hepozy2024')
+
+@app.route('/admin')
+def admin_dashboard():
+    pw = request.args.get('pw', '')
+    if pw != ADMIN_PASSWORD:
+        return (
+            '<!DOCTYPE html><html><head><title>Admin Login</title>'
+            '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<style>'
+            '*{box-sizing:border-box;margin:0;padding:0;}'
+            'body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;'
+            'background:#0d0f1a;color:#fff;display:flex;align-items:center;'
+            'justify-content:center;min-height:100vh;}'
+            '.box{background:#161926;border:1px solid #2a2d3e;border-radius:16px;'
+            'padding:36px 32px;width:320px;text-align:center;}'
+            'h2{font-size:22px;margin-bottom:6px;}'
+            'p{color:#888;font-size:13px;margin-bottom:24px;}'
+            'input{width:100%;padding:11px 14px;border-radius:9px;border:1px solid #2a2d3e;'
+            'background:#0d0f1a;color:#fff;font-size:14px;margin-bottom:14px;}'
+            'button{width:100%;padding:11px;border-radius:9px;border:none;'
+            'background:#7c6aff;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}'
+            '</style></head><body>'
+            '<div class="box">'
+            '<h2>🔐 Admin Login</h2>'
+            '<p>Hepozy site management</p>'
+            '<form method="get">'
+            '<input type="password" name="pw" placeholder="Admin password" autofocus>'
+            '<button type="submit">Enter</button>'
+            '</form></div></body></html>',
+            401
+        )
+
+    now = datetime.now(timezone.utc)
+    total_users    = User.query.count()
+    online_now     = len(online_users)
+    today_start    = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    new_today      = User.query.filter(User.created_at >= today_start).count()
+    new_this_week  = User.query.filter(User.created_at >= now - timedelta(days=7)).count()
+    new_this_month = User.query.filter(User.created_at >= now - timedelta(days=30)).count()
+    total_messages = Message.query.count()
+    msgs_today     = Message.query.filter(Message.created_at >= today_start).count()
+    total_stories  = Story.query.filter(Story.expires_at > now).count()
+    total_friends  = Friendship.query.count()
+    pending_reqs   = FriendRequest.query.filter_by(status='pending').count()
+
+    # Growth: new users per day last 14 days
+    growth_labels = []
+    growth_data = []
+    for i in range(13, -1, -1):
+        day = now - timedelta(days=i)
+        ds = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        de = ds + timedelta(days=1)
+        cnt = User.query.filter(User.created_at >= ds, User.created_at < de).count()
+        growth_labels.append(ds.strftime('%b %d'))
+        growth_data.append(cnt)
+
+    # Recent 20 users
+    recent_users = User.query.order_by(User.created_at.desc()).limit(20).all()
+    rows = ''
+    for u in recent_users:
+        badge = '<span style="color:#22c55e;">●</span>' if u.id in online_users else '<span style="color:#444;">●</span>'
+        joined = u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—'
+        rows += f'<tr><td>{u.id}</td><td>{u.username}</td><td>{badge}</td><td>{joined}</td></tr>'
+
+    html = f'''<!DOCTYPE html>
+<html><head>
+<title>Hepozy Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0d0f1a;color:#e8eaf0;padding:20px 16px;min-height:100vh;}}
+h1{{font-size:22px;font-weight:800;margin-bottom:2px;}}
+.sub{{color:#666;font-size:13px;margin-bottom:24px;}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px;}}
+.card{{background:#161926;border:1px solid #2a2d3e;border-radius:14px;padding:16px 14px;}}
+.val{{font-size:30px;font-weight:800;line-height:1;}}
+.lbl{{font-size:11px;color:#666;margin-top:5px;text-transform:uppercase;letter-spacing:.4px;}}
+.c1{{color:#7c6aff;}}.c2{{color:#22c55e;}}.c3{{color:#f97316;}}.c4{{color:#38bdf8;}}
+.box{{background:#161926;border:1px solid #2a2d3e;border-radius:14px;padding:18px;margin-bottom:24px;}}
+.box h3{{font-size:12px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;}}
+table{{width:100%;border-collapse:collapse;font-size:13px;}}
+th{{text-align:left;padding:9px 12px;color:#666;border-bottom:1px solid #2a2d3e;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}}
+td{{padding:9px 12px;border-bottom:1px solid #1a1d27;color:#bbb;}}
+tr:last-child td{{border-bottom:none;}}
+tr:hover td{{background:#1a1d27;}}
+a.btn{{display:inline-flex;align-items:center;gap:6px;background:#7c6aff;color:#fff;border-radius:9px;padding:8px 16px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:20px;}}
+</style>
+</head><body>
+<h1>📊 Hepozy Admin</h1>
+<div class="sub">Real-time site stats &nbsp;·&nbsp; <a href="/admin?pw={pw}" style="color:#7c6aff;">🔄 Refresh</a></div>
+
+<div class="grid">
+  <div class="card"><div class="val c1">{total_users}</div><div class="lbl">Total Users</div></div>
+  <div class="card"><div class="val c2">{online_now}</div><div class="lbl">Online Now</div></div>
+  <div class="card"><div class="val">{new_today}</div><div class="lbl">Joined Today</div></div>
+  <div class="card"><div class="val">{new_this_week}</div><div class="lbl">This Week</div></div>
+  <div class="card"><div class="val">{new_this_month}</div><div class="lbl">This Month</div></div>
+  <div class="card"><div class="val c3">{total_messages}</div><div class="lbl">Total Messages</div></div>
+  <div class="card"><div class="val c4">{msgs_today}</div><div class="lbl">Messages Today</div></div>
+  <div class="card"><div class="val">{total_stories}</div><div class="lbl">Live Stories</div></div>
+  <div class="card"><div class="val">{total_friends}</div><div class="lbl">Friendships</div></div>
+  <div class="card"><div class="val">{pending_reqs}</div><div class="lbl">Pending Reqs</div></div>
+</div>
+
+<div class="box">
+  <h3>📈 New Users — Last 14 Days</h3>
+  <canvas id="chart" height="80"></canvas>
+</div>
+
+<div class="box">
+  <h3>👥 Most Recent Signups</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Username</th><th>Online</th><th>Joined</th></tr></thead>
+    <tbody>{rows}</tbody>
+  </table>
+</div>
+
+<script>
+new Chart(document.getElementById('chart'),{{
+  type:'bar',
+  data:{{
+    labels:{growth_labels},
+    datasets:[{{
+      label:'New Users',
+      data:{growth_data},
+      backgroundColor:'rgba(124,106,255,0.75)',
+      borderColor:'#7c6aff',
+      borderWidth:1,
+      borderRadius:5
+    }}]
+  }},
+  options:{{
+    plugins:{{legend:{{display:false}}}},
+    scales:{{
+      x:{{grid:{{color:'#2a2d3e'}},ticks:{{color:'#666',font:{{size:10}}}}}},
+      y:{{grid:{{color:'#2a2d3e'}},ticks:{{color:'#666',stepSize:1}},beginAtZero:true}}
+    }}
+  }}
+}});
+</script>
+</body></html>'''
+    return html
+
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
