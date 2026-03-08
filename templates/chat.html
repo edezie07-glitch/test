@@ -755,6 +755,20 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   flex-shrink:0;display:flex;align-items:center;justify-content:center;
   transition:border-color .15s;
 }
+
+/* ── Sliders ── */
+#SC_contrastPanel input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:3px;border-radius:2px;
+  background:rgba(255,255,255,.25);outline:none;cursor:pointer;
+}
+#SC_contrastPanel input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--brand);border:2px solid #fff;cursor:pointer;
+  box-shadow:0 0 6px rgba(124,106,255,.6);
+}
+/* arrow SVG transition */
+#SC_arrowSvg{ transition:transform .25s cubic-bezier(.4,0,.2,1); display:block; }
 .sc-privacy-opt.selected .sc-privacy-radio{
   border-color:var(--brand);
   background:var(--brand);
@@ -1418,7 +1432,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
     <!-- Canvas / preview area -->
     <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
-      <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;">
+      <div id="SC_rotWrap" style="display:contents;touch-action:none;"><img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;"></div>
       <video id="SC_vid" style="max-width:100%;max-height:100%;object-fit:contain;display:none;" playsinline autoplay loop muted></video>
       <!-- Text story bg + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#7c6aff,#a855f7);"></div>
@@ -1472,15 +1486,31 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div onclick="scClose()" style="padding:11px 18px;color:#ef4444;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">✕ <span>Discard Story</span></div>
     </div>
 
-    <!-- BOTTOM-CENTER: Arrow toggle for edit tools -->
-    <div style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:0;">
+    <!-- BOTTOM-CENTER: Double-arrow toggle for edit tools -->
+    <div style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);z-index:10;">
       <button id="SC_arrowBtn" onclick="scToggleTools()" style="
-        background:rgba(0,0,0,.45);border:none;color:#fff;
-        border-radius:50%;width:38px;height:38px;font-size:20px;
-        cursor:pointer;display:flex;align-items:center;justify-content:center;
-        backdrop-filter:blur(4px);transition:transform .2s;
-      ">⌃</button>
+        background:rgba(0,0,0,.5);border:none;color:#fff;
+        border-radius:20px;padding:6px 14px;
+        cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0;
+        backdrop-filter:blur(6px);
+        border:1px solid rgba(255,255,255,.18);
+        transition:background .15s;
+        -webkit-tap-highlight-color:transparent;
+      ">
+        <svg id="SC_arrowSvg" width="22" height="20" viewBox="0 0 22 20" fill="none" style="transition:transform .25s cubic-bezier(.4,0,.2,1);display:block;">
+          <!-- outer chevron -->
+          <polyline id="SC_chevOuter" points="2,14 11,5 20,14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- inner chevron (smaller, lower) -->
+          <polyline id="SC_chevInner" points="5,18 11,12 17,18" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </button>
     </div>
+
+    <!-- Tap-outside overlay to close tools -->
+    <div id="SC_toolsOv" onclick="scCloseTools()" style="
+      display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;
+      background:rgba(0,0,0,.18);
+    "></div>
 
     <!-- Edit tools panel (slides up) -->
     <div id="SC_tools" style="
@@ -1512,17 +1542,41 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
           cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
         " id="SC_captionBtn"><span style="font-size:20px;">✏️</span>Add Text</button>
       </div>
-      <!-- Contrast options (hidden until contrast tapped) -->
-      <div id="SC_contrastPanel" style="display:none;margin-bottom:10px;">
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px;text-align:center;">Choose filter</div>
-        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">
-          <div class="sc-filter-swatch" onclick="scSetFilter('none')" style="background:linear-gradient(135deg,#fff,#aaa);">Normal</div>
-          <div class="sc-filter-swatch" onclick="scSetFilter('brightness(1.25) contrast(1.1)')" style="background:linear-gradient(135deg,#ffe,#ffc);">Bright</div>
-          <div class="sc-filter-swatch" onclick="scSetFilter('contrast(1.4) saturate(1.3)')" style="background:linear-gradient(135deg,#f8f,#88f);">Vivid</div>
-          <div class="sc-filter-swatch" onclick="scSetFilter('grayscale(1)')" style="background:linear-gradient(135deg,#888,#222);">B&W</div>
-          <div class="sc-filter-swatch" onclick="scSetFilter('sepia(0.8)')" style="background:linear-gradient(135deg,#c96,#a74);">Sepia</div>
-          <div class="sc-filter-swatch" onclick="scSetFilter('hue-rotate(180deg) saturate(1.4)')" style="background:linear-gradient(135deg,#0ff,#06f);">Cool</div>
-          <div class="sc-filter-swatch" onclick="scSetFilter('brightness(.7) contrast(1.3)')" style="background:linear-gradient(135deg,#222,#444);">Dark</div>
+      <!-- Contrast / Adjust panel -->
+      <div id="SC_contrastPanel" style="display:none;margin-bottom:10px;padding:10px 4px 0;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <!-- Brightness -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">☀️ Brightness</span>
+            <input type="range" id="SC_slBrightness" min="0" max="200" value="100" oninput="scApplyAdjust()" class="sc-slider">
+            <span id="SC_slBrightnessVal" class="sc-slider-val">100</span>
+          </div>
+          <!-- Contrast -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">◑ Contrast</span>
+            <input type="range" id="SC_slContrast" min="0" max="200" value="100" oninput="scApplyAdjust()" class="sc-slider">
+            <span id="SC_slContrastVal" class="sc-slider-val">100</span>
+          </div>
+          <!-- Saturation -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">🌈 Saturation</span>
+            <input type="range" id="SC_slSaturate" min="0" max="200" value="100" oninput="scApplyAdjust()" class="sc-slider">
+            <span id="SC_slSaturateVal" class="sc-slider-val">100</span>
+          </div>
+          <!-- Blur -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">💧 Blur</span>
+            <input type="range" id="SC_slBlur" min="0" max="10" value="0" step="0.1" oninput="scApplyAdjust()" class="sc-slider">
+            <span id="SC_slBlurVal" class="sc-slider-val">0</span>
+          </div>
+          <!-- Warmth -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">🌡️ Warmth</span>
+            <input type="range" id="SC_slWarm" min="0" max="100" value="0" oninput="scApplyAdjust()" class="sc-slider" style="accent-color:#f59e0b;">
+            <span id="SC_slWarmVal" class="sc-slider-val">0</span>
+          </div>
+          <!-- Reset -->
+          <button onclick="scResetAdjust()" style="align-self:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);border-radius:8px;padding:7px 20px;font-size:11px;cursor:pointer;margin-top:4px;">↺ Reset</button>
         </div>
       </div>
       <!-- Caption input -->
@@ -3616,14 +3670,16 @@ async function setStoryPrivacy(privacy){
 // STORY CREATOR — multi-page flow
 // ══════════════════════════════════════════════
 const SC = {
-  type: null,        // 'photo'|'camera'|'text'
-  mediaFile: null,   // File object
-  mediaType: null,   // 'image'|'video'
-  mediaURL: null,    // object URL
+  type: null,
+  mediaFile: null,
+  mediaType: null,
+  mediaURL: null,
   audioFile: null,
   audioName: '',
   caption: '',
   filter: 'none',
+  rotation: 0,
+  rotStartAngle: 0,
   camStream: null,
   toolsOpen: false,
   settingsOpen: false,
@@ -3685,7 +3741,16 @@ function scLoadEditor(){
   $('SC_settings').style.display='none';
   SC.settingsOpen=false; SC.toolsOpen=false;
   $('SC_tools').style.transform='translateY(100%)';
-  $('SC_arrowBtn').textContent='⌃';
+  $('SC_toolsOv').style.display='none';
+  const _asv=$('SC_arrowSvg'); if(_asv) _asv.style.transform='rotate(0deg)';
+  // Reset adjust sliders
+  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{const el=$(id);if(el)el.value=100;});
+  const _sb=$('SC_slBlur'); if(_sb) _sb.value=0;
+  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{const el=$(id);if(el)el.textContent='100';});
+  const _sbv=$('SC_slBlurVal'); if(_sbv) _sbv.textContent='0';
+  // Reset rotation
+  SC.rotation=0; SC.rotStartAngle=0;
+  const _img=$('SC_img'); if(_img){_img.style.filter='none'; _img.style.transform='rotate(0deg)';}
   if(SC.type==='text'){
     tb.style.display='block'; tx.style.display='block';
     setTimeout(()=>tx.focus(),300);
@@ -3736,8 +3801,18 @@ function scSnap(){
 // ── Tools ──
 function scToggleTools(){
   SC.toolsOpen = !SC.toolsOpen;
-  $('SC_tools').style.transform = SC.toolsOpen ? 'translateY(0)' : 'translateY(100%)';
-  $('SC_arrowBtn').textContent = SC.toolsOpen ? '⌄' : '⌃';
+  const tools = $('SC_tools'), ov = $('SC_toolsOv'), svg = $('SC_arrowSvg');
+  tools.style.transform = SC.toolsOpen ? 'translateY(0)' : 'translateY(100%)';
+  ov.style.display = SC.toolsOpen ? 'block' : 'none';
+  // flip double chevrons to point down when open
+  if(svg) svg.style.transform = SC.toolsOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+function scCloseTools(){
+  SC.toolsOpen = false;
+  $('SC_tools').style.transform = 'translateY(100%)';
+  $('SC_toolsOv').style.display = 'none';
+  const svg = $('SC_arrowSvg');
+  if(svg) svg.style.transform = 'rotate(0deg)';
 }
 
 function scToggleSettings(){
@@ -3758,17 +3833,71 @@ function scShowDeleteMenu(){
 }
 function scHideDeleteMenu(){ $('SC_delMenu').style.display='none'; }
 
-// ── Contrast / Filter ──
+// ── Contrast / Adjust ──
 function scShowContrast(){
   const p=$('SC_contrastPanel');
   p.style.display = p.style.display==='none' ? 'block' : 'none';
 }
-function scSetFilter(f){
-  SC.filter=f;
-  $('SC_img').style.filter=f;
-  document.querySelectorAll('.sc-filter-swatch').forEach(s=>s.classList.remove('active'));
-  event.target.closest('.sc-filter-swatch').classList.add('active');
+function scApplyAdjust(){
+  const br = $('SC_slBrightness').value;
+  const ct = $('SC_slContrast').value;
+  const sa = $('SC_slSaturate').value;
+  const bl = $('SC_slBlur').value;
+  const wm = $('SC_slWarm') ? $('SC_slWarm').value : 0;
+  $('SC_slBrightnessVal').textContent = br;
+  $('SC_slContrastVal').textContent   = ct;
+  $('SC_slSaturateVal').textContent   = sa;
+  $('SC_slBlurVal').textContent       = parseFloat(bl).toFixed(1);
+  if($('SC_slWarmVal')) $('SC_slWarmVal').textContent = wm;
+  // warmth = sepia blend via CSS filter
+  const sep = parseFloat(wm)/100;
+  const f = `brightness(${br}%) contrast(${ct}%) saturate(${sa}%) sepia(${sep.toFixed(2)}) blur(${bl}px)`;
+  SC.filter = f;
+  const img=$('SC_img'), vid=$('SC_vid');
+  if(img) img.style.filter = f;
+  if(vid) vid.style.filter = f;
 }
+function scResetAdjust(){
+  $('SC_slBrightness').value=100; $('SC_slBrightnessVal').textContent='100';
+  $('SC_slContrast').value=100;   $('SC_slContrastVal').textContent='100';
+  $('SC_slSaturate').value=100;   $('SC_slSaturateVal').textContent='100';
+  $('SC_slBlur').value=0;         $('SC_slBlurVal').textContent='0.0';
+  if($('SC_slWarm')){ $('SC_slWarm').value=0; $('SC_slWarmVal').textContent='0'; }
+  SC.filter='none';
+  const img=$('SC_img'), vid=$('SC_vid');
+  if(img) img.style.filter='none';
+  if(vid) vid.style.filter='none';
+}
+
+// ── Pinch-Rotate touch on canvas ──
+(function(){
+  function getAngle(t1,t2){
+    return Math.atan2(t2.clientY-t1.clientY, t2.clientX-t1.clientX) * 180/Math.PI;
+  }
+  let _active=false, _startAngle=0, _baseRot=0;
+  document.addEventListener('touchstart',function(e){
+    if(!$('SC_p1') || $('SC_p1').style.display==='none') return;
+    const canvas=$('SC_canvas');
+    if(!canvas.contains(e.target)) return;
+    if(e.touches.length===2){
+      _active=true;
+      _startAngle=getAngle(e.touches[0],e.touches[1]);
+      _baseRot=SC.rotation;
+      e.preventDefault();
+    }
+  },{passive:false});
+  document.addEventListener('touchmove',function(e){
+    if(!_active||e.touches.length<2) return;
+    const angle=getAngle(e.touches[0],e.touches[1]);
+    SC.rotation = _baseRot + (angle-_startAngle);
+    const img=$('SC_img');
+    if(img) img.style.transform='rotate('+SC.rotation+'deg)';
+    e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchend',function(e){
+    if(e.touches.length<2) _active=false;
+  });
+})();
 
 // ── Caption ──
 function scAddCaption(){
@@ -3838,6 +3967,34 @@ function scUpdatePrivacyUI(val){
 function scBackToEditor(){ scPage(1); }
 
 // ── POST ──
+// Bake rotation + CSS filter onto offscreen canvas → returns File
+async function scBakeImage(){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const rad = SC.rotation * Math.PI/180;
+      const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const cw = Math.round(w*cos + h*sin);
+      const ch = Math.round(w*sin + h*cos);
+      const cv = document.createElement('canvas');
+      cv.width=cw; cv.height=ch;
+      const ctx=cv.getContext('2d');
+      // apply CSS filter via ctx.filter if supported
+      if(SC.filter && SC.filter!=='none'){
+        ctx.filter = SC.filter;
+      }
+      ctx.translate(cw/2, ch/2);
+      ctx.rotate(rad);
+      ctx.drawImage(img, -w/2, -h/2, w, h);
+      cv.toBlob(blob=>{
+        resolve(new File([blob],'story.jpg',{type:'image/jpeg'}));
+      },'image/jpeg',0.92);
+    };
+    img.src = SC.mediaURL;
+  });
+}
+
 async function scPost(){
   const btn=$('SC_shareBtn');
   btn.disabled=true; btn.textContent='Posting…';
@@ -3850,11 +4007,16 @@ async function scPost(){
   let content='', mediaUrl='', mediaType='text';
   const textVal=($('SC_textBox').value||SC.caption||'').trim();
 
-  // upload media
+  // upload media (bake rotation+filter via canvas for images)
   if(SC.mediaFile){
     try{
       btn.textContent='Uploading…';
-      const fd=new FormData(); fd.append('media',SC.mediaFile);
+      let uploadFile = SC.mediaFile;
+      // bake rotation + filter for images using offscreen canvas
+      if(SC.mediaType==='image' && (SC.rotation!==0 || SC.filter!=='none')){
+        uploadFile = await scBakeImage();
+      }
+      const fd=new FormData(); fd.append('media', uploadFile);
       const up=await fetch('/api/upload/media',{method:'POST',body:fd});
       const ud=await up.json();
       if(!ud.success){ toast('Upload failed: '+(ud.error||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
