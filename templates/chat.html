@@ -720,6 +720,47 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   /* story viewer is now its own fullscreen div */
 }
 
+
+/* ── STORY CREATOR ── */
+#SC{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+.sc-type-btn{
+  width:100%;max-width:320px;padding:16px 20px;border-radius:16px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.07);
+  color:#fff;font-size:16px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:14px;
+  transition:background .15s,transform .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.sc-type-btn:active{background:rgba(124,106,255,.35);transform:scale(.97);}
+.sc-filter-swatch{
+  flex-shrink:0;width:60px;height:60px;border-radius:10px;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:4px;font-size:9px;font-weight:700;color:#fff;
+  cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.7);
+  border:2px solid transparent;transition:border-color .15s;
+}
+.sc-filter-swatch:active,.sc-filter-swatch.active{border-color:#fff;}
+.sc-privacy-opt{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:12px;
+  background:rgba(255,255,255,.06);color:#fff;
+  font-size:14px;font-weight:600;cursor:pointer;
+  border:1.5px solid transparent;transition:border-color .15s,background .15s;
+}
+.sc-privacy-opt.selected{border-color:var(--brand);background:rgba(124,106,255,.18);}
+.sc-privacy-radio{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.4);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:border-color .15s;
+}
+.sc-privacy-opt.selected .sc-privacy-radio{
+  border-color:var(--brand);
+  background:var(--brand);
+  box-shadow:0 0 0 3px rgba(124,106,255,.3);
+}
+
 </style>
 </head>
 <body>
@@ -1349,76 +1390,264 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   "></div>
 </div>
 
-<!-- Privacy edit sheet for own story -->
+<!-- ══════════════════════════════════════════
+     STORY CREATOR — multi-page fullscreen flow
+══════════════════════════════════════════ -->
+<div id="SC" style="display:none;position:fixed;inset:0;z-index:6000;background:#000;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+
+  <!-- PAGE 0: Type chooser (3 buttons) -->
+  <div id="SC_p0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;padding:24px;">
+    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:.4px;">Create Story</div>
+    <button class="sc-type-btn" onclick="scChoose('photo')">
+      <span style="font-size:30px;">🖼️</span>
+      <span>Photo Story</span>
+    </button>
+    <button class="sc-type-btn" onclick="scChoose('camera')">
+      <span style="font-size:30px;">📷</span>
+      <span>Take Photo</span>
+    </button>
+    <button class="sc-type-btn" onclick="scChoose('text')">
+      <span style="font-size:30px;">📝</span>
+      <span>Text Story</span>
+    </button>
+    <button onclick="scClose()" style="margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.6);padding:10px 28px;border-radius:24px;font-size:14px;cursor:pointer;">Cancel</button>
+  </div>
+
+  <!-- PAGE 1: EDITOR (photo/video/text/camera result) -->
+  <div id="SC_p1" style="display:none;height:100%;flex-direction:column;position:relative;">
+
+    <!-- Canvas / preview area -->
+    <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
+      <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;">
+      <video id="SC_vid" style="max-width:100%;max-height:100%;object-fit:contain;display:none;" playsinline autoplay loop muted></video>
+      <!-- Text story bg + text -->
+      <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#7c6aff,#a855f7);"></div>
+      <textarea id="SC_textBox" placeholder="Tap to type…" style="
+        display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+        background:transparent;border:none;outline:none;
+        color:#fff;font-size:22px;font-weight:700;text-align:center;
+        width:85%;resize:none;font-family:inherit;
+        text-shadow:0 2px 8px rgba(0,0,0,.5);
+        caret-color:#fff;min-height:80px;
+      " rows="4"></textarea>
+      <!-- Overlaid caption (for photo/video) -->
+      <div id="SC_caption" style="
+        display:none;position:absolute;bottom:90px;left:0;right:0;
+        padding:10px 18px;text-align:center;
+        color:#fff;font-size:16px;font-weight:600;
+        text-shadow:0 2px 8px rgba(0,0,0,.7);
+        pointer-events:none;
+      "></div>
+    </div>
+
+    <!-- TOP-LEFT: Delete button -->
+    <div style="position:absolute;top:16px;left:14px;z-index:10;">
+      <button id="SC_delBtn" onclick="scShowDeleteMenu()" style="
+        background:rgba(0,0,0,.45);border:none;color:#fff;
+        border-radius:50%;width:40px;height:40px;font-size:19px;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        backdrop-filter:blur(4px);
+      ">🗑️</button>
+    </div>
+
+    <!-- TOP-RIGHT: 3-dots settings -->
+    <div style="position:absolute;top:16px;right:14px;z-index:10;">
+      <button onclick="scToggleSettings()" style="
+        background:rgba(0,0,0,.45);border:none;color:#fff;
+        border-radius:50%;width:40px;height:40px;font-size:20px;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        backdrop-filter:blur(4px);letter-spacing:2px;font-weight:900;
+      ">⋯</button>
+    </div>
+
+    <!-- Settings dropdown -->
+    <div id="SC_settings" style="
+      display:none;position:absolute;top:64px;right:14px;z-index:20;
+      background:rgba(24,24,36,.95);border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;padding:6px 0;min-width:180px;
+      backdrop-filter:blur(8px);
+    ">
+      <div onclick="scSettingsPrivacy()" style="padding:11px 18px;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">🔒 <span>Story Privacy</span></div>
+      <div style="height:1px;background:rgba(255,255,255,.08);margin:2px 0;"></div>
+      <div onclick="scClose()" style="padding:11px 18px;color:#ef4444;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">✕ <span>Discard Story</span></div>
+    </div>
+
+    <!-- BOTTOM-CENTER: Arrow toggle for edit tools -->
+    <div style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:0;">
+      <button id="SC_arrowBtn" onclick="scToggleTools()" style="
+        background:rgba(0,0,0,.45);border:none;color:#fff;
+        border-radius:50%;width:38px;height:38px;font-size:20px;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        backdrop-filter:blur(4px);transition:transform .2s;
+      ">⌃</button>
+    </div>
+
+    <!-- Edit tools panel (slides up) -->
+    <div id="SC_tools" style="
+      position:absolute;bottom:0;left:0;right:0;z-index:11;
+      background:rgba(14,14,22,.92);
+      border-top:1px solid rgba(255,255,255,.1);
+      padding:12px 16px 28px;
+      transform:translateY(100%);
+      transition:transform .28s cubic-bezier(.4,0,.2,1);
+      backdrop-filter:blur(8px);
+    ">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+        <!-- Contrast -->
+        <button onclick="scShowContrast()" style="
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+          color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
+          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
+        "><span style="font-size:20px;">🎨</span>Contrast</button>
+        <!-- Song -->
+        <button onclick="scPickSong()" style="
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+          color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
+          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
+        " id="SC_songBtn"><span style="font-size:20px;">🎵</span>Add Song</button>
+        <!-- Text overlay -->
+        <button onclick="scAddCaption()" style="
+          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+          color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
+          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
+        " id="SC_captionBtn"><span style="font-size:20px;">✏️</span>Add Text</button>
+      </div>
+      <!-- Contrast options (hidden until contrast tapped) -->
+      <div id="SC_contrastPanel" style="display:none;margin-bottom:10px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px;text-align:center;">Choose filter</div>
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;">
+          <div class="sc-filter-swatch" onclick="scSetFilter('none')" style="background:linear-gradient(135deg,#fff,#aaa);">Normal</div>
+          <div class="sc-filter-swatch" onclick="scSetFilter('brightness(1.25) contrast(1.1)')" style="background:linear-gradient(135deg,#ffe,#ffc);">Bright</div>
+          <div class="sc-filter-swatch" onclick="scSetFilter('contrast(1.4) saturate(1.3)')" style="background:linear-gradient(135deg,#f8f,#88f);">Vivid</div>
+          <div class="sc-filter-swatch" onclick="scSetFilter('grayscale(1)')" style="background:linear-gradient(135deg,#888,#222);">B&W</div>
+          <div class="sc-filter-swatch" onclick="scSetFilter('sepia(0.8)')" style="background:linear-gradient(135deg,#c96,#a74);">Sepia</div>
+          <div class="sc-filter-swatch" onclick="scSetFilter('hue-rotate(180deg) saturate(1.4)')" style="background:linear-gradient(135deg,#0ff,#06f);">Cool</div>
+          <div class="sc-filter-swatch" onclick="scSetFilter('brightness(.7) contrast(1.3)')" style="background:linear-gradient(135deg,#222,#444);">Dark</div>
+        </div>
+      </div>
+      <!-- Caption input -->
+      <div id="SC_captionInput" style="display:none;margin-bottom:10px;">
+        <input id="SC_captionText" type="text" placeholder="Add caption…" maxlength="120" style="
+          width:100%;padding:10px 13px;border-radius:10px;
+          border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);
+          color:#fff;font-size:14px;outline:none;
+        " oninput="scUpdateCaption(this.value)">
+      </div>
+      <!-- Song display -->
+      <div id="SC_songDisplay" style="display:none;padding:8px 12px;background:rgba(124,106,255,.2);border-radius:10px;margin-bottom:10px;display:none;align-items:center;gap:8px;">
+        <span style="font-size:16px;">🎵</span>
+        <span id="SC_songName" style="color:#fff;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <button onclick="scClearSong()" style="background:transparent;border:none;color:#ef4444;font-size:16px;cursor:pointer;">✕</button>
+      </div>
+    </div>
+
+    <!-- BOTTOM-RIGHT: Next button -->
+    <div style="position:absolute;bottom:16px;right:14px;z-index:12;">
+      <button onclick="scGoShare()" style="
+        background:var(--brand);border:none;color:#fff;
+        border-radius:24px;padding:12px 24px;font-size:15px;font-weight:700;
+        cursor:pointer;display:flex;align-items:center;gap:6px;
+        box-shadow:0 4px 18px rgba(124,106,255,.5);
+      ">Next →</button>
+    </div>
+  </div>
+
+  <!-- PAGE 2: SHARE -->
+  <div id="SC_p2" style="display:none;height:100%;flex-direction:column;background:#0d0f1a;">
+    <div style="padding:16px 14px 8px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);">
+      <button onclick="scBackToEditor()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
+      <span style="color:#fff;font-size:16px;font-weight:700;">Share Story</span>
+    </div>
+    <!-- Mini preview -->
+    <div style="margin:16px;border-radius:14px;overflow:hidden;max-height:200px;background:#111;display:flex;align-items:center;justify-content:center;">
+      <img id="SC_shareThumb" style="max-width:100%;max-height:200px;object-fit:cover;display:none;">
+      <div id="SC_shareThumbText" style="display:none;padding:24px;color:#fff;font-size:16px;font-weight:600;text-align:center;background:linear-gradient(135deg,#7c6aff,#a855f7);width:100%;min-height:100px;display:none;align-items:center;justify-content:center;"></div>
+    </div>
+    <!-- Privacy picker -->
+    <div style="padding:0 16px 12px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Who can see this</div>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="SC_privacyPicker">
+        <label class="sc-privacy-opt" id="scpo_friends">
+          <input type="radio" name="scPrivacy" value="friends" checked style="display:none;">
+          <span class="sc-privacy-radio"></span>
+          <span>👥 Friends only</span>
+        </label>
+        <label class="sc-privacy-opt" id="scpo_public">
+          <input type="radio" name="scPrivacy" value="public" style="display:none;">
+          <span class="sc-privacy-radio"></span>
+          <span>🌍 Public</span>
+        </label>
+        <label class="sc-privacy-opt" id="scpo_custom">
+          <input type="radio" name="scPrivacy" value="custom" style="display:none;">
+          <span class="sc-privacy-radio"></span>
+          <span>✏️ Custom</span>
+        </label>
+      </div>
+      <div id="SC_customList" style="display:none;margin-top:10px;max-height:130px;overflow-y:auto;background:rgba(255,255,255,.05);border-radius:10px;padding:8px;"></div>
+    </div>
+    <!-- Share button -->
+    <div style="padding:0 16px;margin-top:auto;padding-bottom:32px;">
+      <button id="SC_shareBtn" onclick="scPost()" style="
+        width:100%;padding:15px;border-radius:14px;border:none;
+        background:var(--brand);color:#fff;font-size:16px;font-weight:800;
+        cursor:pointer;letter-spacing:.3px;
+      ">✨ Share Story</button>
+    </div>
+  </div>
+
+  <!-- PAGE 3: CAMERA -->
+  <div id="SC_p3" style="display:none;height:100%;flex-direction:column;position:relative;background:#000;">
+    <video id="SC_camVid" style="width:100%;height:100%;object-fit:cover;" autoplay playsinline muted></video>
+    <!-- Shutter button -->
+    <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);">
+      <button onclick="scSnap()" style="
+        width:72px;height:72px;border-radius:50%;
+        border:4px solid #fff;background:rgba(255,255,255,.25);
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        -webkit-tap-highlight-color:transparent;
+      "><div style="width:56px;height:56px;border-radius:50%;background:#fff;"></div></button>
+    </div>
+    <!-- Close -->
+    <button onclick="scCloseCam()" style="position:absolute;top:16px;left:14px;background:rgba(0,0,0,.4);border:none;color:#fff;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <canvas id="SC_snapCanvas" style="display:none;"></canvas>
+  </div>
+
+  <!-- DELETE MENU -->
+  <div id="SC_delMenu" style="
+    display:none;position:absolute;inset:0;z-index:30;
+    background:rgba(0,0,0,.6);align-items:flex-end;
+    backdrop-filter:blur(2px);
+  " onclick="scHideDeleteMenu()">
+    <div style="width:100%;background:#1a1d27;border-radius:18px 18px 0 0;padding:12px 16px 32px;" onclick="event.stopPropagation()">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px;"></div>
+      <button onclick="scClose()" style="width:100%;padding:14px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">🗑️ Delete Story</button>
+      <button onclick="scHideDeleteMenu()" style="width:100%;padding:14px;border-radius:12px;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file inputs for story creator -->
+<input type="file" id="SC_galleryInput" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
+<input type="file" id="SC_audioInput" accept="audio/*" style="display:none;" onchange="scAudioPicked(this)">
+
+<!-- Privacy Sheet (used from viewer) -->
 <div class="del-sheet-ov" id="privacySheetOv" onclick="closePrivacySheet()"></div>
 <div class="del-sheet" id="privacySheet">
   <div style="padding:14px 16px 8px;font-size:15px;font-weight:700;color:var(--txt);">🔒 Story Privacy</div>
   <div style="padding:0 8px 16px;display:flex;flex-direction:column;gap:6px;">
-    <button onclick="setStoryPrivacy('public')"    class="del-opt" style="justify-content:flex-start;gap:10px;">🌍 <span>Public — everyone</span></button>
-    <button onclick="setStoryPrivacy('friends')"   class="del-opt" style="justify-content:flex-start;gap:10px;">👥 <span>Friends only</span></button>
-    <button onclick="setStoryPrivacy('custom')"    class="del-opt" style="justify-content:flex-start;gap:10px;">✏️ <span>Custom</span></button>
+    <button onclick="setStoryPrivacy('public')"  class="del-opt" style="justify-content:flex-start;gap:10px;">🌍 <span>Public</span></button>
+    <button onclick="setStoryPrivacy('friends')" class="del-opt" style="justify-content:flex-start;gap:10px;">👥 <span>Friends only</span></button>
+    <button onclick="setStoryPrivacy('custom')"  class="del-opt" style="justify-content:flex-start;gap:10px;">✏️ <span>Custom</span></button>
     <button onclick="closePrivacySheet()" style="margin-top:4px;padding:12px;border-radius:12px;border:none;background:var(--hov);color:var(--mute);font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
   </div>
 </div>
-<!-- Create Story Modal -->
-<div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
-<div class="profile-modal" id="createStoryModal" style="max-width:420px;">
-  <div class="profile-header">
-    <h3>✨ New Story</h3>
-    <button class="closebtn" onclick="closeCreateStory()">✕</button>
-  </div>
-  <div class="profile-body" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
 
-    <!-- Media preview (shows after picking) -->
-    <div id="storyMediaPreview" style="display:none;border-radius:14px;overflow:hidden;max-height:260px;background:#000;position:relative;">
-      <img id="storyImgPreviewEl" style="width:100%;max-height:260px;object-fit:cover;display:none;">
-      <video id="storyVidPreviewEl" style="width:100%;max-height:260px;object-fit:cover;display:none;" controls playsinline></video>
-      <!-- Remove media button -->
-      <button onclick="clearStoryMedia()" style="position:absolute;top:8px;right:8px;border:none;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
-    </div>
-
-    <!-- Big pick button — instantly opens gallery -->
-    <input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="previewStoryMedia(this)">
-    <button id="storyPickBtn" onclick="document.getElementById('storyMediaFile').click()" style="
-      width:100%;padding:18px;border-radius:14px;border:2px dashed var(--bdr);
-      background:var(--sb2);color:var(--mute);font-size:15px;cursor:pointer;
-      display:flex;flex-direction:column;align-items:center;gap:6px;
-    ">
-      <span style="font-size:32px;">🖼️</span>
-      <span style="font-weight:600;">Tap to pick photo or video</span>
-      <span style="font-size:11px;">JPG · PNG · GIF · MP4 · MOV · WEBM</span>
-    </button>
-
-    <!-- Caption / text -->
-    <textarea id="storyTextContent" rows="3" placeholder="Add a caption… (optional)" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:var(--txt);font-size:14px;resize:none;font-family:var(--font-b);outline:none;"></textarea>
-
-    <!-- Audio track (optional) -->
-    <div style="display:flex;align-items:center;gap:8px;">
-      <input type="file" id="storyAudioFile" accept="audio/*" style="display:none;" onchange="previewStoryAudio(this)">
-      <button onclick="document.getElementById('storyAudioFile').click()" style="
-        flex:1;padding:10px;border-radius:10px;border:1px solid var(--bdr);
-        background:var(--sb2);color:var(--mute);font-size:13px;cursor:pointer;
-        display:flex;align-items:center;justify-content:center;gap:6px;
-      " id="storyAudioBtn">
-        🎵 Add song
-      </button>
-      <button id="storyAudioClear" onclick="clearStoryAudio()" style="display:none;padding:10px 14px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:#ef4444;font-size:13px;cursor:pointer;">✕</button>
-    </div>
-    <audio id="storyAudioPreview" style="display:none;width:100%;border-radius:8px;" controls></audio>
-
-    <!-- Privacy -->
-    <select id="storyPrivacy" class="ei" style="width:100%;">
-      <option value="friends">👥 Friends only</option>
-      <option value="public">🌐 Public</option>
-      <option value="custom">🔒 Custom</option>
-    </select>
-    <div id="customPrivacySection" style="display:none;">
-      <div id="customFriendsList" style="max-height:120px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
-    </div>
-
-    <button class="savebtn" onclick="createStory()">📸 Post Story</button>
-  </div>
-</div>
+<!-- Compat shims (old IDs still referenced elsewhere) -->
+<input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
+<input type="file" id="storyAudioFile" accept="audio/*" style="display:none;" onchange="scAudioPicked(this)">
+<input type="text" id="storyTextContent" style="display:none;">
+<select id="storyPrivacy" style="display:none;"><option value="friends">Friends</option><option value="public">Public</option><option value="custom">Custom</option></select>
+<div id="customPrivacySection" style="display:none;"><div id="customFriendsList"></div></div>
 <script>
 // Auto-include credentials for all /api fetch calls
 const _origFetch = window.fetch;
@@ -3383,72 +3612,299 @@ async function setStoryPrivacy(privacy){
   } catch(e){ toast('Error','err'); }
   closePrivacySheet();
 }
-function openCreateStoryModal(){document.getElementById('createStoryOverlay').classList.add('show');document.getElementById('createStoryModal').classList.add('show');document.getElementById('storyPrivacy').value='friends';toggleStoryType();}
-function closeCreateStory(){
-  document.getElementById('createStoryOverlay').classList.remove('show');
-  document.getElementById('createStoryModal').classList.remove('show');
-  const tc = document.getElementById('storyTextContent'); if(tc) tc.value='';
-  const mf = document.getElementById('storyMediaFile');   if(mf) mf.value='';
-  const prev = document.getElementById('storyMediaPreview'); if(prev) prev.style.display='none';
-  switchStoryTab('text'); // reset to text tab
+// ══════════════════════════════════════════════
+// STORY CREATOR — multi-page flow
+// ══════════════════════════════════════════════
+const SC = {
+  type: null,        // 'photo'|'camera'|'text'
+  mediaFile: null,   // File object
+  mediaType: null,   // 'image'|'video'
+  mediaURL: null,    // object URL
+  audioFile: null,
+  audioName: '',
+  caption: '',
+  filter: 'none',
+  camStream: null,
+  toolsOpen: false,
+  settingsOpen: false,
+};
+
+function $ (id){ return document.getElementById(id); }
+
+// ── Open / Close ──
+function openCreateStoryModal(){ scOpen(); }  // alias
+function closeCreateStory(){ scClose(); }     // alias
+function scOpen(){
+  Object.assign(SC,{type:null,mediaFile:null,mediaType:null,mediaURL:null,audioFile:null,audioName:'',caption:'',filter:'none',toolsOpen:false,settingsOpen:false});
+  $('SC').style.display='flex';
+  document.body.style.overflow='hidden';
+  scPage(0);
 }
-function toggleStoryType(){}  // legacy — no-op now
-function previewStoryAudio(input){
-  const file = input.files[0]; if(!file) return;
-  const audio = document.getElementById('storyAudioPreview');
-  const btn = document.getElementById('storyAudioBtn');
-  const clr = document.getElementById('storyAudioClear');
-  audio.src = URL.createObjectURL(file);
-  audio.style.display = 'block';
-  btn.innerHTML = '🎵 ' + file.name.replace(/\.[^.]+$/,'').substring(0,24);
-  clr.style.display = 'block';
+function scClose(){
+  scCloseCam();
+  $('SC').style.display='none';
+  document.body.style.overflow='';
 }
-function clearStoryAudio(){
-  const input = document.getElementById('storyAudioFile'); if(input) input.value='';
-  const audio = document.getElementById('storyAudioPreview');
-  if(audio){ audio.pause(); audio.src=''; audio.style.display='none'; }
-  const btn = document.getElementById('storyAudioBtn');
-  if(btn) btn.innerHTML = '🎵 Add song';
-  const clr = document.getElementById('storyAudioClear');
-  if(clr) clr.style.display='none';
+function scPage(n){
+  [0,1,2,3].forEach(i=>{
+    const el=$('SC_p'+i);
+    if(el) el.style.display = i===n?'flex':'none';
+  });
 }
-function clearStoryMedia(){
-  const mf = document.getElementById('storyMediaFile'); if(mf) mf.value='';
-  const img = document.getElementById('storyImgPreviewEl'); if(img){img.src='';img.style.display='none';}
-  const vid = document.getElementById('storyVidPreviewEl'); if(vid){vid.pause();vid.src='';vid.style.display='none';}
-  const prev = document.getElementById('storyMediaPreview'); if(prev) prev.style.display='none';
-  const btn = document.getElementById('storyPickBtn'); if(btn) btn.style.display='flex';
-}
-function switchStoryTab(tab){
-  const isText = tab === 'text';
-  document.getElementById('storyTextInput').style.display  = isText ? 'block' : 'none';
-  document.getElementById('storyMediaInput').style.display = isText ? 'none'  : 'block';
-  const tBtn = document.getElementById('storyTabText');
-  const mBtn = document.getElementById('storyTabMedia');
-  if(tBtn){ tBtn.style.background = isText ? 'var(--brand)' : 'transparent'; tBtn.style.color = isText ? '#fff' : 'var(--mute)'; tBtn.style.borderColor = isText ? 'var(--brand)' : 'var(--bdr)'; }
-  if(mBtn){ mBtn.style.background = !isText ? 'var(--brand)' : 'transparent'; mBtn.style.color = !isText ? '#fff' : 'var(--mute)'; mBtn.style.borderColor = !isText ? 'var(--brand)' : 'var(--bdr)'; }
-}
-function previewStoryMedia(input){
-  const file = input.files[0];
-  if(!file) return;
-  const img = document.getElementById('storyImgPreviewEl');
-  const vid = document.getElementById('storyVidPreviewEl');
-  const prev = document.getElementById('storyMediaPreview');
-  const label = document.getElementById('storyMediaLabel');
-  img.style.display='none'; vid.style.display='none';
-  const url = URL.createObjectURL(file);
-  if(file.type.startsWith('video/')){
-    vid.src = url; vid.style.display='block';
+
+// ── Type chooser ──
+function scChoose(type){
+  SC.type = type;
+  if(type==='photo'){
+    $('SC_galleryInput').click();
+  } else if(type==='camera'){
+    scOpenCam();
   } else {
-    img.src = url; img.style.display='block';
+    scSetupText();
+    scPage(1);
   }
-  prev.style.display='block';
-  label.style.padding='8px';
-  label.querySelector('span').textContent = file.name;
 }
-function previewStoryImg(input){ previewStoryMedia(input); } // legacy alias
-document.getElementById('storyPrivacy')?.addEventListener('change',function(){document.getElementById('customPrivacySection').style.display=this.value==='custom'?'block':'none';if(this.value==='custom')loadCustomFriendsList();});
-function loadCustomFriendsList(){const list=document.getElementById('customFriendsList');list.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;"><span>${esc(f.username)}</span></label>`).join('');}
+
+// ── Gallery ──
+function scGalleryPicked(input){
+  const file = input.files[0]; if(!file) return;
+  SC.mediaFile = file;
+  SC.mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+  SC.mediaURL = URL.createObjectURL(file);
+  scLoadEditor();
+}
+
+function scLoadEditor(){
+  scPage(1);
+  const img = $('SC_img'), vid = $('SC_vid'), tb = $('SC_textBg'), tx = $('SC_textBox'), cap = $('SC_caption');
+  img.style.display='none'; vid.style.display='none';
+  tb.style.display='none'; tx.style.display='none';
+  cap.style.display='none'; cap.textContent=''; tx.value=''; SC.caption='';
+  $('SC_contrastPanel').style.display='none';
+  $('SC_captionInput').style.display='none';
+  $('SC_settings').style.display='none';
+  SC.settingsOpen=false; SC.toolsOpen=false;
+  $('SC_tools').style.transform='translateY(100%)';
+  $('SC_arrowBtn').textContent='⌃';
+  if(SC.type==='text'){
+    tb.style.display='block'; tx.style.display='block';
+    setTimeout(()=>tx.focus(),300);
+  } else if(SC.mediaType==='video'){
+    vid.src=SC.mediaURL; vid.style.display='block';
+  } else {
+    img.src=SC.mediaURL; img.style.display='block';
+    img.style.filter='none'; SC.filter='none';
+  }
+  // reset song button
+  $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>Add Song';
+  $('SC_songDisplay').style.display='none';
+}
+
+function scSetupText(){
+  SC.mediaFile=null; SC.mediaType='text'; SC.mediaURL=null;
+  scLoadEditor();
+}
+
+// ── Camera ──
+function scOpenCam(){
+  scPage(3);
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
+    .then(stream=>{
+      SC.camStream=stream;
+      $('SC_camVid').srcObject=stream;
+    })
+    .catch(()=>{ toast('Camera not available','err'); scPage(0); });
+}
+function scCloseCam(){
+  if(SC.camStream){ SC.camStream.getTracks().forEach(t=>t.stop()); SC.camStream=null; }
+  $('SC_camVid').srcObject=null;
+}
+function scSnap(){
+  const vid=$('SC_camVid'), canvas=$('SC_snapCanvas');
+  canvas.width=vid.videoWidth; canvas.height=vid.videoHeight;
+  canvas.getContext('2d').drawImage(vid,0,0);
+  scCloseCam();
+  canvas.toBlob(blob=>{
+    SC.mediaFile = new File([blob],'snap.jpg',{type:'image/jpeg'});
+    SC.mediaType = 'image';
+    SC.mediaURL  = URL.createObjectURL(SC.mediaFile);
+    SC.type = 'camera';
+    scLoadEditor();
+  },'image/jpeg',0.92);
+}
+
+// ── Tools ──
+function scToggleTools(){
+  SC.toolsOpen = !SC.toolsOpen;
+  $('SC_tools').style.transform = SC.toolsOpen ? 'translateY(0)' : 'translateY(100%)';
+  $('SC_arrowBtn').textContent = SC.toolsOpen ? '⌄' : '⌃';
+}
+
+function scToggleSettings(){
+  SC.settingsOpen = !SC.settingsOpen;
+  $('SC_settings').style.display = SC.settingsOpen ? 'block' : 'none';
+}
+function scSettingsPrivacy(){
+  scToggleSettings();
+  // jump to share page privacy section
+  scGoShare();
+}
+
+// Delete menu
+function scShowDeleteMenu(){
+  $('SC_delMenu').style.display='flex';
+  $('SC_settings').style.display='none';
+  SC.settingsOpen=false;
+}
+function scHideDeleteMenu(){ $('SC_delMenu').style.display='none'; }
+
+// ── Contrast / Filter ──
+function scShowContrast(){
+  const p=$('SC_contrastPanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+}
+function scSetFilter(f){
+  SC.filter=f;
+  $('SC_img').style.filter=f;
+  document.querySelectorAll('.sc-filter-swatch').forEach(s=>s.classList.remove('active'));
+  event.target.closest('.sc-filter-swatch').classList.add('active');
+}
+
+// ── Caption ──
+function scAddCaption(){
+  const ci=$('SC_captionInput');
+  ci.style.display = ci.style.display==='none' ? 'block' : 'none';
+  if(ci.style.display==='block') $('SC_captionText').focus();
+}
+function scUpdateCaption(v){
+  SC.caption=v;
+  const cap=$('SC_caption');
+  cap.textContent=v;
+  cap.style.display = v ? 'block' : 'none';
+}
+
+// ── Song ──
+function scPickSong(){ $('SC_audioInput').click(); }
+function scAudioPicked(input){
+  const file=input.files[0]; if(!file) return;
+  SC.audioFile=file;
+  SC.audioName=file.name.replace(/\.[^.]+$/,'').substring(0,30);
+  $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>'+SC.audioName;
+  $('SC_songName').textContent=SC.audioName;
+  const sd=$('SC_songDisplay'); sd.style.display='flex';
+}
+function scClearSong(){
+  SC.audioFile=null; SC.audioName='';
+  $('SC_audioInput').value='';
+  $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>Add Song';
+  $('SC_songDisplay').style.display='none';
+}
+
+// ── Share page ──
+function scGoShare(){
+  // close tools/settings
+  $('SC_tools').style.transform='translateY(100%)';
+  $('SC_settings').style.display='none';
+  SC.toolsOpen=false; SC.settingsOpen=false;
+  // set thumbnail
+  const si=$('SC_shareThumb'), st=$('SC_shareThumbText');
+  si.style.display='none'; st.style.display='none';
+  if(SC.mediaURL && SC.mediaType==='image'){
+    si.src=SC.mediaURL; si.style.display='block';
+  } else if(SC.type==='text'){
+    const txt=($('SC_textBox').value||'').trim();
+    st.textContent=txt||'Text Story';
+    st.style.display='flex';
+  }
+  // privacy options
+  scUpdatePrivacyUI('friends');
+  // build custom list
+  const cl=$('SC_customList');
+  cl.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join('');
+  // radio change
+  document.querySelectorAll('[name=scPrivacy]').forEach(r=>{
+    r.onchange=()=>{ scUpdatePrivacyUI(r.value); };
+  });
+  scPage(2);
+}
+function scUpdatePrivacyUI(val){
+  document.querySelectorAll('[name=scPrivacy]').forEach(r=>{
+    r.checked=(r.value===val);
+    r.closest('label').classList.toggle('selected', r.value===val);
+  });
+  $('SC_customList').style.display = val==='custom' ? 'block' : 'none';
+  if(val==='custom') $('SC_customList').innerHTML.length<10 && ($('SC_customList').innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join(''));
+}
+function scBackToEditor(){ scPage(1); }
+
+// ── POST ──
+async function scPost(){
+  const btn=$('SC_shareBtn');
+  btn.disabled=true; btn.textContent='Posting…';
+  const privacy = document.querySelector('[name=scPrivacy]:checked')?.value||'friends';
+  const customUsers = privacy==='custom'
+    ? Array.from($('SC_customList').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value))
+    : [];
+  if(privacy==='custom'&&!customUsers.length){ toast('Select at least one friend','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+
+  let content='', mediaUrl='', mediaType='text';
+  const textVal=($('SC_textBox').value||SC.caption||'').trim();
+
+  // upload media
+  if(SC.mediaFile){
+    try{
+      btn.textContent='Uploading…';
+      const fd=new FormData(); fd.append('media',SC.mediaFile);
+      const up=await fetch('/api/upload/media',{method:'POST',body:fd});
+      const ud=await up.json();
+      if(!ud.success){ toast('Upload failed: '+(ud.error||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+      mediaUrl=ud.url; mediaType=ud.media_type;
+    } catch(e){ toast('Upload error','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+  } else {
+    // text story
+    content=($('SC_textBox').value||'').trim();
+    if(!content){ toast('Please type something','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+    mediaType='text';
+  }
+
+  // caption as content for photo/video
+  if(mediaUrl && textVal) content=textVal;
+
+  // upload audio
+  let audioUrl='', audioName='';
+  if(SC.audioFile){
+    try{
+      btn.textContent='Uploading audio…';
+      const afd=new FormData(); afd.append('audio',SC.audioFile);
+      const aup=await fetch('/api/upload/audio',{method:'POST',body:afd});
+      const aud=await aup.json();
+      if(aud.success){ audioUrl=aud.url; audioName=SC.audioName; }
+    } catch(e){}
+  }
+
+  try{
+    const r=await fetch('/api/stories/create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content,media_url:mediaUrl,media_type:mediaType,privacy,custom_users:customUsers,audio_url:audioUrl,audio_name:audioName})
+    });
+    const d=await r.json();
+    if(d.success){ toast('✅ Story shared!','ok'); scClose(); loadStories(); }
+    else toast(d.error||'Failed','err');
+  } catch(e){ toast('Network error','err'); }
+  btn.disabled=false; btn.textContent='✨ Share Story';
+}
+
+async function createStory(){ scPost(); } // legacy alias
+
+function toggleStoryType(){}
+function switchStoryTab(){}
+function previewStoryMedia(){}
+function previewStoryImg(){}
+function previewStoryAudio(){}
+function clearStoryAudio(){}
+function clearStoryMedia(){}
+function loadCustomFriendsList(){}
 async function createStory(){
   const btn = document.querySelector('#createStoryModal .savebtn');
   const resetBtn = ()=>{ if(btn){btn.disabled=false;btn.textContent='📸 Post Story';} };
