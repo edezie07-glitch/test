@@ -1318,11 +1318,28 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     "></p>
   </div>
 
-  <!-- Tap zones: left = prev, right = next -->
+  <!-- Tap zones: left = prev, right = next, long-press = pause/fullscreen -->
   <div style="position:absolute;inset:0;display:flex;z-index:1;">
-    <div style="flex:1;cursor:pointer;" onclick="prevStory()"></div>
-    <div style="flex:1;cursor:pointer;" onclick="nextStory()"></div>
+    <div style="flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;"
+      onclick="prevStory()"
+      onmousedown="storyLongPressStart()" onmouseup="storyLongPressEnd()" onmouseleave="storyLongPressEnd()"
+      ontouchstart="storyLongPressStart()" ontouchend="storyLongPressEnd()" ontouchcancel="storyLongPressEnd()">
+    </div>
+    <div style="flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;"
+      onclick="nextStory()"
+      onmousedown="storyLongPressStart()" onmouseup="storyLongPressEnd()" onmouseleave="storyLongPressEnd()"
+      ontouchstart="storyLongPressStart()" ontouchend="storyLongPressEnd()" ontouchcancel="storyLongPressEnd()">
+    </div>
   </div>
+
+  <!-- Music note (bottom-left) -->
+  <div id="storyMusicNote" style="
+    display:none;position:absolute;bottom:80px;left:14px;z-index:2;
+    background:rgba(0,0,0,.5);color:#fff;border-radius:20px;
+    padding:5px 12px;font-size:12px;font-weight:600;
+    backdrop-filter:blur(4px);max-width:220px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  ">🎵</div>
 
   <!-- Bottom: viewers (owner only) -->
   <div id="storyViewers" style="
@@ -1347,51 +1364,59 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div class="profile-overlay" id="createStoryOverlay" onclick="closeCreateStory()"></div>
 <div class="profile-modal" id="createStoryModal" style="max-width:420px;">
   <div class="profile-header">
-    <h3>📸 New Story</h3>
+    <h3>✨ New Story</h3>
     <button class="closebtn" onclick="closeCreateStory()">✕</button>
   </div>
-  <div class="profile-body" style="padding:16px;">
+  <div class="profile-body" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
 
-    <!-- Tabs: Text / Photo / Video -->
-    <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button id="storyTabText"  onclick="switchStoryTab('text')"  style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--brand);background:var(--brand);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">📝 Text</button>
-      <button id="storyTabMedia" onclick="switchStoryTab('media')" style="flex:1;padding:9px;border-radius:9px;border:2px solid var(--bdr);background:transparent;color:var(--mute);font-size:13px;font-weight:700;cursor:pointer;">📷 Photo/Video</button>
+    <!-- Media preview (shows after picking) -->
+    <div id="storyMediaPreview" style="display:none;border-radius:14px;overflow:hidden;max-height:260px;background:#000;position:relative;">
+      <img id="storyImgPreviewEl" style="width:100%;max-height:260px;object-fit:cover;display:none;">
+      <video id="storyVidPreviewEl" style="width:100%;max-height:260px;object-fit:cover;display:none;" controls playsinline></video>
+      <!-- Remove media button -->
+      <button onclick="clearStoryMedia()" style="position:absolute;top:8px;right:8px;border:none;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
 
-    <!-- Text input -->
-    <div id="storyTextInput">
-      <textarea id="storyTextContent" rows="5" placeholder="What's on your mind?" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:var(--txt);font-size:15px;resize:none;font-family:var(--font-b);outline:none;"></textarea>
-    </div>
+    <!-- Big pick button — instantly opens gallery -->
+    <input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="previewStoryMedia(this)">
+    <button id="storyPickBtn" onclick="document.getElementById('storyMediaFile').click()" style="
+      width:100%;padding:18px;border-radius:14px;border:2px dashed var(--bdr);
+      background:var(--sb2);color:var(--mute);font-size:15px;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+    ">
+      <span style="font-size:32px;">🖼️</span>
+      <span style="font-weight:600;">Tap to pick photo or video</span>
+      <span style="font-size:11px;">JPG · PNG · GIF · MP4 · MOV · WEBM</span>
+    </button>
 
-    <!-- Media input (photo OR video) -->
-    <div id="storyMediaInput" style="display:none;">
-      <!-- Preview area -->
-      <div id="storyMediaPreview" style="display:none;margin-bottom:10px;text-align:center;border-radius:12px;overflow:hidden;max-height:240px;">
-        <img id="storyImgPreviewEl" style="max-width:100%;max-height:240px;object-fit:cover;display:none;border-radius:12px;">
-        <video id="storyVidPreviewEl" style="max-width:100%;max-height:240px;object-fit:cover;display:none;border-radius:12px;" controls playsinline></video>
-      </div>
-      <!-- Pick file -->
-      <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:28px 16px;border:2px dashed var(--bdr);border-radius:12px;cursor:pointer;color:var(--mute);font-size:14px;" id="storyMediaLabel">
-        <span style="font-size:28px;">📁</span>
-        <span>Tap to choose photo or video</span>
-        <span style="font-size:11px;color:var(--mute);">JPG, PNG, GIF, MP4, MOV, WEBM…</span>
-        <input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="previewStoryMedia(this)">
-      </label>
+    <!-- Caption / text -->
+    <textarea id="storyTextContent" rows="3" placeholder="Add a caption… (optional)" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:var(--txt);font-size:14px;resize:none;font-family:var(--font-b);outline:none;"></textarea>
+
+    <!-- Audio track (optional) -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="file" id="storyAudioFile" accept="audio/*" style="display:none;" onchange="previewStoryAudio(this)">
+      <button onclick="document.getElementById('storyAudioFile').click()" style="
+        flex:1;padding:10px;border-radius:10px;border:1px solid var(--bdr);
+        background:var(--sb2);color:var(--mute);font-size:13px;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;gap:6px;
+      " id="storyAudioBtn">
+        🎵 Add song
+      </button>
+      <button id="storyAudioClear" onclick="clearStoryAudio()" style="display:none;padding:10px 14px;border-radius:10px;border:1px solid var(--bdr);background:var(--sb2);color:#ef4444;font-size:13px;cursor:pointer;">✕</button>
     </div>
+    <audio id="storyAudioPreview" style="display:none;width:100%;border-radius:8px;" controls></audio>
 
     <!-- Privacy -->
-    <div style="margin-top:14px;">
-      <select id="storyPrivacy" class="ei" style="width:100%;">
-        <option value="friends">👥 Friends only</option>
-        <option value="public">🌐 Public</option>
-        <option value="custom">🔒 Custom</option>
-      </select>
-    </div>
-    <div id="customPrivacySection" style="display:none;margin-top:10px;">
-      <div id="customFriendsList" style="max-height:130px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
+    <select id="storyPrivacy" class="ei" style="width:100%;">
+      <option value="friends">👥 Friends only</option>
+      <option value="public">🌐 Public</option>
+      <option value="custom">🔒 Custom</option>
+    </select>
+    <div id="customPrivacySection" style="display:none;">
+      <div id="customFriendsList" style="max-height:120px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;padding:8px;"></div>
     </div>
 
-    <button class="savebtn" onclick="createStory()" style="margin-top:14px;">📸 Post Story</button>
+    <button class="savebtn" onclick="createStory()">📸 Post Story</button>
   </div>
 </div>
 <script>
@@ -3095,29 +3120,39 @@ async function openStory(userId){
     showStory();
   }catch(e){ toast('Failed to load story','err'); }
 }
-// ── Progress bar timer ──
+// ── Story viewer state ──
 let _storyTimer = null;
-const STORY_DURATION = 5000; // 5s per story
+let _storyPaused = false;
+let _storyRemaining = 0;
+let _storyStartTime = 0;
+const STORY_DURATION = 17000; // 17 seconds
 
 function showStory(){
   if(!currentStories.length) return;
   const story = currentStories[currentStoryIndex];
+  _storyPaused = false;
+  _storyRemaining = STORY_DURATION;
 
-  // Show the viewer
+  // Show viewer
   const viewer = document.getElementById('storyViewer');
   viewer.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
-  // Fill header
+  // Header
   document.getElementById('storyUsername').textContent = story.username;
   document.getElementById('storyTime').textContent = relTime(story.created_at);
   document.getElementById('storyUserAvatar').textContent = story.username[0].toUpperCase();
+
+  // Stop any previous audio
+  const prevAudio = document.getElementById('storyBgAudio');
+  if(prevAudio){ prevAudio.pause(); prevAudio.remove(); }
 
   // Content
   const imgEl  = document.getElementById('storyImage');
   const vidEl  = document.getElementById('storyVideo');
   const textEl = document.getElementById('storyText');
   imgEl.style.display='none'; vidEl.style.display='none'; textEl.style.display='none';
+
   if(story.media_url){
     if(story.media_type === 'video'){
       vidEl.src = story.media_url;
@@ -3132,7 +3167,23 @@ function showStory(){
     textEl.style.display = 'block';
   }
 
-  // Owner controls: delete + privacy
+  // Play background audio if any
+  if(story.audio_url){
+    const audio = document.createElement('audio');
+    audio.id = 'storyBgAudio';
+    audio.src = story.audio_url;
+    audio.loop = true;
+    audio.style.display = 'none';
+    document.body.appendChild(audio);
+    audio.play().catch(()=>{});
+    // Show music note
+    document.getElementById('storyMusicNote').style.display = 'flex';
+    document.getElementById('storyMusicNote').textContent = '🎵 ' + (story.audio_name||'');
+  } else {
+    document.getElementById('storyMusicNote').style.display = 'none';
+  }
+
+  // Owner controls
   const ownerBtns = document.getElementById('storyOwnerBtns');
   if(story.is_own){
     ownerBtns.style.display = 'flex';
@@ -3144,27 +3195,72 @@ function showStory(){
   // Progress bars
   const prog = document.getElementById('storyProgress');
   prog.innerHTML = currentStories.map((_,i) =>
-    `<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden;">
-      <div id="spb${i}" style="height:100%;background:#fff;width:${i<currentStoryIndex?'100':i===currentStoryIndex?'0':'0'}%;transition:none;"></div>
+    `<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.28);overflow:hidden;">
+      <div id="spb${i}" style="height:100%;background:#fff;width:${i<currentStoryIndex?'100':'0'}%;transition:none;"></div>
     </div>`
   ).join('');
 
-  // Animate current bar
+  startStoryTimer();
+
+  fetch(`/api/stories/${story.id}/view`,{method:'POST'});
+  if(story.is_own) loadStoryViewers(story.id);
+}
+
+function startStoryTimer(){
   clearTimeout(_storyTimer);
+  _storyStartTime = Date.now();
   const bar = document.getElementById(`spb${currentStoryIndex}`);
   if(bar){
     requestAnimationFrame(()=>{
-      bar.style.transition = `width ${STORY_DURATION}ms linear`;
+      bar.style.transition = `width ${_storyRemaining}ms linear`;
       bar.style.width = '100%';
     });
   }
+  _storyTimer = setTimeout(()=>nextStory(), _storyRemaining);
+}
 
-  // Auto-advance
-  _storyTimer = setTimeout(()=>nextStory(), STORY_DURATION);
+function pauseStory(){
+  if(_storyPaused) return;
+  _storyPaused = true;
+  _storyRemaining -= (Date.now() - _storyStartTime);
+  clearTimeout(_storyTimer);
+  // Freeze progress bar
+  const bar = document.getElementById(`spb${currentStoryIndex}`);
+  if(bar){
+    const computed = getComputedStyle(bar).width;
+    bar.style.transition = 'none';
+    bar.style.width = computed;
+  }
+  // Pause video/audio
+  const vid = document.getElementById('storyVideo');
+  if(vid && !vid.paused) vid.pause();
+  const audio = document.getElementById('storyBgAudio');
+  if(audio && !audio.paused) audio.pause();
+}
 
-  // Mark viewed + load viewers if own
-  fetch(`/api/stories/${story.id}/view`,{method:'POST'});
-  if(story.is_own) loadStoryViewers(story.id);
+function resumeStory(){
+  if(!_storyPaused) return;
+  _storyPaused = false;
+  const vid = document.getElementById('storyVideo');
+  if(vid) vid.play().catch(()=>{});
+  const audio = document.getElementById('storyBgAudio');
+  if(audio) audio.play().catch(()=>{});
+  startStoryTimer();
+}
+
+// Long-press to go fullscreen (native browser fullscreen API)
+let _longPressTimer = null;
+function storyLongPressStart(){
+  pauseStory();
+  _longPressTimer = setTimeout(()=>{
+    const viewer = document.getElementById('storyViewer');
+    if(viewer.requestFullscreen) viewer.requestFullscreen();
+    else if(viewer.webkitRequestFullscreen) viewer.webkitRequestFullscreen();
+  }, 600);
+}
+function storyLongPressEnd(){
+  clearTimeout(_longPressTimer);
+  resumeStory();
 }
 async function loadStoryViewers(storyId){
   const el = document.getElementById('storyViewers');
@@ -3225,6 +3321,16 @@ function nextStory(){
 }
 function closeStoryViewer(){
   clearTimeout(_storyTimer);
+  _storyPaused = false;
+  // Exit fullscreen if active
+  if(document.fullscreenElement || document.webkitFullscreenElement){
+    (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
+  }
+  // Stop audio
+  const audio = document.getElementById('storyBgAudio');
+  if(audio){ audio.pause(); audio.remove(); }
+  const vid = document.getElementById('storyVideo');
+  if(vid){ vid.pause(); vid.src=''; }
   document.getElementById('storyViewer').style.display = 'none';
   document.body.style.overflow = '';
   loadStories();
@@ -3287,6 +3393,32 @@ function closeCreateStory(){
   switchStoryTab('text'); // reset to text tab
 }
 function toggleStoryType(){}  // legacy — no-op now
+function previewStoryAudio(input){
+  const file = input.files[0]; if(!file) return;
+  const audio = document.getElementById('storyAudioPreview');
+  const btn = document.getElementById('storyAudioBtn');
+  const clr = document.getElementById('storyAudioClear');
+  audio.src = URL.createObjectURL(file);
+  audio.style.display = 'block';
+  btn.innerHTML = '🎵 ' + file.name.replace(/\.[^.]+$/,'').substring(0,24);
+  clr.style.display = 'block';
+}
+function clearStoryAudio(){
+  const input = document.getElementById('storyAudioFile'); if(input) input.value='';
+  const audio = document.getElementById('storyAudioPreview');
+  if(audio){ audio.pause(); audio.src=''; audio.style.display='none'; }
+  const btn = document.getElementById('storyAudioBtn');
+  if(btn) btn.innerHTML = '🎵 Add song';
+  const clr = document.getElementById('storyAudioClear');
+  if(clr) clr.style.display='none';
+}
+function clearStoryMedia(){
+  const mf = document.getElementById('storyMediaFile'); if(mf) mf.value='';
+  const img = document.getElementById('storyImgPreviewEl'); if(img){img.src='';img.style.display='none';}
+  const vid = document.getElementById('storyVidPreviewEl'); if(vid){vid.pause();vid.src='';vid.style.display='none';}
+  const prev = document.getElementById('storyMediaPreview'); if(prev) prev.style.display='none';
+  const btn = document.getElementById('storyPickBtn'); if(btn) btn.style.display='flex';
+}
 function switchStoryTab(tab){
   const isText = tab === 'text';
   document.getElementById('storyTextInput').style.display  = isText ? 'block' : 'none';
@@ -3353,12 +3485,26 @@ async function createStory(){
     if(!customUsers.length){ toast('Select at least one friend','err'); resetBtn(); return; }
   }
 
+  // ── Upload audio if provided ──
+  let audioUrl = '', audioName = '';
+  const audioFile = document.getElementById('storyAudioFile')?.files[0];
+  if(audioFile){
+    try{
+      if(btn) btn.textContent = 'Uploading audio...';
+      const afd = new FormData(); afd.append('audio', audioFile);
+      const aup = await fetch('/api/upload/audio',{method:'POST',body:afd});
+      const aud = await aup.json();
+      if(aud.success){ audioUrl = aud.url; audioName = audioFile.name.replace(/\.[^.]+$/,''); }
+      else toast('Audio upload failed','err');
+    } catch(e){ toast('Audio upload error','err'); }
+  }
+
   // ── Post ──
   try{
     const r = await fetch('/api/stories/create',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({content, media_url:mediaUrl, media_type:mediaType, privacy, custom_users:customUsers})
+      body: JSON.stringify({content, media_url:mediaUrl, media_type:mediaType, privacy, custom_users:customUsers, audio_url:audioUrl, audio_name:audioName})
     });
     const d = await r.json();
     if(d.success){
