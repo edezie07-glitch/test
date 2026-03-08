@@ -3101,35 +3101,54 @@ document.getElementById('storyPrivacy')?.addEventListener('change',function(){do
 function loadCustomFriendsList(){const list=document.getElementById('customFriendsList');list.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;"><span>${esc(f.username)}</span></label>`).join('');}
 async function createStory(){
   const btn = document.querySelector('#createStoryModal .savebtn');
+  const resetBtn = ()=>{ if(btn){btn.disabled=false;btn.textContent='📸 Post Story';} };
   if(btn){btn.disabled=true;btn.textContent='Posting...';}
-  const type = document.getElementById('storyType').value;
-  const privacy = document.getElementById('storyPrivacy').value;
+
+  const type    = document.getElementById('storyType')?.value || 'text';
+  const privacy = document.getElementById('storyPrivacy')?.value || 'friends';
   let content = '', mediaUrl = '', mediaType = 'text';
-  try{
-    if(type === 'text'){
-      content = document.getElementById('storyTextContent').value.trim();
-      if(!content){ toast('Please write something','err'); return; }
-    } else {
-      const file = document.getElementById('storyImageFile').files[0];
-      if(!file){ toast('Please select an image','err'); return; }
+
+  // ── Validate & collect content ──
+  if(type === 'text'){
+    content = (document.getElementById('storyTextContent')?.value || '').trim();
+    if(!content){ toast('Please write something','err'); resetBtn(); return; }
+  } else {
+    const file = document.getElementById('storyImageFile')?.files[0];
+    if(!file){ toast('Please select an image','err'); resetBtn(); return; }
+    try{
       const fd = new FormData(); fd.append('image', file);
       const up = await fetch('/api/upload/image',{method:'POST',body:fd});
       const ud = await up.json();
-      if(!ud.success){ toast('Image upload failed: '+(ud.error||''),'err'); return; }
+      if(!ud.success){ toast('Upload failed: '+(ud.error||'unknown'),'err'); resetBtn(); return; }
       mediaUrl = ud.url; mediaType = 'image';
-    }
-    let customUsers = [];
-    if(privacy === 'custom'){
-      customUsers = Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));
-      if(!customUsers.length){ toast('Select at least one friend','err'); return; }
-    }
-    const r = await fetch('/api/stories/create',{method:'POST',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({content, media_url:mediaUrl, media_type:mediaType, privacy, custom_users:customUsers})});
+    } catch(e){ toast('Upload error: '+e.message,'err'); resetBtn(); return; }
+  }
+
+  let customUsers = [];
+  if(privacy === 'custom'){
+    customUsers = Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));
+    if(!customUsers.length){ toast('Select at least one friend','err'); resetBtn(); return; }
+  }
+
+  // ── Post ──
+  try{
+    const r = await fetch('/api/stories/create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({content, media_url:mediaUrl, media_type:mediaType, privacy, custom_users:customUsers})
+    });
     const d = await r.json();
-    if(d.success){ toast('✅ Story posted!','ok'); closeCreateStory(); loadStories(); }
-    else toast(d.error||'Failed to post story','err');
-  } catch(e){ toast('Failed: '+e.message,'err'); }
-  finally{ if(btn){btn.disabled=false;btn.textContent='📸 Post Story';} }
+    if(d.success){
+      toast('✅ Story posted!','ok');
+      closeCreateStory();
+      loadStories();
+    } else {
+      toast(d.error||'Failed to post','err');
+    }
+  } catch(e){
+    toast('Network error: '+e.message,'err');
+  }
+  resetBtn();
 }
 setTimeout(loadStories,1000);
 
