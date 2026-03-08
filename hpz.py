@@ -64,6 +64,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'webm', 'mkv', '3gp', 'm4v'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Ensure upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -1057,12 +1058,34 @@ def upload_image():
         return jsonify({'success': False, 'error': 'No file uploaded'}), 400
     file = request.files['image']
     if file.filename == '' or not allowed_file(file.filename):
-        return jsonify({'success': False, 'error': 'Invalid file'}), 400
+        return jsonify({'success': False, 'error': 'Invalid file type'}), 400
     try:
         ext = file.filename.rsplit('.', 1)[1].lower()
         filename = f"img_{uuid.uuid4().hex}.{ext}"
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         return jsonify({'success': True, 'url': f'/static/uploads/{filename}', 'filename': filename})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/upload/media', methods=['POST'])
+@login_required
+def upload_media():
+    """Upload image or video for stories."""
+    file = request.files.get('media') or request.files.get('image')
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    is_image = ext in ALLOWED_EXTENSIONS
+    is_video = ext in VIDEO_EXTENSIONS
+    if not is_image and not is_video:
+        return jsonify({'success': False, 'error': f'Unsupported file type .{ext}. Allowed: images (jpg,png,gif,webp) and videos (mp4,mov,webm,3gp)'}), 400
+    try:
+        prefix = 'vid' if is_video else 'img'
+        filename = f"{prefix}_{uuid.uuid4().hex}.{ext}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        media_type = 'video' if is_video else 'image'
+        return jsonify({'success': True, 'url': f'/static/uploads/{filename}', 'media_type': media_type, 'filename': filename})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
