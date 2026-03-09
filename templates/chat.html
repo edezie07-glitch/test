@@ -1284,13 +1284,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
   <div class="iarea">
-    <input type="file" id="imgInp" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)">
-    <input type="file" id="imgInpDirect" accept="image/*" capture="environment" style="display:none" onchange="handleDirectUpload(this)">
+    <input type="file" id="imgInp" accept="image/*" multiple style="display:none" onchange="handleImgInp(this)">
     <button class="isb" onclick="toggleAttachMenu()" title="Attach" id="attachBtn">📎</button>
     <div id="attachMenu" style="position:absolute;bottom:70px;left:10px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:8px;display:none;flex-direction:column;gap:6px;z-index:200;box-shadow:var(--shad);min-width:170px;">
       <button onclick="pickFromGallery();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">🖼️ Gallery</button>
       <button onclick="takePhoto();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📷 Take Photo</button>
-      <button onclick="sendMultipleImages();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📂 Multiple Photos</button>
     </div>
     <button class="isb rec-btn" id="recBtn" onclick="toggleRecording()" title="Record voice message">🎙️</button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
@@ -1303,6 +1301,26 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 
 <!-- Image Preview Modal -->
+<!-- Multi-photo preview sheet -->
+<div id="multiPhotoOverlay" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);flex-direction:column;" onclick="if(event.target===this)closeMultiPreview()">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:clamp(44px,10vw,58px) 18px 12px;flex-shrink:0;">
+    <button onclick="closeMultiPreview()" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;">✕</button>
+    <span id="multiPhotoCount" style="color:#fff;font-weight:700;font-size:15px;"></span>
+    <button onclick="addMorePhotos()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:12px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ Add</button>
+  </div>
+  <!-- Main preview of selected photo -->
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 12px;overflow:hidden;">
+    <img id="multiPhotoMain" src="" style="max-width:100%;max-height:100%;border-radius:14px;object-fit:contain;">
+  </div>
+  <!-- Thumbnail strip -->
+  <div id="multiPhotoStrip" style="display:flex;gap:8px;padding:12px 16px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
+  <!-- Caption + send -->
+  <div style="padding:8px 16px calc(env(safe-area-inset-bottom,0px)+16px);display:flex;flex-direction:column;gap:10px;flex-shrink:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);">
+    <input id="multiPhotoCaption" type="text" placeholder="Add a caption…" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:10px 16px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+    <button onclick="sendMultiPhotos()" style="background:linear-gradient(135deg,#7c6aff,#a855f7);border:none;color:#fff;border-radius:16px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">Send <span id="multiSendLabel"></span></button>
+  </div>
+</div>
+
 <div class="img-preview-overlay" id="imgPreviewOverlay"></div>
 <div class="img-preview-modal" id="imgPreviewModal">
   <div class="img-preview-header">
@@ -1817,7 +1835,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
           cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
         "><span style="font-size:20px;">🎨</span>Contrast</button>
         <!-- Song -->
-        <button onclick="scPickSong()" style="
+        <button onclick="scOpenMusicPicker()" style="
           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
           color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
           cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
@@ -1971,6 +1989,115 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <input type="file" id="SC_galleryInput" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
 <input type="file" id="SC_audioInput" accept="audio/*" style="display:none;" onchange="scAudioPicked(this)">
 
+<!-- ── MUSIC PICKER MODAL ── -->
+<div id="musicPickerOverlay" style="
+  display:none;position:fixed;inset:0;z-index:7500;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+  flex-direction:column;align-items:center;justify-content:flex-end;
+" onclick="e=>{if(e.target===this)scCloseMusicPicker();}">
+  <div id="musicPickerSheet" style="
+    width:100%;max-width:520px;
+    background:linear-gradient(180deg,#1a1035 0%,#0f0c1a 100%);
+    border-radius:22px 22px 0 0;
+    padding:0 0 env(safe-area-inset-bottom,0);
+    max-height:85vh;display:flex;flex-direction:column;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  " onclick="event.stopPropagation()">
+    <!-- Handle -->
+    <div style="display:flex;justify-content:center;padding:12px 0 4px;">
+      <div style="width:36px;height:4px;border-radius:4px;background:rgba(255,255,255,.2);"></div>
+    </div>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;">
+      <h3 style="color:#fff;font-size:18px;font-weight:800;margin:0;">🎵 Music</h3>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button onclick="scOpenMusicUpload()" style="
+          background:rgba(124,106,255,.25);border:1px solid rgba(124,106,255,.5);
+          color:var(--brand,#7c6aff);border-radius:10px;padding:6px 12px;
+          font-size:12px;font-weight:700;cursor:pointer;
+        ">+ Upload</button>
+        <button onclick="scCloseMusicPicker()" style="
+          background:rgba(255,255,255,.1);border:none;color:#fff;
+          border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;
+        ">✕</button>
+      </div>
+    </div>
+    <!-- Search bar -->
+    <div style="padding:0 16px 12px;">
+      <div style="position:relative;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;">🔍</span>
+        <input id="musicSearchInput" placeholder="Search songs or artists…"
+          oninput="scMusicSearch(this.value)"
+          style="width:100%;box-sizing:border-box;
+            background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+            border-radius:12px;padding:10px 12px 10px 36px;
+            color:#fff;font-size:14px;outline:none;">
+      </div>
+    </div>
+    <!-- Track list -->
+    <div id="musicTrackList" style="
+      flex:1;overflow-y:auto;padding:0 12px 16px;
+      display:flex;flex-direction:column;gap:4px;
+    ">
+      <div style="text-align:center;color:rgba(255,255,255,.4);padding:24px;font-size:14px;">Loading music…</div>
+    </div>
+    <!-- Current playing preview bar -->
+    <div id="musicPreviewBar" style="
+      display:none;margin:0 16px 12px;
+      background:rgba(124,106,255,.2);border:1px solid rgba(124,106,255,.4);
+      border-radius:14px;padding:10px 14px;
+      display:flex;align-items:center;gap:10px;
+    ">
+      <button onclick="scStopMusicPreview()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">⏹</button>
+      <div style="flex:1;min-width:0;">
+        <div id="musicPreviewTitle" style="color:#fff;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="musicPreviewArtist" style="color:rgba(255,255,255,.5);font-size:11px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MUSIC UPLOAD MODAL ── -->
+<div id="musicUploadOverlay" style="
+  display:none;position:fixed;inset:0;z-index:7600;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;
+">
+  <div style="
+    background:linear-gradient(180deg,#1a1035,#0f0c1a);
+    border-radius:20px;padding:24px;width:calc(100%-40px);max-width:400px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  " onclick="event.stopPropagation()">
+    <h3 style="color:#fff;margin:0 0 18px;font-size:18px;">🎵 Upload Song</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="muTitle" placeholder="Song title" style="
+        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+        border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <input id="muArtist" placeholder="Artist name" style="
+        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+        border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <input id="muGenre" placeholder="Genre (optional)" style="
+        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+        border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <div id="muAudioLabel" onclick="document.getElementById('muAudioFile').click()" style="
+        background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.25);
+        border-radius:10px;padding:14px;text-align:center;color:rgba(255,255,255,.6);
+        font-size:13px;cursor:pointer;">
+        🎵 Tap to choose audio file (mp3, m4a, wav…)
+      </div>
+      <input id="muAudioFile" type="file" accept="audio/*" style="display:none;" onchange="muAudioChosen(this)">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button onclick="scCloseMusicUpload()" style="
+        flex:1;background:rgba(255,255,255,.1);border:none;color:#fff;
+        border-radius:12px;padding:12px;font-size:14px;cursor:pointer;">Cancel</button>
+      <button onclick="muSubmit()" id="muSubmitBtn" style="
+        flex:2;background:linear-gradient(135deg,#7c6aff,#a855f7);border:none;color:#fff;
+        border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Upload Song</button>
+    </div>
+  </div>
+</div>
+
 <!-- Privacy Sheet (used from viewer) -->
 <div class="del-sheet-ov" id="privacySheetOv" onclick="closePrivacySheet()"></div>
 <div class="del-sheet" id="privacySheet">
@@ -2080,7 +2207,7 @@ function connectSocket(){
     }else{
       // Build a clean preview for the notification
       let preview='';
-      if(msg.message_type==='image'){preview='📷 Sent a photo';}
+      if(msg.message_type==='image'){ const n=msg.sender_id===ME_ID?'You':esc(msg.sender_username||''); preview=(n?n+' ':'')+'sent a photo 📷'; }
       else if(msg.message_type==='video'){preview='🎥 Sent a video';}
       else if(msg.message_type==='audio'){preview='🎵 Sent a voice message';}
       else{
@@ -2103,6 +2230,15 @@ function connectSocket(){
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
   socket.on('friend_request_accepted',(data)=>{
     toast(data.username+' accepted your friend request! 🎉','ok');
+    showInAppNotif(data.username, '🎉 accepted your friend request! You are now friends.', null);
+    if(prefs.sound) beep();
+    loadFriends();
+    loadRequests();
+  });
+  // New: notify the ACCEPTOR that a new friendship is formed
+  socket.on('new_friend_added',(data)=>{
+    toast('You are now friends with '+data.username+' 🎉','ok');
+    showInAppNotif(data.username, '👋 You are now connected as friends!', null);
     loadFriends();
   });
   socket.on('friend_request_received',(data)=>{
@@ -2281,53 +2417,148 @@ function closeAttachMenu(){
 document.addEventListener('click',e=>{
   if(!e.target.closest('#attachBtn')&&!e.target.closest('#attachMenu'))closeAttachMenu();
 });
+// ════════════════════════════════════════════
+// PHOTO SENDING — single or multi
+// ════════════════════════════════════════════
 function pickFromGallery(){
   if(!currentChatId){toast('Select a chat first','err');return;}
-  document.getElementById('imgInp').removeAttribute('capture');
-  document.getElementById('imgInp').click();
+  const inp=document.getElementById('imgInp');
+  inp.removeAttribute('capture');
+  inp.value='';
+  inp.click();
 }
 function takePhoto(){
   if(!currentChatId){toast('Select a chat first','err');return;}
-  document.getElementById('imgInp').setAttribute('capture','environment');
-  document.getElementById('imgInp').click();
-}
-function sendMultipleImages(){
-  if(!currentChatId){toast('Select a chat first','err');return;}
-  const inp=document.getElementById('imgInpDirect');
-  inp.setAttribute('multiple','');
+  const inp=document.getElementById('imgInp');
+  inp.setAttribute('capture','environment');
+  inp.value='';
   inp.click();
 }
 function triggerImageSelect(){
   if(!currentChatId){toast('Select a chat first','err');return;}
+  pickFromGallery();
+}
+function addMorePhotos(){
+  document.getElementById('imgInp').removeAttribute('capture');
+  document.getElementById('imgInp').value='';
   document.getElementById('imgInp').click();
 }
-async function directUploadImage(file){
-  if(!currentChatId){toast('Select a chat first','err');return;}
-  const fd=new FormData();fd.append('image',file);
-  toast('Uploading...','info');
-  try{
-    const r=await fetch('/api/upload/image',{method:'POST',body:fd});
-    const d=await r.json();
-    if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image'});toast('Sent!','ok');}
-    else toast(d.error||'Upload failed','err');
-  }catch(e){toast('Upload failed','err');}
-}
-async function handleDirectUpload(inp){
+
+// Central handler for the single file input
+function handleImgInp(inp){
   const files=Array.from(inp.files);
   if(!files.length)return;
-  if(files.length===1){showImagePreview(files[0]);}
-  else{
-    toast('Sending '+files.length+' photos...','info');
-    for(const f of files){await directUploadImage(f);}
+  // If we already have a multi-preview open, add to it
+  if(_multiFiles.length>0){
+    _multiFiles.push(...files);
+    refreshMultiStrip();
+    inp.value='';
+    return;
+  }
+  if(files.length===1){
+    showImagePreview(files[0]);
+  } else {
+    openMultiPreview(files);
   }
   inp.value='';
 }
+
+// ── Multi-photo preview ──
+let _multiFiles=[];
+let _multiSelected=0;
+
+function openMultiPreview(files){
+  _multiFiles=Array.from(files);
+  _multiSelected=0;
+  document.getElementById('multiPhotoCaption').value='';
+  document.getElementById('multiPhotoOverlay').style.display='flex';
+  refreshMultiStrip();
+  selectMultiPhoto(0);
+}
+function closeMultiPreview(){
+  document.getElementById('multiPhotoOverlay').style.display='none';
+  _multiFiles=[];
+  _multiSelected=0;
+}
+function refreshMultiStrip(){
+  const strip=document.getElementById('multiPhotoStrip');
+  const count=document.getElementById('multiPhotoCount');
+  const sendLbl=document.getElementById('multiSendLabel');
+  const n=_multiFiles.length;
+  count.textContent=n+' photo'+(n!==1?'s':'');
+  sendLbl.textContent=n+' photo'+(n!==1?'s':'');
+  strip.innerHTML=_multiFiles.map((f,i)=>{
+    const url=URL.createObjectURL(f);
+    return `<div style="position:relative;flex-shrink:0;" id="mpthumb-${i}">
+      <img src="${url}" onclick="selectMultiPhoto(${i})" style="
+        width:72px;height:72px;object-fit:cover;border-radius:10px;cursor:pointer;
+        border:2.5px solid ${i===_multiSelected?'var(--brand,#7c6aff)':'transparent'};
+        transition:border-color .15s;
+      " id="mpthumb-img-${i}">
+      <button onclick="removeMultiPhoto(${i})" style="
+        position:absolute;top:-6px;right:-6px;
+        background:#ef4444;border:none;color:#fff;border-radius:50%;
+        width:20px;height:20px;font-size:11px;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;
+        box-shadow:0 2px 6px rgba(0,0,0,.4);
+      ">✕</button>
+    </div>`;
+  }).join('');
+}
+function selectMultiPhoto(i){
+  _multiSelected=i;
+  const f=_multiFiles[i];
+  const url=URL.createObjectURL(f);
+  document.getElementById('multiPhotoMain').src=url;
+  // Update strip highlights
+  _multiFiles.forEach((_,j)=>{
+    const img=document.getElementById('mpthumb-img-'+j);
+    if(img) img.style.border=j===i?'2.5px solid var(--brand,#7c6aff)':'2.5px solid transparent';
+  });
+}
+function removeMultiPhoto(i){
+  _multiFiles.splice(i,1);
+  if(!_multiFiles.length){closeMultiPreview();return;}
+  _multiSelected=Math.min(_multiSelected,_multiFiles.length-1);
+  refreshMultiStrip();
+  selectMultiPhoto(_multiSelected);
+}
+
+async function sendMultiPhotos(){
+  if(!_multiFiles.length||!currentChatId)return;
+  const caption=document.getElementById('multiPhotoCaption').value.trim();
+  const btn=document.querySelector('#multiPhotoOverlay button[onclick="sendMultiPhotos()"]');
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  try{
+    // Upload all in parallel for speed
+    const uploads=await Promise.all(_multiFiles.map(async f=>{
+      const fd=new FormData(); fd.append('image',f);
+      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+      const d=await r.json();
+      return d.success?d.url:null;
+    }));
+    const urls=uploads.filter(Boolean);
+    if(!urls.length){toast('All uploads failed','err');return;}
+    // Send as JSON array — single message, multiple photos
+    const content=urls.length===1?urls[0]:JSON.stringify(urls);
+    socket.emit('send_message',{
+      chat_id:currentChatId,
+      content,
+      message_type:'image',
+      caption:caption||undefined
+    });
+    closeMultiPreview();
+    toast(urls.length===1?'Photo sent 📸':'Photos sent 📸','ok');
+  }catch(e){
+    toast('Send failed','err');
+  }finally{
+    if(btn){btn.disabled=false;}
+  }
+}
 let imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1,filter:'none',cropping:false,cropStart:null,cropRect:null};
 function previewImage(inp){
-  const f=inp.files[0];if(!f)return;
-  if(!currentChatId){toast('Select a chat first','err');inp.value='';return;}
-  showImagePreview(f);
-  inp.value='';
+  // Legacy alias — now routes through handleImgInp
+  handleImgInp(inp);
 }
 function showImagePreview(f){
   imgPreviewData.file=f;
@@ -2484,18 +2715,25 @@ async function sendEditedImage(){
   const{canvas}=imgPreviewData;if(!canvas)return;
   const q=parseFloat(document.getElementById('imgQuality').value)||0.75;
   const caption=document.getElementById('imgCaption').value.trim();
+  const btn=document.querySelector('.img-preview-footer .send-btn');
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
   canvas.toBlob(async blob=>{
     const fd=new FormData();fd.append('image',blob,'photo.jpg');
-    toast('Sending...','info');
     try{
       const r=await fetch('/api/upload/image',{method:'POST',body:fd});
       const d=await r.json();
       if(d.success){
-        socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption});
+        socket.emit('send_message',{
+          chat_id:currentChatId,
+          content:d.url,
+          message_type:'image',
+          caption:caption||undefined
+        });
         closeImagePreview();
-        toast('Photo sent! 📸','ok');
+        toast('Photo sent 📸','ok');
       }else toast(d.error||'Upload failed','err');
     }catch(e){toast('Upload failed','err');}
+    finally{if(btn){btn.disabled=false;btn.textContent='Send 📤';}}
   },'image/jpeg',q);
 }
 let viewerCurrentUrl='';
@@ -2965,47 +3203,85 @@ function stopSignalMonitor(){
 let _currentFacing = 'user';
 let _speakerOn     = true;
 
-// ── Flip camera (mobile-safe using applyConstraints) ──
+// ── Flip camera — works on iOS Safari, Android Chrome, desktop ──
+// Strategy: enumerate devices → get exact deviceId → getUserMedia → replaceTrack
 async function flipCamera(){
   if(!cd.localStream || cd.type!=='video') return;
-  _currentFacing = _currentFacing==='user' ? 'environment' : 'user';
   const btn = document.getElementById('flipBtn');
-  if(btn){ btn.disabled=true; btn.style.opacity='.5'; }
+  if(btn){ btn.disabled=true; btn.style.opacity='.4'; }
+
+  const nextFacing = _currentFacing==='user' ? 'environment' : 'user';
+
   try{
-    const videoTrack = cd.localStream.getVideoTracks()[0];
-    if(videoTrack){
-      // Try applyConstraints first (works on most Android/iOS)
-      try{
-        await videoTrack.applyConstraints({ facingMode: { exact: _currentFacing } });
-      }catch(constraintErr){
-        // Fall back: get a new stream entirely
-        const newStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: _currentFacing } },
-          audio: false
-        });
-        const newTrack = newStream.getVideoTracks()[0];
-        if(!newTrack) throw new Error('No video track');
-        // Replace in peer connection without renegotiation
-        const sender = cd.pc?.getSenders().find(s=>s.track?.kind==='video');
-        if(sender) await sender.replaceTrack(newTrack);
-        // Stop old video track
-        videoTrack.stop();
-        // Swap into localStream
-        cd.localStream.removeTrack(videoTrack);
-        cd.localStream.addTrack(newTrack);
+    // Step 1: find the correct camera deviceId via enumerateDevices
+    let deviceId = null;
+    try{
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(d=>d.kind==='videoinput');
+      // On phones there are usually exactly 2: front (user) and back (environment)
+      // We pick the one whose label hints at the target facing, otherwise just the other one
+      const current = cd.localStream.getVideoTracks()[0];
+      const currentLabel = current ? current.label.toLowerCase() : '';
+      for(const cam of cameras){
+        const lbl = cam.label.toLowerCase();
+        if(nextFacing==='environment' && (lbl.includes('back')||lbl.includes('rear')||lbl.includes('environment'))){
+          deviceId = cam.deviceId; break;
+        }
+        if(nextFacing==='user' && (lbl.includes('front')||lbl.includes('user')||lbl.includes('selfie')||lbl.includes('face'))){
+          deviceId = cam.deviceId; break;
+        }
       }
-      // Refresh local preview
-      const lv = document.getElementById('localVideo');
-      if(lv){
-        lv.srcObject = null;
-        lv.srcObject = cd.localStream;
-        lv.play().catch(()=>{});
+      // If label matching failed, just pick the camera that isn't the current one
+      if(!deviceId && cameras.length>=2){
+        const currentId = current ? current.getSettings().deviceId : null;
+        const other = cameras.find(d=>d.deviceId!==currentId);
+        if(other) deviceId = other.deviceId;
       }
+    }catch(enumErr){ /* enumerateDevices not supported — fall through */ }
+
+    // Step 2: open new stream with deviceId if found, else facingMode
+    const videoConstraint = deviceId
+      ? { deviceId: { exact: deviceId } }
+      : { facingMode: { ideal: nextFacing } };
+
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: videoConstraint,
+      audio: false
+    });
+    const newTrack = newStream.getVideoTracks()[0];
+    if(!newTrack) throw new Error('No video track from new camera');
+
+    // Step 3: replace track in the live peer connection (no renegotiation needed)
+    const sender = cd.pc?.getSenders().find(s=>s.track?.kind==='video');
+    if(sender){
+      await sender.replaceTrack(newTrack);
     }
+
+    // Step 4: swap track in localStream
+    const oldTrack = cd.localStream.getVideoTracks()[0];
+    if(oldTrack){
+      cd.localStream.removeTrack(oldTrack);
+      oldTrack.stop(); // release camera hardware
+    }
+    cd.localStream.addTrack(newTrack);
+
+    // Step 5: refresh local PiP preview
+    const lv = document.getElementById('localVideo');
+    if(lv){
+      // Must reset srcObject on iOS or preview freezes
+      lv.srcObject = null;
+      await new Promise(r=>setTimeout(r,50)); // brief yield for iOS
+      lv.srcObject = cd.localStream;
+      lv.play().catch(()=>{});
+    }
+
+    // Commit the facing state only after success
+    _currentFacing = nextFacing;
+
   }catch(e){
-    console.warn('[flip]',e);
-    _currentFacing = _currentFacing==='user' ? 'environment' : 'user'; // revert
-    toast('Flip camera not available','info');
+    console.warn('[flipCamera]', e.name, e.message);
+    toast('Cannot switch camera on this device','info');
+    // Do NOT update _currentFacing — stay on current camera
   }finally{
     if(btn){ btn.disabled=false; btn.style.opacity='1'; }
   }
@@ -3713,7 +3989,7 @@ function updatePrev(msg){
   // Update last message preview in crow row without full reload
   document.querySelectorAll(`.crow[data-fid="${fid}"] .cprev`).forEach(el=>{
     let preview='';
-    if(msg.message_type==='image')preview='📷 Photo';
+    if(msg.message_type==='image'){ const n=msg.sender_id===ME_ID?'You':(msg.sender_username||''); preview=(n?n+' ':'')+'sent a photo 📷'; }
     else if(msg.message_type==='audio')preview='🎵 Voice message';
     else if(msg.message_type==='video')preview='🎥 Video';
     else preview=(msg.content||'').slice(0,50);
@@ -4516,7 +4792,7 @@ function $ (id){ return document.getElementById(id); }
 function openCreateStoryModal(){ scOpen(); }  // alias
 function closeCreateStory(){ scClose(); }     // alias
 function scOpen(){
-  Object.assign(SC,{type:null,mediaFile:null,mediaType:null,mediaURL:null,audioFile:null,audioName:'',caption:'',filter:'none',toolsOpen:false,settingsOpen:false});
+  Object.assign(SC,{type:null,mediaFile:null,mediaType:null,mediaURL:null,audioFile:null,audioUrl:'',audioName:'',caption:'',filter:'none',toolsOpen:false,settingsOpen:false});
   $('SC').style.display='flex';
   document.body.style.overflow='hidden';
   scPage(0);
@@ -4589,6 +4865,7 @@ function scLoadEditor(){
   }
   // reset song button
   $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>Add Song';
+  SC.audioUrl='';
   $('SC_songDisplay').style.display='none';
 }
 
@@ -4740,7 +5017,165 @@ function scUpdateCaption(v){
 }
 
 // ── Song ──
-function scPickSong(){ $('SC_audioInput').click(); }
+// ══════════════════════════════════════════════════
+// MUSIC LIBRARY PICKER
+// ══════════════════════════════════════════════════
+let _musicPreviewAudio = null;
+let _musicSearchTimer  = null;
+let _musicAllTracks    = [];
+
+function scOpenMusicPicker(){
+  const ov = document.getElementById('musicPickerOverlay');
+  if(!ov) return;
+  ov.style.display='flex';
+  document.getElementById('musicSearchInput').value='';
+  scLoadMusicLibrary('');
+}
+function scCloseMusicPicker(){
+  const ov = document.getElementById('musicPickerOverlay');
+  if(ov) ov.style.display='none';
+  scStopMusicPreview();
+}
+function scMusicSearch(q){
+  clearTimeout(_musicSearchTimer);
+  _musicSearchTimer = setTimeout(()=>scLoadMusicLibrary(q), 280);
+}
+async function scLoadMusicLibrary(q){
+  const list = document.getElementById('musicTrackList');
+  if(!list) return;
+  list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.4);padding:24px;font-size:14px;">Loading…</div>';
+  try{
+    const r = await fetch('/api/music/search?q='+encodeURIComponent(q||'')+'&limit=50');
+    const d = await r.json();
+    if(!d.success||!d.tracks.length){
+      list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.35);padding:32px;font-size:13px;">'+(q?'No results for "'+q+'"':'No songs yet — upload the first one! ☝️')+'</div>';
+      return;
+    }
+    _musicAllTracks = d.tracks;
+    list.innerHTML = d.tracks.map(t=>musicTrackRow(t)).join('');
+  }catch(e){
+    list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Failed to load</div>';
+  }
+}
+function musicTrackRow(t){
+  const dur = t.duration>0 ? Math.floor(t.duration/60)+':'+String(t.duration%60).padStart(2,'0') : '';
+  const cover = t.cover_url
+    ? `<img src="${t.cover_url}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
+    : `<div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#7c6aff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎵</div>`;
+  const isSelected = SC.audioName === t.title+' – '+t.artist;
+  return `<div onclick="scSelectLibraryTrack(${t.id})" style="
+    display:flex;align-items:center;gap:12px;
+    padding:10px 10px;border-radius:12px;cursor:pointer;
+    background:${isSelected?'rgba(124,106,255,.25)':'rgba(255,255,255,.05)'};
+    border:1px solid ${isSelected?'rgba(124,106,255,.5)':'transparent'};
+    transition:background .15s;
+  " onmouseenter="this.style.background='rgba(255,255,255,.1)'" onmouseleave="this.style.background='${isSelected?'rgba(124,106,255,.25)':'rgba(255,255,255,.05)'}'" >
+    ${cover}
+    <div style="flex:1;min-width:0;">
+      <div style="color:#fff;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(t.title)}</div>
+      <div style="color:rgba(255,255,255,.45);font-size:12px;margin-top:2px;">${escHtml(t.artist)}${t.genre?' · '+escHtml(t.genre):''}${dur?' · '+dur:''}</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button onclick="event.stopPropagation();scPreviewTrack(${t.id},'${escHtml(t.title).replace(/'/g,"\'")}','${escHtml(t.artist).replace(/'/g,"\'")}','${t.audio_url}')" style="
+        background:rgba(255,255,255,.1);border:none;color:#fff;
+        width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;
+      ">▶</button>
+      ${isSelected?`<span style="color:#7c6aff;font-size:18px;">✓</span>`:''}
+    </div>
+  </div>`;
+}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function scSelectLibraryTrack(trackId){
+  const t = _musicAllTracks.find(x=>x.id===trackId);
+  if(!t) return;
+  scStopMusicPreview();
+  // Store as a library URL reference (not a file upload)
+  SC.audioFile   = null;           // no file — it's a library URL
+  SC.audioUrl    = t.audio_url;    // direct URL to use when posting
+  SC.audioName   = t.title+' – '+t.artist;
+  const btn = document.getElementById('SC_songBtn');
+  if(btn) btn.innerHTML='<span style="font-size:16px;">🎵</span><span style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+SC.audioName+'</span>';
+  const sn = document.getElementById('SC_songName');
+  if(sn) sn.textContent = SC.audioName;
+  scCloseMusicPicker();
+  toast('🎵 '+t.title+' added to story','ok');
+}
+
+function scPreviewTrack(id, title, artist, url){
+  scStopMusicPreview();
+  _musicPreviewAudio = new Audio(url);
+  _musicPreviewAudio.volume = 0.8;
+  _musicPreviewAudio.play().catch(()=>{});
+  const bar = document.getElementById('musicPreviewBar');
+  if(bar){ bar.style.display='flex'; }
+  const pt = document.getElementById('musicPreviewTitle');
+  const pa = document.getElementById('musicPreviewArtist');
+  if(pt) pt.textContent = title;
+  if(pa) pa.textContent = artist;
+}
+function scStopMusicPreview(){
+  if(_musicPreviewAudio){ _musicPreviewAudio.pause(); _musicPreviewAudio=null; }
+  const bar = document.getElementById('musicPreviewBar');
+  if(bar) bar.style.display='none';
+}
+
+// ── Music upload ──
+let _muAudioFile = null;
+function scOpenMusicUpload(){
+  scCloseMusicPicker();
+  const ov = document.getElementById('musicUploadOverlay');
+  if(ov){ ov.style.display='flex'; _muAudioFile=null; }
+  document.getElementById('muTitle').value='';
+  document.getElementById('muArtist').value='';
+  document.getElementById('muGenre').value='';
+  document.getElementById('muAudioLabel').textContent='🎵 Tap to choose audio file (mp3, m4a, wav…)';
+  document.getElementById('muAudioFile').value='';
+}
+function scCloseMusicUpload(){
+  const ov = document.getElementById('musicUploadOverlay');
+  if(ov) ov.style.display='none';
+  _muAudioFile=null;
+}
+function muAudioChosen(input){
+  _muAudioFile = input.files[0];
+  if(_muAudioFile){
+    const lbl = document.getElementById('muAudioLabel');
+    if(lbl) lbl.textContent='🎵 '+_muAudioFile.name;
+    // Auto-fill title from filename if empty
+    const ti = document.getElementById('muTitle');
+    if(ti&&!ti.value) ti.value = _muAudioFile.name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ');
+  }
+}
+async function muSubmit(){
+  if(!_muAudioFile){ toast('Choose an audio file first','err'); return; }
+  const title  = document.getElementById('muTitle').value.trim()||_muAudioFile.name;
+  const artist = document.getElementById('muArtist').value.trim()||'Unknown';
+  const genre  = document.getElementById('muGenre').value.trim();
+  const btn    = document.getElementById('muSubmitBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Uploading…'; }
+  try{
+    const fd = new FormData();
+    fd.append('audio',_muAudioFile);
+    fd.append('title',title);
+    fd.append('artist',artist);
+    fd.append('genre',genre);
+    const r = await fetch('/api/music/upload',{method:'POST',body:fd});
+    const d = await r.json();
+    if(d.success){
+      toast('🎵 Song uploaded to library!','ok');
+      scCloseMusicUpload();
+      // Auto-select the just-uploaded track
+      SC.audioFile=null; SC.audioUrl=d.track.audio_url;
+      SC.audioName=d.track.title+' – '+d.track.artist;
+      const sbtn=document.getElementById('SC_songBtn');
+      if(sbtn) sbtn.innerHTML='<span style="font-size:16px;">🎵</span><span style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+SC.audioName+'</span>';
+    } else { toast(d.error||'Upload failed','err'); }
+  }catch(e){ toast('Upload failed','err'); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Upload Song'; } }
+}
+
+function scPickSong(){ $('SC_audioInput').click(); }  // kept for compat
 function scAudioPicked(input){
   const file=input.files[0]; if(!file) return;
   SC.audioFile=file;
@@ -4859,9 +5294,9 @@ async function scPost(){
   // caption as content for photo/video
   if(mediaUrl && textVal) content=textVal;
 
-  // upload audio
-  let audioUrl='', audioName='';
-  if(SC.audioFile){
+  // audio: either a library URL (SC.audioUrl) or an uploaded file (SC.audioFile)
+  let audioUrl = SC.audioUrl||'', audioName = SC.audioName||'';
+  if(SC.audioFile && !SC.audioUrl){
     try{
       btn.textContent='Uploading audio…';
       const afd=new FormData(); afd.append('audio',SC.audioFile);
