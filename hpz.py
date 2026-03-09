@@ -587,11 +587,23 @@ def get_friends():
                 Message.sender_id == friend_id,
                 ~Message.id.in_(db.session.query(MessageRead.message_id).filter_by(user_id=user_id))
             ).count()
+        def _preview(msg, me):
+            if not msg:
+                return None
+            if msg.message_type == 'image':
+                who = 'You' if msg.sender_id == me else (User.query.get(msg.sender_id).username if User.query.get(msg.sender_id) else '')
+                return (who + ' sent a photo 📷') if who else 'sent a photo 📷'
+            if msg.message_type == 'audio':
+                return '🎵 Voice message'
+            return msg.content[:60] if msg.content else ''
+
         friends.append({
             **friend.to_dict(),
             'chat_id': chat_id,
             'is_online': is_user_online(friend_id),
-            'last_message': ('📷 Photo' if last_msg.message_type == 'image' else last_msg.content[:50]) if last_msg else None,
+            'last_message': _preview(last_msg, user_id),
+            'last_message_type': last_msg.message_type if last_msg else None,
+            'last_sender_id': last_msg.sender_id if last_msg else None,
             'last_message_time': last_msg.created_at.isoformat() if last_msg else None,
             'unread_count': unread
         })
@@ -1656,8 +1668,7 @@ def handle_call_offer(data):
             'offer': data.get('offer'),
             'call_type': data.get('call_type', 'voice')
         }, room=sid)
-    else:
-        emit('call_error', {'message': 'User is offline'})
+    # Do NOT emit call_error when offline — caller just keeps ringing
 
 @socketio.on('call_answer')
 def handle_call_answer(data):
