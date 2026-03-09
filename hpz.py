@@ -206,6 +206,18 @@ class PinnedChat(db.Model):
     pinned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint('user_id', 'chat_id'),)
 
+class Music(db.Model):
+    __tablename__ = 'music_library'
+    id          = db.Column(db.Integer, primary_key=True)
+    title       = db.Column(db.String(200), nullable=False, index=True)
+    artist      = db.Column(db.String(200), nullable=False, default='Unknown')
+    audio_url   = db.Column(db.String(500), nullable=False)
+    cover_url   = db.Column(db.String(500), default='')
+    duration    = db.Column(db.Integer, default=0)   # seconds
+    genre       = db.Column(db.String(80), default='')
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
 # ============================================================
 # DATABASE INITIALIZATION
 # ============================================================
@@ -579,7 +591,7 @@ def get_friends():
             **friend.to_dict(),
             'chat_id': chat_id,
             'is_online': is_user_online(friend_id),
-            'last_message': last_msg.content[:50] if last_msg else None,
+            'last_message': ('📷 Photo' if last_msg.message_type == 'image' else last_msg.content[:50]) if last_msg else None,
             'last_message_time': last_msg.created_at.isoformat() if last_msg else None,
             'unread_count': unread
         })
@@ -658,6 +670,14 @@ def accept_friend_request():
                 'user_id': user_id,
                 'username': acceptor.username
             }, room=sender_sid)
+        # Also notify the acceptor that a new friend is now in their list
+        sender_user = User.query.get(req.from_user_id)
+        acceptor_sid = get_sid(user_id)
+        if acceptor_sid and sender_user:
+            socketio.emit('new_friend_added', {
+                'user_id': req.from_user_id,
+                'username': sender_user.username
+            }, room=acceptor_sid)
         return jsonify({'success': True, 'message': 'Friend request accepted'})
     except Exception as e:
         db.session.rollback()
@@ -687,6 +707,79 @@ def reject_friend_request():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================
+# MUSIC LIBRARY API
+# ============================================================
+@app.route('/api/music/search')
+@login_required
+def music_search():
+    q = request.args.get('q','').strip()
+    limit = min(int(request.args.get('limit',30)),50)
+    query = Music.query
+    if q:
+        like = f'%{q}%'
+        query = query.filter(db.or_(Music.title.ilike(like), Music.artist.ilike(like), Music.genre.ilike(like)))
+    tracks = query.order_by(Music.title).limit(limit).all()
+    return jsonify({'success':True,'tracks':[{
+        'id':t.id,'title':t.title,'artist':t.artist,
+        'audio_url':t.audio_url,'cover_url':t.cover_url,
+        'duration':t.duration,'genre':t.genre
+    } for t in tracks]})
+
+@app.route('/api/music/upload', methods=['POST'])
+@login_required
+def music_upload():
+    # Any user can upload music to the library
+    if 'audio' not in request.files:
+        return jsonify({'success':False,'error':'No audio file'}),400
+    audio_file = request.files['audio']
+    title  = request.form.get('title','').strip()
+    artist = request.form.get('artist','Unknown').strip()
+    genre  = request.form.get('genre','').strip()
+    cover_url = ''
+    if not title:
+        # Use filename as title
+        title = audio_file.filename.rsplit('.',1)[0].replace('_',' ').replace('-',' ').title()
+    ext = 'mp3'
+    if '.' in (audio_file.filename or ''):
+        candidate = audio_file.filename.rsplit('.',1)[1].lower()
+        if candidate in AUDIO_EXTENSIONS:
+            ext = candidate
+    filename = f"music_{session['user_id']}_{uuid.uuid4().hex[:10]}.{ext}"
+    try:
+        audio_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        audio_url = f'/static/uploads/{filename}'
+        # Handle optional cover image
+        if 'cover' in request.files:
+            cov = request.files['cover']
+            cext = cov.filename.rsplit('.',1)[-1].lower() if '.' in cov.filename else 'jpg'
+            cname = f"cover_{uuid.uuid4().hex[:10]}.{cext}"
+            cov.save(os.path.join(app.config['UPLOAD_FOLDER'], cname))
+            cover_url = f'/static/uploads/{cname}'
+        track = Music(title=title,artist=artist,genre=genre,audio_url=audio_url,
+                      cover_url=cover_url,uploaded_by=session['user_id'])
+        db.session.add(track)
+        db.session.commit()
+        return jsonify({'success':True,'track':{'id':track.id,'title':track.title,
+            'artist':track.artist,'audio_url':track.audio_url,'cover_url':track.cover_url,
+            'duration':track.duration,'genre':track.genre}})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/music/delete/<int:track_id>', methods=['DELETE'])
+@login_required
+def music_delete(track_id):
+    track = Music.query.get(track_id)
+    if not track:
+        return jsonify({'success':False,'error':'Not found'}),404
+    # Only uploader or admin can delete
+    if track.uploaded_by != session['user_id'] and session.get('username') != 'admin':
+        return jsonify({'success':False,'error':'Not allowed'}),403
+    db.session.delete(track)
+    db.session.commit()
+    return jsonify({'success':True})
 
 # ============================================================
 # MESSAGES API
