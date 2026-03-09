@@ -445,24 +445,22 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   position:fixed;inset:0;z-index:950;
   background:#000;
   opacity:0;pointer-events:none;
-  transition:opacity .3s cubic-bezier(.4,0,.2,1);
+  transition:opacity .3s ease;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   overflow:hidden;
 }
 .call-screen.show{opacity:1;pointer-events:all;}
 
-/* Remote video — true fullscreen */
+/* Remote video fullscreen */
 #remoteVideo{
   position:absolute;inset:0;width:100%;height:100%;
-  object-fit:cover;z-index:0;display:block;
-  background:#111;
+  object-fit:cover;z-index:0;background:#111;
 }
 
-/* Voice-only backdrop (when no video) */
+/* Voice-only bg */
 #callVoiceBg{
-  position:absolute;inset:0;z-index:0;
+  position:absolute;inset:0;z-index:0;display:none;
   background:linear-gradient(160deg,#0f0c1a 0%,#1a1035 55%,#0d1f3c 100%);
-  display:none;
 }
 #callVoiceBg::before,#callVoiceBg::after{
   content:'';position:absolute;border-radius:50%;
@@ -471,124 +469,135 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #callVoiceBg::before{width:360px;height:360px;background:radial-gradient(circle,#7c6aff,transparent);top:-80px;left:-60px;}
 #callVoiceBg::after{width:300px;height:300px;background:radial-gradient(circle,#06b6d4,transparent);bottom:80px;right:-40px;}
 
-/* Top info bar */
+/* Top overlay — hidden by default, shown on tap */
 #callTopBar{
-  position:absolute;top:0;left:0;right:0;z-index:5;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:clamp(44px,10vw,60px) 18px 16px;
-  background:linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 100%);
+  position:absolute;top:0;left:0;right:0;z-index:6;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:clamp(44px,10vw,60px) 18px 20px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%);
   pointer-events:none;
-  animation:callFadeDown .4s ease both;
+  opacity:0;
+  transition:opacity .3s ease;
 }
-@keyframes callFadeDown{from{opacity:0;transform:translateY(-14px);}to{opacity:1;transform:translateY(0);}}
-@keyframes callFadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+#callTopBar.visible{opacity:1;}
+.call-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:.3px;text-shadow:0 2px 8px rgba(0,0,0,.8);}
+.call-status{font-size:13px;color:rgba(255,255,255,.6);letter-spacing:.4px;margin-top:3px;}
+.call-timer{font-size:22px;font-weight:700;color:#fff;letter-spacing:3px;margin-top:4px;display:none;}
 
-/* Voice-mode avatar (shown when no video) */
+/* Signal dot — top right, always visible */
+#callSignalWrap{
+  position:absolute;top:clamp(44px,10vw,60px);right:18px;z-index:7;
+  display:flex;align-items:center;gap:5px;
+}
+#callSignalDot{
+  width:9px;height:9px;border-radius:50%;
+  background:#22c55e;box-shadow:0 0 7px rgba(34,197,94,.9);
+  transition:background .5s,box-shadow .5s;
+}
+#callSignalLabel{font-size:10px;color:rgba(255,255,255,.55);font-weight:700;}
+
+/* Voice center avatar */
 #callVoiceCenter{
   position:absolute;inset:0;z-index:2;
-  display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;
   pointer-events:none;
 }
 .call-av-ring{
-  width:116px;height:116px;border-radius:50%;
+  width:120px;height:120px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   background:conic-gradient(var(--brand),#06b6d4,#a855f7,var(--brand));
-  animation:ringRotate 4s linear infinite;flex-shrink:0;
+  animation:ringRotate 4s linear infinite;
 }
 .call-av-ring.pulse{animation:ringRotate 4s linear infinite,ringPulse 1.6s ease-in-out infinite;}
 @keyframes ringRotate{to{filter:hue-rotate(360deg);}}
-@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.45);}50%{box-shadow:0 0 0 24px rgba(124,106,255,0);}}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.5);}50%{box-shadow:0 0 0 26px rgba(124,106,255,0);}}
 .call-av-inner{
-  width:104px;height:104px;border-radius:50%;
+  width:106px;height:106px;border-radius:50%;
   background:linear-gradient(135deg,#2d2060,#1a3a5c);
   display:flex;align-items:center;justify-content:center;
-  font-size:44px;font-weight:800;color:#fff;
+  font-size:46px;font-weight:800;color:#fff;
   border:3px solid rgba(255,255,255,.1);
 }
-.call-name{font-size:24px;font-weight:800;color:#fff;letter-spacing:.3px;text-shadow:0 2px 8px rgba(0,0,0,.6);}
-.call-status{font-size:13px;color:rgba(255,255,255,.55);letter-spacing:.5px;}
-.call-timer{font-size:26px;font-weight:700;color:#fff;letter-spacing:3px;display:none;text-shadow:0 2px 8px rgba(0,0,0,.6);}
 
-/* Draggable local video PiP */
+/* Draggable PiP */
 #localVideo{
-  position:absolute;
-  bottom:140px;right:16px;
-  width:96px;height:128px;
-  border-radius:16px;
+  position:absolute;bottom:140px;right:16px;
+  width:96px;height:128px;border-radius:16px;
   object-fit:cover;
-  border:2.5px solid rgba(255,255,255,.35);
-  box-shadow:0 6px 28px rgba(0,0,0,.7);
-  z-index:8;
-  cursor:grab;
-  touch-action:none;
-  display:none;
+  border:2.5px solid rgba(255,255,255,.4);
+  box-shadow:0 6px 28px rgba(0,0,0,.75);
+  z-index:8;cursor:grab;touch-action:none;
+  display:none;user-select:none;-webkit-user-drag:none;
   transition:box-shadow .2s,border-color .2s;
-  -webkit-user-drag:none;
-  user-select:none;
 }
-#localVideo:active{cursor:grabbing;box-shadow:0 10px 36px rgba(0,0,0,.85);border-color:rgba(255,255,255,.6);}
+#localVideo.dragging{cursor:grabbing;box-shadow:0 12px 36px rgba(0,0,0,.9);border-color:rgba(255,255,255,.7);transition:none;}
 
-/* Bottom controls dock */
+/* Bottom dock */
 #callDock{
   position:absolute;bottom:0;left:0;right:0;z-index:9;
   display:flex;flex-direction:column;align-items:center;
   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px);
+  opacity:0;
+  transition:opacity .3s ease;
 }
 
-/* Double-chevron toggle button */
-#callDockToggle{
-  background:rgba(255,255,255,.13);
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.2);
-  border-radius:24px;
-  padding:7px 20px 5px;
-  cursor:pointer;
-  margin-bottom:0;
-  transition:background .2s;
-  -webkit-tap-highlight-color:transparent;
-  display:flex;flex-direction:column;align-items:center;gap:0;
+/* Controls tray — hidden by default, slides up on tap */
+#callCtrlTray{
+  display:flex;gap:20px;align-items:center;justify-content:center;
+  padding:0 28px;
+  max-height:0;opacity:0;overflow:hidden;
+  transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease,padding .3s ease;
+  pointer-events:none;
 }
-#callDockToggle:active{background:rgba(255,255,255,.22);}
+#callCtrlTray.open{
+  max-height:140px;opacity:1;padding:16px 28px 12px;
+  pointer-events:all;
+}
+
+/* Double-chevron toggle */
+#callDockToggle{
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1.5px solid rgba(255,255,255,.25);
+  border-radius:28px;
+  padding:8px 28px 6px;
+  cursor:pointer;
+  transition:background .2s,transform .15s;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:0;
+}
+#callDockToggle:active{background:rgba(255,255,255,.25);transform:scale(.95);}
 #callDockChevrons{
-  display:flex;flex-direction:column;align-items:center;gap:-2px;
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;align-items:center;
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+  line-height:1;
 }
 #callDockToggle.open #callDockChevrons{transform:rotate(180deg);}
 
-/* Controls tray */
-#callCtrlTray{
-  display:flex;gap:22px;align-items:center;justify-content:center;
-  padding:18px 28px 10px;
-  overflow:hidden;
-  max-height:0;
-  opacity:0;
-  transition:max-height .32s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .3s ease;
-}
-#callCtrlTray.open{max-height:120px;opacity:1;}
-
-/* Control buttons */
+/* Buttons */
 .ccb{
-  width:60px;height:60px;border:none;border-radius:50%;
+  width:62px;height:62px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;font-size:22px;
   transition:transform .15s,background .2s,box-shadow .2s;
   -webkit-tap-highlight-color:transparent;
-  background:rgba(255,255,255,.14);
-  backdrop-filter:blur(10px);
-  border:1.5px solid rgba(255,255,255,.18);
-  color:#fff;
-  flex-shrink:0;
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1.5px solid rgba(255,255,255,.2);
+  color:#fff;flex-shrink:0;
+  outline:none;
 }
-.ccb:active{transform:scale(.88);}
-.ccb.active{background:rgba(124,106,255,.75);border-color:var(--brand);box-shadow:0 0 22px rgba(124,106,255,.55);}
+.ccb:active{transform:scale(.87);}
+.ccb.active{background:rgba(124,106,255,.8);border-color:rgba(124,106,255,.9);box-shadow:0 0 24px rgba(124,106,255,.6);}
 .ccb.end-btn{
-  width:66px;height:66px;font-size:25px;
+  width:68px;height:68px;font-size:26px;
   background:linear-gradient(135deg,#ef4444,#c62828);
-  border:none;
-  box-shadow:0 4px 22px rgba(239,68,68,.5);
+  border:none;box-shadow:0 4px 24px rgba(239,68,68,.55);
 }
-.ccb.end-btn:active{transform:scale(.86);}
+.ccb.end-btn:active{transform:scale(.85);}
 
+/* Incoming call */
 /* Incoming call */
 .incoming-screen{
   position:fixed;inset:0;z-index:980;
@@ -1385,59 +1394,56 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 
 <!-- ── ACTIVE CALL SCREEN ── -->
-<div class="call-screen" id="callModal">
+<div class="call-screen" id="callModal" onclick="callScreenTap(event)">
 
-  <!-- Remote video — true fullscreen -->
+  <!-- Remote video fullscreen -->
   <video id="remoteVideo" autoplay playsinline muted></video>
 
-  <!-- Voice-only background (shown when no video) -->
+  <!-- Voice-only background -->
   <div id="callVoiceBg"></div>
 
-  <!-- Top bar: name + timer + signal -->
+  <!-- Signal dot — always visible top-right -->
+  <div id="callSignalWrap">
+    <div id="callSignalDot"></div>
+    <span id="callSignalLabel"></span>
+  </div>
+
+  <!-- Top bar: name+timer — hidden until tap -->
   <div id="callTopBar">
     <div>
       <div class="call-name" id="callName">Username</div>
       <div class="call-status" id="callStatus">Calling…</div>
       <div class="call-timer" id="callTimer">00:00</div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;">
-      <div id="callSignalDot" style="
-        width:10px;height:10px;border-radius:50%;
-        background:#22c55e;
-        box-shadow:0 0 6px rgba(34,197,94,.8);
-        transition:background .4s,box-shadow .4s;
-        flex-shrink:0;
-      "></div>
-      <span id="callSignalLabel" style="font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.3px;"></span>
-    </div>
   </div>
 
-  <!-- Voice-mode center avatar -->
+  <!-- Voice center avatar -->
   <div id="callVoiceCenter">
     <div class="call-av-ring" id="callAvRing">
       <div class="call-av-inner" id="callAvatar">U</div>
     </div>
+    <div class="call-name" id="callNameVoice" style="color:#fff;margin-top:8px;"></div>
+    <div class="call-status" id="callStatusVoice" style="margin-top:4px;"></div>
+    <div class="call-timer" id="callTimerVoice" style="display:none;margin-top:6px;"></div>
   </div>
 
-  <!-- Draggable local video PiP -->
+  <!-- Draggable PiP -->
   <video id="localVideo" autoplay muted playsinline></video>
 
   <!-- Bottom dock -->
   <div id="callDock">
-    <!-- Controls tray (slides up) -->
     <div id="callCtrlTray">
-      <button class="ccb" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute">🎤</button>
-      <button class="ccb" id="flipBtn" onclick="flipCamera()" title="Flip camera" style="display:none;">🔄</button>
-      <button class="ccb end-btn" onclick="endCall()" title="End call">📞</button>
-      <button class="ccb" id="speakerBtn" onclick="toggleSpeaker()" title="Speaker">🔊</button>
-      <button class="ccb" id="videoBtn" onclick="toggleVideo()" title="Camera on/off">📹</button>
+      <button class="ccb" id="muteBtn"    title="Mute">🎤</button>
+      <button class="ccb" id="flipBtn"    title="Flip" style="display:none;">🔄</button>
+      <button class="ccb end-btn" id="endBtn" title="End">📵</button>
+      <button class="ccb" id="speakerBtn" title="Speaker">🔊</button>
+      <button class="ccb" id="videoBtn"   title="Camera" style="display:none;">📹</button>
     </div>
-    <!-- Double-chevron toggle -->
-    <button id="callDockToggle" onclick="toggleCallDock()">
+    <button id="callDockToggle">
       <div id="callDockChevrons">
-        <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
-          <polyline points="2,15 13,4 24,15" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="5,20 13,12 21,20" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="2,13 14,2 26,13" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <polyline points="5,18 14,10 23,18" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         </svg>
       </div>
     </button>
@@ -2528,26 +2534,24 @@ function resetCd(){
 resetCd();
 function nowStr(){const d=new Date(),h=d.getHours(),m=d.getMinutes();return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM');}
 function fmtDur(s){if(!s||s<1)return '0s';if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;return r?m+'m '+r+'s':m+'m';}
-function setStatus(t){const e=document.getElementById('callStatus');if(e)e.textContent=t;}
+function setStatus(t){
+  ['callStatus','callStatusVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t;});
+}
 function startCallTimer(){
   if(cd.timerInterval)return;
   cd.startTime=Date.now();cd.duration=0;cd.startTimeStr=nowStr();
-  const st=document.getElementById('callStatus');
-  const tm=document.getElementById('callTimer');
-  if(st) st.style.display='none';
-  if(tm){ tm.style.display='block'; tm.textContent='00:00'; }
+  ['callStatus','callStatusVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+  ['callTimer','callTimerVoice'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='block';e.textContent='00:00';}});
   cd.timerInterval=setInterval(()=>{
     cd.duration=Math.floor((Date.now()-cd.startTime)/1000);
-    const tm=document.getElementById('callTimer');
-    if(tm) tm.textContent=String(Math.floor(cd.duration/60)).padStart(2,'0')+':'+String(cd.duration%60).padStart(2,'0');
+    const t=String(Math.floor(cd.duration/60)).padStart(2,'0')+':'+String(cd.duration%60).padStart(2,'0');
+    ['callTimer','callTimerVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t;});
   },1000);
 }
 function stopCallTimer(){
   clearInterval(cd.timerInterval);cd.timerInterval=null;
-  const st=document.getElementById('callStatus');
-  const tm=document.getElementById('callTimer');
-  if(st) st.style.display='block';
-  if(tm){ tm.style.display='none'; tm.textContent='00:00'; }
+  ['callStatus','callStatusVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='block';});
+  ['callTimer','callTimerVoice'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';e.textContent='00:00';}});
 }
 function appendCallMsg(type,dur,startT,isReceiver){
   const area=document.getElementById('marea');if(!area)return;
@@ -2562,53 +2566,107 @@ function appendCallMsg(type,dur,startT,isReceiver){
   }
   area.appendChild(div);area.scrollTop=area.scrollHeight;
 }
-function showCallModal(name,status,isVideo){
-  const av=document.getElementById('callAvatar');
-  if(av) av.textContent=name[0].toUpperCase();
-  document.getElementById('callName').textContent=name;
-  document.getElementById('callStatus').textContent=status;
-  document.getElementById('callStatus').style.display='block';
-  document.getElementById('callTimer').style.display='none';
+// ── Call UI state ──
+let _callUIVisible = false;
+let _callUITimer   = null;
 
-  const lv=document.getElementById('localVideo');
-  const rv=document.getElementById('remoteVideo');
-  const vc=document.getElementById('callVoiceCenter');
-  const vb=document.getElementById('callVoiceBg');
+function callScreenTap(e){
+  // Don't trigger when tapping a button or the PiP
+  if(e.target.closest('.ccb')||e.target.closest('#callDockToggle')||e.target.id==='localVideo') return;
+  if(_callUIVisible) hideCallUI(); else showCallUI(true);
+}
+
+function showCallUI(autoHide){
+  _callUIVisible = true;
+  clearTimeout(_callUITimer);
+  document.getElementById('callTopBar').classList.add('visible');
+  document.getElementById('callDock').style.opacity = '1';
+  if(autoHide) _callUITimer = setTimeout(hideCallUI, 4000);
+}
+
+function hideCallUI(){
+  _callUIVisible = false;
+  clearTimeout(_callUITimer);
+  document.getElementById('callTopBar').classList.remove('visible');
+  // Close tray too when hiding
+  const tray = document.getElementById('callCtrlTray');
+  const tog  = document.getElementById('callDockToggle');
+  tray.classList.remove('open');
+  tog.classList.remove('open');
+  document.getElementById('callDock').style.opacity = '0';
+}
+
+function showCallModal(name, status, isVideo){
+  // Avatar
+  const av = document.getElementById('callAvatar');
+  if(av) av.textContent = name[0].toUpperCase();
+
+  // Sync all name/status/timer elements
+  ['callName','callNameVoice'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent=name;
+  });
+  ['callStatus','callStatusVoice'].forEach(id=>{
+    const el=document.getElementById(id); if(el){ el.textContent=status; el.style.display='block'; }
+  });
+  ['callTimer','callTimerVoice'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+
+  const lv = document.getElementById('localVideo');
+  const rv = document.getElementById('remoteVideo');
+  const vc = document.getElementById('callVoiceCenter');
+  const vb = document.getElementById('callVoiceBg');
 
   if(isVideo){
-    if(lv){ lv.style.display='block'; pipInitPos(); }
-    if(rv) rv.style.display='block';
-    if(vc) vc.style.display='none';
-    if(vb) vb.style.display='none';
+    rv.style.display='block';
+    lv.style.display='block'; pipInitPos();
+    vc.style.display='none';
+    vb.style.display='none';
+    document.getElementById('videoBtn').style.display='flex';
+    document.getElementById('flipBtn').style.display='flex';
   } else {
-    if(lv) lv.style.display='none';
-    if(rv) rv.style.display='none';
-    if(vc){ vc.style.display='flex'; }
-    if(vb) vb.style.display='block';
+    rv.style.display='none';
+    lv.style.display='none';
+    vc.style.display='flex';
+    vb.style.display='block';
+    document.getElementById('videoBtn').style.display='none';
+    document.getElementById('flipBtn').style.display='none';
   }
-  const vBtn=document.getElementById('videoBtn');
-  if(vBtn) vBtn.style.display=isVideo?'flex':'none';
-  const mBtn=document.getElementById('muteBtn');
+
+  // Reset buttons
+  const mBtn = document.getElementById('muteBtn');
   if(mBtn){ mBtn.innerHTML='🎤'; mBtn.classList.remove('active'); }
-  // Reset dock
-  const tray=document.getElementById('callCtrlTray');
-  const tog=document.getElementById('callDockToggle');
-  if(tray) tray.classList.remove('open');
-  if(tog) tog.classList.remove('open');
+  const vBtn = document.getElementById('videoBtn');
+  if(vBtn){ vBtn.innerHTML='📹'; vBtn.classList.remove('active'); }
+  const sBtn = document.getElementById('speakerBtn');
+  if(sBtn){ sBtn.innerHTML='🔊'; sBtn.classList.remove('active'); }
+
+  // Start hidden — show briefly so user sees name
+  document.getElementById('callDock').style.opacity='0';
   document.getElementById('callModal').classList.add('show');
+  // Show UI for 3s so caller sees who they're calling
+  showCallUI(true);
 }
+
 function hideCallModal(){
   document.getElementById('callModal').classList.remove('show');
+  clearTimeout(_callUITimer);
+  _callUIVisible=false;
+  document.getElementById('callTopBar').classList.remove('visible');
   const tray=document.getElementById('callCtrlTray');
-  const tog=document.getElementById('callDockToggle');
-  if(tray) tray.classList.remove('open');
-  if(tog) tog.classList.remove('open');
+  const tog =document.getElementById('callDockToggle');
+  tray.classList.remove('open'); tog.classList.remove('open');
+  document.getElementById('callDock').style.opacity='0';
 }
+
 function toggleCallDock(){
-  const tray=document.getElementById('callCtrlTray');
-  const tog=document.getElementById('callDockToggle');
-  const open=tray.classList.toggle('open');
-  tog.classList.toggle('open',open);
+  const tray = document.getElementById('callCtrlTray');
+  const tog  = document.getElementById('callDockToggle');
+  const open = tray.classList.toggle('open');
+  tog.classList.toggle('open', open);
+  // Keep UI visible while tray is open
+  if(open){ clearTimeout(_callUITimer); _callUIVisible=true; }
+  else showCallUI(true);
 }
 function showIncomingCall(name,type){
   document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
@@ -2672,13 +2730,14 @@ async function getMedia(type){
     throw new Error(!window.isSecureContext ? 'HTTPS_REQUIRED' : 'NO_MEDIA_DEVICES');
 
   const audio = {
-    echoCancellation:   { ideal: true },
-    echoCancellationType: { ideal: 'system' }, // hardware AEC on phones
-    noiseSuppression:   { ideal: true },
-    autoGainControl:    { ideal: true },
-    channelCount:       { ideal: 1 },          // mono — eliminates stereo feedback paths
-    sampleRate:         { ideal: 48000 },
-    latency:            { ideal: 0.005 }       // 5ms latency hint
+    echoCancellation:      { ideal: true },
+    echoCancellationType:  { ideal: 'system' }, // hardware AEC on phones
+    noiseSuppression:      { ideal: true },
+    autoGainControl:       { ideal: true },
+    channelCount:          { ideal: 1 },   // mono — eliminates stereo feedback
+    sampleRate:            { ideal: 48000 },
+    latency:               { ideal: 0.005 },
+    suppressLocalAudioPlayback: { ideal: true } // prevents local mic echo on Chrome
   };
   const audioFallback = { echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1 };
   const videoConstraints = { facingMode:'user', width:{ideal:1280}, height:{ideal:720} };
@@ -3026,88 +3085,82 @@ function toggleMute(){
   if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
 }
 function toggleVideo(){
+  if(!cd.localStream) return;
   cd.videoOff=!cd.videoOff;
   const btn=document.getElementById('videoBtn');
   btn.classList.toggle('active',cd.videoOff);
   btn.innerHTML=cd.videoOff?'📵':'📹';
+  cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
   const lv=document.getElementById('localVideo');
   const vc=document.getElementById('callVoiceCenter');
   const vb=document.getElementById('callVoiceBg');
-  if(cd.localStream){
-    cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
-    // Show/hide local pip and voice bg
-    if(lv) lv.style.display=cd.videoOff?'none':'block';
-    if(vc) vc.style.display=cd.videoOff?'flex':'none';
-    if(vb) vb.style.display=cd.videoOff?'block':'none';
-  }
+  if(lv) lv.style.display=cd.videoOff?'none':'block';
+  if(vc) vc.style.display=cd.videoOff?'flex':'none';
+  if(vb) vb.style.display=cd.videoOff?'block':'none';
 }
-// ── Draggable PiP — mouse + touch ──
+
+// ── Draggable PiP ──
 (function(){
-  let dragging=false, ox=0, oy=0, startX=0, startY=0;
-  function pip(){ return document.getElementById('localVideo'); }
-
-  function onStart(cx,cy){
-    const el=pip(); if(!el||el.style.display==='none') return;
-    dragging=true;
-    const r=el.getBoundingClientRect();
+  let drag=false, ox=0, oy=0;
+  const el=()=>document.getElementById('localVideo');
+  function start(cx,cy){
+    const v=el(); if(!v||v.style.display==='none') return;
+    drag=true;
+    const r=v.getBoundingClientRect();
     ox=cx-r.left; oy=cy-r.top;
-    startX=cx; startY=cy;
-    el.style.transition='none';
-    el.style.cursor='grabbing';
-    el.style.right='auto'; el.style.bottom='auto';
+    v.classList.add('dragging');
+    v.style.right='auto'; v.style.bottom='auto';
+    v.style.transition='none';
   }
-  function onMove(cx,cy){
-    if(!dragging) return;
-    const el=pip(); if(!el) return;
-    const vw=window.innerWidth, vh=window.innerHeight;
-    const w=el.offsetWidth, h=el.offsetHeight;
-    let x=cx-ox, y=cy-oy;
-    // Clamp within screen with 8px margin
-    x=Math.max(8, Math.min(x, vw-w-8));
-    y=Math.max(8, Math.min(y, vh-h-8));
-    el.style.left=x+'px'; el.style.top=y+'px';
+  function move(cx,cy){
+    if(!drag) return;
+    const v=el(); if(!v) return;
+    const vw=window.innerWidth,vh=window.innerHeight;
+    const w=v.offsetWidth,h=v.offsetHeight;
+    v.style.left=Math.max(8,Math.min(cx-ox,vw-w-8))+'px';
+    v.style.top =Math.max(8,Math.min(cy-oy,vh-h-8))+'px';
   }
-  function onEnd(cx,cy){
-    if(!dragging) return;
-    dragging=false;
-    const el=pip(); if(!el) return;
-    el.style.cursor='grab';
-    // Snap to nearest vertical edge
-    const vw=window.innerWidth;
-    const r=el.getBoundingClientRect();
-    const midX=r.left+r.width/2;
-    if(midX < vw/2){
-      el.style.left='8px'; el.style.right='auto';
-    } else {
-      el.style.right='8px'; el.style.left='auto';
-    }
-    el.style.transition='left .2s,right .2s,top .2s,bottom .2s';
+  function end(){
+    if(!drag) return; drag=false;
+    const v=el(); if(!v) return;
+    v.classList.remove('dragging');
+    // Snap to nearest horizontal edge
+    const r=v.getBoundingClientRect();
+    v.style.transition='left .22s,right .22s,top .22s';
+    if(r.left+r.width/2 < window.innerWidth/2){ v.style.left='8px'; v.style.right='auto'; }
+    else { v.style.right='8px'; v.style.left='auto'; }
   }
-
-  document.addEventListener('mousedown',e=>{ if(e.target===pip()) onStart(e.clientX,e.clientY); });
-  document.addEventListener('mousemove',e=>{ if(dragging) onMove(e.clientX,e.clientY); });
-  document.addEventListener('mouseup',  e=>{ onEnd(e.clientX,e.clientY); });
-
-  document.addEventListener('touchstart',e=>{
-    if(e.target===pip()){ onStart(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); }
-  },{passive:false});
-  document.addEventListener('touchmove',e=>{
-    if(dragging){ onMove(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); }
-  },{passive:false});
-  document.addEventListener('touchend',e=>{
-    if(dragging) onEnd(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
-  });
+  document.addEventListener('mousedown',e=>{ if(e.target===el()) start(e.clientX,e.clientY); });
+  document.addEventListener('mousemove',e=>{ move(e.clientX,e.clientY); });
+  document.addEventListener('mouseup',  ()=>end());
+  document.addEventListener('touchstart',e=>{ if(e.target===el()){ start(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); } },{passive:false});
+  document.addEventListener('touchmove', e=>{ if(drag){ move(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); } },{passive:false});
+  document.addEventListener('touchend',  ()=>end());
 })();
 
-// Set initial PiP position (bottom-right, above dock)
 function pipInitPos(){
-  const lv=document.getElementById('localVideo');
-  if(!lv) return;
-  lv.style.right='16px';
-  lv.style.bottom='140px';
-  lv.style.left='auto';
-  lv.style.top='auto';
+  const lv=document.getElementById('localVideo'); if(!lv) return;
+  lv.style.right='16px'; lv.style.bottom='140px';
+  lv.style.left='auto';  lv.style.top='auto';
+  lv.style.transition='none';
 }
+// ── Wire call buttons after DOM ready ──
+document.addEventListener('DOMContentLoaded', function(){
+  const get = id => document.getElementById(id);
+  const tog = get('callDockToggle');
+  if(tog) tog.addEventListener('click', function(e){ e.stopPropagation(); toggleCallDock(); });
+  const mb = get('muteBtn');
+  if(mb) mb.addEventListener('click', function(e){ e.stopPropagation(); toggleMute(); });
+  const vb = get('videoBtn');
+  if(vb) vb.addEventListener('click', function(e){ e.stopPropagation(); toggleVideo(); });
+  const fb = get('flipBtn');
+  if(fb) fb.addEventListener('click', function(e){ e.stopPropagation(); flipCamera(); });
+  const sb = get('speakerBtn');
+  if(sb) sb.addEventListener('click', function(e){ e.stopPropagation(); toggleSpeaker(); });
+  const eb = get('endBtn');
+  if(eb) eb.addEventListener('click', function(e){ e.stopPropagation(); endCall(); });
+});
+
 function endCall(){const tid=cd.calleeId||cd.callerId;const wasMissed=cd.active&&cd.duration===0;if(tid)socket.emit('call_end',{target_id:tid,was_missed:wasMissed});const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;cleanupCall();appendCallMsg(type,dur,startT,false);}
 function cleanupCall(){
   stopCallTimer();
