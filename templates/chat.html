@@ -2205,18 +2205,22 @@ function connectSocket(){
     if(currentChatId&&msg.chat_id===currentChatId){
       appendMsg(msg);
     }else{
-      // Build a clean preview for the notification
+      // Build notification preview
       let preview='';
-      if(msg.message_type==='image'){ const n=msg.sender_id===ME_ID?'You':esc(msg.sender_username||''); preview=(n?n+' ':'')+'sent a photo 📷'; }
-      else if(msg.message_type==='video'){preview='🎥 Sent a video';}
-      else if(msg.message_type==='audio'){preview='🎵 Sent a voice message';}
+      if(msg.message_type==='image') preview=msg.sender_username+' sent a photo 📷';
+      else if(msg.message_type==='video') preview=msg.sender_username+' sent a video 🎥';
+      else if(msg.message_type==='audio') preview=msg.sender_username+' sent a voice message 🎵';
       else{
         const txt=(msg.content||'').trim();
-        preview=txt.length>60?txt.slice(0,60)+'…':txt;
+        preview=txt.length>80?txt.slice(0,80)+'…':txt;
       }
-      if(msg.sender_id!==ME_ID)showInAppNotif(msg.sender_username,preview,msg.chat_id);
+      // Always notify for messages from others — new friends, existing friends, everyone
+      if(msg.sender_id!==ME_ID){
+        showInAppNotif(msg.sender_username, preview, msg.chat_id);
+        if(prefs.sound) beep();
+      }
     }
-    if(prefs.sound&&msg.sender_id!==ME_ID)beep();
+    if(prefs.sound&&msg.sender_id!==ME_ID&&currentChatId===msg.chat_id) beep(); // in-chat sound
     updatePrev(msg);
     updateUnreadBadge(msg);
   });
@@ -2895,17 +2899,18 @@ function showCallModal(name, status, isVideo){
   if(isVideo){
     rv.style.display='block';
     lv.style.display='block'; pipInitPos();
-    vc.style.display='none';
-    vb.style.display='none';
-    document.getElementById('videoBtn').style.display='flex';
-    document.getElementById('flipBtn').style.display='flex';
+    if(vc) vc.style.display='none';
+    if(vb) vb.style.display='none';
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
+    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='flex';
   } else {
+    // Voice call — show gradient bg and avatar center
     rv.style.display='none';
     lv.style.display='none';
-    vc.style.display='flex';
-    vb.style.display='block';
-    document.getElementById('videoBtn').style.display='none';
-    document.getElementById('flipBtn').style.display='none';
+    if(vc){ vc.style.display='flex'; vc.style.alignItems='center'; vc.style.justifyContent='center'; }
+    if(vb){ vb.style.display='block'; }
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='none';
+    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='none';
   }
 
   // Reset buttons
@@ -3078,7 +3083,7 @@ function preferOpus(sdp){
 let _remoteAudioNode = null;
 let _attachedStreamId = null;
 
-function attachAudio(stream){
+async function attachAudio(stream){
   // Skip if this exact stream is already routed
   if(_attachedStreamId === stream.id && _remoteAudioNode) return;
 
@@ -3089,15 +3094,17 @@ function attachAudio(stream){
   const audioTracks = stream.getAudioTracks();
   if(!audioTracks.length){ stream.addEventListener('addtrack', e=>{ if(e.track.kind==='audio') attachAudio(stream); },{once:true}); return; }
 
+  // Always ensure audio context is running
   try{
     const ctx = getAC();
-    if(ctx.state==='suspended') ctx.resume();
+    // Must await resume — suspended AC = silent on iOS/Chrome
+    if(ctx.state==='suspended') await ctx.resume();
 
     // Signal chain: source → high-pass (removes mic rumble) → compressor → gain → output
     const source     = ctx.createMediaStreamSource(stream);
     const hpf        = ctx.createBiquadFilter();
     hpf.type         = 'highpass';
-    hpf.frequency.value = 100;  // cut sub-100Hz rumble
+    hpf.frequency.value = 100;
     hpf.Q.value      = 0.7;
     const compressor = ctx.createDynamicsCompressor();
     compressor.threshold.value = -20;
@@ -3115,36 +3122,41 @@ function attachAudio(stream){
     _remoteAudioNode  = gain;
     _attachedStreamId = stream.id;
 
-    // Muted keepalive <audio> — keeps AudioContext alive on iOS
-    // NEVER unmuted — all audio goes through Web Audio chain above
+    // iOS Safari requires an actual <audio> element playing (even muted)
+    // to keep AudioContext alive — this is the keepalive element
     let ka = document.getElementById('remoteAudio');
-    if(!ka){
-      ka = document.createElement('audio');
-      ka.id = 'remoteAudio';
-      ka.muted = true;
-      ka.autoplay = true;
-      ka.setAttribute('playsinline','');
-      ka.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-      document.body.appendChild(ka);
-    }
-    // Always reset srcObject so iOS doesn't reuse a stale reference
-    ka.srcObject = null;
+    if(ka) ka.remove();
+    ka = document.createElement('audio');
+    ka.id = 'remoteAudio';
+    ka.muted = true;        // muted: we play via Web Audio above
+    ka.autoplay = true;
+    ka.setAttribute('playsinline','');
+    ka.setAttribute('webkit-playsinline','');
+    ka.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+    document.body.appendChild(ka);
     ka.srcObject = stream;
     ka.play().catch(()=>{});
 
   }catch(err){
-    // Graceful fallback — direct audio element (no Web Audio)
-    console.warn('[audio] Web Audio chain failed, using direct element:', err);
+    // Graceful fallback — direct unmuted audio element (no Web Audio processing)
+    console.warn('[audio] Web Audio chain failed, falling back to direct element:', err.message);
     _attachedStreamId = stream.id;
     let el = document.getElementById('remoteAudio');
     if(el) el.remove();
     el = document.createElement('audio');
-    el.id='remoteAudio'; el.autoplay=true; el.muted=false; el.volume=1.0;
-    el.setAttribute('playsinline',''); el.setAttribute('webkit-playsinline','');
+    el.id='remoteAudio';
+    el.autoplay=true;
+    el.muted=false;       // UNMUTED in fallback — no Web Audio
+    el.volume=1.0;
+    el.setAttribute('playsinline','');
+    el.setAttribute('webkit-playsinline','');
     el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
     document.body.appendChild(el);
+    el.srcObject = null;
     el.srcObject = stream;
-    el.play().catch(()=>{});
+    let tries=0;
+    function tryPlay(){ el.play().catch(e=>{ if(++tries<5) setTimeout(tryPlay,300); }); }
+    tryPlay();
   }
 }
 
@@ -3315,6 +3327,7 @@ function hideRemoteCamOff(){
 }
 
 // ── Outgoing ringing screen ──
+let _outgoingRingTimer=null, _outgoingTimeout=null;
 function showOutgoingScreen(name, type){
   const av = document.getElementById('outgoingCallAvatar');
   const nm = document.getElementById('outgoingCallName');
@@ -3323,9 +3336,40 @@ function showOutgoingScreen(name, type){
   if(nm) nm.textContent = name;
   if(ty) ty.textContent = type==='video' ? '📹 Video call' : '📞 Voice call';
   document.getElementById('outgoingCallModal').classList.add('show');
+
+  // Play ringing sound for the caller
+  try{
+    if(!cd._outRingCtx) cd._outRingCtx = new(window.AudioContext||window.webkitAudioContext)();
+    function outRing(){
+      const ctx=cd._outRingCtx;
+      [[440,0],[480,.3]].forEach(([freq,t])=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=freq; o.type='sine';
+        g.gain.setValueAtTime(0,ctx.currentTime+t);
+        g.gain.linearRampToValueAtTime(0.18,ctx.currentTime+t+.04);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+.28);
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.32);
+      });
+    }
+    outRing(); _outgoingRingTimer=setInterval(outRing,1800);
+  }catch(e){}
+
+  // Auto-cancel after 60s if no answer
+  clearTimeout(_outgoingTimeout);
+  _outgoingTimeout = setTimeout(()=>{
+    if(document.getElementById('outgoingCallModal').classList.contains('show')){
+      toast('No answer','info');
+      socket.emit('call_end',{target_id:cd.calleeId, was_missed:true});
+      cleanupCall();
+    }
+  }, 60000);
 }
 function hideOutgoingScreen(){
   document.getElementById('outgoingCallModal').classList.remove('show');
+  clearInterval(_outgoingRingTimer); _outgoingRingTimer=null;
+  clearTimeout(_outgoingTimeout); _outgoingTimeout=null;
+  if(cd._outRingCtx){try{cd._outRingCtx.close();}catch(e){} cd._outRingCtx=null;}
 }
 
 function makePc(targetId){
@@ -3371,6 +3415,9 @@ function makePc(targetId){
       setStatus('Connected ✅');
       startCallTimer();
       startSignalMonitor(pc);
+      // Re-unlock audio on connection — critical for iOS
+      const ac=getAC();
+      if(ac.state==='suspended') ac.resume().catch(()=>{});
     } else if(s==='failed'){
       stopSignalMonitor();
       if(pc.restartIce) pc.restartIce();
@@ -3411,8 +3458,16 @@ function mediaErr(e){
   toast('📞 '+msg,'err');
 }
 
-async function startVoiceCall(){ if(!currentFriendId){toast('Open a chat first','err');return;} const f=friends.find(x=>x.id===currentFriendId); if(f) await doCall(f,'voice'); }
-async function startVideoCall(){ if(!currentFriendId){toast('Open a chat first','err');return;} const f=friends.find(x=>x.id===currentFriendId); if(f) await doCall(f,'video'); }
+async function startVoiceCall(){
+  if(!currentFriendId){toast('Open a chat first','err');return;}
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(f) await doCall(f,'voice');
+}
+async function startVideoCall(){
+  if(!currentFriendId){toast('Open a chat first','err');return;}
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(f) await doCall(f,'video');
+}
 
 async function doCall(friend, type){
   if(cd.active){ toast(friend.username+' is busy','info'); return; }
@@ -3442,9 +3497,10 @@ async function doCall(friend, type){
     offer = new RTCSessionDescription({type:offer.type, sdp:preferOpus(offer.sdp)});
     await pc.setLocalDescription(offer);
 
-    // Show call screen AND outgoing ringing overlay
-    showCallModal(friend.username, 'Ringing…', type==='video');
+    // Show outgoing ringing screen (fullscreen, on top)
     showOutgoingScreen(friend.username, type);
+    // Also prepare the call modal underneath (muted/ready)
+    showCallModal(friend.username, 'Ringing…', type==='video');
     socket.emit('call_offer',{callee_id:friend.id, offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}, call_type:type});
   }catch(e){ mediaErr(e); cleanupCall(); }
 }
@@ -3586,7 +3642,7 @@ function endCall(){
 function cleanupCall(){
   stopCallTimer();
   stopSignalMonitor();
-  hideOutgoingScreen();
+  hideOutgoingScreen(); // also clears ringing sound + timeout
   hideRemoteCamOff();
   _attachedStreamId=null;
   if(_remoteAudioNode){ try{_remoteAudioNode.disconnect();}catch(e){} _remoteAudioNode=null; }
@@ -3607,10 +3663,20 @@ function setupCallListeners(){
   socket.on('call_accepted',async data=>{
     if(!cd.pc)return;
     hideOutgoingScreen();
-    try{await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));await flushPending();setStatus('Connecting…');}
+    setStatus('Connecting…');
+    try{
+      await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      await flushPending();
+    }
     catch(e){toast('❌ Call setup failed','err');endCall();}
   });
-  socket.on('call_rejected',data=>{ hideOutgoingScreen(); const name=data.callee_name||'User';const msg=data.busy?name+' is in another call':name+' declined the call';toast(msg,'info');cleanupCall();});
+  socket.on('call_rejected',data=>{
+    hideOutgoingScreen();
+    const name=data.callee_name||'User';
+    const msg=data.busy?name+' is busy in another call':name+' declined the call';
+    toast(msg,'info');
+    cleanupCall();
+  });
   // missed_call_notify handled in connectSocket above
   socket.on('ice_candidate',async data=>{
     if(!cd.pc||!data.candidate)return;
@@ -3950,9 +4016,9 @@ function buildCrowEl(f){
         <span class="cuname">${esc(f.username)}</span>
         ${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''}
       </div>
-      <div class="cprev">${f.last_message?esc(f.last_message):'No messages yet'}</div>
+      <div class="cprev" style="color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.last_message?esc(f.last_message):'Start a conversation…'}</div>
     </div>
-    <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;margin-right:32px;">${uCount>9?'9+':uCount}</span>
+    <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;margin-right:32px;">${uCount>99?'99+':uCount}</span>
     <button class="crow-menu-btn" title="More">⋯</button>
   `;
   // 3-dot button click
@@ -3982,25 +4048,48 @@ function buildCrowEl(f){
 }
 
 function updateOnlineStatus(){if(currentFriendId&&onlineUsers.has(currentFriendId)){document.getElementById('chsub').textContent='Online';document.getElementById('chsub').classList.add('online');}else if(currentFriendId){document.getElementById('chsub').textContent='Friend';document.getElementById('chsub').classList.remove('online');}renderFriends();}
+function buildPreview(msg){
+  if(!msg) return '';
+  const senderName = msg.sender_id===ME_ID ? 'You' : (msg.sender_username||'');
+  const prefix = senderName ? senderName+': ' : '';
+  if(msg.message_type==='image'){
+    return (senderName?senderName+' ':'')+'sent a photo 📷';
+  }
+  if(msg.message_type==='audio') return prefix+'🎵 Voice message';
+  if(msg.message_type==='video') return prefix+'🎥 Video';
+  // Text: show first 55 chars
+  const txt=(msg.content||'').trim();
+  const short=txt.length>55?txt.slice(0,55)+'…':txt;
+  return prefix+short;
+}
+
 function updatePrev(msg){
   if(!msg)return;
   const parts=msg.chat_id.split('-').map(Number);
   const fid=parts[0]===ME_ID?parts[1]:parts[0];
-  // Update last message preview in crow row without full reload
+  const preview=buildPreview(msg);
   document.querySelectorAll(`.crow[data-fid="${fid}"] .cprev`).forEach(el=>{
-    let preview='';
-    if(msg.message_type==='image'){ const n=msg.sender_id===ME_ID?'You':(msg.sender_username||''); preview=(n?n+' ':'')+'sent a photo 📷'; }
-    else if(msg.message_type==='audio')preview='🎵 Voice message';
-    else if(msg.message_type==='video')preview='🎥 Video';
-    else preview=(msg.content||'').slice(0,50);
     el.textContent=preview;
   });
   document.querySelectorAll(`.crow[data-fid="${fid}"] .cts`).forEach(el=>{
     el.textContent=relTime(msg.created_at);
   });
-  // Re-sort friend list so latest chat bubbles to top
   const f=friends.find(x=>x.id===fid);
-  if(f){f.last_message=msg.content;f.last_message_time=msg.created_at;}
+  if(f){
+    f.last_message=preview;
+    f.last_message_time=msg.created_at;
+  }
+  // Bubble this chat to top of list
+  sortAndRenderList();
+}
+
+function sortAndRenderList(){
+  // Re-sort friends array by last_message_time (keep pinned at top)
+  friends.sort((a,b)=>{
+    const at=a.last_message_time||'', bt=b.last_message_time||'';
+    return bt.localeCompare(at);
+  });
+  renderFriends();
 }
 
 // ── Load requests, sync all badges ──
@@ -4167,7 +4256,7 @@ function renderUnreadBadge(fid){
   // Update all crow elements for this friend (desktop + mobile)
   document.querySelectorAll(`.crow[data-fid="${fid}"] .unread-badge`).forEach(el=>{
     const count=unreadCounts[fid]||0;
-    el.textContent=count>9?'9+':count||'';
+    el.textContent=count>99?'99+':count||'';
     el.style.display=count>0?'flex':'none';
   });
 }
