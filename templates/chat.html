@@ -440,105 +440,154 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .profile-action-btn{padding:12px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .profile-action-btn:hover{background:var(--brand-dk);}
 /* ── Call UI – fullscreen renovated ── */
+/* ══ CALL SCREEN ══ */
 .call-screen{
   position:fixed;inset:0;z-index:950;
-  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
-  background:linear-gradient(160deg,#0f0c1a 0%,#1a1035 50%,#0d1f3c 100%);
+  background:#000;
   opacity:0;pointer-events:none;
-  transition:opacity .35s cubic-bezier(.4,0,.2,1);
-  padding:0 0 env(safe-area-inset-bottom,0);
+  transition:opacity .3s cubic-bezier(.4,0,.2,1);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  overflow:hidden;
 }
 .call-screen.show{opacity:1;pointer-events:all;}
 
-/* Animated background blobs */
-.call-screen::before,.call-screen::after{
+/* Remote video — true fullscreen */
+#remoteVideo{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;z-index:0;display:block;
+  background:#111;
+}
+
+/* Voice-only backdrop (when no video) */
+#callVoiceBg{
+  position:absolute;inset:0;z-index:0;
+  background:linear-gradient(160deg,#0f0c1a 0%,#1a1035 55%,#0d1f3c 100%);
+  display:none;
+}
+#callVoiceBg::before,#callVoiceBg::after{
   content:'';position:absolute;border-radius:50%;
-  filter:blur(60px);opacity:.35;pointer-events:none;
-  animation:cblob 8s ease-in-out infinite alternate;
+  filter:blur(72px);opacity:.4;pointer-events:none;
 }
-.call-screen::before{width:340px;height:340px;background:radial-gradient(circle,#7c6aff,transparent);top:-60px;left:-80px;}
-.call-screen::after{width:280px;height:280px;background:radial-gradient(circle,#06b6d4,transparent);bottom:100px;right:-60px;animation-delay:-4s;}
-@keyframes cblob{0%{transform:scale(1) translate(0,0);}100%{transform:scale(1.15) translate(20px,20px);}}
+#callVoiceBg::before{width:360px;height:360px;background:radial-gradient(circle,#7c6aff,transparent);top:-80px;left:-60px;}
+#callVoiceBg::after{width:300px;height:300px;background:radial-gradient(circle,#06b6d4,transparent);bottom:80px;right:-40px;}
 
-/* Top area */
-.call-top{
-  width:100%;display:flex;flex-direction:column;align-items:center;
-  padding:clamp(48px,12vh,80px) 24px 0;
-  position:relative;z-index:2;
-  animation:callFadeUp .4s ease both;
+/* Top info bar */
+#callTopBar{
+  position:absolute;top:0;left:0;right:0;z-index:5;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:clamp(44px,10vw,60px) 18px 16px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 100%);
+  pointer-events:none;
+  animation:callFadeDown .4s ease both;
 }
-@keyframes callFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes callFadeDown{from{opacity:0;transform:translateY(-14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes callFadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 
-/* Avatar ring */
+/* Voice-mode avatar (shown when no video) */
+#callVoiceCenter{
+  position:absolute;inset:0;z-index:2;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  pointer-events:none;
+}
 .call-av-ring{
-  width:110px;height:110px;border-radius:50%;
+  width:116px;height:116px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   background:conic-gradient(var(--brand),#06b6d4,#a855f7,var(--brand));
-  animation:ringRotate 4s linear infinite;
-  flex-shrink:0;margin-bottom:20px;
+  animation:ringRotate 4s linear infinite;flex-shrink:0;
 }
-.call-av-ring.pulse{animation:ringRotate 4s linear infinite, ringPulse 1.5s ease-in-out infinite;}
+.call-av-ring.pulse{animation:ringRotate 4s linear infinite,ringPulse 1.6s ease-in-out infinite;}
 @keyframes ringRotate{to{filter:hue-rotate(360deg);}}
-@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.5);}50%{box-shadow:0 0 0 22px rgba(124,106,255,0);}}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.45);}50%{box-shadow:0 0 0 24px rgba(124,106,255,0);}}
 .call-av-inner{
-  width:98px;height:98px;border-radius:50%;
+  width:104px;height:104px;border-radius:50%;
   background:linear-gradient(135deg,#2d2060,#1a3a5c);
   display:flex;align-items:center;justify-content:center;
-  font-size:42px;font-weight:800;color:#fff;
-  border:3px solid rgba(255,255,255,.12);
+  font-size:44px;font-weight:800;color:#fff;
+  border:3px solid rgba(255,255,255,.1);
 }
-.call-name{font-size:26px;font-weight:800;color:#fff;letter-spacing:.3px;margin:0 0 8px;}
-.call-status{font-size:14px;color:rgba(255,255,255,.55);letter-spacing:.5px;margin:0;}
-.call-timer{font-size:28px;font-weight:700;color:#fff;letter-spacing:3px;margin:10px 0 0;display:none;}
+.call-name{font-size:24px;font-weight:800;color:#fff;letter-spacing:.3px;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+.call-status{font-size:13px;color:rgba(255,255,255,.55);letter-spacing:.5px;}
+.call-timer{font-size:26px;font-weight:700;color:#fff;letter-spacing:3px;display:none;text-shadow:0 2px 8px rgba(0,0,0,.6);}
 
-/* Video area */
-.call-video-area{
-  position:relative;width:100%;flex:1;
-  display:none;overflow:hidden;
-}
-.call-video-area.active{display:block;}
-#remoteVideo{
-  width:100%;height:100%;object-fit:cover;
-  position:absolute;inset:0;
-}
+/* Draggable local video PiP */
 #localVideo{
-  position:absolute;bottom:14px;right:14px;
-  width:90px;height:120px;border-radius:12px;
-  object-fit:cover;border:2px solid rgba(255,255,255,.3);
-  box-shadow:0 4px 20px rgba(0,0,0,.5);
-  z-index:3;cursor:pointer;
-  transition:all .2s;
+  position:absolute;
+  bottom:140px;right:16px;
+  width:96px;height:128px;
+  border-radius:16px;
+  object-fit:cover;
+  border:2.5px solid rgba(255,255,255,.35);
+  box-shadow:0 6px 28px rgba(0,0,0,.7);
+  z-index:8;
+  cursor:grab;
+  touch-action:none;
+  display:none;
+  transition:box-shadow .2s,border-color .2s;
+  -webkit-user-drag:none;
+  user-select:none;
+}
+#localVideo:active{cursor:grabbing;box-shadow:0 10px 36px rgba(0,0,0,.85);border-color:rgba(255,255,255,.6);}
+
+/* Bottom controls dock */
+#callDock{
+  position:absolute;bottom:0;left:0;right:0;z-index:9;
+  display:flex;flex-direction:column;align-items:center;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px);
 }
 
-/* Controls */
-.call-controls{
-  width:100%;padding:24px 32px clamp(32px,8vh,56px);
-  display:flex;flex-direction:column;align-items:center;gap:20px;
-  position:relative;z-index:2;
-  animation:callFadeUp .5s .1s ease both;
+/* Double-chevron toggle button */
+#callDockToggle{
+  background:rgba(255,255,255,.13);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:24px;
+  padding:7px 20px 5px;
+  cursor:pointer;
+  margin-bottom:0;
+  transition:background .2s;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:0;
 }
-.call-ctrl-row{display:flex;gap:20px;align-items:center;justify-content:center;}
+#callDockToggle:active{background:rgba(255,255,255,.22);}
+#callDockChevrons{
+  display:flex;flex-direction:column;align-items:center;gap:-2px;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+#callDockToggle.open #callDockChevrons{transform:rotate(180deg);}
+
+/* Controls tray */
+#callCtrlTray{
+  display:flex;gap:22px;align-items:center;justify-content:center;
+  padding:18px 28px 10px;
+  overflow:hidden;
+  max-height:0;
+  opacity:0;
+  transition:max-height .32s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .3s ease;
+}
+#callCtrlTray.open{max-height:120px;opacity:1;}
+
+/* Control buttons */
 .ccb{
-  width:58px;height:58px;border:none;border-radius:50%;
+  width:60px;height:60px;border:none;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;font-size:22px;
   transition:transform .15s,background .2s,box-shadow .2s;
   -webkit-tap-highlight-color:transparent;
-  background:rgba(255,255,255,.12);
-  backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.14);
+  backdrop-filter:blur(10px);
+  border:1.5px solid rgba(255,255,255,.18);
   color:#fff;
+  flex-shrink:0;
 }
-.ccb:active{transform:scale(.9);}
-.ccb.active{background:var(--brand);border-color:var(--brand);box-shadow:0 0 20px rgba(124,106,255,.6);}
+.ccb:active{transform:scale(.88);}
+.ccb.active{background:rgba(124,106,255,.75);border-color:var(--brand);box-shadow:0 0 22px rgba(124,106,255,.55);}
 .ccb.end-btn{
-  width:68px;height:68px;font-size:26px;
-  background:linear-gradient(135deg,#ef4444,#dc2626);
+  width:66px;height:66px;font-size:25px;
+  background:linear-gradient(135deg,#ef4444,#c62828);
   border:none;
-  box-shadow:0 4px 20px rgba(239,68,68,.45);
+  box-shadow:0 4px 22px rgba(239,68,68,.5);
 }
-.ccb.end-btn:active{transform:scale(.88);}
+.ccb.end-btn:active{transform:scale(.86);}
 
 /* Incoming call */
 .incoming-screen{
@@ -1337,37 +1386,61 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 <!-- ── ACTIVE CALL SCREEN ── -->
 <div class="call-screen" id="callModal">
-  <!-- Remote video (fullscreen bg for video calls) -->
-  <video id="remoteVideo" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0;"></video>
-  <!-- Video overlay gradient -->
-  <div id="callVideoOverlay" style="display:none;position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.4) 0%,transparent 35%,transparent 55%,rgba(0,0,0,.7) 100%);z-index:1;pointer-events:none;"></div>
 
-  <!-- Top section -->
-  <div class="call-top" style="z-index:2;">
+  <!-- Remote video — true fullscreen -->
+  <video id="remoteVideo" autoplay playsinline muted></video>
+
+  <!-- Voice-only background (shown when no video) -->
+  <div id="callVoiceBg"></div>
+
+  <!-- Top bar: name + timer + signal -->
+  <div id="callTopBar">
+    <div>
+      <div class="call-name" id="callName">Username</div>
+      <div class="call-status" id="callStatus">Calling…</div>
+      <div class="call-timer" id="callTimer">00:00</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div id="callSignalDot" style="
+        width:10px;height:10px;border-radius:50%;
+        background:#22c55e;
+        box-shadow:0 0 6px rgba(34,197,94,.8);
+        transition:background .4s,box-shadow .4s;
+        flex-shrink:0;
+      "></div>
+      <span id="callSignalLabel" style="font-size:11px;color:rgba(255,255,255,.5);font-weight:600;letter-spacing:.3px;"></span>
+    </div>
+  </div>
+
+  <!-- Voice-mode center avatar -->
+  <div id="callVoiceCenter">
     <div class="call-av-ring" id="callAvRing">
       <div class="call-av-inner" id="callAvatar">U</div>
     </div>
-    <div class="call-name" id="callName">Username</div>
-    <div class="call-status" id="callStatus">Calling…</div>
-    <div class="call-timer" id="callTimer">00:00</div>
   </div>
 
-  <!-- Local video (pip) -->
-  <video id="localVideo" autoplay muted playsinline style="
-    position:absolute;bottom:120px;right:16px;
-    width:88px;height:118px;border-radius:14px;
-    object-fit:cover;border:2px solid rgba(255,255,255,.3);
-    box-shadow:0 4px 24px rgba(0,0,0,.6);
-    z-index:3;display:none;
-  "></video>
+  <!-- Draggable local video PiP -->
+  <video id="localVideo" autoplay muted playsinline></video>
 
-  <!-- Controls -->
-  <div class="call-controls">
-    <div class="call-ctrl-row">
-      <button class="ccb" id="muteBtn" onclick="toggleMute()" title="Mute">🎤</button>
-      <button class="ccb end-btn" onclick="endCall()">📞</button>
-      <button class="ccb" id="videoBtn" onclick="toggleVideo()" title="Video" style="display:none;">📹</button>
+  <!-- Bottom dock -->
+  <div id="callDock">
+    <!-- Controls tray (slides up) -->
+    <div id="callCtrlTray">
+      <button class="ccb" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute">🎤</button>
+      <button class="ccb" id="flipBtn" onclick="flipCamera()" title="Flip camera" style="display:none;">🔄</button>
+      <button class="ccb end-btn" onclick="endCall()" title="End call">📞</button>
+      <button class="ccb" id="speakerBtn" onclick="toggleSpeaker()" title="Speaker">🔊</button>
+      <button class="ccb" id="videoBtn" onclick="toggleVideo()" title="Camera on/off">📹</button>
     </div>
+    <!-- Double-chevron toggle -->
+    <button id="callDockToggle" onclick="toggleCallDock()">
+      <div id="callDockChevrons">
+        <svg width="26" height="22" viewBox="0 0 26 22" fill="none">
+          <polyline points="2,15 13,4 24,15" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="5,20 13,12 21,20" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </button>
   </div>
 </div>
 <!-- SETTINGS DRAWER -->
@@ -2496,27 +2569,46 @@ function showCallModal(name,status,isVideo){
   document.getElementById('callStatus').textContent=status;
   document.getElementById('callStatus').style.display='block';
   document.getElementById('callTimer').style.display='none';
-  // video elements
+
   const lv=document.getElementById('localVideo');
   const rv=document.getElementById('remoteVideo');
-  const vo=document.getElementById('callVideoOverlay');
+  const vc=document.getElementById('callVoiceCenter');
+  const vb=document.getElementById('callVoiceBg');
+
   if(isVideo){
-    if(lv) lv.style.display='block';
+    if(lv){ lv.style.display='block'; pipInitPos(); }
     if(rv) rv.style.display='block';
-    if(vo) vo.style.display='block';
+    if(vc) vc.style.display='none';
+    if(vb) vb.style.display='none';
   } else {
     if(lv) lv.style.display='none';
     if(rv) rv.style.display='none';
-    if(vo) vo.style.display='none';
+    if(vc){ vc.style.display='flex'; }
+    if(vb) vb.style.display='block';
   }
   const vBtn=document.getElementById('videoBtn');
   if(vBtn) vBtn.style.display=isVideo?'flex':'none';
   const mBtn=document.getElementById('muteBtn');
-  if(mBtn){ mBtn.textContent='🎤'; mBtn.classList.remove('active'); }
+  if(mBtn){ mBtn.innerHTML='🎤'; mBtn.classList.remove('active'); }
+  // Reset dock
+  const tray=document.getElementById('callCtrlTray');
+  const tog=document.getElementById('callDockToggle');
+  if(tray) tray.classList.remove('open');
+  if(tog) tog.classList.remove('open');
   document.getElementById('callModal').classList.add('show');
 }
 function hideCallModal(){
   document.getElementById('callModal').classList.remove('show');
+  const tray=document.getElementById('callCtrlTray');
+  const tog=document.getElementById('callDockToggle');
+  if(tray) tray.classList.remove('open');
+  if(tog) tog.classList.remove('open');
+}
+function toggleCallDock(){
+  const tray=document.getElementById('callCtrlTray');
+  const tog=document.getElementById('callDockToggle');
+  const open=tray.classList.toggle('open');
+  tog.classList.toggle('open',open);
 }
 function showIncomingCall(name,type){
   document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
@@ -2547,59 +2639,62 @@ function hideIncomingCall(){
   if(cd._ringCtx){try{cd._ringCtx.close();}catch(e){} cd._ringCtx=null;}
 }
 // ═══════════════════════════════════════════════════════
-// AUDIO ENGINE — zero echo, clean voice
+// AUDIO ENGINE v3 — zero echo, crystal clear, smooth
 // ═══════════════════════════════════════════════════════
 
-// Shared AudioContext — one per session, never recreated
+// Single shared AudioContext for the session lifetime
 let _AC = null;
 function getAC(){
-  if(!_AC||_AC.state==='closed'){
-    _AC=new(window.AudioContext||window.webkitAudioContext)({sampleRate:48000,latencyHint:'interactive'});
+  if(!_AC || _AC.state==='closed'){
+    _AC = new(window.AudioContext||window.webkitAudioContext)({
+      sampleRate: 48000,
+      latencyHint: 'interactive'
+    });
   }
   return _AC;
 }
 
 async function unlockAudio(){
   try{
-    const ctx=getAC();
+    const ctx = getAC();
     if(ctx.state==='suspended') await ctx.resume();
-    // Play 10ms of silence to unlock on iOS
-    const buf=ctx.createBuffer(1,ctx.sampleRate/100,ctx.sampleRate);
-    const src=ctx.createBufferSource();
-    src.buffer=buf;src.connect(ctx.destination);src.start();src.stop(ctx.currentTime+.01);
+    // 10ms silence unlocks iOS audio policy
+    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.01), ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.connect(ctx.destination);
+    src.start(); src.stop(ctx.currentTime + 0.01);
   }catch(e){}
 }
 
-// Get mic with aggressive hardware-level echo/noise suppression
+// Hardware-level AEC — mono mic, 48kHz, system echo cancellation
 async function getMedia(type){
-  if(!navigator.mediaDevices?.getUserMedia){
-    throw new Error(!window.isSecureContext?'HTTPS_REQUIRED':'NO_MEDIA_DEVICES');
-  }
-  // Maximum echo suppression constraints — tried in order, fallback each time
-  const audioConstraints={
-    echoCancellation:{ideal:true},
-    echoCancellationType:{ideal:'system'},   // hardware AEC on mobile
-    noiseSuppression:{ideal:true},
-    autoGainControl:{ideal:true},
-    channelCount:{ideal:1},                  // mono — halves echo surface
-    sampleRate:{ideal:48000},
-    sampleSize:{ideal:16},
-    latency:{ideal:0.01}
+  if(!navigator.mediaDevices?.getUserMedia)
+    throw new Error(!window.isSecureContext ? 'HTTPS_REQUIRED' : 'NO_MEDIA_DEVICES');
+
+  const audio = {
+    echoCancellation:   { ideal: true },
+    echoCancellationType: { ideal: 'system' }, // hardware AEC on phones
+    noiseSuppression:   { ideal: true },
+    autoGainControl:    { ideal: true },
+    channelCount:       { ideal: 1 },          // mono — eliminates stereo feedback paths
+    sampleRate:         { ideal: 48000 },
+    latency:            { ideal: 0.005 }       // 5ms latency hint
   };
-  const videoConstraints={facingMode:'user',width:{ideal:1280},height:{ideal:720}};
-  const list=type==='video'
-    ?[
-      {video:videoConstraints,audio:audioConstraints},
-      {video:{facingMode:'user'},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}},
-      {video:true,audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}},
-      {audio:{echoCancellation:true,noiseSuppression:true},video:false}
-    ]
-    :[
-      {audio:audioConstraints,video:false},
-      {audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1},video:false},
-      {audio:{echoCancellation:true,noiseSuppression:true},video:false},
-      {audio:true,video:false}
-    ];
+  const audioFallback = { echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1 };
+  const videoConstraints = { facingMode:'user', width:{ideal:1280}, height:{ideal:720} };
+
+  const list = type==='video' ? [
+    { video: videoConstraints, audio },
+    { video: { facingMode:'user' }, audio: audioFallback },
+    { video: true, audio: audioFallback },
+    { audio: audioFallback, video: false }
+  ] : [
+    { audio, video: false },
+    { audio: audioFallback, video: false },
+    { audio: { echoCancellation:true, noiseSuppression:true }, video: false },
+    { audio: true, video: false }
+  ];
+
   let err;
   for(const con of list){
     try{ return await navigator.mediaDevices.getUserMedia(con); }
@@ -2608,149 +2703,244 @@ async function getMedia(type){
   throw err;
 }
 
-// Prioritize Opus codec in SDP (best echo handling + lowest latency)
+// Rewrite SDP to prioritize Opus with crystal-clear voice settings
 function preferOpus(sdp){
-  const lines=sdp.split('\n');
-  let opusPayload=null;
-  // Find Opus payload type
+  const lines = sdp.split('\n');
+  let pt = null;
   for(const l of lines){
-    const m=l.match(/a=rtpmap:(\d+) opus\/48000/i);
-    if(m){opusPayload=m[1];break;}
+    const m = l.match(/a=rtpmap:(\d+) opus\/48000/i);
+    if(m){ pt=m[1]; break; }
   }
-  if(!opusPayload) return sdp;
-  // Move Opus to front of m=audio line
+  if(!pt) return sdp;
   return lines.map(l=>{
     if(l.startsWith('m=audio')){
-      const parts=l.split(' ');
-      const codecs=parts.slice(3).filter(p=>p!==opusPayload);
-      return parts.slice(0,3).concat([opusPayload,...codecs]).join(' ');
+      const p = l.split(' ');
+      return [...p.slice(0,3), pt, ...p.slice(3).filter(x=>x!==pt)].join(' ');
     }
-    // Add stereo:0 and useinbandfec:1 to Opus fmtp for better voice
-    if(opusPayload&&l.includes('a=fmtp:'+opusPayload)){
-      return l.trimEnd()+';stereo=0;useinbandfec=1;cbr=1';
+    if(pt && l.includes('a=fmtp:'+pt)){
+      const base = l.trimEnd().replace(/;?stereo=[01]/,'').replace(/;?useinbandfec=[01]/,'').replace(/;?cbr=[01]/,'').replace(/;?maxaveragebitrate=\d+/,'');
+      return base + ';stereo=0;useinbandfec=1;cbr=1;maxaveragebitrate=64000';
     }
     return l;
   }).join('\n');
 }
 
-// Route remote audio through Web Audio API with gain normalization
-// Never uses <audio> srcObject directly — routes via AudioContext to avoid
-// OS-level feedback loop on phones with earpiece/speaker
-let _remoteAudioNode=null;
+// ── Remote audio routing ──
+// Track which stream is currently attached to prevent double-attach
+let _remoteAudioNode = null;
+let _attachedStreamId = null;
+
 function attachAudio(stream){
-  // Tear down previous node cleanly
-  if(_remoteAudioNode){
-    try{_remoteAudioNode.disconnect();}catch(e){}
-    _remoteAudioNode=null;
-  }
-  // Guard: needs at least one active audio track
-  const audioTracks=stream.getAudioTracks();
-  if(!audioTracks.length) return;
+  // Skip if this exact stream is already routed
+  if(_attachedStreamId === stream.id && _remoteAudioNode) return;
+
+  // Tear down previous cleanly
+  if(_remoteAudioNode){ try{_remoteAudioNode.disconnect();}catch(e){} _remoteAudioNode=null; }
+  _attachedStreamId = null;
+
+  const audioTracks = stream.getAudioTracks();
+  if(!audioTracks.length){ stream.addEventListener('addtrack', e=>{ if(e.track.kind==='audio') attachAudio(stream); },{once:true}); return; }
 
   try{
-    const ctx=getAC();
+    const ctx = getAC();
     if(ctx.state==='suspended') ctx.resume();
 
-    // Source → Dynamics compressor (evens out volume spikes) → Gain → Output
-    const source=ctx.createMediaStreamSource(stream);
-    const compressor=ctx.createDynamicsCompressor();
-    compressor.threshold.value=-24;   // dB — compress above this
-    compressor.knee.value=10;
-    compressor.ratio.value=4;
-    compressor.attack.value=0.003;
-    compressor.release.value=0.15;
-    const gainNode=ctx.createGain();
-    gainNode.gain.value=1.0;
+    // Signal chain: source → high-pass (removes mic rumble) → compressor → gain → output
+    const source     = ctx.createMediaStreamSource(stream);
+    const hpf        = ctx.createBiquadFilter();
+    hpf.type         = 'highpass';
+    hpf.frequency.value = 100;  // cut sub-100Hz rumble
+    hpf.Q.value      = 0.7;
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -20;
+    compressor.knee.value      = 8;
+    compressor.ratio.value     = 3;
+    compressor.attack.value    = 0.002;
+    compressor.release.value   = 0.12;
+    const gain       = ctx.createGain();
+    gain.gain.value  = 1.0;
 
-    source.connect(compressor);
-    compressor.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    _remoteAudioNode=gainNode; // keep ref for cleanup
+    source.connect(hpf);
+    hpf.connect(compressor);
+    compressor.connect(gain);
+    gain.connect(ctx.destination);
+    _remoteAudioNode  = gain;
+    _attachedStreamId = stream.id;
 
-    // Keep a silent <audio> as a keepalive for mobile browsers that
-    // suspend AudioContext when no <audio> is playing
-    let keepalive=document.getElementById('remoteAudio');
-    if(!keepalive){
-      keepalive=document.createElement('audio');
-      keepalive.id='remoteAudio';
-      keepalive.muted=true;   // MUTED — audio goes through Web Audio API, not here
-      keepalive.autoplay=true;
-      keepalive.setAttribute('playsinline','');
-      keepalive.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-      document.body.appendChild(keepalive);
+    // Muted keepalive <audio> — keeps AudioContext alive on iOS
+    // NEVER unmuted — all audio goes through Web Audio chain above
+    let ka = document.getElementById('remoteAudio');
+    if(!ka){
+      ka = document.createElement('audio');
+      ka.id = 'remoteAudio';
+      ka.muted = true;
+      ka.autoplay = true;
+      ka.setAttribute('playsinline','');
+      ka.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+      document.body.appendChild(ka);
     }
-    keepalive.srcObject=stream;
-    keepalive.play().catch(()=>{});
+    // Always reset srcObject so iOS doesn't reuse a stale reference
+    ka.srcObject = null;
+    ka.srcObject = stream;
+    ka.play().catch(()=>{});
 
-  }catch(e){
-    // Fallback: direct <audio> if Web Audio API fails
-    console.warn('[audio] Web Audio failed, falling back',e);
-    let el=document.getElementById('remoteAudio');
+  }catch(err){
+    // Graceful fallback — direct audio element (no Web Audio)
+    console.warn('[audio] Web Audio chain failed, using direct element:', err);
+    _attachedStreamId = stream.id;
+    let el = document.getElementById('remoteAudio');
     if(el) el.remove();
-    el=document.createElement('audio');
+    el = document.createElement('audio');
     el.id='remoteAudio'; el.autoplay=true; el.muted=false; el.volume=1.0;
-    el.setAttribute('playsinline','');
+    el.setAttribute('playsinline',''); el.setAttribute('webkit-playsinline','');
     el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
     document.body.appendChild(el);
-    el.srcObject=stream;
+    el.srcObject = stream;
     el.play().catch(()=>{});
   }
 }
 
 function attachVideo(stream){
-  const rv=document.getElementById('remoteVideo'); if(!rv) return;
-  rv.srcObject=stream;
-  rv.muted=true;  // CRITICAL — audio ONLY via Web Audio, never via video element
-  rv.setAttribute('playsinline','');
-  rv.setAttribute('webkit-playsinline','');
+  const rv = document.getElementById('remoteVideo'); if(!rv) return;
+  rv.srcObject = null;  // reset prevents stale frames
+  rv.srcObject = stream;
+  rv.muted = true;  // MUST stay muted — audio via Web Audio only
+  rv.setAttribute('playsinline',''); rv.setAttribute('webkit-playsinline','');
   let a=0;
-  function tryPlay(){ rv.play().catch(()=>{ if(a++<20) setTimeout(tryPlay,300); }); }
-  setTimeout(tryPlay,80);
+  function tryPlay(){ rv.play().catch(()=>{ if(a++<20) setTimeout(tryPlay,250); }); }
+  setTimeout(tryPlay, 60);
+}
+
+// ── Signal quality monitor ──
+let _statsTimer = null;
+function startSignalMonitor(pc){
+  stopSignalMonitor();
+  _statsTimer = setInterval(async()=>{
+    if(!pc || pc.connectionState==='closed') return;
+    try{
+      const stats = await pc.getStats();
+      let rtt=null, lost=0, total=0;
+      stats.forEach(s=>{
+        if(s.type==='remote-inbound-rtp'&&s.kind==='audio'){
+          if(s.roundTripTime!=null) rtt=s.roundTripTime*1000; // ms
+          if(s.packetsLost!=null) lost=s.packetsLost;
+          if(s.totalSamplesReceived!=null) total=s.totalSamplesReceived;
+        }
+      });
+      const dot   = document.getElementById('callSignalDot');
+      const label = document.getElementById('callSignalLabel');
+      if(!dot||!label) return;
+      let quality, color, shadow;
+      if(rtt===null){ quality=''; color='#94a3b8'; shadow='0 0 4px rgba(148,163,184,.5)'; }
+      else if(rtt<120){ quality=''; color='#22c55e'; shadow='0 0 8px rgba(34,197,94,.8)'; }
+      else if(rtt<280){ quality='⚠'; color='#f59e0b'; shadow='0 0 6px rgba(245,158,11,.7)'; }
+      else { quality='↓'; color='#ef4444'; shadow='0 0 6px rgba(239,68,68,.7)'; }
+      dot.style.background   = color;
+      dot.style.boxShadow    = shadow;
+      label.textContent      = quality;
+    }catch(e){}
+  }, 2500);
+}
+function stopSignalMonitor(){
+  clearInterval(_statsTimer); _statsTimer=null;
+  const dot=document.getElementById('callSignalDot');
+  const label=document.getElementById('callSignalLabel');
+  if(dot){ dot.style.background='#94a3b8'; dot.style.boxShadow='none'; }
+  if(label) label.textContent='';
+}
+
+// ── New features ──
+let _currentFacing = 'user';
+async function flipCamera(){
+  if(!cd.localStream||cd.type!=='video') return;
+  _currentFacing = _currentFacing==='user'?'environment':'user';
+  const newStream = await navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:_currentFacing },
+    audio:false
+  }).catch(()=>null);
+  if(!newStream) return;
+  const newVideoTrack = newStream.getVideoTracks()[0];
+  if(!newVideoTrack) return;
+  // Replace track in peer connection
+  const sender = cd.pc?.getSenders().find(s=>s.track?.kind==='video');
+  if(sender) await sender.replaceTrack(newVideoTrack).catch(()=>{});
+  // Replace track in local stream
+  cd.localStream.getVideoTracks().forEach(t=>t.stop());
+  const lv = document.getElementById('localVideo');
+  // Build new combined stream for local preview
+  const audioTracks = cd.localStream.getAudioTracks();
+  const combined = new MediaStream([...audioTracks, newVideoTrack]);
+  cd.localStream = combined;
+  if(lv){ lv.srcObject=null; lv.srcObject=combined; lv.play().catch(()=>{}); }
+}
+
+let _speakerOn = true;
+async function toggleSpeaker(){
+  _speakerOn = !_speakerOn;
+  const btn = document.getElementById('speakerBtn');
+  if(btn){ btn.classList.toggle('active',!_speakerOn); btn.innerHTML=_speakerOn?'🔊':'🔇'; }
+  // setSinkId routes audio to earpiece ('') or default speaker ('')
+  // On mobile, '' = earpiece, 'default' or specific id = speaker
+  const el = document.getElementById('remoteAudio');
+  if(el && el.setSinkId){
+    try{
+      await el.setSinkId(_speakerOn ? 'default' : '');
+    }catch(e){
+      console.warn('[speaker] setSinkId not supported:', e);
+    }
+  }
+  // Also adjust AudioContext destination volume as fallback
+  if(_remoteAudioNode){
+    _remoteAudioNode.gain.value = _speakerOn ? 1.0 : 0.4;
+  }
 }
 
 function makePc(targetId){
   if(cd.pc){ try{cd.pc.close();}catch(e){} }
-  const pc=new RTCPeerConnection({
+  const pc = new RTCPeerConnection({
     ...STUN,
-    // Force DTLS — reduces handshake latency
-    bundlePolicy:'max-bundle',
-    rtcpMuxPolicy:'require',
+    bundlePolicy:  'max-bundle',
+    rtcpMuxPolicy: 'require',
   });
   cd.pc=pc; cd.pending=[];
 
-  pc.onicecandidate=e=>{ if(e.candidate) socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate}); };
+  pc.onicecandidate = e=>{ if(e.candidate) socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate}); };
 
-  const remoteStream=new MediaStream();
-  let _audioAttached=false;
+  const remoteStream = new MediaStream();
+  let _audioAttached = false;
 
-  pc.ontrack=e=>{
-    const track=e.track;
+  pc.ontrack = e=>{
+    const track = e.track;
     if(!remoteStream.getTracks().find(t=>t.id===track.id)) remoteStream.addTrack(track);
     if(track.kind==='video') attachVideo(remoteStream);
-    if(track.kind==='audio'&&!_audioAttached){
-      _audioAttached=true;
+    if(track.kind==='audio' && !_audioAttached){
+      _audioAttached = true;
       attachAudio(remoteStream);
     }
-    track.onunmute=()=>{
+    track.onunmute = ()=>{
       if(track.kind!=='audio') return;
-      // Re-attach only if audio node was torn down
       if(!_remoteAudioNode){ _audioAttached=false; attachAudio(remoteStream); _audioAttached=true; }
     };
   };
 
-  pc.onconnectionstatechange=()=>{
-    const s=pc.connectionState;
-    if(s==='connected'){ setStatus('Connected ✅  ·  '+nowStr()); startCallTimer(); }
+  pc.onconnectionstatechange = ()=>{
+    const s = pc.connectionState;
+    if(s==='connected'){
+      setStatus('Connected ✅  ·  '+nowStr());
+      startCallTimer();
+      startSignalMonitor(pc);
+    }
     else if(s==='failed'){
+      stopSignalMonitor();
       if(pc.restartIce) pc.restartIce();
       setStatus('Reconnecting…');
       setTimeout(()=>{ if(cd.pc&&(cd.pc.connectionState==='failed'||cd.pc.iceConnectionState==='failed')){ toast('❌ Connection failed','err'); endCall(); } },8000);
     }
     else if(s==='disconnected'){ setStatus('Reconnecting…'); }
   };
-  pc.oniceconnectionstatechange=()=>{
-    const s=pc.iceConnectionState;
-    if(s==='connected'||s==='completed'){ setStatus('Connected ✅  ·  '+nowStr()); startCallTimer(); }
+  pc.oniceconnectionstatechange = ()=>{
+    const s = pc.iceConnectionState;
+    if(s==='connected'||s==='completed'){ setStatus('Connected ✅  ·  '+nowStr()); startCallTimer(); startSignalMonitor(pc); }
     else if(s==='checking'){ setStatus('Connecting…'); }
   };
   return pc;
@@ -2769,7 +2959,7 @@ function mediaErr(e){
   else if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') msg='Mic/camera blocked — allow in browser settings';
   else if(e.name==='NotFoundError') msg='No microphone found';
   else if(e.name==='NotReadableError') msg='Mic/camera in use by another app';
-  else msg+=(e.message?': '+e.message:'');
+  else msg += (e.message ? ': '+e.message : '');
   toast('📞 '+msg,'err');
 }
 
@@ -2779,17 +2969,21 @@ async function startVideoCall(){ if(!currentFriendId){toast('Open a chat first',
 async function doCall(friend,type){
   if(cd.active){ toast(friend.username+' is busy','info'); return; }
   await unlockAudio();
+  _currentFacing='user'; _speakerOn=true;
+  const flipBtn=document.getElementById('flipBtn');
+  if(flipBtn) flipBtn.style.display=type==='video'?'flex':'none';
+  const spkBtn=document.getElementById('speakerBtn');
+  if(spkBtn){ spkBtn.classList.remove('active'); spkBtn.innerHTML='🔊'; }
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id; cd.calleeName=friend.username;
     const stream=await getMedia(type); cd.localStream=stream;
     if(type==='video'){
       const lv=document.getElementById('localVideo');
-      if(lv){ lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+      if(lv){ lv.srcObject=null; lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
     }
     const pc=makePc(friend.id);
     stream.getTracks().forEach(t=>{ if(!pc.getSenders().some(s=>s.track?.id===t.id)) pc.addTrack(t,stream); });
     let offer=await pc.createOffer({offerToReceiveAudio:true,offerToReceiveVideo:type==='video'});
-    // Inject Opus preference into SDP
     offer=new RTCSessionDescription({type:offer.type,sdp:preferOpus(offer.sdp)});
     await pc.setLocalDescription(offer);
     showCallModal(friend.username,'Calling…',type==='video');
@@ -2800,13 +2994,18 @@ async function doCall(friend,type){
 async function acceptCall(){
   await unlockAudio();
   hideIncomingCall();
+  _currentFacing='user'; _speakerOn=true;
+  const flipBtn=document.getElementById('flipBtn');
   const d=cd.incoming; if(!d){ cleanupCall(); return; }
+  if(flipBtn) flipBtn.style.display=d.call_type==='video'?'flex':'none';
+  const spkBtn=document.getElementById('speakerBtn');
+  if(spkBtn){ spkBtn.classList.remove('active'); spkBtn.innerHTML='🔊'; }
   try{
     cd.active=true; cd.type=d.call_type; cd.calleeId=d.caller_id; cd.calleeName=d.caller_name;
     const stream=await getMedia(d.call_type); cd.localStream=stream;
     if(d.call_type==='video'){
       const lv=document.getElementById('localVideo');
-      if(lv){ lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+      if(lv){ lv.srcObject=null; lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
     }
     const pc=makePc(d.caller_id);
     stream.getTracks().forEach(t=>{ if(!pc.getSenders().some(s=>s.track?.id===t.id)) pc.addTrack(t,stream); });
@@ -2823,26 +3022,104 @@ function toggleMute(){
   cd.muted=!cd.muted;
   const btn=document.getElementById('muteBtn');
   btn.classList.toggle('active',cd.muted);
-  btn.textContent=cd.muted?'🔇':'🎤';
-  if(cd.localStream)cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
+  btn.innerHTML=cd.muted?'🔇':'🎤';
+  if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
 }
 function toggleVideo(){
   cd.videoOff=!cd.videoOff;
   const btn=document.getElementById('videoBtn');
   btn.classList.toggle('active',cd.videoOff);
-  btn.textContent=cd.videoOff?'📵':'📹';
-  if(cd.localStream)cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
+  btn.innerHTML=cd.videoOff?'📵':'📹';
+  const lv=document.getElementById('localVideo');
+  const vc=document.getElementById('callVoiceCenter');
+  const vb=document.getElementById('callVoiceBg');
+  if(cd.localStream){
+    cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
+    // Show/hide local pip and voice bg
+    if(lv) lv.style.display=cd.videoOff?'none':'block';
+    if(vc) vc.style.display=cd.videoOff?'flex':'none';
+    if(vb) vb.style.display=cd.videoOff?'block':'none';
+  }
+}
+// ── Draggable PiP — mouse + touch ──
+(function(){
+  let dragging=false, ox=0, oy=0, startX=0, startY=0;
+  function pip(){ return document.getElementById('localVideo'); }
+
+  function onStart(cx,cy){
+    const el=pip(); if(!el||el.style.display==='none') return;
+    dragging=true;
+    const r=el.getBoundingClientRect();
+    ox=cx-r.left; oy=cy-r.top;
+    startX=cx; startY=cy;
+    el.style.transition='none';
+    el.style.cursor='grabbing';
+    el.style.right='auto'; el.style.bottom='auto';
+  }
+  function onMove(cx,cy){
+    if(!dragging) return;
+    const el=pip(); if(!el) return;
+    const vw=window.innerWidth, vh=window.innerHeight;
+    const w=el.offsetWidth, h=el.offsetHeight;
+    let x=cx-ox, y=cy-oy;
+    // Clamp within screen with 8px margin
+    x=Math.max(8, Math.min(x, vw-w-8));
+    y=Math.max(8, Math.min(y, vh-h-8));
+    el.style.left=x+'px'; el.style.top=y+'px';
+  }
+  function onEnd(cx,cy){
+    if(!dragging) return;
+    dragging=false;
+    const el=pip(); if(!el) return;
+    el.style.cursor='grab';
+    // Snap to nearest vertical edge
+    const vw=window.innerWidth;
+    const r=el.getBoundingClientRect();
+    const midX=r.left+r.width/2;
+    if(midX < vw/2){
+      el.style.left='8px'; el.style.right='auto';
+    } else {
+      el.style.right='8px'; el.style.left='auto';
+    }
+    el.style.transition='left .2s,right .2s,top .2s,bottom .2s';
+  }
+
+  document.addEventListener('mousedown',e=>{ if(e.target===pip()) onStart(e.clientX,e.clientY); });
+  document.addEventListener('mousemove',e=>{ if(dragging) onMove(e.clientX,e.clientY); });
+  document.addEventListener('mouseup',  e=>{ onEnd(e.clientX,e.clientY); });
+
+  document.addEventListener('touchstart',e=>{
+    if(e.target===pip()){ onStart(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); }
+  },{passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(dragging){ onMove(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); }
+  },{passive:false});
+  document.addEventListener('touchend',e=>{
+    if(dragging) onEnd(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+  });
+})();
+
+// Set initial PiP position (bottom-right, above dock)
+function pipInitPos(){
+  const lv=document.getElementById('localVideo');
+  if(!lv) return;
+  lv.style.right='16px';
+  lv.style.bottom='140px';
+  lv.style.left='auto';
+  lv.style.top='auto';
 }
 function endCall(){const tid=cd.calleeId||cd.callerId;const wasMissed=cd.active&&cd.duration===0;if(tid)socket.emit('call_end',{target_id:tid,was_missed:wasMissed});const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;cleanupCall();appendCallMsg(type,dur,startT,false);}
 function cleanupCall(){
   stopCallTimer();
-  // Tear down Web Audio node first
+  stopSignalMonitor();
+  _attachedStreamId=null;
   if(_remoteAudioNode){ try{_remoteAudioNode.disconnect();}catch(e){} _remoteAudioNode=null; }
   if(cd.localStream){ cd.localStream.getTracks().forEach(t=>t.stop()); cd.localStream=null; }
   if(cd.pc){ try{cd.pc.close();}catch(e){} cd.pc=null; }
   const ra=document.getElementById('remoteAudio'); if(ra){ ra.srcObject=null; ra.remove(); }
   const rv=document.getElementById('remoteVideo'); if(rv) rv.srcObject=null;
   const lv=document.getElementById('localVideo');  if(lv) lv.srcObject=null;
+  _currentFacing='user'; _speakerOn=true;
   hideCallModal(); hideIncomingCall(); resetCd();
 }
 function setupCallListeners(){
