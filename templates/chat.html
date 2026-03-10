@@ -1196,6 +1196,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 /* Group row: 👥 avatar should always show the icon clearly */
 .crow[data-gcid] .av { display:flex;align-items:center;justify-content:center;font-style:normal; }
+
+/* @mention dropdown */
+#mentionDropdown{position:absolute;bottom:70px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:6px;z-index:500;box-shadow:var(--shad);min-width:180px;max-height:220px;overflow-y:auto;display:none;}
+#mentionDropdown.show{display:block;}
+.mention-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--txt);}
+.mention-item:hover,.mention-item.active{background:var(--hov);}
+.mention-item .mav{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+/* @mention chip in messages */
+.mention{color:var(--brand);font-weight:700;background:rgba(124,106,255,.12);border-radius:5px;padding:1px 5px;}
+.mention.me{background:rgba(124,106,255,.22);}
 </style>
 </head>
 <body>
@@ -1494,18 +1504,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <div class="iarea">
     <input type="file" id="imgInp" accept="image/*" multiple style="display:none" onchange="handleImgInp(this)">
-    <button class="isb" onclick="toggleAttachMenu()" title="Attach" id="attachBtn">📎</button>
-    <div id="attachMenu" style="position:absolute;bottom:70px;left:10px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:8px;display:none;flex-direction:column;gap:6px;z-index:200;box-shadow:var(--shad);min-width:170px;">
-      <button onclick="pickFromGallery();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">🖼️ Gallery</button>
-      <button onclick="takePhoto();closeAttachMenu();" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:none;border:none;color:var(--txt);font-size:14px;cursor:pointer;border-radius:10px;width:100%;text-align:left;" onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background='none'">📷 Take Photo</button>
-    </div>
+    <button class="isb" onclick="pickFromGallery()" title="Photo / Video" id="attachBtn">🖼️</button>
+    <div id="attachMenu" style="display:none;"></div>
     <button class="isb rec-btn" id="recBtn" onclick="toggleRecording()" title="Record voice message">🎙️</button>
     <button class="isb" onclick="toggleEmoji()" title="Emoji">😊</button>
     <textarea id="msgInput" rows="1" placeholder="Type a message…"
-      oninput="autoR(this);doTyping();"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(editingMsgId){saveEdit();}else{sendMsg();}}"></textarea>
+      oninput="autoR(this);doTyping();handleMentionInput(event);"
+      onkeydown="handleMentionKeydown(event);if(!_mentionActive&&event.key==='Enter'&&!event.shiftKey){event.preventDefault();if(editingMsgId){saveEdit();}else{sendMsg();}}"></textarea>
     <button class="sndbtn" onclick="sendMsg()">➤</button>
   </div>
+<div id="mentionDropdown"></div>
 </main>
 
 
@@ -2655,6 +2663,7 @@ function closeAttachMenu(){
 }
 document.addEventListener('click',e=>{
   if(!e.target.closest('#attachBtn')&&!e.target.closest('#attachMenu'))closeAttachMenu();
+  if(!e.target.closest('#mentionDropdown')&&!e.target.closest('#msgInput'))closeMentionDropdown();
 });
 // ════════════════════════════════════════════
 // PHOTO SENDING — single or multi
@@ -3467,31 +3476,61 @@ function stopSignalMonitor(){
 
 // ── Camera flip ──
 let _currentFacing = 'user';
+// Sync _currentFacing from actual video track after getUserMedia
+function _syncFacingFromStream(stream) {
+  if (!stream) return;
+  const track = stream.getVideoTracks()[0];
+  if (!track) return;
+  try {
+    const settings = track.getSettings();
+    if (settings.facingMode) {
+      _currentFacing = settings.facingMode;
+    } else {
+      // Fallback: check track label
+      const lbl = track.label.toLowerCase();
+      if (lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment')) {
+        _currentFacing = 'environment';
+      } else {
+        _currentFacing = 'user';
+      }
+    }
+  } catch(e) { _currentFacing = 'user'; }
+}
 async function flipCamera(){
   if(!cd.localStream || cd.type!=='video') return;
   const btn = document.getElementById('flipBtn');
   if(btn){ btn.disabled=true; btn.style.opacity='.4'; }
   const nextFacing = _currentFacing==='user' ? 'environment' : 'user';
   try{
-    let deviceId = null;
+    // Strategy: first try facingMode constraint (most reliable on mobile)
+    // then fall back to enumerateDevices to find the other camera by deviceId
+    let newStream = null;
     try{
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(d=>d.kind==='videoinput');
-      const curTrack = cd.localStream.getVideoTracks()[0];
-      const curId    = curTrack ? curTrack.getSettings().deviceId : null;
-      for(const cam of cameras){
-        const lbl = cam.label.toLowerCase();
-        if(nextFacing==='environment' && (lbl.includes('back')||lbl.includes('rear')||lbl.includes('environment'))){ deviceId=cam.deviceId; break; }
-        if(nextFacing==='user'        && (lbl.includes('front')||lbl.includes('user')||lbl.includes('selfie')||lbl.includes('face'))){ deviceId=cam.deviceId; break; }
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: nextFacing }, width:{ideal:1280}, height:{ideal:720} },
+        audio: false
+      });
+    }catch(facingErr){
+      // exact facingMode failed — try ideal
+      try{
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: nextFacing } },
+          audio: false
+        });
+      }catch(idealErr){
+        // Last resort: pick a different deviceId
+        const devices  = await navigator.mediaDevices.enumerateDevices();
+        const cameras  = devices.filter(d => d.kind === 'videoinput');
+        const curTrack = cd.localStream.getVideoTracks()[0];
+        const curId    = curTrack ? curTrack.getSettings().deviceId : null;
+        const other    = cameras.find(d => d.deviceId !== curId);
+        if(!other) throw new Error('No second camera found');
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: other.deviceId } },
+          audio: false
+        });
       }
-      if(!deviceId && cameras.length>=2){
-        const other = cameras.find(d=>d.deviceId!==curId);
-        if(other) deviceId = other.deviceId;
-      }
-    }catch(e){}
-
-    const con = deviceId ? { deviceId:{exact:deviceId} } : { facingMode:{ideal:nextFacing} };
-    const newStream = await navigator.mediaDevices.getUserMedia({ video:con, audio:false });
+    }
     const newTrack  = newStream.getVideoTracks()[0];
     if(!newTrack) throw new Error('No video track');
 
@@ -3762,6 +3801,7 @@ async function doCall(friend, type){
 
     const stream = await getMedia(type);
     cd.localStream = stream;
+    if(type==='video') _syncFacingFromStream(stream);  // sync flip state
 
     if(type==='video'){
       const lv=document.getElementById('localVideo');
@@ -3806,6 +3846,7 @@ async function acceptCall(){
 
     const stream = await getMedia(d.call_type);
     cd.localStream = stream;
+    if(d.call_type==='video') _syncFacingFromStream(stream);  // sync flip state
 
     if(d.call_type==='video'){
       const lv=document.getElementById('localVideo');
@@ -4197,6 +4238,8 @@ async function loadFriends(){
 // ── Archive storage ──
 const archivedChats=new Set(JSON.parse(localStorage.getItem('hpz_archive')||'[]'));
 function saveArchive(){localStorage.setItem('hpz_archive',JSON.stringify([...archivedChats]));}
+const archivedGroups=new Set(JSON.parse(localStorage.getItem('hpz_g_archive')||'[]'));
+function saveGroupArchive(){localStorage.setItem('hpz_g_archive',JSON.stringify([...archivedGroups]));}
 
 // ── renderFriends: unified list of friends + groups, sorted by activity ──
 function renderFriends(){
@@ -4214,12 +4257,14 @@ function renderFriends(){
       data: f,
     }));
 
-  const groupItems = (groups || []).map(g => ({
-    type: 'group',
-    sortKey: g.last_message_time || g.created_at || '',
-    pinned: false,
-    data: g,
-  }));
+  const groupItems = (groups || [])
+    .filter(g => !archivedGroups.has(g.id))
+    .map(g => ({
+      type: 'group',
+      sortKey: g.last_message_time || g.created_at || '',
+      pinned: false,
+      data: g,
+    }));
 
   // Merge and sort: pinned first, then by last activity descending
   const all = [...friendItems, ...groupItems].sort((a, b) => {
@@ -4412,6 +4457,126 @@ function openChat(fid,fname,chatId){
 }
 
 function doTyping(){if(!currentChatId||!socket?.connected)return;socket.emit('typing_start',{chatId:currentChatId});clearTimeout(typingTimer);typingTimer=setTimeout(()=>socket.emit('typing_stop',{chatId:currentChatId}),2000);}
+
+// ══════════════════════════════════════════════════════════════════
+// @MENTION FEATURE — works in group chats
+// ══════════════════════════════════════════════════════════════════
+let _mentionActive = false;
+let _mentionStart  = -1;
+let _mentionIdx    = 0;
+let _mentionList   = [];
+
+function handleMentionInput(e) {
+  const inp  = document.getElementById('msgInput');
+  const val  = inp.value;
+  const pos  = inp.selectionStart;
+
+  // Find last @ before cursor
+  let atPos = -1;
+  for (let i = pos - 1; i >= 0; i--) {
+    if (val[i] === '@') { atPos = i; break; }
+    if (val[i] === ' ' || val[i] === '\n') break;
+  }
+
+  if (atPos === -1) { closeMentionDropdown(); return; }
+
+  const query = val.slice(atPos + 1, pos).toLowerCase();
+
+  // Only show for group chats
+  if (!currentGroupId) { closeMentionDropdown(); return; }
+
+  const g = groups.find(x => x.id === currentGroupId);
+  if (!g || !g._members) { closeMentionDropdown(); return; }
+
+  _mentionList = g._members
+    .filter(m => m.id !== ME_ID && m.username.toLowerCase().startsWith(query))
+    .slice(0, 6);
+
+  if (!_mentionList.length) { closeMentionDropdown(); return; }
+
+  _mentionActive = true;
+  _mentionStart  = atPos;
+  _mentionIdx    = 0;
+
+  const dd = document.getElementById('mentionDropdown');
+  dd.innerHTML = _mentionList.map((m, i) => `
+    <div class="mention-item${i===0?' active':''}" data-idx="${i}" onclick="insertMention(${i})">
+      <div class="mav">${m.username[0].toUpperCase()}</div>
+      <span>@${esc(m.username)}</span>
+    </div>
+  `).join('');
+  dd.classList.add('show');
+}
+
+function closeMentionDropdown() {
+  _mentionActive = false;
+  _mentionStart  = -1;
+  _mentionList   = [];
+  const dd = document.getElementById('mentionDropdown');
+  if (dd) { dd.classList.remove('show'); dd.innerHTML = ''; }
+}
+
+function insertMention(idx) {
+  const m   = _mentionList[idx];
+  if (!m)   return;
+  const inp = document.getElementById('msgInput');
+  const val = inp.value;
+  const pos = inp.selectionStart;
+  const before = val.slice(0, _mentionStart);
+  const after  = val.slice(pos);
+  inp.value = before + '@' + m.username + ' ' + after;
+  const newPos = (before + '@' + m.username + ' ').length;
+  inp.setSelectionRange(newPos, newPos);
+  inp.focus();
+  closeMentionDropdown();
+  autoR(inp);
+}
+
+function handleMentionKeydown(e) {
+  if (!_mentionActive) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _mentionIdx = (_mentionIdx + 1) % _mentionList.length;
+    _updateMentionHighlight();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _mentionIdx = (_mentionIdx - 1 + _mentionList.length) % _mentionList.length;
+    _updateMentionHighlight();
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    if (_mentionList.length) { e.preventDefault(); insertMention(_mentionIdx); }
+  } else if (e.key === 'Escape') {
+    closeMentionDropdown();
+  }
+}
+
+function _updateMentionHighlight() {
+  document.querySelectorAll('#mentionDropdown .mention-item').forEach((el, i) => {
+    el.classList.toggle('active', i === _mentionIdx);
+  });
+}
+
+// Cache group members when we open group info or open group chat
+async function _cacheGroupMembers(gid) {
+  if (!gid) return;
+  const g = groups.find(x => x.id === gid);
+  if (!g) return;
+  if (g._members) return; // already cached
+  try {
+    const r = await fetch('/api/groups/' + gid);
+    const d = await r.json();
+    if (d.success) g._members = d.group.members;
+  } catch(e) {}
+}
+
+// Render @mentions as highlighted chips in message bubbles
+function renderMentions(text) {
+  if (!text || !text.includes('@')) return esc(text);
+  // Replace @username with chip — check against group members + current user
+  return esc(text).replace(/@(\w+)/g, (match, name) => {
+    const isMe = name.toLowerCase() === ME_NAME.toLowerCase();
+    return `<span class="mention${isMe?' me':''}">${match}</span>`;
+  });
+}
 function showTyping(name){document.getElementById('tytxt').textContent=`${name} is typing`;document.getElementById('tybar').style.display='flex';}
 function hideTyping(){document.getElementById('tybar').style.display='none';}
 function beep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.value=880;g.gain.setValueAtTime(.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}catch(e){}}
@@ -4557,13 +4722,15 @@ function renderMobileChatList(){
     }));
 
   // Groups
-  const groupItems = (groups || []).map(g => ({
-    type: 'group',
-    sortKey: g.last_message_time || g.created_at || '',
-    pinned: false,
-    data: g,
-    unread: g.unread_count || 0,
-  }));
+  const groupItems = (groups || [])
+    .filter(g => !archivedGroups.has(g.id))
+    .map(g => ({
+      type: 'group',
+      sortKey: g.last_message_time || g.created_at || '',
+      pinned: false,
+      data: g,
+      unread: g.unread_count || 0,
+    }));
 
   let all = [...friendItems, ...groupItems];
 
@@ -4613,7 +4780,8 @@ function openCrowCtxAt(x,y,fid){
     <div class="crow-ctx-item" onclick="crowCtxDo('archive')">${isArchived?'📤 Unarchive':'🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxDo('profile')">👤 View Profile</div>
-  `;
+    <div class="crow-ctx-item danger" onclick="crowCtxDo('delete-conv')">🗑️ Delete Conversation</div>
+  \`;
   const mx=Math.min(x,window.innerWidth-195);
   const my=Math.min(y,window.innerHeight-160);
   menu.style.left=mx+'px';
@@ -4638,19 +4806,40 @@ function crowCtxDo(action){
     togglePinChat(cid);
   }
   else if(action==='profile'){currentFriendId=fid;showFriendProfile();}
+  else if(action==='delete-conv'){ confirmDeleteConversation(f.chat_id, f.id); }
 }
 
 // ════════════════════════════════════════════════════
 // ADDED: Conversation 3-line menu (inside open chat)
 // ════════════════════════════════════════════════════
 function openConv3Menu(e){
+  const btn=document.getElementById('conv3Btn');
+  const rect=btn.getBoundingClientRect();
+  const menu=document.getElementById('crowCtx');
+  // Group chat: show group-specific menu
+  if(currentGroupId){
+    const g=groups.find(x=>x.id===currentGroupId);
+    const isGA=g&&archivedGroups.has(currentGroupId);
+    menu.innerHTML=`
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('group-info')">ℹ️ Group Info</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('schedule')">⏳ Schedule Message</div>
+      <div class="crow-ctx-sep"></div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('archive-group')">${isGA?'📤 Unarchive Group':'🗄️ Archive Group'}</div>
+      <div class="crow-ctx-sep"></div>
+      <div class="crow-ctx-item danger" onclick="crowCtxConvDo('delete-conv')">🗑️ Clear Messages</div>
+    `;
+    menu.style.left=Math.min(rect.right-180,window.innerWidth-195)+'px';
+    menu.style.top=(rect.bottom+6)+'px';
+    menu.classList.add('show');
+    setTimeout(()=>document.addEventListener('click',closeCrowCtx,{once:true}),10);
+    return;
+  }
   if(!currentFriendId)return;
   const f=friends.find(x=>x.id===currentFriendId);
   const isArchived=f&&archivedChats.has(currentFriendId);
   const isPinned=currentChatId&&pinnedChatIds.has(currentChatId);
-  const btn=document.getElementById('conv3Btn');
-  const rect=btn.getBoundingClientRect();
-  const menu=document.getElementById('crowCtx');
   menu.innerHTML=`
     <div class="crow-ctx-item" onclick="crowCtxConvDo('profile')">👤 View Profile</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
@@ -4659,7 +4848,9 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('pin-chat')">${isPinned?'📌 Unpin Chat':'📌 Pin Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
-  `;
+    <div class="crow-ctx-sep"></div>
+    <div class="crow-ctx-item danger" onclick="crowCtxConvDo('delete-conv')">🗑️ Delete Conversation</div>
+  \`;
   // Position below the button, aligned to right edge
   const mx=Math.min(rect.right-180,window.innerWidth-195);
   const my=rect.bottom+6;
@@ -4682,11 +4873,73 @@ function crowCtxConvDo(action){
     saveArchive();renderFriends();
     if(window.innerWidth<=720&&archivedChats.has(currentFriendId))goBackToList();
   }
+  else if(action==='delete-conv'){
+    if(!currentChatId)return;
+    confirmDeleteConversation(currentChatId, currentFriendId);
+  }
+  else if(action==='group-info'){
+    if(currentGroupId)openGroupInfo(currentGroupId);
+  }
+  else if(action==='archive-group'){
+    if(!currentGroupId)return;
+    if(archivedGroups.has(currentGroupId)){
+      archivedGroups.delete(currentGroupId);
+      toast('Group unarchived','ok');
+    } else {
+      archivedGroups.add(currentGroupId);
+      toast('Group archived 🗄️','ok');
+      if(window.innerWidth<=720)goBackToList();
+    }
+    saveGroupArchive();
+    renderFriends();
+  }
 }
 
 // ════════════════════════════════════════════════════
 // ADDED: Archive page (opened from Settings)
 // ════════════════════════════════════════════════════
+// ── Delete entire conversation ──
+async function confirmDeleteConversation(chatId, fid) {
+  if (!chatId) return;
+  const isGroup = chatId.startsWith('group-');
+  const msg = isGroup
+    ? 'Clear all messages in this group? (Admins only)'
+    : 'Delete this entire conversation for you? Messages you sent will be removed for everyone.';
+  if (!confirm(msg)) return;
+  try {
+    const r = await fetch('/api/conversations/' + chatId + '/clear', { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) {
+      toast('Conversation deleted 🗑️', 'ok');
+      // Clear the message area if we're currently in that chat
+      if (currentChatId === chatId) {
+        document.getElementById('marea').innerHTML = '';
+      }
+      // Update friend's last_message preview to empty
+      if (fid) {
+        const f = friends.find(x => x.id === fid);
+        if (f) { f.last_message = ''; f.last_message_time = ''; }
+      }
+      renderFriends();
+    } else {
+      toast(d.error || 'Failed to delete', 'err');
+    }
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+// Socket: when conversation is cleared by the other side
+socket && socket.on('conversation_cleared', data => {
+  if (currentChatId === data.chat_id) {
+    document.getElementById('marea').innerHTML = '';
+    toast('Conversation was cleared', 'info');
+  }
+  const parts = data.chat_id.split('-').map(Number);
+  const fid = parts[0] === ME_ID ? parts[1] : parts[0];
+  const f = friends.find(x => x.id === fid);
+  if (f) { f.last_message = ''; f.last_message_time = ''; }
+  renderFriends();
+});
+
 function openArchivePage(){
   renderArchivePage();
   document.getElementById('archivePage').classList.add('show');
@@ -6624,6 +6877,8 @@ function openGroupChat(g) {
   // ── Re-render list so active state + unread clear ──
   renderFriends();
 
+  // ── Cache members for @mention ──
+  _cacheGroupMembers(g.id);
   // ── Load messages ──
   loadMsgs(g.chat_id);
   if (socket) {
