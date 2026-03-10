@@ -1595,6 +1595,44 @@ def delete_group(gid):
         db.session.rollback()
         return jsonify({'success':False,'error':str(e)}),500
 
+
+@app.route('/api/groups/<int:gid>/remove_member', methods=['POST'])
+@login_required
+def remove_member(gid):
+    user_id = int(session['user_id'])
+    g = Group.query.get(gid)
+    if not g:
+        return jsonify({'success': False, 'error': 'Group not found'}), 404
+    admin = GroupMember.query.filter_by(group_id=gid, user_id=user_id).first()
+    if not admin or admin.role != 'admin':
+        return jsonify({'success': False, 'error': 'Only admins can remove members'}), 403
+    data = request.get_json()
+    target_id = data.get('user_id')
+    if not target_id:
+        return jsonify({'success': False, 'error': 'user_id required'}), 400
+    if target_id == user_id:
+        return jsonify({'success': False, 'error': 'Use leave to remove yourself'}), 400
+    target = GroupMember.query.filter_by(group_id=gid, user_id=target_id).first()
+    if not target:
+        return jsonify({'success': False, 'error': 'User is not a member'}), 404
+    try:
+        db.session.delete(target)
+        db.session.commit()
+        # Notify removed user
+        if target_id in online_users:
+            sid = online_users[target_id]['sid']
+            socketio.emit('removed_from_group', {'group_id': gid, 'name': g.name}, room=sid)
+        # Notify all remaining members
+        socketio.emit('group_member_removed', {
+            'group_id': gid,
+            'chat_id': g.chat_id,
+            'user_id': target_id
+        }, room=g.chat_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/groups/<int:gid>/rename', methods=['PUT'])
 @login_required
 def rename_group(gid):
