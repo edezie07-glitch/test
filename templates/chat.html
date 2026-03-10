@@ -4120,21 +4120,23 @@ function hideDelSheet(){
 }
 async function doDeleteForMe(){
   if(!sheetDeleteId) return;
+  const msgId = sheetDeleteId;  // capture before hideDelSheet nulls it
   hideDelSheet();
   try{
-    const r=await fetch(`/api/messages/${sheetDeleteId}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({for_everyone:false})});
+    const r=await fetch(`/api/messages/${msgId}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({for_everyone:false})});
     const d=await r.json();
     if(d.success){
-      const el=document.querySelector(`[data-msg-id="${sheetDeleteId}"]`);
+      const el=document.querySelector(`[data-msg-id="${msgId}"]`);
       if(el)el.remove();
     } else toast(d.error||'Failed','err');
   }catch(e){toast('Failed','err');}
 }
 async function doDeleteForEveryone(){
   if(!sheetDeleteId) return;
+  const msgId = sheetDeleteId;  // capture before hideDelSheet nulls it
   hideDelSheet();
   try{
-    const r=await fetch(`/api/messages/${sheetDeleteId}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({for_everyone:true})});
+    const r=await fetch(`/api/messages/${msgId}/delete`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({for_everyone:true})});
     const d=await r.json();
     if(!d.success)toast(d.error||'Failed','err');
   }catch(e){toast('Failed','err');}
