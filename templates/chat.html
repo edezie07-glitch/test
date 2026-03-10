@@ -1193,6 +1193,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* Group creation: checked friend row highlight */
 .cg-friend-row.cg-checked{background:rgba(124,106,255,.1);border-color:rgba(124,106,255,.3);}
 .cg-friend-row.cg-checked .cg-friend-name{color:var(--brand);font-weight:600;}
+
+/* Group row: 👥 avatar should always show the icon clearly */
+.crow[data-gcid] .av { display:flex;align-items:center;justify-content:center;font-style:normal; }
 </style>
 </head>
 <body>
@@ -1276,14 +1279,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div style="font-size:12px;">Search for friends above to start chatting</div>
     </div>
   </div>
-  <!-- Mobile Groups Section -->
-  <div id="clpGroupSection" style="display:none;border-top:1px solid var(--bdr);">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;">
-      <span style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;">Groups</span>
-      <button class="new-group-btn" onclick="openCreateGroup()" title="New Group" style="width:26px;height:26px;font-size:14px;">+</button>
-    </div>
-    <div id="clpGroupList"></div>
-  </div>
+  <!-- clpGroupSection removed — groups merged into clpBody -->
+  <div id="clpGroupSection" style="display:none;"></div>
+  <div id="clpGroupList" style="display:none;"></div>
 </div>
 <!-- ADDED: Archive page (full screen, opened from settings) -->
 <div class="archive-page" id="archivePage">
@@ -1334,14 +1332,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="llabel" style="display:flex;align-items:center;justify-content:space-between;"><span>Conversations</span></div>
     <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
   </div>
-  <!-- Group list in sidebar -->
-  <div id="groupSection" style="display:none;border-top:1px solid var(--bdr);margin-top:4px;">
-    <div class="llabel" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 4px;">
-      <span>Groups</span>
-      <button class="new-group-btn" onclick="openCreateGroup()" title="New Group" style="width:24px;height:24px;font-size:14px;">+</button>
-    </div>
-    <div id="groupList"></div>
-  </div>
+  <!-- groupSection removed — groups merged into main clist -->
+  <div id="groupSection" style="display:none;"></div>
 <!-- MAIN -->
 <main class="main" id="mainChat">
   <div class="chdr">
@@ -1349,11 +1341,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="back-btn" id="backBtn" onclick="goBackToList()" aria-label="Back">‹</button>
     <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
     <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
-      <div class="chdr-nm" id="chnm">HPZ Messenger</div>
-      <div class="chdr-sub" id="chsub">Select a conversation</div>
+      <div class="chdr-nm" id="chnm"></div>
+      <div class="chdr-sub" id="chsub"></div>
     </div>
     <div class="chdr-actions">
-      <button class="chdr-btn" id="gsearchBtn" onclick="openGlobalSearch()" title="Search all chats">🔎</button>
       <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
       <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
       <!-- Search is accessible via ☰ menu -->
@@ -1374,11 +1365,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <span class="pin-text" id="pinnedText">1 pinned message</span>
   </div>
   <div class="marea" id="marea">
-    <div class="ces" id="welcomeScreen">
-      <div class="big">💬</div>
-      <h3>Welcome to HPZ</h3>
-      <p>Select a conversation from the sidebar to start chatting</p>
-    </div>
+    <div class="ces" id="welcomeScreen" style="display:none;"></div>
   </div>
   <div class="tybar" id="tybar" style="display:none;">
     <div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>
@@ -2454,7 +2441,7 @@ function connectSocket(){
         if(msg.sender_id!==ME_ID&&currentGroupChatId!==msg.chat_id){
           g.unread_count=(g.unread_count||0)+1;
         }
-        renderGroups();
+        renderFriends(); // re-sort unified list
       }
       return; // don't call updatePrev/updateUnreadBadge for groups
     }
@@ -4210,34 +4197,44 @@ async function loadFriends(){
 const archivedChats=new Set(JSON.parse(localStorage.getItem('hpz_archive')||'[]'));
 function saveArchive(){localStorage.setItem('hpz_archive',JSON.stringify([...archivedChats]));}
 
-// ── renderFriends: desktop sidebar + mobile chat list ──
+// ── renderFriends: unified list of friends + groups, sorted by activity ──
 function renderFriends(){
-  // Desktop sidebar — pinned chats at top
-  const list=document.getElementById('clist');
-  const empty=document.getElementById('cempty');
-  list.querySelectorAll('.crow').forEach(e=>e.remove());
-  let visibleFriends=friends.filter(f=>!archivedChats.has(f.id));
-  // Sort: pinned first, then by last message time
-  visibleFriends.sort((a,b)=>{
-    const aCid=a.chat_id||[Math.min(a.id,ME_ID),Math.max(a.id,ME_ID)].join('-');
-    const bCid=b.chat_id||[Math.min(b.id,ME_ID),Math.max(b.id,ME_ID)].join('-');
-    const aPin=pinnedChatIds&&pinnedChatIds.has(aCid)?1:0;
-    const bPin=pinnedChatIds&&pinnedChatIds.has(bCid)?1:0;
-    if(bPin!==aPin)return bPin-aPin;
-    return 0; // keep server order otherwise
+  const list  = document.getElementById('clist');
+  const empty = document.getElementById('cempty');
+  list.querySelectorAll('.crow').forEach(e => e.remove());
+
+  // Build unified items array: friends + groups
+  const friendItems = friends
+    .filter(f => !archivedChats.has(f.id))
+    .map(f => ({
+      type: 'friend',
+      sortKey: f.last_message_time || '',
+      pinned: pinnedChatIds.has(f.chat_id || [Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-')),
+      data: f,
+    }));
+
+  const groupItems = (groups || []).map(g => ({
+    type: 'group',
+    sortKey: g.last_message_time || g.created_at || '',
+    pinned: false,
+    data: g,
+  }));
+
+  // Merge and sort: pinned first, then by last activity descending
+  const all = [...friendItems, ...groupItems].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.sortKey.localeCompare(a.sortKey);
   });
-  // Sort: pinned first
-  visibleFriends.sort((a,b)=>{
-    const ap=pinnedChatIds.has(a.chat_id||'')?0:1;
-    const bp=pinnedChatIds.has(b.chat_id||'')?0:1;
-    return ap-bp;
-  });
-  if(!visibleFriends.length){empty.style.display='';}
-  else{
-    empty.style.display='none';
-    visibleFriends.forEach(f=>{
-      const el=buildCrowEl(f);
-      if(pinnedChatIds.has(f.chat_id||''))el.classList.add('pinned-chat');
+
+  if (!all.length) {
+    empty.style.display = '';
+  } else {
+    empty.style.display = 'none';
+    all.forEach(item => {
+      const el = item.type === 'friend'
+        ? buildCrowEl(item.data)
+        : buildGroupRow(item.data);
+      if (item.pinned) el.classList.add('pinned-chat');
       list.appendChild(el);
     });
   }
@@ -4335,6 +4332,7 @@ function sortAndRenderList(){
     const at=a.last_message_time||'', bt=b.last_message_time||'';
     return bt.localeCompare(at);
   });
+  // Groups are sorted inside renderFriends() at render time
   renderFriends();
 }
 
@@ -4382,7 +4380,12 @@ async function quickAccept(userId){let rq=pendingReqs.find(r=>r.user_id===userId
 function openChat(fid,fname,chatId){
   if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
   currentChatId=chatId;currentFriendId=fid;
-  document.getElementById('chav').textContent=fname[0].toUpperCase();
+  currentGroupId=null;currentGroupChatId=null;  // clear group state
+  const chav=document.getElementById('chav');
+  chav.textContent=fname[0].toUpperCase();
+  chav.style.background='';  // use CSS default
+  chav.style.fontSize='';
+  chav.onclick=showFriendProfile;  // restore friend profile click
   document.getElementById('chnm').textContent=fname;
   const isOnline=onlineUsers.has(fid);
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
@@ -4525,7 +4528,8 @@ function goBackToList(){
   main.classList.remove('chat-open');
   main.style.display='none';
   document.getElementById('chatListPage').style.display='flex';
-  currentChatId=null;currentFriendId=null;
+  currentChatId=null; currentFriendId=null;
+  currentGroupId=null; currentGroupChatId=null;
   renderMobileChatList();
 }
 
@@ -4534,16 +4538,52 @@ function goBackToList(){
 // ════════════════════════════════════════════════════
 let currentTab='all';
 function renderMobileChatList(){
-  if(window.innerWidth>720)return;
-  const body=document.getElementById('clpBody');
-  const empty=document.getElementById('clpEmpty');
-  if(!body)return;
-  body.querySelectorAll('.crow').forEach(e=>e.remove());
-  let list=friends.filter(f=>!archivedChats.has(f.id));
-  if(currentTab==='unread')list=list.filter(f=>(unreadCounts[f.id]||0)+(f.unread_count||0)>0);
-  if(!list.length){empty.style.display='';return;}
-  empty.style.display='none';
-  list.forEach(f=>body.appendChild(buildCrowEl(f)));
+  if(window.innerWidth > 720) return;
+  const body  = document.getElementById('clpBody');
+  const empty = document.getElementById('clpEmpty');
+  if (!body) return;
+  body.querySelectorAll('.crow').forEach(e => e.remove());
+
+  // Friends
+  let friendItems = friends
+    .filter(f => !archivedChats.has(f.id))
+    .map(f => ({
+      type: 'friend',
+      sortKey: f.last_message_time || '',
+      pinned: pinnedChatIds.has(f.chat_id || [Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-')),
+      data: f,
+      unread: (unreadCounts[f.id]||0) + (f.unread_count||0),
+    }));
+
+  // Groups
+  const groupItems = (groups || []).map(g => ({
+    type: 'group',
+    sortKey: g.last_message_time || g.created_at || '',
+    pinned: false,
+    data: g,
+    unread: g.unread_count || 0,
+  }));
+
+  let all = [...friendItems, ...groupItems];
+
+  // Filter to unread only if that tab is active
+  if (currentTab === 'unread') all = all.filter(x => x.unread > 0);
+
+  // Sort: pinned first, then by last activity descending
+  all.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.sortKey.localeCompare(a.sortKey);
+  });
+
+  if (!all.length) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  all.forEach(item => {
+    const el = item.type === 'friend'
+      ? buildCrowEl(item.data)
+      : buildGroupRow(item.data);
+    if (item.pinned) el.classList.add('pinned-chat');
+    body.appendChild(el);
+  });
 }
 function switchTab(tab){
   currentTab=tab;
@@ -6471,35 +6511,23 @@ async function loadGroups() {
     const d = await r.json();
     if (!d.success) return;
     groups = d.groups;
-    renderGroups();
+    renderFriends();  // merged render — no separate group list
   } catch(e) {}
 }
 
-// ── Render groups in the sidebar and mobile chat list ──
+// ── renderGroups: merges groups into the unified chat list ──
+// Called after loadGroups() — triggers a full re-render of all chats
 function renderGroups() {
-  // Desktop: inject into sidebar after friends list
-  const container = document.getElementById('groupSection');
-  if (!container) return;
-  if (!groups.length) {
-    container.style.display = 'none';
-    return;
-  }
-  container.style.display = 'block';
-  const list = document.getElementById('groupList');
-  if (!list) return;
-  list.innerHTML = '';
-  groups.forEach(g => {
-    const el = buildGroupRow(g);
-    list.appendChild(el);
-  });
-  renderGroupsMobile();
+  // No separate section — groups are merged into renderFriends()
+  renderFriends();
 }
 
+// ── Build a group crow element (same style as friend rows) ──
 function buildGroupRow(g) {
-  const uCount = g.unread_count || 0;
+  const uCount   = g.unread_count || 0;
   const isActive = currentGroupChatId === g.chat_id;
-  const el = document.createElement('div');
-  el.className = 'crow' + (isActive ? ' active' : '');
+  const el       = document.createElement('div');
+  el.className   = 'crow' + (isActive ? ' active' : '');
   el.setAttribute('data-gcid', g.chat_id);
 
   // Expiry badge for event groups
@@ -6507,29 +6535,27 @@ function buildGroupRow(g) {
   if (g.is_temporary && g.expires_at) {
     const left = new Date(g.expires_at) - Date.now();
     if (left > 0) {
-      const hrs  = Math.floor(left / 3600000);
+      const hrs = Math.floor(left / 3600000);
       const mins = Math.floor((left % 3600000) / 60000);
-      const txt  = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
-      expBadge = `<span style="font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;border-radius:6px;padding:1px 6px;margin-left:5px;font-weight:600;">⏱ ${txt}</span>`;
+      expBadge = `<span style="font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;border-radius:6px;padding:1px 6px;margin-left:5px;font-weight:600;">⏱ ${hrs>0?hrs+'h ':''} ${mins}m</span>`;
     } else {
-      expBadge = `<span style="font-size:10px;color:#ef4444;margin-left:5px;">⏱ Expired</span>`;
+      expBadge = `<span style="font-size:10px;color:#ef4444;margin-left:5px;font-size:10px;">⏱ Expired</span>`;
     }
   }
 
+  const lastTime = g.last_message_time || g.created_at || '';
+  const preview  = g.last_message || (g.member_count + ' member' + (g.member_count===1?'':'s'));
+
   el.innerHTML = `
-    <div class="av" style="background:${g.avatar_color};font-size:16px;position:relative;">
-      👥
-    </div>
+    <div class="av" style="background:${g.avatar_color};font-size:17px;flex-shrink:0;">👥</div>
     <div class="cmeta">
       <div class="cnrow">
         <span class="cuname">${esc(g.name)}${expBadge}</span>
-        ${g.last_message_time ? `<span class="cts">${relTime(g.last_message_time)}</span>` : ''}
+        ${lastTime ? `<span class="cts">${relTime(lastTime)}</span>` : ''}
       </div>
-      <div class="cprev" style="color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-        ${g.last_message ? esc(g.last_message) : (g.member_count + ' members')}
-      </div>
+      <div class="cprev">${esc(preview)}</div>
     </div>
-    <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;margin-right:8px;">${uCount > 99 ? '99+' : uCount}</span>
+    <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;margin-right:8px;">${uCount>99?'99+':uCount}</span>
     <button class="crow-menu-btn" title="Group info">⋯</button>
   `;
   el.querySelector('.crow-menu-btn').addEventListener('click', e => {
@@ -6540,67 +6566,74 @@ function buildGroupRow(g) {
     if (e.target.closest('.crow-menu-btn')) return;
     openGroupChat(g);
   });
+  // Long press on mobile
+  let pt;
+  el.addEventListener('touchstart', e => {
+    if (e.target.closest('.crow-menu-btn')) return;
+    pt = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(40); openGroupInfo(g.id); }, 500);
+  }, { passive: true });
+  el.addEventListener('touchend',  () => clearTimeout(pt));
+  el.addEventListener('touchmove', () => clearTimeout(pt));
   return el;
 }
 
-function renderGroupsMobile() {
-  const body = document.getElementById('clpGroupList');
-  if (!body || window.innerWidth > 720) return;
-  body.innerHTML = '';
-  if (!groups.length) {
-    document.getElementById('clpGroupSection').style.display = 'none';
-    return;
-  }
-  document.getElementById('clpGroupSection').style.display = 'block';
-  groups.forEach(g => body.appendChild(buildGroupRow(g)));
-}
+// Legacy stub — no longer needed (groups merged into clist)
+function renderGroupsMobile() {}
 
-// ── Open a group chat ──
+// ── Open a group chat — same pattern as openChat() ──
 function openGroupChat(g) {
   currentGroupChatId = g.chat_id;
-  currentGroupId = g.id;
-  currentChatId = g.chat_id;
-  currentFriendId = null; // clear 1-on-1
+  currentGroupId     = g.id;
+  currentChatId      = g.chat_id;
+  currentFriendId    = null;  // clear 1-on-1 state
 
-  // Update header
-  document.getElementById('chav').textContent = '👥';
-  document.getElementById('chav').style.background = g.avatar_color || 'var(--brand)';
-  document.getElementById('chnm').textContent = g.name;
-  document.getElementById('chsub').textContent = g.member_count + ' members';
-  document.getElementById('chsub').classList.remove('online');
+  // ── Header ──
+  const chav = document.getElementById('chav');
+  chav.textContent       = '👥';
+  chav.style.background  = g.avatar_color || 'var(--brand)';
+  chav.style.fontSize    = '20px';
+  chav.style.cursor      = 'pointer';
+  chav.onclick           = () => openGroupInfo(g.id);
+  document.getElementById('chnm').textContent   = g.name;
+  const sub = document.getElementById('chsub');
+  sub.textContent = g.member_count + ' member' + (g.member_count === 1 ? '' : 's');
+  sub.className   = 'chdr-sub';  // no online class
 
-  // Hide call buttons (groups don't have calls), show info
-  ['videoCallBtn','voiceCallBtn'].forEach(id => {
+  // ── Buttons: hide calls, show group info via ☰ ──
+  ['videoCallBtn', 'voiceCallBtn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  ['pinnedBtn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'block';
-  });
-  // Repurpose conv3Btn for group info
+  const pinnedBtn = document.getElementById('pinnedBtn');
+  if (pinnedBtn) pinnedBtn.style.display = 'block';
+
   const c3 = document.getElementById('conv3Btn');
-  if (c3) { c3.style.display = 'block'; c3.onclick = () => openGroupInfo(g.id); }
-
-  document.querySelector('.iarea').style.display = 'flex';
-
-  // Load messages
-  loadMsgs(g.chat_id);
-  if (socket) {
-    socket.emit('join_chat', { chat_id: g.chat_id });
-    socket.emit('mark_all_read', { chat_id: g.chat_id });
+  if (c3) {
+    c3.style.display = 'block';
+    c3.onclick = (e) => { e.stopPropagation(); openGroupInfo(g.id); };
   }
 
-  // Clear unread
-  const el = document.querySelector(`[data-gcid="${g.chat_id}"] .unread-badge`);
-  if (el) { el.style.display = 'none'; }
-  // Update group unread in memory
+  // ── Show input area ──
+  document.querySelector('.iarea').style.display = 'flex';
+
+  // ── Clear unread in memory + UI ──
   const gObj = groups.find(x => x.chat_id === g.chat_id);
   if (gObj) gObj.unread_count = 0;
 
-  renderGroups();
+  // ── Re-render list so active state + unread clear ──
+  renderFriends();
 
-  // Mobile: switch view
+  // ── Load messages ──
+  loadMsgs(g.chat_id);
+  if (socket) {
+    socket.emit('join_chat',      { chat_id: g.chat_id });
+    socket.emit('mark_all_read',  { chat_id: g.chat_id });
+  }
+
+  // ── Clear search ──
+  clearSearch();
+
+  // ── Mobile: slide to chat view ──
   if (window.innerWidth <= 720) {
     document.getElementById('chatListPage').style.display = 'none';
     const main = document.getElementById('mainChat');
@@ -6624,17 +6657,17 @@ socket && socket.on('group_deleted', data => {
   groups = groups.filter(x => x.id !== data.group_id);
   if (currentGroupId === data.group_id) {
     currentGroupId = null; currentGroupChatId = null; currentChatId = null;
-    document.getElementById('chnm').textContent = 'Hepozy';
+    currentFriendId = null;
+    document.getElementById('chnm').textContent = '';
     document.getElementById('chsub').textContent = '';
     document.querySelector('.iarea').style.display = 'none';
     if (window.innerWidth <= 720) goBackToList();
   }
-  renderGroups();
+  renderFriends();
 });
 socket && socket.on('group_updated', data => {
   const g = groups.find(x => x.id === data.group_id);
-  if (g) { g.name = data.name; g.description = data.description; renderGroups(); }
-  // Update header if currently in this group
+  if (g) { g.name = data.name; g.description = data.description; renderFriends(); }
   if (currentGroupId === data.group_id) {
     document.getElementById('chnm').textContent = data.name;
   }
@@ -6729,12 +6762,13 @@ async function leaveGroup() {
       groups = groups.filter(x => x.id !== gid);
       if (currentGroupId === gid) {
         currentGroupId = null; currentGroupChatId = null; currentChatId = null;
-        document.getElementById('chnm').textContent = 'Hepozy';
+        currentFriendId = null;
+        document.getElementById('chnm').textContent = '';
         document.getElementById('chsub').textContent = '';
         document.querySelector('.iarea').style.display = 'none';
         if (window.innerWidth <= 720) goBackToList();
       }
-      renderGroups();
+      renderFriends();
     } else { toast(d.error || 'Failed', 'err'); }
   } catch(e) { toast('Failed', 'err'); }
 }
@@ -6752,12 +6786,13 @@ async function deleteGroup() {
       groups = groups.filter(x => x.id !== gid);
       if (currentGroupId === gid) {
         currentGroupId = null; currentGroupChatId = null; currentChatId = null;
-        document.getElementById('chnm').textContent = 'Hepozy';
+        currentFriendId = null;
+        document.getElementById('chnm').textContent = '';
         document.getElementById('chsub').textContent = '';
         document.querySelector('.iarea').style.display = 'none';
         if (window.innerWidth <= 720) goBackToList();
       }
-      renderGroups();
+      renderFriends();
     } else { toast(d.error || 'Failed', 'err'); }
   } catch(e) { toast('Failed', 'err'); }
 }
@@ -6953,10 +6988,10 @@ async function submitCreateGroup() {
     if (d.success) {
       toast('Group "' + name + '" created! 🎉', 'ok');
       closeCreateGroup();
-      await loadGroups();
-      // Auto-open the new group
+      await loadGroups();  // reloads groups[] and calls renderFriends()
+      // Auto-open the new group immediately
       const g = groups.find(x => x.id === d.group.id);
-      if (g) openGroupChat(g);
+      if (g) setTimeout(() => openGroupChat(g), 80);  // tiny delay so DOM renders first
     } else {
       toast(d.error || 'Failed to create group', 'err');
     }
@@ -6967,8 +7002,8 @@ async function submitCreateGroup() {
 // ── Load groups on init + refresh expiry countdowns every minute ──
 loadGroups();
 setInterval(() => {
-  // Re-render group list to update expiry countdowns without full server fetch
-  if (groups.length) renderGroups();
+  // Re-render unified list to update expiry badges without server fetch
+  if (groups.length) renderFriends();
 }, 60000);
 
 </script>
