@@ -989,6 +989,210 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;
 }
 
+
+/* ── Mood Warning Sheet ─────────────────────────────────────── */
+#moodSheet{position:fixed;bottom:0;left:0;right:0;background:var(--card);
+  border-radius:20px 20px 0 0;padding:22px 20px 28px;z-index:3000;
+  box-shadow:0 -6px 32px rgba(0,0,0,.22);transform:translateY(100%);
+  transition:transform .28s cubic-bezier(.4,0,0,1);max-width:540px;margin:0 auto;}
+#moodSheet.show{transform:translateY(0);}
+.mood-title{font-size:17px;font-weight:700;color:var(--txt);margin-bottom:6px;}
+.mood-sub{font-size:13px;color:var(--mute);margin-bottom:16px;line-height:1.5;}
+.mood-preview{background:rgba(239,68,68,.08);border-left:3px solid #ef4444;
+  border-radius:0 8px 8px 0;padding:10px 12px;font-size:13px;color:var(--txt);
+  margin-bottom:16px;white-space:pre-wrap;word-break:break-word;}
+.mood-btns{display:flex;gap:10px;}
+.mood-btn{flex:1;padding:11px;border-radius:12px;border:none;font-size:14px;
+  font-weight:600;cursor:pointer;transition:opacity .15s;}
+.mood-btn.send{background:var(--brand);color:#fff;}
+.mood-btn.edit{background:var(--hov);color:var(--txt);}
+
+/* ── Time Capsule Sheet ──────────────────────────────────────── */
+/* ═══ MOOD WARNING SHEET ═══ */
+#moodWarnSheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);
+  border-radius:24px 24px 0 0;
+  padding:22px 20px 36px;
+  z-index:3100;
+  text-align:center;
+  transform:translateY(110%);
+  transition:transform .32s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 -8px 40px rgba(0,0,0,.4);
+  max-width:540px;margin:0 auto;
+}
+#moodWarnSheet.show{transform:translateY(0);}
+#moodBackdrop{ z-index:3099; }
+
+/* fading banner CSS below */
+
+/* ═══ GROUP SECTION IN SIDEBAR ═══ */
+#groupSection .llabel{font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;}
+
+/* Time capsule message bubble */
+.bub.capsule-msg{border-left:3px solid var(--brand) !important;}
+.bub.capsule-msg::before{content:'⏳ ';font-size:11px;opacity:.7;}
+
+/* Capsule sheet improvements */
+#capsuleSheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--card);
+  border-radius:20px 20px 0 0;
+  padding:20px 20px 32px;
+  z-index:3000;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.4,0,0,1);
+  box-shadow:0 -8px 32px rgba(0,0,0,.35);
+  max-height:90vh;
+  overflow-y:auto;
+}
+#capsuleSheet.show{transform:translateY(0);}
+
+
+.capsule-title{font-size:18px;font-weight:700;color:var(--txt);margin-bottom:4px;}
+.capsule-sub{font-size:13px;color:var(--mute);margin-bottom:18px;}
+.capsule-field{margin-bottom:14px;}
+.capsule-field label{font-size:12px;font-weight:600;color:var(--mute);
+  text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+.capsule-field textarea,.capsule-field input{width:100%;background:var(--hov);
+  border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;
+  font-size:14px;color:var(--txt);outline:none;font-family:inherit;box-sizing:border-box;}
+.capsule-field textarea{resize:none;height:80px;}
+.capsule-send{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;
+  border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
+#capsuleMsgBubble{background:rgba(124,106,255,.12);border-left:3px solid var(--brand);
+  border-radius:0 8px 8px 0;padding:8px 12px;font-size:13px;color:var(--txt);
+  margin-bottom:14px;white-space:pre-wrap;word-break:break-word;}
+.capsule-banner{background:linear-gradient(135deg,rgba(124,106,255,.12),rgba(168,85,247,.08));
+  border:1px solid rgba(124,106,255,.25);border-radius:10px;padding:8px 12px;
+  font-size:12px;color:var(--brand);font-weight:600;margin-bottom:16px;
+  display:flex;align-items:center;gap:7px;}
+
+/* ── Fading Relationship Banner ────────────────────────────── */
+#fadingBanner{
+  position:fixed;top:68px;left:50%;
+  transform:translateX(-50%) translateY(calc(-100% - 24px));
+  background:linear-gradient(135deg,var(--card),rgba(124,106,255,.07));
+  border:1px solid rgba(124,106,255,.3);
+  border-radius:16px;padding:12px 14px;
+  z-index:3050;display:flex;align-items:center;gap:10px;
+  max-width:380px;width:calc(100% - 28px);
+  box-shadow:0 8px 28px rgba(0,0,0,.3);
+  transition:transform .36s cubic-bezier(.22,1,.36,1), opacity .3s;
+  opacity:0;pointer-events:none;
+}
+#fadingBanner.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;pointer-events:all;
+}
+#fadingBanner .fb-icon{font-size:24px;flex-shrink:0;}
+#fadingBanner .fb-text{font-size:13px;color:var(--txt);flex:1;line-height:1.45;}
+#fadingBanner .fb-text strong{color:var(--brand);}
+#fadingBanner .fb-close{background:none;border:none;color:var(--mute);font-size:17px;
+  cursor:pointer;padding:4px 2px;flex-shrink:0;line-height:1;}
+#fadingBanner .fb-chat-btn{
+  background:var(--brand);color:#fff;border:none;border-radius:20px;
+  padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;
+  flex-shrink:0;white-space:nowrap;
+}
+
+/* ── Group Chat UI ───────────────────────────────────────────── */
+#createGroupSheet{position:fixed;inset:0;background:var(--card);z-index:3000;
+  display:flex;flex-direction:column;transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,0,1);}
+#createGroupSheet.show{transform:translateX(0);}
+.cg-hdr{display:flex;align-items:center;gap:12px;padding:16px 16px 10px;
+  border-bottom:1px solid var(--bdr);}
+.cg-back{background:none;border:none;font-size:24px;color:var(--txt);cursor:pointer;padding:0;}
+.cg-title{font-size:17px;font-weight:700;color:var(--txt);flex:1;}
+.cg-create-btn{background:var(--brand);color:#fff;border:none;border-radius:20px;
+  padding:7px 16px;font-size:14px;font-weight:600;cursor:pointer;}
+.cg-create-btn:disabled{opacity:.4;cursor:default;}
+.cg-body{flex:1;overflow-y:auto;padding:16px;}
+.cg-section{margin-bottom:20px;}
+.cg-label{font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:8px;}
+.cg-input{width:100%;background:var(--hov);border:1px solid var(--bdr);border-radius:10px;
+  padding:11px 14px;font-size:15px;color:var(--txt);outline:none;
+  font-family:inherit;box-sizing:border-box;}
+.cg-input:focus{border-color:var(--brand);}
+.cg-color-row{display:flex;gap:10px;flex-wrap:wrap;}
+.cg-color{width:34px;height:34px;border-radius:50%;cursor:pointer;border:3px solid transparent;
+  transition:transform .15s;}
+.cg-color.selected{border-color:var(--txt);transform:scale(1.15);}
+.cg-type-row{display:flex;gap:10px;}
+.cg-type-btn{flex:1;padding:10px;border-radius:11px;border:1.5px solid var(--bdr);
+  background:var(--hov);color:var(--txt);font-size:13px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .15s;}
+.cg-type-btn.selected{border-color:var(--brand);background:rgba(124,106,255,.1);color:var(--brand);}
+.cg-friends-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;}
+.cg-friend-row{display:flex;align-items:center;gap:12px;padding:9px 10px;
+  border-radius:10px;cursor:pointer;transition:background .15s;}
+.cg-friend-row:hover{background:var(--hov);}
+.cg-friend-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--brand);flex-shrink:0;}
+.cg-friend-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
+.cg-friend-name{font-size:14px;font-weight:600;color:var(--txt);}
+/* Group crow in list */
+.crow.is-group .av{font-size:13px;}
+.group-tag{font-size:9px;background:rgba(124,106,255,.18);color:var(--brand);
+  border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700;vertical-align:middle;}
+.temp-tag{font-size:9px;background:rgba(245,158,11,.18);color:#f59e0b;
+  border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700;vertical-align:middle;}
+/* Group info panel inside chat header */
+#groupInfoSheet{position:fixed;inset:0;background:var(--card);z-index:3000;
+  display:flex;flex-direction:column;transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,0,1);}
+#groupInfoSheet.show{transform:translateX(0);}
+.gi-hdr{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--bdr);}
+.gi-body{flex:1;overflow-y:auto;padding:16px;}
+.gi-av{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:26px;font-weight:700;color:#fff;margin:0 auto 10px;}
+.gi-name{font-size:20px;font-weight:700;color:var(--txt);text-align:center;margin-bottom:4px;}
+.gi-desc{font-size:13px;color:var(--mute);text-align:center;margin-bottom:18px;}
+.gi-member{display:flex;align-items:center;gap:12px;padding:9px 4px;border-bottom:1px solid var(--bdr);}
+.gi-member:last-child{border-bottom:none;}
+.gi-member-av{width:38px;height:38px;border-radius:50%;background:var(--brand);
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  font-weight:700;color:#fff;flex-shrink:0;}
+.gi-member-name{font-size:14px;font-weight:600;color:var(--txt);flex:1;}
+.gi-role{font-size:11px;background:rgba(124,106,255,.15);color:var(--brand);
+  border-radius:4px;padding:2px 7px;font-weight:700;}
+.gi-leave{width:100%;padding:12px;background:rgba(239,68,68,.1);color:#ef4444;
+  border:1.5px solid rgba(239,68,68,.3);border-radius:12px;font-size:15px;
+  font-weight:600;cursor:pointer;}
+.gi-member{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);}
+.gi-member:last-child{border-bottom:none;}
+.gi-member-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;color:#fff;flex-shrink:0;}
+.gi-member-name{font-size:14px;font-weight:600;color:var(--txt);}
+.gi-role{background:rgba(124,106,255,.15);color:var(--brand);border-radius:20px;
+  padding:2px 9px;font-size:11px;font-weight:700;flex-shrink:0;}
+/* Time capsule message bubble indicator */
+.bub.capsule-msg::before{content:'⏳ ';font-size:11px;}
+
+/* Group button in sidebar/mobile header */
+.new-group-btn{display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:50%;background:rgba(124,106,255,.12);
+  border:none;color:var(--brand);font-size:18px;cursor:pointer;
+  transition:background .15s;flex-shrink:0;}
+.new-group-btn:hover{background:rgba(124,106,255,.25);}
+
+/* Capsule tabs */
+.ct-tab{flex:1;padding:9px 14px;border:none;border-radius:10px;background:var(--hov);color:var(--mute);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
+.ct-tab.ct-active{background:var(--brand);color:#fff;}
+/* Capsule list item */
+.cl-item{background:var(--hov);border-radius:13px;padding:13px 15px;margin-bottom:10px;border:1px solid var(--bdr);transition:opacity .25s,transform .25s;}
+.cl-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.cl-date{font-size:12px;font-weight:700;color:var(--txt);}
+.cl-countdown{font-size:11px;color:var(--brand);font-weight:600;}
+.cl-preview{font-size:13px;color:var(--mute);font-style:italic;margin-bottom:10px;line-height:1.45;word-break:break-word;}
+.cl-cancel{background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;}
+.cl-cancel:hover{background:rgba(239,68,68,.15);}
+
+/* Group creation: checked friend row highlight */
+.cg-friend-row.cg-checked{background:rgba(124,106,255,.1);border-color:rgba(124,106,255,.3);}
+.cg-friend-row.cg-checked .cg-friend-name{color:var(--brand);font-weight:600;}
 </style>
 </head>
 <body>
@@ -1026,6 +1230,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="clp-title"><a href="/" onclick="location.reload();return false;" title="Refresh" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--txt);"><img src="/logo" alt="Hepozy" style="width:32px;height:32px;object-fit:cover;border-radius:50%;cursor:pointer;" onerror="this.style.display='none'"><span>Hepozy</span></a></div>
     <div class="clp-btns">
       <button class="ib" style="position:relative;" onclick="toggleP('rqPanelClp')" title="Requests">🔔<span class="nbadge hidden" id="rqBadgeClp">0</span></button>
+      <button class="new-group-btn" onclick="openCreateGroup()" title="New Group" style="width:30px;height:30px;">👥</button>
       <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
     </div>
   </div>
@@ -1071,6 +1276,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div style="font-size:12px;">Search for friends above to start chatting</div>
     </div>
   </div>
+  <!-- Mobile Groups Section -->
+  <div id="clpGroupSection" style="display:none;border-top:1px solid var(--bdr);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;">
+      <span style="font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;">Groups</span>
+      <button class="new-group-btn" onclick="openCreateGroup()" title="New Group" style="width:26px;height:26px;font-size:14px;">+</button>
+    </div>
+    <div id="clpGroupList"></div>
+  </div>
 </div>
 <!-- ADDED: Archive page (full screen, opened from settings) -->
 <div class="archive-page" id="archivePage">
@@ -1093,6 +1306,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="brand"><a href="/" onclick="location.reload();return false;" title="Refresh"><img src="/logo" alt="Hepozy Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'"></a></div>
       <div class="hbtns">
         <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
+        <button class="new-group-btn" onclick="openCreateGroup()" title="New Group">👥</button>
         <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
       </div>
     </div>
@@ -1117,10 +1331,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 
   <div class="clist" id="clist">
-    <div class="llabel">Conversations</div>
+    <div class="llabel" style="display:flex;align-items:center;justify-content:space-between;"><span>Conversations</span></div>
     <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
   </div>
-</aside>
+  <!-- Group list in sidebar -->
+  <div id="groupSection" style="display:none;border-top:1px solid var(--bdr);margin-top:4px;">
+    <div class="llabel" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 4px;">
+      <span>Groups</span>
+      <button class="new-group-btn" onclick="openCreateGroup()" title="New Group" style="width:24px;height:24px;font-size:14px;">+</button>
+    </div>
+    <div id="groupList"></div>
+  </div>
 <!-- MAIN -->
 <main class="main" id="mainChat">
   <div class="chdr">
@@ -2214,13 +2435,29 @@ function connectSocket(){
         const txt=(msg.content||'').trim();
         preview=txt.length>80?txt.slice(0,80)+'…':txt;
       }
-      // Always notify for messages from others — new friends, existing friends, everyone
+      // Always notify for messages from others — new friends, existing friends, groups
       if(msg.sender_id!==ME_ID){
         showInAppNotif(msg.sender_username, preview, msg.chat_id);
         if(prefs.sound) beep();
       }
     }
-    if(prefs.sound&&msg.sender_id!==ME_ID&&currentChatId===msg.chat_id) beep(); // in-chat sound
+    if(prefs.sound&&msg.sender_id!==ME_ID&&currentChatId===msg.chat_id) beep();
+    // Update group preview + unread
+    if(msg.chat_id&&msg.chat_id.startsWith('group-')){
+      const g=groups.find(x=>x.chat_id===msg.chat_id);
+      if(g){
+        const sender=msg.sender_username||'';
+        if(msg.message_type==='image') g.last_message=sender+' sent a photo 📷';
+        else if(msg.message_type==='audio') g.last_message=sender+': 🎵 Voice message';
+        else g.last_message=sender+': '+(msg.content||'').substring(0,50);
+        g.last_message_time=msg.created_at;
+        if(msg.sender_id!==ME_ID&&currentGroupChatId!==msg.chat_id){
+          g.unread_count=(g.unread_count||0)+1;
+        }
+        renderGroups();
+      }
+      return; // don't call updatePrev/updateUnreadBadge for groups
+    }
     updatePrev(msg);
     updateUnreadBadge(msg);
   });
@@ -2290,16 +2527,26 @@ function sendMsg(){
   if(!txt)return;
   if(!currentChatId){toast('Select a chat first','err');return;}
   if(!socket){toast('Not connected','err');return;}
-  const data={chat_id:currentChatId,content:txt,message_type:'text'};
-  if(replyToMsg)data.reply_to_id=replyToMsg.id;
-  socket.emit('send_message',data);
-  inp.value='';inp.style.height='auto';
-  closeEmoji();cancelReply();
+  if(editingMsgId){saveEdit();return;}
+  // Mood check — only for plain text messages
+  checkMoodBeforeSend(txt, ()=>{
+    const data={chat_id:currentChatId,content:txt,message_type:'text'};
+    if(replyToMsg)data.reply_to_id=replyToMsg.id;
+    socket.emit('send_message',data);
+    inp.value='';inp.style.height='auto';
+    closeEmoji();cancelReply();
+  });
 }
 async function loadMsgs(chatId){
+  const area=document.getElementById('marea');
+  area.innerHTML='<div style="text-align:center;padding:32px;color:var(--mute);">Loading…</div>';
   try{
-    const r=await fetch(`/api/messages/${chatId}`);const d=await r.json();
-    const area=document.getElementById('marea');area.innerHTML='';
+    // Group chats use a different endpoint
+    const endpoint = chatId.startsWith('group-')
+      ? `/api/messages/group/${chatId}`
+      : `/api/messages/${chatId}`;
+    const r=await fetch(endpoint);const d=await r.json();
+    area.innerHTML='';
     if(!d.success||!d.messages.length){area.innerHTML='<div class="ces"><div class="big">👋</div><h3>Say hello!</h3><p>No messages yet</p></div>';return;}
     let ld='';
     d.messages.forEach(m=>{const dy=dayLabel(m.created_at);if(dy!==ld){area.insertAdjacentHTML('beforeend',`<div class="daydiv"><span>${dy}</span></div>`);ld=dy;}appendMsg(m,false);});
@@ -2792,202 +3039,49 @@ function showFriendProfile(){
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
 // ═══════ WEBRTC CALLS ═══════
-const STUN={
-  iceServers:[
-    {urls:'stun:stun.l.google.com:19302'},
-    {urls:'stun:stun1.l.google.com:19302'},
-    {urls:'stun:stun2.l.google.com:19302'},
-    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turn:a.relay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turn:a.relay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turns:a.relay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'},
-  ],
-  iceCandidatePoolSize:10
-};
-let cd={};
+// ══════════════════════════════════════════════════════════════════
+// CALL ENGINE v4 — high quality, reliable, smooth
+// ══════════════════════════════════════════════════════════════════
+
+// ── ICE config: multiple STUN + public TURN fallbacks ──
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  // OpenRelay free TURN (UDP + TCP + TLS)
+  { urls: 'turn:openrelay.metered.ca:80',    username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',   username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:a.relay.metered.ca:80',      username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turn:a.relay.metered.ca:443',     username:'openrelayproject', credential:'openrelayproject' },
+  { urls: 'turns:a.relay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+];
+
+// ── Call state ──
+let cd = {};
 function resetCd(){
-  cd={active:false,type:null,muted:false,videoOff:false,localStream:null,pc:null,callerId:null,calleeId:null,calleeName:null,pending:[],incoming:null,ringTimer:null,timerInterval:null,startTime:null,startTimeStr:null,duration:0};
+  cd = {
+    active:false, type:null, muted:false, videoOff:false,
+    localStream:null, pc:null, callerId:null, calleeId:null,
+    calleeName:null, callerName:null,
+    pending:[], incoming:null,
+    ringTimer:null, timerInterval:null,
+    startTime:null, startTimeStr:null, duration:0,
+    _outRingCtx:null, _ringCtx:null,
+  };
 }
 resetCd();
-function nowStr(){const d=new Date(),h=d.getHours(),m=d.getMinutes();return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM');}
-function fmtDur(s){if(!s||s<1)return '0s';if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;return r?m+'m '+r+'s':m+'m';}
-function setStatus(t){
-  ['callStatus','callStatusVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t;});
-}
-function startCallTimer(){
-  if(cd.timerInterval)return;
-  cd.startTime=Date.now();cd.duration=0;cd.startTimeStr=nowStr();
-  ['callStatus','callStatusVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-  ['callTimer','callTimerVoice'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='block';e.textContent='00:00';}});
-  cd.timerInterval=setInterval(()=>{
-    cd.duration=Math.floor((Date.now()-cd.startTime)/1000);
-    const t=String(Math.floor(cd.duration/60)).padStart(2,'0')+':'+String(cd.duration%60).padStart(2,'0');
-    ['callTimer','callTimerVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t;});
-  },1000);
-}
-function stopCallTimer(){
-  clearInterval(cd.timerInterval);cd.timerInterval=null;
-  ['callStatus','callStatusVoice'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='block';});
-  ['callTimer','callTimerVoice'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='none';e.textContent='00:00';}});
-}
-function appendCallMsg(type,dur,startT,isReceiver){
-  const area=document.getElementById('marea');if(!area)return;
-  const div=document.createElement('div');
-  const endT=nowStr(),st=startT||endT;
-  if(type==='missed'){
-    div.className='call-msg missed';
-    div.innerHTML=(isReceiver?'📵 Missed call from caller · ':'📵 Missed call · ')+endT;
-  }else{
-    div.className='call-msg answered';
-    div.innerHTML=(type==='video'?'📹 Video':'📞 Voice')+' call · '+st+' – '+endT+' ('+fmtDur(dur)+')';
-  }
-  area.appendChild(div);area.scrollTop=area.scrollHeight;
-}
-// ── Call UI state ──
-let _callUIVisible = false;
-let _callUITimer   = null;
 
-function callScreenTap(e){
-  // Don't trigger when tapping a button or the PiP
-  if(e.target.closest('.ccb')||e.target.closest('#callDockToggle')||e.target.id==='localVideo') return;
-  if(_callUIVisible) hideCallUI(); else showCallUI(true);
-}
+function nowStr(){ const d=new Date(),h=d.getHours(),m=d.getMinutes(); return (h%12||12)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM'); }
+function fmtDur(s){ if(!s||s<1)return '0s'; if(s<60)return s+'s'; const m=Math.floor(s/60),r=s%60; return r?m+'m '+r+'s':m+'m'; }
 
-function showCallUI(autoHide){
-  _callUIVisible = true;
-  clearTimeout(_callUITimer);
-  document.getElementById('callTopBar').classList.add('visible');
-  document.getElementById('callDock').style.opacity = '1';
-  if(autoHide) _callUITimer = setTimeout(hideCallUI, 4000);
-}
-
-function hideCallUI(){
-  _callUIVisible = false;
-  clearTimeout(_callUITimer);
-  document.getElementById('callTopBar').classList.remove('visible');
-  // Close tray too when hiding
-  const tray = document.getElementById('callCtrlTray');
-  const tog  = document.getElementById('callDockToggle');
-  tray.classList.remove('open');
-  tog.classList.remove('open');
-  document.getElementById('callDock').style.opacity = '0';
-}
-
-function showCallModal(name, status, isVideo){
-  // Avatar
-  const av = document.getElementById('callAvatar');
-  if(av) av.textContent = name[0].toUpperCase();
-
-  // Sync all name/status/timer elements
-  ['callName','callNameVoice'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.textContent=name;
-  });
-  ['callStatus','callStatusVoice'].forEach(id=>{
-    const el=document.getElementById(id); if(el){ el.textContent=status; el.style.display='block'; }
-  });
-  ['callTimer','callTimerVoice'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.style.display='none';
-  });
-
-  const lv = document.getElementById('localVideo');
-  const rv = document.getElementById('remoteVideo');
-  const vc = document.getElementById('callVoiceCenter');
-  const vb = document.getElementById('callVoiceBg');
-
-  if(isVideo){
-    rv.style.display='block';
-    lv.style.display='block'; pipInitPos();
-    if(vc) vc.style.display='none';
-    if(vb) vb.style.display='none';
-    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
-    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='flex';
-  } else {
-    // Voice call — show gradient bg and avatar center
-    rv.style.display='none';
-    lv.style.display='none';
-    if(vc){ vc.style.display='flex'; vc.style.alignItems='center'; vc.style.justifyContent='center'; }
-    if(vb){ vb.style.display='block'; }
-    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='none';
-    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='none';
-  }
-
-  // Reset buttons
-  const mBtn = document.getElementById('muteBtn');
-  if(mBtn){ mBtn.innerHTML='🎤'; mBtn.classList.remove('active'); }
-  const vBtn = document.getElementById('videoBtn');
-  if(vBtn){ vBtn.innerHTML='📹'; vBtn.classList.remove('active'); }
-  const sBtn = document.getElementById('speakerBtn');
-  if(sBtn){ sBtn.innerHTML='🔊'; sBtn.classList.remove('active'); }
-
-  // Start hidden — show briefly so user sees name
-  document.getElementById('callDock').style.opacity='0';
-  document.getElementById('callModal').classList.add('show');
-  // Show UI for 3s so caller sees who they're calling
-  showCallUI(true);
-}
-
-function hideCallModal(){
-  document.getElementById('callModal').classList.remove('show');
-  clearTimeout(_callUITimer);
-  _callUIVisible=false;
-  document.getElementById('callTopBar').classList.remove('visible');
-  const tray=document.getElementById('callCtrlTray');
-  const tog =document.getElementById('callDockToggle');
-  tray.classList.remove('open'); tog.classList.remove('open');
-  document.getElementById('callDock').style.opacity='0';
-}
-
-function toggleCallDock(){
-  const tray = document.getElementById('callCtrlTray');
-  const tog  = document.getElementById('callDockToggle');
-  const open = tray.classList.toggle('open');
-  tog.classList.toggle('open', open);
-  // Keep UI visible while tray is open
-  if(open){ clearTimeout(_callUITimer); _callUIVisible=true; }
-  else showCallUI(true);
-}
-function showIncomingCall(name,type){
-  document.getElementById('incomingCallAvatar').textContent=name[0].toUpperCase();
-  document.getElementById('incomingCallName').textContent=name;
-  document.getElementById('incomingCallType').textContent=type==='video'?'📹 Video call':'📞 Voice call';
-  document.getElementById('incomingCallModal').classList.add('show');
-  // Ringtone
-  try{
-    cd._ringCtx=new(window.AudioContext||window.webkitAudioContext)();
-    function ring(){
-      const ctx=cd._ringCtx;
-      [[520,0],[660,.18],[520,.36]].forEach(([freq,t])=>{
-        const o=ctx.createOscillator(),g=ctx.createGain();
-        o.connect(g);g.connect(ctx.destination);
-        o.frequency.value=freq;
-        g.gain.setValueAtTime(0,ctx.currentTime+t);
-        g.gain.linearRampToValueAtTime(0.35,ctx.currentTime+t+.05);
-        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+.28);
-        o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+.3);
-      });
-    }
-    ring();cd.ringTimer=setInterval(ring,1600);
-  }catch(e){}
-}
-function hideIncomingCall(){
-  document.getElementById('incomingCallModal').classList.remove('show');
-  clearInterval(cd.ringTimer);cd.ringTimer=null;
-  if(cd._ringCtx){try{cd._ringCtx.close();}catch(e){} cd._ringCtx=null;}
-}
-// ═══════════════════════════════════════════════════════
-// AUDIO ENGINE v3 — zero echo, crystal clear, smooth
-// ═══════════════════════════════════════════════════════
-
-// Single shared AudioContext for the session lifetime
+// ── Shared AudioContext ──
 let _AC = null;
 function getAC(){
   if(!_AC || _AC.state==='closed'){
-    _AC = new(window.AudioContext||window.webkitAudioContext)({
-      sampleRate: 48000,
-      latencyHint: 'interactive'
-    });
+    _AC = new(window.AudioContext||window.webkitAudioContext)({ sampleRate:48000, latencyHint:'interactive' });
   }
   return _AC;
 }
@@ -2995,180 +3089,356 @@ function getAC(){
 async function unlockAudio(){
   try{
     const ctx = getAC();
-    if(ctx.state==='suspended') await ctx.resume();
-    // 10ms silence unlocks iOS audio policy
+    if(ctx.state !== 'running') await ctx.resume();
+    // Play 10ms silence — unlocks iOS/Android audio policy on user gesture
     const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.01), ctx.sampleRate);
     const src = ctx.createBufferSource();
-    src.buffer = buf; src.connect(ctx.destination);
-    src.start(); src.stop(ctx.currentTime + 0.01);
+    src.buffer=buf; src.connect(ctx.destination); src.start(); src.stop(ctx.currentTime+0.01);
   }catch(e){}
 }
 
-// Hardware-level AEC — mono mic, 48kHz, system echo cancellation
+// ── Media acquisition with progressive fallback ──
 async function getMedia(type){
   if(!navigator.mediaDevices?.getUserMedia)
     throw new Error(!window.isSecureContext ? 'HTTPS_REQUIRED' : 'NO_MEDIA_DEVICES');
 
-  const audio = {
-    echoCancellation:      { ideal: true },
-    echoCancellationType:  { ideal: 'system' }, // hardware AEC on phones
-    noiseSuppression:      { ideal: true },
-    autoGainControl:       { ideal: true },
-    channelCount:          { ideal: 1 },   // mono — eliminates stereo feedback
-    sampleRate:            { ideal: 48000 },
-    latency:               { ideal: 0.005 },
-    suppressLocalAudioPlayback: { ideal: true } // prevents local mic echo on Chrome
+  const audioHD = {
+    echoCancellation:      { ideal:true },
+    echoCancellationType:  { ideal:'system' },
+    noiseSuppression:      { ideal:true },
+    autoGainControl:       { ideal:true },
+    channelCount:          { ideal:1 },
+    sampleRate:            { ideal:48000 },
+    latency:               { ideal:0.005 },
+    suppressLocalAudioPlayback: { ideal:true },
   };
-  const audioFallback = { echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1 };
-  const videoConstraints = { facingMode:'user', width:{ideal:1280}, height:{ideal:720} };
+  const audioSD = { echoCancellation:true, noiseSuppression:true, autoGainControl:true };
+  const videoHD = { facingMode:'user', width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:30} };
 
-  const list = type==='video' ? [
-    { video: videoConstraints, audio },
-    { video: { facingMode:'user' }, audio: audioFallback },
-    { video: true, audio: audioFallback },
-    { audio: audioFallback, video: false }
+  const chains = type==='video' ? [
+    { video:videoHD,            audio:audioHD },
+    { video:{facingMode:'user'}, audio:audioSD },
+    { video:true,               audio:audioSD },
+    { video:false,              audio:audioSD },  // last resort: audio only
   ] : [
-    { audio, video: false },
-    { audio: audioFallback, video: false },
-    { audio: { echoCancellation:true, noiseSuppression:true }, video: false },
-    { audio: true, video: false }
+    { video:false, audio:audioHD },
+    { video:false, audio:audioSD },
+    { video:false, audio:{ echoCancellation:true, noiseSuppression:true } },
+    { video:false, audio:true },
   ];
 
-  let err;
-  for(const con of list){
+  let lastErr;
+  for(const con of chains){
     try{ return await navigator.mediaDevices.getUserMedia(con); }
-    catch(e){ err=e; if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') throw e; }
+    catch(e){
+      lastErr = e;
+      if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') throw e;
+    }
   }
-  throw err;
+  throw lastErr;
 }
 
-// Rewrite SDP: Opus first, mono, 64kbps, FEC, 20ms frames
+// ── SDP: prefer Opus, set good codec params ──
 function preferOpus(sdp){
-  // Handle both \r\n (Safari/Firefox) and \n (Chrome)
-  const sep = sdp.includes('\r\n') ? '\r\n' : '\n';
+  const sep  = sdp.includes('\r\n') ? '\r\n' : '\n';
   const lines = sdp.split(sep);
   let pt = null;
+
   for(const l of lines){
     const m = l.match(/a=rtpmap:(\d+) opus\/48000/i);
     if(m){ pt=m[1]; break; }
   }
   if(!pt) return sdp;
-  let hasFmtp = false;
+
+  let fmtpSeen = false;
   const out = lines.map(l=>{
+    // Move Opus to front of m=audio payload list
     if(l.startsWith('m=audio')){
-      const p = l.split(' ');
-      return [...p.slice(0,3), pt, ...p.slice(3).filter(x=>x!==pt)].join(' ');
+      const parts = l.split(' ');
+      const others = parts.slice(3).filter(x=>x!==pt);
+      return [...parts.slice(0,3), pt, ...others].join(' ');
     }
-    if(pt && l.includes('a=fmtp:'+pt)){
-      hasFmtp = true;
-      const base = l.trimEnd()
-        .replace(/;?stereo=[01]/g,'')
-        .replace(/;?useinbandfec=[01]/g,'')
-        .replace(/;?cbr=[01]/g,'')
-        .replace(/;?maxaveragebitrate=\d+/g,'')
-        .replace(/;?ptime=\d+/g,'');
-      return base+';stereo=0;useinbandfec=1;cbr=1;maxaveragebitrate=64000';
+    // Rewrite existing fmtp line
+    if(pt && l.startsWith('a=fmtp:'+pt)){
+      fmtpSeen = true;
+      return 'a=fmtp:'+pt+' minptime=10;useinbandfec=1;stereo=0;maxaveragebitrate=128000';
     }
-    // If no fmtp line exists, insert one after the rtpmap line
-    if(pt && !hasFmtp && l.includes('a=rtpmap:'+pt)){
-      return l+sep+'a=fmtp:'+pt+' stereo=0;useinbandfec=1;cbr=1;maxaveragebitrate=64000';
+    // Insert fmtp if none exists
+    if(pt && !fmtpSeen && l.startsWith('a=rtpmap:'+pt)){
+      return l + sep + 'a=fmtp:'+pt+' minptime=10;useinbandfec=1;stereo=0;maxaveragebitrate=128000';
     }
     return l;
   }).join(sep);
   return out;
 }
 
-// ── Remote audio routing ──
-// Track which stream is currently attached to prevent double-attach
-let _remoteAudioNode = null;
-let _attachedStreamId = null;
+// ── Remote audio: direct <audio> element (most reliable cross-browser) ──
+// We tried Web Audio chain — it causes silence on iOS when AC is suspended mid-call.
+// Direct unmuted <audio> is simpler and 100% reliable.
+let _remoteAudioEl = null;
 
-async function attachAudio(stream){
-  // Skip if this exact stream is already routed
-  if(_attachedStreamId === stream.id && _remoteAudioNode) return;
+function attachAudio(stream){
+  // Tear down any previous
+  if(_remoteAudioEl){
+    _remoteAudioEl.srcObject = null;
+    _remoteAudioEl.remove();
+    _remoteAudioEl = null;
+  }
 
-  // Tear down previous cleanly
-  if(_remoteAudioNode){ try{_remoteAudioNode.disconnect();}catch(e){} _remoteAudioNode=null; }
-  _attachedStreamId = null;
+  const el = document.createElement('audio');
+  el.id = 'remoteAudioEl';
+  el.autoplay  = true;
+  el.muted     = false;   // MUST be unmuted — user hears through this
+  el.volume    = 1.0;
+  el.setAttribute('playsinline','');
+  el.setAttribute('webkit-playsinline','');
+  el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
+  document.body.appendChild(el);
+  _remoteAudioEl = el;
 
-  const audioTracks = stream.getAudioTracks();
-  if(!audioTracks.length){ stream.addEventListener('addtrack', e=>{ if(e.track.kind==='audio') attachAudio(stream); },{once:true}); return; }
+  el.srcObject = stream;
 
-  // Always ensure audio context is running
-  try{
-    const ctx = getAC();
-    // Must await resume — suspended AC = silent on iOS/Chrome
-    if(ctx.state==='suspended') await ctx.resume();
+  // Retry play with backoff — critical for autoplay policy
+  let attempt = 0;
+  function tryPlay(){
+    el.play().then(()=>{
+      console.log('[audio] playing OK');
+    }).catch(err=>{
+      console.warn('[audio] play attempt', attempt, err.name);
+      if(attempt++ < 8) setTimeout(tryPlay, attempt * 200);
+    });
+  }
+  tryPlay();
+}
 
-    // Signal chain: source → high-pass (removes mic rumble) → compressor → gain → output
-    const source     = ctx.createMediaStreamSource(stream);
-    const hpf        = ctx.createBiquadFilter();
-    hpf.type         = 'highpass';
-    hpf.frequency.value = 100;
-    hpf.Q.value      = 0.7;
-    const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -20;
-    compressor.knee.value      = 8;
-    compressor.ratio.value     = 3;
-    compressor.attack.value    = 0.002;
-    compressor.release.value   = 0.12;
-    const gain       = ctx.createGain();
-    gain.gain.value  = 1.0;
-
-    source.connect(hpf);
-    hpf.connect(compressor);
-    compressor.connect(gain);
-    gain.connect(ctx.destination);
-    _remoteAudioNode  = gain;
-    _attachedStreamId = stream.id;
-
-    // iOS Safari requires an actual <audio> element playing (even muted)
-    // to keep AudioContext alive — this is the keepalive element
-    let ka = document.getElementById('remoteAudio');
-    if(ka) ka.remove();
-    ka = document.createElement('audio');
-    ka.id = 'remoteAudio';
-    ka.muted = true;        // muted: we play via Web Audio above
-    ka.autoplay = true;
-    ka.setAttribute('playsinline','');
-    ka.setAttribute('webkit-playsinline','');
-    ka.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-    document.body.appendChild(ka);
-    ka.srcObject = stream;
-    ka.play().catch(()=>{});
-
-  }catch(err){
-    // Graceful fallback — direct unmuted audio element (no Web Audio processing)
-    console.warn('[audio] Web Audio chain failed, falling back to direct element:', err.message);
-    _attachedStreamId = stream.id;
-    let el = document.getElementById('remoteAudio');
-    if(el) el.remove();
-    el = document.createElement('audio');
-    el.id='remoteAudio';
-    el.autoplay=true;
-    el.muted=false;       // UNMUTED in fallback — no Web Audio
-    el.volume=1.0;
-    el.setAttribute('playsinline','');
-    el.setAttribute('webkit-playsinline','');
-    el.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;';
-    document.body.appendChild(el);
-    el.srcObject = null;
-    el.srcObject = stream;
-    let tries=0;
-    function tryPlay(){ el.play().catch(e=>{ if(++tries<5) setTimeout(tryPlay,300); }); }
-    tryPlay();
+function detachAudio(){
+  if(_remoteAudioEl){
+    _remoteAudioEl.pause();
+    _remoteAudioEl.srcObject = null;
+    _remoteAudioEl.remove();
+    _remoteAudioEl = null;
   }
 }
 
 function attachVideo(stream){
-  const rv = document.getElementById('remoteVideo'); if(!rv) return;
-  rv.srcObject = null;  // reset prevents stale frames
+  const rv = document.getElementById('remoteVideo');
+  if(!rv) return;
+  rv.srcObject = null;
   rv.srcObject = stream;
-  rv.muted = true;  // MUST stay muted — audio via Web Audio only
-  rv.setAttribute('playsinline',''); rv.setAttribute('webkit-playsinline','');
+  rv.muted = true;  // video element stays muted — audio through _remoteAudioEl
+  rv.setAttribute('playsinline','');
+  rv.setAttribute('webkit-playsinline','');
   let a=0;
-  function tryPlay(){ rv.play().catch(()=>{ if(a++<20) setTimeout(tryPlay,250); }); }
-  setTimeout(tryPlay, 60);
+  function tryPlay(){ rv.play().catch(()=>{ if(a++<20) setTimeout(tryPlay,300); }); }
+  setTimeout(tryPlay, 80);
+}
+
+// ── Speaker toggle (works on Chrome; graceful on Safari) ──
+let _speakerOn = true;
+async function toggleSpeaker(){
+  _speakerOn = !_speakerOn;
+  const btn = document.getElementById('speakerBtn');
+  if(btn){ btn.classList.toggle('active',!_speakerOn); btn.innerHTML=_speakerOn?'🔊':'🔇'; }
+  if(_remoteAudioEl){
+    if(typeof _remoteAudioEl.setSinkId === 'function'){
+      try{ await _remoteAudioEl.setSinkId(_speakerOn ? '' : 'default'); }catch(e){}
+    }
+    _remoteAudioEl.volume = _speakerOn ? 1.0 : 0.35;
+  }
+}
+
+// ── RTCPeerConnection factory ──
+let _connectedFired = false;  // prevent double-fire of connected state
+
+function makePc(targetId){
+  if(cd.pc){ try{cd.pc.close();}catch(e){} }
+  _connectedFired = false;
+
+  const pc = new RTCPeerConnection({
+    iceServers:        ICE_SERVERS,
+    iceCandidatePoolSize: 10,
+    bundlePolicy:      'max-bundle',
+    rtcpMuxPolicy:     'require',
+    iceTransportPolicy:'all',   // try direct first, TURN fallback
+  });
+  cd.pc = pc;
+  cd.pending = [];
+
+  // ICE candidate relay
+  pc.onicecandidate = e=>{
+    if(e.candidate){
+      socket.emit('ice_candidate',{ target_id:targetId, candidate:e.candidate });
+    }
+  };
+
+  // Log ICE gathering for debugging
+  pc.onicegatheringstatechange = ()=>{ console.log('[ice] gathering:', pc.iceGatheringState); };
+
+  // Remote media handling
+  const remoteStream = new MediaStream();
+
+  pc.ontrack = e=>{
+    const track = e.track;
+    // De-duplicate tracks
+    if(!remoteStream.getTracks().find(t=>t.id===track.id)){
+      remoteStream.addTrack(track);
+    }
+
+    if(track.kind === 'audio'){
+      // Attach audio as soon as first audio track arrives
+      attachAudio(remoteStream);
+      // Re-attach if track un-mutes after being muted
+      track.onunmute = ()=>{ if(!_remoteAudioEl) attachAudio(remoteStream); };
+    }
+
+    if(track.kind === 'video'){
+      attachVideo(remoteStream);
+      if(track.muted) showRemoteCamOff(cd.calleeName||cd.callerName||'');
+      track.onmute   = ()=>showRemoteCamOff(cd.calleeName||cd.callerName||'');
+      track.onunmute = ()=>hideRemoteCamOff();
+    }
+  };
+
+  // Connection state machine
+  function onConnected(){
+    if(_connectedFired) return;
+    _connectedFired = true;
+    console.log('[pc] connected');
+    hideOutgoingScreen();
+    showCallUI(true);
+    setStatus('Connected');
+    startCallTimer();
+    startSignalMonitor(pc);
+    // Set video bitrate after connection
+    if(cd.type === 'video') setVideoBitrate(pc, 1500);
+  }
+
+  pc.onconnectionstatechange = ()=>{
+    const s = pc.connectionState;
+    console.log('[pc] connectionState:', s);
+    if(s==='connected') onConnected();
+    else if(s==='failed'){
+      setStatus('Reconnecting…');
+      stopSignalMonitor();
+      if(pc.restartIce) pc.restartIce();
+      setTimeout(()=>{
+        if(cd.pc && (cd.pc.connectionState==='failed' || cd.pc.iceConnectionState==='failed')){
+          toast('❌ Connection lost','err');
+          endCall();
+        }
+      }, 10000);
+    }
+    else if(s==='disconnected'){
+      setStatus('Reconnecting…');
+      stopSignalMonitor();
+    }
+    else if(s==='closed'){ stopSignalMonitor(); }
+  };
+
+  // Fallback: iceConnectionState sometimes fires when connectionState doesn't
+  pc.oniceconnectionstatechange = ()=>{
+    const s = pc.iceConnectionState;
+    console.log('[pc] iceConnectionState:', s);
+    if(s==='connected' || s==='completed') onConnected();
+    else if(s==='checking') setStatus('Connecting…');
+  };
+
+  return pc;
+}
+
+// ── Video bitrate control (post-connection) ──
+async function setVideoBitrate(pc, kbps){
+  try{
+    const sender = pc.getSenders().find(s=>s.track?.kind==='video');
+    if(!sender) return;
+    const params = sender.getParameters();
+    if(!params.encodings || !params.encodings.length) params.encodings = [{}];
+    params.encodings[0].maxBitrate = kbps * 1000;
+    params.encodings[0].maxFramerate = 30;
+    await sender.setParameters(params);
+  }catch(e){ console.warn('[video bitrate]', e.message); }
+}
+
+// ── Flush buffered ICE candidates ──
+async function flushPending(){
+  if(!cd.pc?.remoteDescription?.type) return;
+  const q = [...cd.pending]; cd.pending = [];
+  for(const ic of q){
+    try{ await cd.pc.addIceCandidate(new RTCIceCandidate(ic)); }catch(e){}
+  }
+}
+
+// ── Media permission error messages ──
+function mediaErr(e){
+  let msg = 'Could not start call';
+  if(e.message==='HTTPS_REQUIRED' || !window.isSecureContext) msg = 'Calls require HTTPS';
+  else if(e.message==='NO_MEDIA_DEVICES')  msg = 'Browser does not support calls';
+  else if(e.name==='NotAllowedError'  || e.name==='PermissionDeniedError') msg = 'Mic/camera permission denied — check browser settings';
+  else if(e.name==='NotFoundError')        msg = 'No microphone found';
+  else if(e.name==='NotReadableError')     msg = 'Mic/camera already in use by another app';
+  else msg += e.message ? ': '+e.message : '';
+  toast('📞 '+msg, 'err');
+}
+
+// ── Call UI helpers ──
+let _callUITimer   = null;
+let _callUIVisible = false;
+
+function showCallUI(autoHide){
+  _callUIVisible = true;
+  const topBar = document.getElementById('callTopBar');
+  const dock   = document.getElementById('callDock');
+  if(topBar) topBar.classList.add('visible');
+  if(dock)   dock.style.opacity = '1';
+  clearTimeout(_callUITimer);
+  if(autoHide){
+    _callUITimer = setTimeout(hideCallUI, 4000);
+  }
+}
+function hideCallUI(){
+  _callUIVisible = false;
+  clearTimeout(_callUITimer);
+  const tray = document.getElementById('callCtrlTray');
+  if(tray && tray.classList.contains('open')) return; // keep visible while tray open
+  const topBar = document.getElementById('callTopBar');
+  const dock   = document.getElementById('callDock');
+  if(topBar) topBar.classList.remove('visible');
+  if(dock)   dock.style.opacity = '0';
+}
+function callScreenTap(e){
+  if(e.target.closest('.ccb') || e.target.closest('#callDockToggle') || e.target.closest('#localVideo')) return;
+  if(_callUIVisible) hideCallUI(); else showCallUI(true);
+}
+function toggleCallDock(){
+  const tray = document.getElementById('callCtrlTray');
+  const tog  = document.getElementById('callDockToggle');
+  const open = tray.classList.toggle('open');
+  tog.classList.toggle('open', open);
+  if(open){ clearTimeout(_callUITimer); _callUIVisible=true; }
+  else showCallUI(true);
+}
+
+// ── Status + timer helpers ──
+function setStatus(t){
+  ['callStatus','callStatusVoice'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=t; });
+}
+function startCallTimer(){
+  cd.startTime    = Date.now();
+  cd.startTimeStr = nowStr();
+  ['callStatus','callStatusVoice'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
+  ['callTimer','callTimerVoice'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.style.display='block'; e.textContent='00:00'; }});
+  clearInterval(cd.timerInterval);
+  cd.timerInterval = setInterval(()=>{
+    const s = Math.floor((Date.now()-cd.startTime)/1000);
+    cd.duration = s;
+    const t = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+    ['callTimer','callTimerVoice'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=t; });
+  }, 1000);
+}
+function stopCallTimer(){
+  clearInterval(cd.timerInterval);
+  ['callStatus','callStatusVoice'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='block'; });
+  ['callTimer','callTimerVoice'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.style.display='none'; e.textContent='00:00'; }});
 }
 
 // ── Signal quality monitor ──
@@ -3179,410 +3449,241 @@ function startSignalMonitor(pc){
     if(!pc || pc.connectionState==='closed') return;
     try{
       const stats = await pc.getStats();
-      let rtt=null, lost=0, total=0;
+      let rtt=null;
       stats.forEach(s=>{
-        if(s.type==='remote-inbound-rtp'&&s.kind==='audio'){
-          if(s.roundTripTime!=null) rtt=s.roundTripTime*1000; // ms
-          if(s.packetsLost!=null) lost=s.packetsLost;
-          if(s.totalSamplesReceived!=null) total=s.totalSamplesReceived;
+        if(s.type==='remote-inbound-rtp' && s.kind==='audio'){
+          if(s.roundTripTime!=null) rtt = s.roundTripTime*1000;
         }
       });
       const dot   = document.getElementById('callSignalDot');
       const label = document.getElementById('callSignalLabel');
-      if(!dot||!label) return;
-      let quality, color, shadow;
-      if(rtt===null){ quality=''; color='#94a3b8'; shadow='0 0 4px rgba(148,163,184,.5)'; }
-      else if(rtt<120){ quality=''; color='#22c55e'; shadow='0 0 8px rgba(34,197,94,.8)'; }
-      else if(rtt<280){ quality='⚠'; color='#f59e0b'; shadow='0 0 6px rgba(245,158,11,.7)'; }
-      else { quality='↓'; color='#ef4444'; shadow='0 0 6px rgba(239,68,68,.7)'; }
-      dot.style.background   = color;
-      dot.style.boxShadow    = shadow;
-      label.textContent      = quality;
+      if(!dot) return;
+      let color, shadow, text='';
+      if(rtt===null){ color='#94a3b8'; shadow='none'; }
+      else if(rtt<120){ color='#22c55e'; shadow='0 0 8px rgba(34,197,94,.8)'; }
+      else if(rtt<280){ color='#f59e0b'; shadow='0 0 6px rgba(245,158,11,.7)'; text='⚠'; }
+      else { color='#ef4444'; shadow='0 0 6px rgba(239,68,68,.7)'; text='↓'; }
+      dot.style.background  = color;
+      dot.style.boxShadow   = shadow;
+      if(label) label.textContent = text;
     }catch(e){}
   }, 2500);
 }
 function stopSignalMonitor(){
   clearInterval(_statsTimer); _statsTimer=null;
   const dot=document.getElementById('callSignalDot');
-  const label=document.getElementById('callSignalLabel');
   if(dot){ dot.style.background='#94a3b8'; dot.style.boxShadow='none'; }
-  if(label) label.textContent='';
+  const lbl=document.getElementById('callSignalLabel');
+  if(lbl) lbl.textContent='';
 }
 
-// ══════════════════════════════════════════════════════
-// CALL FEATURES
-// ══════════════════════════════════════════════════════
+// ── Camera flip ──
 let _currentFacing = 'user';
-let _speakerOn     = true;
-
-// ── Flip camera — works on iOS Safari, Android Chrome, desktop ──
-// Strategy: enumerate devices → get exact deviceId → getUserMedia → replaceTrack
 async function flipCamera(){
   if(!cd.localStream || cd.type!=='video') return;
   const btn = document.getElementById('flipBtn');
   if(btn){ btn.disabled=true; btn.style.opacity='.4'; }
-
   const nextFacing = _currentFacing==='user' ? 'environment' : 'user';
-
   try{
-    // Step 1: find the correct camera deviceId via enumerateDevices
     let deviceId = null;
     try{
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(d=>d.kind==='videoinput');
-      // On phones there are usually exactly 2: front (user) and back (environment)
-      // We pick the one whose label hints at the target facing, otherwise just the other one
-      const current = cd.localStream.getVideoTracks()[0];
-      const currentLabel = current ? current.label.toLowerCase() : '';
+      const curTrack = cd.localStream.getVideoTracks()[0];
+      const curId    = curTrack ? curTrack.getSettings().deviceId : null;
       for(const cam of cameras){
         const lbl = cam.label.toLowerCase();
-        if(nextFacing==='environment' && (lbl.includes('back')||lbl.includes('rear')||lbl.includes('environment'))){
-          deviceId = cam.deviceId; break;
-        }
-        if(nextFacing==='user' && (lbl.includes('front')||lbl.includes('user')||lbl.includes('selfie')||lbl.includes('face'))){
-          deviceId = cam.deviceId; break;
-        }
+        if(nextFacing==='environment' && (lbl.includes('back')||lbl.includes('rear')||lbl.includes('environment'))){ deviceId=cam.deviceId; break; }
+        if(nextFacing==='user'        && (lbl.includes('front')||lbl.includes('user')||lbl.includes('selfie')||lbl.includes('face'))){ deviceId=cam.deviceId; break; }
       }
-      // If label matching failed, just pick the camera that isn't the current one
       if(!deviceId && cameras.length>=2){
-        const currentId = current ? current.getSettings().deviceId : null;
-        const other = cameras.find(d=>d.deviceId!==currentId);
+        const other = cameras.find(d=>d.deviceId!==curId);
         if(other) deviceId = other.deviceId;
       }
-    }catch(enumErr){ /* enumerateDevices not supported — fall through */ }
+    }catch(e){}
 
-    // Step 2: open new stream with deviceId if found, else facingMode
-    const videoConstraint = deviceId
-      ? { deviceId: { exact: deviceId } }
-      : { facingMode: { ideal: nextFacing } };
+    const con = deviceId ? { deviceId:{exact:deviceId} } : { facingMode:{ideal:nextFacing} };
+    const newStream = await navigator.mediaDevices.getUserMedia({ video:con, audio:false });
+    const newTrack  = newStream.getVideoTracks()[0];
+    if(!newTrack) throw new Error('No video track');
 
-    const newStream = await navigator.mediaDevices.getUserMedia({
-      video: videoConstraint,
-      audio: false
-    });
-    const newTrack = newStream.getVideoTracks()[0];
-    if(!newTrack) throw new Error('No video track from new camera');
-
-    // Step 3: replace track in the live peer connection (no renegotiation needed)
     const sender = cd.pc?.getSenders().find(s=>s.track?.kind==='video');
-    if(sender){
-      await sender.replaceTrack(newTrack);
-    }
+    if(sender) await sender.replaceTrack(newTrack);
 
-    // Step 4: swap track in localStream
     const oldTrack = cd.localStream.getVideoTracks()[0];
-    if(oldTrack){
-      cd.localStream.removeTrack(oldTrack);
-      oldTrack.stop(); // release camera hardware
-    }
+    if(oldTrack){ cd.localStream.removeTrack(oldTrack); oldTrack.stop(); }
     cd.localStream.addTrack(newTrack);
 
-    // Step 5: refresh local PiP preview
     const lv = document.getElementById('localVideo');
-    if(lv){
-      // Must reset srcObject on iOS or preview freezes
-      lv.srcObject = null;
-      await new Promise(r=>setTimeout(r,50)); // brief yield for iOS
-      lv.srcObject = cd.localStream;
-      lv.play().catch(()=>{});
-    }
+    if(lv){ lv.srcObject=null; await new Promise(r=>setTimeout(r,50)); lv.srcObject=cd.localStream; lv.play().catch(()=>{}); }
 
-    // Commit the facing state only after success
     _currentFacing = nextFacing;
-
   }catch(e){
-    console.warn('[flipCamera]', e.name, e.message);
-    toast('Cannot switch camera on this device','info');
-    // Do NOT update _currentFacing — stay on current camera
+    console.warn('[flip]', e.name, e.message);
+    toast('Cannot switch camera', 'info');
   }finally{
     if(btn){ btn.disabled=false; btn.style.opacity='1'; }
   }
 }
 
-// ── Speaker toggle ──
-async function toggleSpeaker(){
-  _speakerOn = !_speakerOn;
-  const btn = document.getElementById('speakerBtn');
-  if(btn){ btn.classList.toggle('active',!_speakerOn); btn.innerHTML=_speakerOn?'🔊':'🔇'; }
-  const el = document.getElementById('remoteAudio');
-  if(el && typeof el.setSinkId === 'function'){
-    try{ await el.setSinkId(_speakerOn ? 'default' : ''); }catch(e){}
-  }
-  if(_remoteAudioNode) _remoteAudioNode.gain.value = _speakerOn ? 1.0 : 0.35;
-}
-
-// ── Remote cam-off: show overlay with caller name ──
+// ── Remote cam-off overlay ──
 function showRemoteCamOff(name){
-  const el = document.getElementById('remoteCamOff');
-  const av = document.getElementById('remoteCamAvatar');
-  const lb = document.getElementById('remoteCamLabel');
-  if(!el) return;
-  if(av) av.textContent = name ? name[0].toUpperCase() : '?';
-  if(lb) lb.textContent = (name||'Caller')+' · Camera off';
-  el.style.display = 'flex';
+  const el=document.getElementById('remoteCamOff');
+  const av=document.getElementById('remoteCamAvatar');
+  const lb=document.getElementById('remoteCamLabel');
+  if(av) av.textContent=(name||'?')[0].toUpperCase();
+  if(lb) lb.textContent=(name||'User')+' · Camera off';
+  if(el) el.style.display='flex';
 }
 function hideRemoteCamOff(){
-  const el = document.getElementById('remoteCamOff');
-  if(el) el.style.display = 'none';
+  const el=document.getElementById('remoteCamOff');
+  if(el) el.style.display='none';
 }
 
 // ── Outgoing ringing screen ──
 let _outgoingRingTimer=null, _outgoingTimeout=null;
+
 function showOutgoingScreen(name, type){
-  const av = document.getElementById('outgoingCallAvatar');
-  const nm = document.getElementById('outgoingCallName');
-  const ty = document.getElementById('outgoingCallType');
-  if(av) av.textContent = name[0].toUpperCase();
-  if(nm) nm.textContent = name;
-  if(ty) ty.textContent = type==='video' ? '📹 Video call' : '📞 Voice call';
+  const av=document.getElementById('outgoingCallAvatar');
+  const nm=document.getElementById('outgoingCallName');
+  const ty=document.getElementById('outgoingCallType');
+  if(av) av.textContent=name[0].toUpperCase();
+  if(nm) nm.textContent=name;
+  if(ty) ty.textContent=type==='video'?'📹 Video call':'📞 Voice call';
   document.getElementById('outgoingCallModal').classList.add('show');
 
-  // Play ringing sound for the caller
+  // Ringing sound for caller
   try{
-    if(!cd._outRingCtx) cd._outRingCtx = new(window.AudioContext||window.webkitAudioContext)();
+    if(cd._outRingCtx) try{cd._outRingCtx.close();}catch(e){}
+    cd._outRingCtx = new(window.AudioContext||window.webkitAudioContext)();
     function outRing(){
       const ctx=cd._outRingCtx;
-      [[440,0],[480,.3]].forEach(([freq,t])=>{
-        const o=ctx.createOscillator(),g=ctx.createGain();
-        o.connect(g);g.connect(ctx.destination);
+      [[440,0],[480,.35]].forEach(([freq,t])=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
         o.frequency.value=freq; o.type='sine';
-        g.gain.setValueAtTime(0,ctx.currentTime+t);
-        g.gain.linearRampToValueAtTime(0.18,ctx.currentTime+t+.04);
-        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+.28);
-        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.32);
+        g.gain.setValueAtTime(0, ctx.currentTime+t);
+        g.gain.linearRampToValueAtTime(0.15, ctx.currentTime+t+.04);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t+.3);
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.35);
       });
     }
-    outRing(); _outgoingRingTimer=setInterval(outRing,1800);
+    outRing();
+    _outgoingRingTimer = setInterval(outRing, 1800);
   }catch(e){}
 
-  // Auto-cancel after 60s if no answer
+  // Auto-cancel after 60s
   clearTimeout(_outgoingTimeout);
   _outgoingTimeout = setTimeout(()=>{
     if(document.getElementById('outgoingCallModal').classList.contains('show')){
       toast('No answer','info');
-      socket.emit('call_end',{target_id:cd.calleeId, was_missed:true});
+      socket.emit('call_end',{ target_id:cd.calleeId, was_missed:true });
       cleanupCall();
     }
   }, 60000);
 }
+
 function hideOutgoingScreen(){
   document.getElementById('outgoingCallModal').classList.remove('show');
   clearInterval(_outgoingRingTimer); _outgoingRingTimer=null;
-  clearTimeout(_outgoingTimeout); _outgoingTimeout=null;
-  if(cd._outRingCtx){try{cd._outRingCtx.close();}catch(e){} cd._outRingCtx=null;}
+  clearTimeout(_outgoingTimeout);    _outgoingTimeout=null;
+  if(cd._outRingCtx){ try{cd._outRingCtx.close();}catch(e){} cd._outRingCtx=null; }
 }
 
-function makePc(targetId){
-  if(cd.pc){ try{cd.pc.close();}catch(e){} }
-  const pc = new RTCPeerConnection({
-    ...STUN,
-    bundlePolicy:  'max-bundle',
-    rtcpMuxPolicy: 'require',
-  });
-  cd.pc=pc; cd.pending=[];
+// ── Incoming call screen ──
+function showIncomingCall(name, type){
+  document.getElementById('incomingCallAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('incomingCallName').textContent   = name;
+  document.getElementById('incomingCallType').textContent   = type==='video'?'📹 Video call':'📞 Voice call';
+  document.getElementById('incomingCallModal').classList.add('show');
 
-  pc.onicecandidate = e=>{ if(e.candidate) socket.emit('ice_candidate',{target_id:targetId,candidate:e.candidate}); };
-
-  const remoteStream = new MediaStream();
-  let _audioAttached = false;
-
-  pc.ontrack = e=>{
-    const track = e.track;
-    if(!remoteStream.getTracks().find(t=>t.id===track.id)) remoteStream.addTrack(track);
-
-    if(track.kind==='video'){
-      attachVideo(remoteStream);
-      // If track starts muted = camera off
-      if(track.muted) showRemoteCamOff(cd.calleeName||cd.callerName||'');
-      track.onmute   = ()=>showRemoteCamOff(cd.calleeName||cd.callerName||'');
-      track.onunmute = ()=>hideRemoteCamOff();
-    }
-    if(track.kind==='audio' && !_audioAttached){
-      _audioAttached = true;
-      attachAudio(remoteStream);
-    }
-    if(track.kind==='audio'){
-      track.onunmute = ()=>{
-        if(!_remoteAudioNode){ _audioAttached=false; attachAudio(remoteStream); _audioAttached=true; }
-      };
-    }
-  };
-
-  pc.onconnectionstatechange = ()=>{
-    const s = pc.connectionState;
-    if(s==='connected'){
-      hideOutgoingScreen();
-      setStatus('Connected ✅');
-      startCallTimer();
-      startSignalMonitor(pc);
-      // Re-unlock audio on connection — critical for iOS
-      const ac=getAC();
-      if(ac.state==='suspended') ac.resume().catch(()=>{});
-    } else if(s==='failed'){
-      stopSignalMonitor();
-      if(pc.restartIce) pc.restartIce();
-      setStatus('Reconnecting…');
-      setTimeout(()=>{
-        if(cd.pc&&(cd.pc.connectionState==='failed'||cd.pc.iceConnectionState==='failed')){
-          toast('❌ Connection failed','err'); endCall();
-        }
-      },8000);
-    } else if(s==='disconnected'){ setStatus('Reconnecting…'); }
-  };
-  pc.oniceconnectionstatechange = ()=>{
-    const s = pc.iceConnectionState;
-    if(s==='connected'||s==='completed'){
-      hideOutgoingScreen();
-      setStatus('Connected ✅');
-      startCallTimer();
-      startSignalMonitor(pc);
-    } else if(s==='checking'){ setStatus('Connecting…'); }
-  };
-  return pc;
-}
-
-async function flushPending(){
-  if(!cd.pc?.remoteDescription?.type) return;
-  const q=[...cd.pending]; cd.pending=[];
-  for(const ic of q){ try{ await cd.pc.addIceCandidate(new RTCIceCandidate(ic)); }catch(e){} }
-}
-
-function mediaErr(e){
-  let msg='Could not start call';
-  if(e.message==='HTTPS_REQUIRED'||!window.isSecureContext) msg='Calls require HTTPS';
-  else if(e.message==='NO_MEDIA_DEVICES') msg='Browser does not support calls';
-  else if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError') msg='Mic/camera blocked — allow in browser settings';
-  else if(e.name==='NotFoundError') msg='No microphone found';
-  else if(e.name==='NotReadableError') msg='Mic/camera in use by another app';
-  else msg += e.message ? ': '+e.message : '';
-  toast('📞 '+msg,'err');
-}
-
-async function startVoiceCall(){
-  if(!currentFriendId){toast('Open a chat first','err');return;}
-  const f=friends.find(x=>x.id===currentFriendId);
-  if(f) await doCall(f,'voice');
-}
-async function startVideoCall(){
-  if(!currentFriendId){toast('Open a chat first','err');return;}
-  const f=friends.find(x=>x.id===currentFriendId);
-  if(f) await doCall(f,'video');
-}
-
-async function doCall(friend, type){
-  if(cd.active){ toast(friend.username+' is busy','info'); return; }
-  await unlockAudio();
-  _currentFacing='user'; _speakerOn=true;
-  cd.callerName = friend.username;
-
-  // Reset buttons
-  const mBtn=document.getElementById('muteBtn');     if(mBtn){ mBtn.innerHTML='🎤'; mBtn.classList.remove('active'); }
-  const vBtn=document.getElementById('videoBtn');     if(vBtn){ vBtn.innerHTML='📹'; vBtn.classList.remove('active'); }
-  const sBtn=document.getElementById('speakerBtn');   if(sBtn){ sBtn.innerHTML='🔊'; sBtn.classList.remove('active'); }
-  const fBtn=document.getElementById('flipBtn');      if(fBtn) fBtn.style.display=type==='video'?'flex':'none';
-  const cBtn=document.getElementById('videoBtn');     if(cBtn) cBtn.style.display=type==='video'?'flex':'none';
-
+  // Ringtone
   try{
-    cd.active=true; cd.type=type; cd.calleeId=friend.id; cd.calleeName=friend.username;
-    const stream = await getMedia(type); cd.localStream = stream;
-
-    if(type==='video'){
-      const lv=document.getElementById('localVideo');
-      if(lv){ lv.srcObject=null; lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+    cd._ringCtx = new(window.AudioContext||window.webkitAudioContext)();
+    function ring(){
+      const ctx=cd._ringCtx;
+      [[520,0],[660,.18],[520,.36]].forEach(([freq,t])=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value=freq;
+        g.gain.setValueAtTime(0, ctx.currentTime+t);
+        g.gain.linearRampToValueAtTime(0.3, ctx.currentTime+t+.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t+.28);
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.3);
+      });
     }
-
-    const pc = makePc(friend.id);
-    stream.getTracks().forEach(t=>{ if(!pc.getSenders().some(s=>s.track?.id===t.id)) pc.addTrack(t,stream); });
-    let offer = await pc.createOffer({offerToReceiveAudio:true, offerToReceiveVideo:type==='video'});
-    offer = new RTCSessionDescription({type:offer.type, sdp:preferOpus(offer.sdp)});
-    await pc.setLocalDescription(offer);
-
-    // Show outgoing ringing screen (fullscreen, on top)
-    showOutgoingScreen(friend.username, type);
-    // Also prepare the call modal underneath (muted/ready)
-    showCallModal(friend.username, 'Ringing…', type==='video');
-    socket.emit('call_offer',{callee_id:friend.id, offer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}, call_type:type});
-  }catch(e){ mediaErr(e); cleanupCall(); }
+    ring(); cd.ringTimer=setInterval(ring, 1600);
+  }catch(e){}
 }
 
-async function acceptCall(){
-  await unlockAudio();
-  hideIncomingCall();
-  _currentFacing='user'; _speakerOn=true;
-  const d=cd.incoming; if(!d){ cleanupCall(); return; }
-  cd.callerName = d.caller_name;
-
-  // Reset buttons
-  const mBtn=document.getElementById('muteBtn');   if(mBtn){ mBtn.innerHTML='🎤'; mBtn.classList.remove('active'); }
-  const vBtn=document.getElementById('videoBtn');   if(vBtn){ vBtn.innerHTML='📹'; vBtn.classList.remove('active'); vBtn.style.display=d.call_type==='video'?'flex':'none'; }
-  const sBtn=document.getElementById('speakerBtn'); if(sBtn){ sBtn.innerHTML='🔊'; sBtn.classList.remove('active'); }
-  const fBtn=document.getElementById('flipBtn');    if(fBtn) fBtn.style.display=d.call_type==='video'?'flex':'none';
-
-  try{
-    cd.active=true; cd.type=d.call_type; cd.calleeId=d.caller_id; cd.calleeName=d.caller_name;
-    const stream = await getMedia(d.call_type); cd.localStream = stream;
-
-    if(d.call_type==='video'){
-      const lv=document.getElementById('localVideo');
-      if(lv){ lv.srcObject=null; lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
-    }
-
-    const pc = makePc(d.caller_id);
-    stream.getTracks().forEach(t=>{ if(!pc.getSenders().some(s=>s.track?.id===t.id)) pc.addTrack(t,stream); });
-    await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
-    await flushPending();
-    let answer = await pc.createAnswer();
-    answer = new RTCSessionDescription({type:answer.type, sdp:preferOpus(answer.sdp)});
-    await pc.setLocalDescription(answer);
-    showCallModal(d.caller_name, 'Connecting…', d.call_type==='video');
-    socket.emit('call_answer',{caller_id:d.caller_id, answer:{type:pc.localDescription.type,sdp:pc.localDescription.sdp}, accepted:true});
-  }catch(e){ mediaErr(e); rejectCall(); }
+function hideIncomingCall(){
+  document.getElementById('incomingCallModal').classList.remove('show');
+  clearInterval(cd.ringTimer); cd.ringTimer=null;
+  if(cd._ringCtx){ try{cd._ringCtx.close();}catch(e){} cd._ringCtx=null; }
 }
 
-function rejectCall(){
-  hideIncomingCall();
-  if(cd.incoming) socket.emit('call_answer',{caller_id:cd.incoming.caller_id,accepted:false});
-  cleanupCall();
-}
+// ── showCallModal / hideCallModal ──
+function showCallModal(name, status, isVideo){
+  const av=document.getElementById('callAvatar');
+  if(av) av.textContent=name[0].toUpperCase();
 
-function toggleMute(){
-  cd.muted=!cd.muted;
-  const btn=document.getElementById('muteBtn');
-  if(!btn) return;
-  btn.classList.toggle('active',cd.muted);
-  btn.innerHTML=cd.muted?'🔇':'🎤';
-  if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
-}
+  ['callName','callNameVoice'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=name; });
+  ['callStatus','callStatusVoice'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.textContent=status; e.style.display='block'; } });
+  ['callTimer','callTimerVoice'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
 
-function toggleVideo(){
-  if(!cd.localStream) return;
-  cd.videoOff=!cd.videoOff;
-  const btn=document.getElementById('videoBtn');
-  if(!btn) return;
-  btn.classList.toggle('active',cd.videoOff);
-  btn.innerHTML=cd.videoOff?'📵':'📹';
-  // Enable/disable video tracks
-  cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
-  // Show/hide local PiP
   const lv=document.getElementById('localVideo');
-  if(lv) lv.style.display=cd.videoOff?'none':'block';
-  // When MY cam is off — no voice center needed (remote video still shows)
-  // But toggle flip button visibility
-  const fBtn=document.getElementById('flipBtn');
-  if(fBtn) fBtn.style.display=cd.videoOff?'none':'flex';
+  const rv=document.getElementById('remoteVideo');
+  const vc=document.getElementById('callVoiceCenter');
+  const vb=document.getElementById('callVoiceBg');
+
+  if(isVideo){
+    if(rv) rv.style.display='block';
+    if(lv){ lv.style.display='block'; pipInitPos(); }
+    if(vc) vc.style.display='none';
+    if(vb) vb.style.display='none';
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
+    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='flex';
+  } else {
+    if(rv) rv.style.display='none';
+    if(lv) lv.style.display='none';
+    if(vc){ vc.style.display='flex'; }
+    if(vb){ vb.style.display='block'; }
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='none';
+    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='none';
+  }
+
+  // Reset control buttons
+  ['muteBtn','videoBtn','speakerBtn'].forEach(id=>{
+    const b=document.getElementById(id); if(!b) return;
+    b.classList.remove('active');
+    if(id==='muteBtn')    b.innerHTML='🎤';
+    if(id==='videoBtn')   b.innerHTML='📹';
+    if(id==='speakerBtn') b.innerHTML='🔊';
+  });
+
+  document.getElementById('callDock').style.opacity='0';
+  document.getElementById('callModal').classList.add('show');
+  showCallUI(true); // Show UI for 3s at call start
 }
 
-// ── Draggable PiP ──
+function hideCallModal(){
+  document.getElementById('callModal').classList.remove('show');
+  clearTimeout(_callUITimer); _callUIVisible=false;
+  const topBar=document.getElementById('callTopBar'); if(topBar) topBar.classList.remove('visible');
+  const tray=document.getElementById('callCtrlTray');  if(tray)   tray.classList.remove('open');
+  const tog=document.getElementById('callDockToggle'); if(tog)    tog.classList.remove('open');
+  const dock=document.getElementById('callDock');      if(dock)   dock.style.opacity='0';
+}
+
+// ── PiP dragging ──
 (function(){
   let drag=false, ox=0, oy=0;
   function el(){ return document.getElementById('localVideo'); }
   function start(cx,cy){
     const v=el(); if(!v||v.style.display==='none') return;
     drag=true;
-    const r=v.getBoundingClientRect();
-    ox=cx-r.left; oy=cy-r.top;
-    v.classList.add('dragging');
-    v.style.right='auto'; v.style.bottom='auto'; v.style.transition='none';
+    const r=v.getBoundingClientRect(); ox=cx-r.left; oy=cy-r.top;
+    v.classList.add('dragging'); v.style.right='auto'; v.style.bottom='auto'; v.style.transition='none';
   }
   function move(cx,cy){
     if(!drag) return;
@@ -3598,7 +3699,7 @@ function toggleVideo(){
     const r=v.getBoundingClientRect();
     v.style.transition='left .22s,right .22s,top .22s';
     if(r.left+r.width/2 < window.innerWidth/2){ v.style.left='8px'; v.style.right='auto'; }
-    else { v.style.right='8px'; v.style.left='auto'; }
+    else{ v.style.right='8px'; v.style.left='auto'; }
   }
   document.addEventListener('mousedown', e=>{ if(e.target===el()) start(e.clientX,e.clientY); });
   document.addEventListener('mousemove', e=>move(e.clientX,e.clientY));
@@ -3614,78 +3715,222 @@ function pipInitPos(){
   lv.style.left='auto';  lv.style.top='auto'; lv.style.transition='none';
 }
 
-// ── Wire all call buttons after DOM ready ──
+// ── Button wiring ──
 document.addEventListener('DOMContentLoaded',()=>{
-  const g=id=>document.getElementById(id);
-  const wire=(id,fn)=>{ const el=g(id); if(el) el.addEventListener('click',e=>{ e.stopPropagation(); fn(); }); };
-  wire('callDockToggle', toggleCallDock);
-  wire('muteBtn',        toggleMute);
-  wire('videoBtn',       toggleVideo);
-  wire('flipBtn',        flipCamera);
-  wire('speakerBtn',     toggleSpeaker);
-  wire('endBtn',         endCall);
+  const wire=(id,fn)=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('click',e=>{ e.stopPropagation(); fn(); });
+  };
+  wire('callDockToggle',  toggleCallDock);
+  wire('muteBtn',         toggleMute);
+  wire('videoBtn',        toggleVideo);
+  wire('flipBtn',         flipCamera);
+  wire('speakerBtn',      toggleSpeaker);
+  wire('endBtn',          endCall);
   wire('outgoingHangupBtn', endCall);
-  wire('rejectCallBtn',  rejectCall);
-  wire('acceptCallBtn',  acceptCall);
+  wire('rejectCallBtn',   rejectCall);
+  wire('acceptCallBtn',   acceptCall);
 });
 
+// ── Mute / video-off toggles ──
+function toggleMute(){
+  cd.muted = !cd.muted;
+  const btn=document.getElementById('muteBtn'); if(!btn) return;
+  btn.classList.toggle('active', cd.muted);
+  btn.innerHTML = cd.muted ? '🔇' : '🎤';
+  if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
+}
+function toggleVideo(){
+  if(!cd.localStream) return;
+  cd.videoOff = !cd.videoOff;
+  const btn=document.getElementById('videoBtn'); if(!btn) return;
+  btn.classList.toggle('active', cd.videoOff);
+  btn.innerHTML = cd.videoOff ? '📵' : '📹';
+  cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
+  const lv=document.getElementById('localVideo'); if(lv) lv.style.display=cd.videoOff?'none':'block';
+  const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display=cd.videoOff?'none':'flex';
+}
+
+// ── doCall: caller initiates ──
+async function startVoiceCall(){
+  if(!currentFriendId){ toast('Open a chat first','err'); return; }
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(f) await doCall(f,'voice');
+}
+async function startVideoCall(){
+  if(!currentFriendId){ toast('Open a chat first','err'); return; }
+  const f=friends.find(x=>x.id===currentFriendId);
+  if(f) await doCall(f,'video');
+}
+
+async function doCall(friend, type){
+  if(cd.active){ toast('Already in a call','info'); return; }
+  await unlockAudio();
+  _currentFacing='user'; _speakerOn=true;
+
+  try{
+    cd.active=true; cd.type=type; cd.calleeId=friend.id;
+    cd.calleeName=friend.username; cd.callerName=friend.username;
+
+    const stream = await getMedia(type);
+    cd.localStream = stream;
+
+    if(type==='video'){
+      const lv=document.getElementById('localVideo');
+      if(lv){ lv.srcObject=null; lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+    }
+
+    const pc = makePc(friend.id);
+    stream.getTracks().forEach(t=>pc.addTrack(t, stream));
+
+    let offer = await pc.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: type==='video',
+      voiceActivityDetection: false,  // disable VAD — causes choppy audio
+    });
+    offer = new RTCSessionDescription({ type:offer.type, sdp:preferOpus(offer.sdp) });
+    await pc.setLocalDescription(offer);
+
+    // Show ringing
+    showOutgoingScreen(friend.username, type);
+    showCallModal(friend.username, 'Ringing…', type==='video');
+
+    socket.emit('call_offer',{
+      callee_id: friend.id,
+      offer: { type:pc.localDescription.type, sdp:pc.localDescription.sdp },
+      call_type: type
+    });
+  }catch(e){ mediaErr(e); cleanupCall(); }
+}
+
+// ── acceptCall: receiver answers ──
+async function acceptCall(){
+  await unlockAudio();
+  hideIncomingCall();
+  _currentFacing='user'; _speakerOn=true;
+  const d=cd.incoming;
+  if(!d){ cleanupCall(); return; }
+  cd.callerName=d.caller_name; cd.calleeName=d.caller_name;
+
+  try{
+    cd.active=true; cd.type=d.call_type;
+    cd.calleeId=d.caller_id;
+
+    const stream = await getMedia(d.call_type);
+    cd.localStream = stream;
+
+    if(d.call_type==='video'){
+      const lv=document.getElementById('localVideo');
+      if(lv){ lv.srcObject=null; lv.srcObject=stream; lv.setAttribute('playsinline',''); lv.muted=true; lv.play().catch(()=>{}); }
+    }
+
+    const pc = makePc(d.caller_id);
+    stream.getTracks().forEach(t=>pc.addTrack(t, stream));
+
+    // Set remote first (offer), then create answer
+    await pc.setRemoteDescription(new RTCSessionDescription(d.offer));
+    await flushPending();
+
+    let answer = await pc.createAnswer({
+      voiceActivityDetection: false,
+    });
+    answer = new RTCSessionDescription({ type:answer.type, sdp:preferOpus(answer.sdp) });
+    await pc.setLocalDescription(answer);
+
+    showCallModal(d.caller_name, 'Connecting…', d.call_type==='video');
+    socket.emit('call_answer',{
+      caller_id: d.caller_id,
+      answer: { type:pc.localDescription.type, sdp:pc.localDescription.sdp },
+      accepted: true
+    });
+  }catch(e){ mediaErr(e); rejectCall(); }
+}
+
+function rejectCall(){
+  hideIncomingCall();
+  if(cd.incoming) socket.emit('call_answer',{ caller_id:cd.incoming.caller_id, accepted:false });
+  cleanupCall();
+}
+
+// ── endCall / cleanupCall ──
 function endCall(){
   hideOutgoingScreen();
-  const tid=cd.calleeId||cd.callerId;
-  const wasMissed=cd.active&&cd.duration===0;
-  if(tid) socket.emit('call_end',{target_id:tid,was_missed:wasMissed});
+  const tid = cd.calleeId || cd.callerId;
+  const wasMissed = cd.active && cd.duration===0;
+  if(tid) socket.emit('call_end',{ target_id:tid, was_missed:wasMissed });
   const dur=cd.duration||0, type=cd.type||'voice', startT=cd.startTimeStr;
   cleanupCall();
-  appendCallMsg(type,dur,startT,false);
+  appendCallMsg(type, dur, startT, false);
 }
 
 function cleanupCall(){
   stopCallTimer();
   stopSignalMonitor();
-  hideOutgoingScreen(); // also clears ringing sound + timeout
+  hideOutgoingScreen();
+  hideIncomingCall();
   hideRemoteCamOff();
-  _attachedStreamId=null;
-  if(_remoteAudioNode){ try{_remoteAudioNode.disconnect();}catch(e){} _remoteAudioNode=null; }
+  detachAudio();
   if(cd.localStream){ cd.localStream.getTracks().forEach(t=>t.stop()); cd.localStream=null; }
   if(cd.pc){ try{cd.pc.close();}catch(e){} cd.pc=null; }
-  const ra=document.getElementById('remoteAudio'); if(ra){ ra.srcObject=null; ra.remove(); }
   const rv=document.getElementById('remoteVideo'); if(rv) rv.srcObject=null;
   const lv=document.getElementById('localVideo');  if(lv) lv.srcObject=null;
-  _currentFacing='user'; _speakerOn=true;
-  hideCallModal(); hideIncomingCall(); resetCd();
+  _currentFacing='user'; _speakerOn=true; _connectedFired=false;
+  hideCallModal();
+  resetCd();
 }
 
+// ── Call socket events ──
 function setupCallListeners(){
-  socket.on('incoming_call',data=>{
-    if(cd.active){socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,busy:true});return;}
-    cd.incoming=data;showIncomingCall(data.caller_name,data.call_type);
+  socket.on('incoming_call', data=>{
+    if(cd.active){
+      socket.emit('call_answer',{ caller_id:data.caller_id, accepted:false, busy:true });
+      return;
+    }
+    cd.incoming = data;
+    showIncomingCall(data.caller_name, data.call_type);
   });
-  socket.on('call_accepted',async data=>{
-    if(!cd.pc)return;
+
+  socket.on('call_accepted', async data=>{
+    if(!cd.pc) return;
     hideOutgoingScreen();
     setStatus('Connecting…');
     try{
       await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
       await flushPending();
+    }catch(e){
+      toast('❌ Call setup failed','err');
+      endCall();
     }
-    catch(e){toast('❌ Call setup failed','err');endCall();}
   });
-  socket.on('call_rejected',data=>{
+
+  socket.on('call_rejected', data=>{
     hideOutgoingScreen();
-    const name=data.callee_name||'User';
-    const msg=data.busy?name+' is busy in another call':name+' declined the call';
-    toast(msg,'info');
+    const name = data.callee_name||'User';
+    toast(data.busy ? name+' is busy' : name+' declined', 'info');
     cleanupCall();
   });
-  // missed_call_notify handled in connectSocket above
-  socket.on('ice_candidate',async data=>{
-    if(!cd.pc||!data.candidate)return;
-    if(!cd.pc.remoteDescription?.type){cd.pending.push(data.candidate);}
-    else{try{await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}catch(e){}}
+
+  socket.on('ice_candidate', async data=>{
+    if(!cd.pc || !data.candidate) return;
+    if(!cd.pc.remoteDescription?.type){
+      cd.pending.push(data.candidate);
+    } else {
+      try{ await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate)); }catch(e){}
+    }
   });
-  socket.on('call_ended',()=>{const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;cleanupCall();appendCallMsg(type,dur,startT);});
-  socket.on('call_error',data=>{toast(data.message||'Call failed','err');cleanupCall();});
+
+  socket.on('call_ended', ()=>{
+    const dur=cd.duration||0, type=cd.type||'voice', startT=cd.startTimeStr;
+    cleanupCall();
+    appendCallMsg(type, dur, startT);
+  });
+
+  socket.on('call_error', data=>{
+    toast(data.message||'Call failed','err');
+    cleanupCall();
+  });
 }
+
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
 function cancelReply(){replyToMsg=null;document.getElementById('replyBar').classList.remove('show');}
 let editingMsgId=null;
@@ -3956,6 +4201,7 @@ async function loadFriends(){
         }
       });
       renderFriends();
+      setTimeout(checkFadingRelationships, 2800);
     }
   }catch(e){}
 }
@@ -4368,6 +4614,7 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('profile')">👤 View Profile</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('schedule')">⏳ Schedule Message</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('pin-chat')">${isPinned?'📌 Unpin Chat':'📌 Pin Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
@@ -4385,6 +4632,7 @@ function crowCtxConvDo(action){
   if(action==='profile'){showFriendProfile();}
   else if(action==='search'){toggleSearch();}
   else if(action==='pinned-msgs'){showPinned();}
+  else if(action==='schedule'){openCapsuleSheet();}
   else if(action==='pin-chat'){if(currentChatId)togglePinChat(currentChatId);}
   else if(action==='archive'){
     if(!currentFriendId)return;
@@ -5873,6 +6121,856 @@ setTimeout(loadPinnedChats,500);
   },{passive:true});
 })();
 
+// ══════════════════════════════════════════════════════════════════
+// FEATURE 1: MOOD-AWARE MESSAGE WARNING
+// Detects angry/harsh tone before sending — privately warns the sender
+// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// FEATURE 2: MOOD-AWARE MESSAGING
+// Detects heated/harsh tone before sending — only visible to sender
+// ══════════════════════════════════════════════════════════════════
+
+// Pattern groups: each has a label and list of regexes
+const MOOD_PATTERNS = [
+  // Insults & slurs
+  /\bstupid\b/i, /\bidiot\b/i, /\bmoron\b/i, /\bdumb(?:ass)?\b/i,
+  /\bimbecile\b/i, /\bloser\b/i, /\bworthless\b/i, /\buseless\b/i,
+  // Profanity
+  /\bf+u+c+k+(?:ing|er|ed|face|head|wit)?\b/i, /\bsh+i+t+\b/i,
+  /\bass+h+o+l+e\b/i, /\bb+i+t+c+h+\b/i, /\bbastard\b/i,
+  /\bdamn you\b/i, /\bgo to hell\b/i,
+  // Hostility phrases
+  /\bi hate (you|this|everything)\b/i, /\bhate you\b/i,
+  /\byou suck\b/i, /\bscrew you\b/i, /\bshut (the )?up\b/i,
+  /\bgo away\b/i, /\bleave me alone\b/i, /\bget out\b/i,
+  /\byou'?re (terrible|awful|disgusting|pathetic|the worst)\b/i,
+  /\bi (can't stand|can't deal with|despise) you\b/i,
+  // Threatening / extreme
+  /\bkys\b/i, /\bkill (your)?self\b/i, /\bi('?ll)? kill\b/i,
+  /\bdont (ever )?talk to me\b/i, /\bnever (talk|speak) to me\b/i,
+  // Punctuation/caps signals (3+ exclamations OR 7+ caps letters)
+  /!{3,}/, /[A-Z]{7,}/,
+  // Angry emojis (unicode code points checked as text)
+  /\u{1F621}|\u{1F92C}/u,   // 😡 🤬
+];
+
+// Compute a simple "heat score" 0–10
+function moodScore(text) {
+  if (!text || text.length < 4) return 0;
+  let hits = 0;
+  for (const r of MOOD_PATTERNS) {
+    const matches = text.match(new RegExp(r.source, r.flags + (r.flags.includes('g') ? '' : 'g')));
+    if (matches) hits += matches.length;
+  }
+  return hits;
+}
+
+let _moodPending = null;
+
+function checkMoodBeforeSend(text, onProceed) {
+  if (!text || text.length < 5) { onProceed(); return; }
+  const score = moodScore(text);
+  if (score < 1) { onProceed(); return; }
+
+  // Show mood warning
+  _moodPending = { text, onProceed };
+  const preview = document.getElementById('moodMsgPreview');
+  if (preview) preview.textContent = '\u201c' + text.substring(0, 100) + (text.length > 100 ? '\u2026' : '') + '\u201d';
+
+  // Intensity label
+  const icon = document.getElementById('moodWarnIcon');
+  const label = document.getElementById('moodWarnLabel');
+  if (icon)  icon.textContent  = score >= 3 ? '🤬' : '😤';
+  if (label) label.textContent = score >= 3
+    ? 'This message sounds quite heated.'
+    : 'Your message has an intense tone.';
+
+  document.getElementById('moodBackdrop').style.display = 'block';
+  document.getElementById('moodWarnSheet').classList.add('show');
+}
+
+function moodSendAnyway() {
+  closeMoodWarn();
+  if (_moodPending) { _moodPending.onProceed(); _moodPending = null; }
+}
+function moodEdit() {
+  closeMoodWarn();
+  _moodPending = null;
+  setTimeout(() => {
+    const inp = document.getElementById('msgInput');
+    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  }, 50);
+}
+function closeMoodWarn() {
+  document.getElementById('moodBackdrop').style.display = 'none';
+  document.getElementById('moodWarnSheet').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FEATURE 3: TIME-CAPSULE MESSAGES
+// Schedule a message to deliver at a future date — even while offline
+// ══════════════════════════════════════════════════════════════════
+
+let _capsuleTab = 'compose';
+
+function openCapsuleSheet(tab) {
+  if (!currentChatId) { toast('Open a chat first', 'err'); return; }
+  _capsuleTab = tab || 'compose';
+  capsuleSwitchTab(_capsuleTab);
+  if (_capsuleTab === 'compose') _initCapsuleCompose();
+  document.getElementById('capsuleBackdrop').style.display = 'block';
+  document.getElementById('capsuleSheet').classList.add('show');
+}
+
+function closeCapsuleSheet() {
+  document.getElementById('capsuleBackdrop').style.display = 'none';
+  document.getElementById('capsuleSheet').classList.remove('show');
+}
+
+function capsuleSwitchTab(tab) {
+  _capsuleTab = tab;
+  ['compose','list'].forEach(t => {
+    document.getElementById('capsuleTab_'+t).classList.toggle('ct-active', t === tab);
+    document.getElementById('capsulePane_'+t).style.display = (t === tab) ? 'block' : 'none';
+  });
+  if (tab === 'list') loadCapsuleList();
+}
+
+function _initCapsuleCompose() {
+  const draft = document.getElementById('msgInput').value.trim();
+  document.getElementById('capsuleMsg').value = draft || '';
+  const min = new Date(Date.now() + 5 * 60000);
+  const di  = document.getElementById('capsuleDate');
+  di.min = min.toISOString().slice(0, 16);
+  di.value = '';
+  document.getElementById('capsuleCountdown').textContent = '';
+  setTimeout(() => document.getElementById('capsuleMsg').focus(), 320);
+}
+
+function capsuleDurationStr(targetDateStr) {
+  const diff = new Date(targetDateStr) - Date.now();
+  if (diff <= 0) return { str: 'Delivering soon…', color: 'var(--brand)' };
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(mins / 60);
+  const days  = Math.floor(hours / 24);
+  const years = Math.floor(days / 365);
+  let str;
+  if (years >= 1)      str = `~${years} year${years > 1 ? 's' : ''}`;
+  else if (days >= 1)  str = `${days} day${days > 1 ? 's' : ''} ${hours % 24}h`;
+  else if (hours >= 1) str = `${hours}h ${mins % 60}m`;
+  else                 str = `${mins} minute${mins !== 1 ? 's' : ''}`;
+  return { str: '📅 Delivers in ' + str, color: 'var(--brand)' };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const di = document.getElementById('capsuleDate');
+  if (di) {
+    di.addEventListener('change', () => {
+      const cd = document.getElementById('capsuleCountdown');
+      if (!di.value || !cd) return;
+      const diff = new Date(di.value) - Date.now();
+      if (diff <= 0) { cd.textContent = '⚠️ Must be in the future'; cd.style.color = '#ef4444'; return; }
+      const { str, color } = capsuleDurationStr(di.value);
+      cd.textContent = str; cd.style.color = color;
+    });
+  }
+});
+
+async function submitCapsule() {
+  const content   = document.getElementById('capsuleMsg').value.trim();
+  const dateVal   = document.getElementById('capsuleDate').value;
+  const countdown = document.getElementById('capsuleCountdown');
+  if (!content) { toast('Write a message first', 'err'); return; }
+  if (!dateVal) { toast('Choose a delivery date', 'err'); return; }
+  const deliverAt = new Date(dateVal);
+  if (deliverAt <= new Date()) { toast('Pick a future date', 'err'); return; }
+  const btn = document.getElementById('capsuleSendBtn');
+  btn.disabled = true; btn.textContent = 'Scheduling…';
+  if (countdown) { countdown.textContent = '⏳ Saving…'; countdown.style.color = 'var(--mute)'; }
+  try {
+    const r = await fetch('/api/scheduled', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: currentChatId, content, deliver_at: deliverAt.toISOString() })
+    });
+    const d = await r.json();
+    if (d.success) {
+      const whenStr = deliverAt.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      toast('⏳ Capsule saved! Delivers ' + whenStr, 'ok');
+      closeCapsuleSheet();
+      const inp = document.getElementById('msgInput');
+      if (inp && inp.value.trim() === content) { inp.value = ''; inp.style.height = ''; }
+    } else {
+      toast(d.error || 'Failed to schedule', 'err');
+      if (countdown) countdown.textContent = '';
+    }
+  } catch(e) { toast('Network error — try again', 'err'); }
+  finally { btn.disabled = false; btn.textContent = '⏳ Schedule message'; }
+}
+
+async function loadCapsuleList() {
+  const body = document.getElementById('capsuleListBody');
+  if (!body) return;
+  body.innerHTML = '<div style="color:var(--mute);font-size:13px;padding:24px;text-align:center;">Loading…</div>';
+  try {
+    const r = await fetch('/api/scheduled');
+    const d = await r.json();
+    if (!d.success) { body.innerHTML = '<div style="color:#ef4444;padding:16px;">Failed to load</div>'; return; }
+    const mine = d.messages.filter(m => !currentChatId || m.chat_id === currentChatId);
+    if (!mine.length) {
+      body.innerHTML = '<div style="color:var(--mute);font-size:13px;padding:28px;text-align:center;line-height:1.7;">No scheduled messages in this chat.<br>Compose one to get started! ⏳</div>';
+      return;
+    }
+    body.innerHTML = mine.map(m => {
+      const dt      = new Date(m.deliver_at);
+      const dateStr = dt.toLocaleString(undefined, { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      const { str } = capsuleDurationStr(m.deliver_at);
+      const preview = m.content.length > 65 ? m.content.substring(0, 65) + '…' : m.content;
+      return `<div class="cl-item" id="cl-${m.id}">
+        <div class="cl-meta">
+          <span class="cl-date">${dateStr}</span>
+          <span class="cl-countdown">${str}</span>
+        </div>
+        <div class="cl-preview">"${esc(preview)}"</div>
+        <button class="cl-cancel" onclick="cancelCapsule(${m.id})">Cancel ✕</button>
+      </div>`;
+    }).join('');
+  } catch(e) { body.innerHTML = '<div style="color:#ef4444;padding:16px;">Failed to load</div>'; }
+}
+
+async function cancelCapsule(id) {
+  if (!confirm('Cancel this scheduled message?')) return;
+  try {
+    const r = await fetch('/api/scheduled/' + id, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) {
+      toast('Capsule cancelled', 'ok');
+      const el = document.getElementById('cl-' + id);
+      if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .25s'; setTimeout(() => el.remove(), 280); }
+      setTimeout(loadCapsuleList, 320);
+    } else { toast(d.error || 'Failed', 'err'); }
+  } catch(e) { toast('Failed', 'err'); }
+}
+// ══════════════════════════════════════════════════════════════════
+// FEATURE 6: FADING RELATIONSHIP REMINDER
+// Soft nudge when you haven't talked to a friend in a while
+// Shows once per session per friend · non-intrusive · auto-dismisses
+// ══════════════════════════════════════════════════════════════════
+
+const _fadingShown      = new Set();
+let   _fadingQueue      = [];
+let   _fadingAutoHide   = null;
+let   _fadingQueueTimer = null;
+
+function checkFadingRelationships() {
+  if (!friends || !friends.length) return;
+  const now = Date.now();
+  const faded = friends
+    .filter(f => {
+      if (_fadingShown.has(f.id)) return false;
+      if (!f.last_message_time)   return false;
+      const ts = new Date(f.last_message_time).getTime();
+      if (!ts || isNaN(ts))       return false;
+      const days = Math.floor((now - ts) / 86400000);
+      f._fadeDays = days;
+      return days >= 3;
+    })
+    .sort((a, b) => b._fadeDays - a._fadeDays);
+  if (!faded.length) return;
+  _fadingQueue = faded.slice(0, 3);
+  showNextFading();
+}
+
+function showNextFading() {
+  if (!_fadingQueue.length) return;
+  const f = _fadingQueue.shift();
+  if (_fadingShown.has(f.id)) { showNextFading(); return; }
+  _fadingShown.add(f.id);
+  showFadingBanner(f.username, f._fadeDays, f.id, f.chat_id);
+}
+
+function fadingDayStr(days) {
+  if (days >= 365)  return Math.floor(days/365) + (Math.floor(days/365)>1?' years':' year');
+  if (days >= 60)   return Math.floor(days/30)  + ' months';
+  if (days >= 30)   return 'a month';
+  if (days >= 14)   return Math.floor(days/7)   + ' weeks';
+  if (days === 7)   return 'a week';
+  if (days >= 5)    return days + ' days';
+  if (days === 1)   return 'yesterday';
+  return days + ' days';
+}
+
+function fadingEmoji(days) {
+  if (days >= 90)  return '💙';
+  if (days >= 30)  return '💛';
+  if (days >= 14)  return '🌸';
+  return '👋';
+}
+
+function fadingMsg(name, days) {
+  const eName = `<strong>${esc(name)}</strong>`;
+  if (days >= 90) return `You haven’t talked to ${eName} in over ${fadingDayStr(days)}. Still thinking of them?`;
+  if (days >= 30) return `It’s been ${fadingDayStr(days)} since you chatted with ${eName}.`;
+  if (days >= 14) return `${eName} hasn’t heard from you in ${fadingDayStr(days)}.`;
+  return `${eName} last messaged ${fadingDayStr(days)} ago — say hi?`;
+}
+
+function showFadingBanner(name, days, fid, chatId) {
+  const banner = document.getElementById('fadingBanner');
+  if (!banner) return;
+  document.getElementById('fadingIcon').textContent = fadingEmoji(days);
+  document.getElementById('fadingText').innerHTML   = fadingMsg(name, days);
+  banner._fid    = fid;
+  banner._chatId = chatId;
+  banner._name   = name;
+  clearTimeout(_fadingAutoHide);
+  banner.classList.add('show');
+  const dur = days >= 30 ? 16000 : days >= 14 ? 13000 : 10000;
+  _fadingAutoHide = setTimeout(() => closeFadingBanner(true), dur);
+}
+
+function closeFadingBanner(autoNext) {
+  clearTimeout(_fadingAutoHide);
+  const banner = document.getElementById('fadingBanner');
+  if (!banner) return;
+  banner.classList.remove('show');
+  if (autoNext && _fadingQueue.length) {
+    _fadingQueueTimer = setTimeout(showNextFading, 3500);
+  }
+}
+
+function fadingBannerChat() {
+  const banner = document.getElementById('fadingBanner');
+  const fid    = banner?._fid;
+  closeFadingBanner(false);
+  clearTimeout(_fadingQueueTimer);
+  if (!fid) return;
+  const f = friends.find(x => x.id === fid);
+  if (f) openChat(f.id, f.username, f.chat_id);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FEATURE 4: TEMPORARY EVENT GROUPS (auto-archive) — also see Feature 5
+// Already built into backend. Frontend handles expiry display.
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// FEATURE 5: GROUPS — full CRUD, persistent + temporary
+// ══════════════════════════════════════════════════════════════════
+let groups = [];
+let currentGroupId = null;
+let currentGroupChatId = null;
+let _cgSelectedIds = new Set();
+let _cgType = 'permanent';
+let _cgColor = '#7c6aff';
+
+// ── Load all groups the user belongs to ──
+async function loadGroups() {
+  try {
+    const r = await fetch('/api/groups');
+    const d = await r.json();
+    if (!d.success) return;
+    groups = d.groups;
+    renderGroups();
+  } catch(e) {}
+}
+
+// ── Render groups in the sidebar and mobile chat list ──
+function renderGroups() {
+  // Desktop: inject into sidebar after friends list
+  const container = document.getElementById('groupSection');
+  if (!container) return;
+  if (!groups.length) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+  const list = document.getElementById('groupList');
+  if (!list) return;
+  list.innerHTML = '';
+  groups.forEach(g => {
+    const el = buildGroupRow(g);
+    list.appendChild(el);
+  });
+  renderGroupsMobile();
+}
+
+function buildGroupRow(g) {
+  const uCount = g.unread_count || 0;
+  const isActive = currentGroupChatId === g.chat_id;
+  const el = document.createElement('div');
+  el.className = 'crow' + (isActive ? ' active' : '');
+  el.setAttribute('data-gcid', g.chat_id);
+
+  // Expiry badge for event groups
+  let expBadge = '';
+  if (g.is_temporary && g.expires_at) {
+    const left = new Date(g.expires_at) - Date.now();
+    if (left > 0) {
+      const hrs  = Math.floor(left / 3600000);
+      const mins = Math.floor((left % 3600000) / 60000);
+      const txt  = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+      expBadge = `<span style="font-size:10px;background:rgba(245,158,11,.15);color:#f59e0b;border-radius:6px;padding:1px 6px;margin-left:5px;font-weight:600;">⏱ ${txt}</span>`;
+    } else {
+      expBadge = `<span style="font-size:10px;color:#ef4444;margin-left:5px;">⏱ Expired</span>`;
+    }
+  }
+
+  el.innerHTML = `
+    <div class="av" style="background:${g.avatar_color};font-size:16px;position:relative;">
+      👥
+    </div>
+    <div class="cmeta">
+      <div class="cnrow">
+        <span class="cuname">${esc(g.name)}${expBadge}</span>
+        ${g.last_message_time ? `<span class="cts">${relTime(g.last_message_time)}</span>` : ''}
+      </div>
+      <div class="cprev" style="color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ${g.last_message ? esc(g.last_message) : (g.member_count + ' members')}
+      </div>
+    </div>
+    <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;margin-right:8px;">${uCount > 99 ? '99+' : uCount}</span>
+    <button class="crow-menu-btn" title="Group info">⋯</button>
+  `;
+  el.querySelector('.crow-menu-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    openGroupInfo(g.id);
+  });
+  el.addEventListener('click', e => {
+    if (e.target.closest('.crow-menu-btn')) return;
+    openGroupChat(g);
+  });
+  return el;
+}
+
+function renderGroupsMobile() {
+  const body = document.getElementById('clpGroupList');
+  if (!body || window.innerWidth > 720) return;
+  body.innerHTML = '';
+  if (!groups.length) {
+    document.getElementById('clpGroupSection').style.display = 'none';
+    return;
+  }
+  document.getElementById('clpGroupSection').style.display = 'block';
+  groups.forEach(g => body.appendChild(buildGroupRow(g)));
+}
+
+// ── Open a group chat ──
+function openGroupChat(g) {
+  currentGroupChatId = g.chat_id;
+  currentGroupId = g.id;
+  currentChatId = g.chat_id;
+  currentFriendId = null; // clear 1-on-1
+
+  // Update header
+  document.getElementById('chav').textContent = '👥';
+  document.getElementById('chav').style.background = g.avatar_color || 'var(--brand)';
+  document.getElementById('chnm').textContent = g.name;
+  document.getElementById('chsub').textContent = g.member_count + ' members';
+  document.getElementById('chsub').classList.remove('online');
+
+  // Hide call buttons (groups don't have calls), show info
+  ['videoCallBtn','voiceCallBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  ['pinnedBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  });
+  // Repurpose conv3Btn for group info
+  const c3 = document.getElementById('conv3Btn');
+  if (c3) { c3.style.display = 'block'; c3.onclick = () => openGroupInfo(g.id); }
+
+  document.querySelector('.iarea').style.display = 'flex';
+
+  // Load messages
+  loadMsgs(g.chat_id);
+  if (socket) {
+    socket.emit('join_chat', { chat_id: g.chat_id });
+    socket.emit('mark_all_read', { chat_id: g.chat_id });
+  }
+
+  // Clear unread
+  const el = document.querySelector(`[data-gcid="${g.chat_id}"] .unread-badge`);
+  if (el) { el.style.display = 'none'; }
+  // Update group unread in memory
+  const gObj = groups.find(x => x.chat_id === g.chat_id);
+  if (gObj) gObj.unread_count = 0;
+
+  renderGroups();
+
+  // Mobile: switch view
+  if (window.innerWidth <= 720) {
+    document.getElementById('chatListPage').style.display = 'none';
+    const main = document.getElementById('mainChat');
+    main.style.display = 'flex';
+    main.classList.add('chat-open');
+  } else {
+    document.getElementById('msgInput').focus();
+  }
+}
+
+// ── Load groups on init + re-render when new message arrives in a group ──
+socket && socket.on('group_created', data => {
+  toast('📣 You\'ve been added to "' + data.name + '"', 'info');
+  loadGroups();
+});
+socket && socket.on('join_group_room', data => {
+  if (data.chat_id) socket.emit('join_chat', { chat_id: data.chat_id });
+});
+socket && socket.on('group_deleted', data => {
+  toast('🗑 Group "' + data.name + '" was deleted', 'info');
+  groups = groups.filter(x => x.id !== data.group_id);
+  if (currentGroupId === data.group_id) {
+    currentGroupId = null; currentGroupChatId = null; currentChatId = null;
+    document.getElementById('chnm').textContent = 'Hepozy';
+    document.getElementById('chsub').textContent = '';
+    document.querySelector('.iarea').style.display = 'none';
+    if (window.innerWidth <= 720) goBackToList();
+  }
+  renderGroups();
+});
+socket && socket.on('group_updated', data => {
+  const g = groups.find(x => x.id === data.group_id);
+  if (g) { g.name = data.name; g.description = data.description; renderGroups(); }
+  // Update header if currently in this group
+  if (currentGroupId === data.group_id) {
+    document.getElementById('chnm').textContent = data.name;
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// GROUP INFO + ADMIN CONTROLS
+// ══════════════════════════════════════════════════════════════════
+let _giCurrentGroup = null;  // full group data for current info sheet
+let _amSelectedIds  = new Set();
+
+async function openGroupInfo(gid) {
+  try {
+    const r = await fetch('/api/groups/' + gid);
+    const d = await r.json();
+    if (!d.success) { toast(d.error || 'Failed', 'err'); return; }
+    const g = d.group;
+    _giCurrentGroup = g;
+
+    // Avatar
+    const av = document.getElementById('giAv');
+    av.textContent = '👥'; av.style.background = g.avatar_color;
+
+    // Name & description
+    document.getElementById('giName').textContent = g.name;
+    document.getElementById('giDesc').textContent =
+      g.description || (g.is_temporary ? '⏱ Event group' : 'Permanent group');
+
+    // Expiry bar for event groups
+    const expBar = document.getElementById('giExpiryBar');
+    if (g.is_temporary && g.expires_at) {
+      const left = new Date(g.expires_at) - Date.now();
+      if (left > 0) {
+        const hrs = Math.floor(left / 3600000);
+        const mins = Math.floor((left % 3600000) / 60000);
+        expBar.textContent = `⏱ Event group · expires in ${hrs > 0 ? hrs + 'h ' : ''}${mins}m`;
+        expBar.style.display = 'block';
+      } else {
+        expBar.textContent = '⏱ Event group · expired';
+        expBar.style.display = 'block';
+      }
+    } else {
+      expBar.style.display = 'none';
+    }
+
+    // Member count
+    document.getElementById('giMemberCount').textContent = g.members.length;
+
+    // Check if current user is admin
+    const myMember = g.members.find(m => m.id === ME_ID);
+    const isAdmin  = myMember?.role === 'admin';
+
+    // Show/hide admin buttons
+    const editBtn   = document.getElementById('giEditBtn');
+    const addBtn    = document.getElementById('giAddMemberBtn');
+    const deleteBtn = document.getElementById('giDeleteBtn');
+    if (editBtn)   editBtn.style.display   = isAdmin ? 'block' : 'none';
+    if (addBtn)    addBtn.style.display    = isAdmin ? 'block' : 'none';
+    if (deleteBtn) deleteBtn.style.display = isAdmin ? 'block' : 'none';
+
+    // Render members
+    document.getElementById('giMembers').innerHTML = g.members.map(m => `
+      <div class="gi-member">
+        <div class="gi-member-av" style="background:var(--brand);">${m.username[0].toUpperCase()}</div>
+        <div style="flex:1;">
+          <div class="gi-member-name">${esc(m.username)}${m.id === ME_ID ? ' <span style="font-size:10px;color:var(--mute);">· you</span>' : ''}</div>
+          ${m.online ? '<div style="font-size:10px;color:#22c55e;margin-top:2px;">● Online</div>' : ''}
+        </div>
+        ${m.role === 'admin' ? '<span class="gi-role">Admin</span>' : '<span style="font-size:10px;color:var(--mute);">Member</span>'}
+      </div>
+    `).join('');
+
+    document.getElementById('groupInfoSheet')._gid = gid;
+    document.getElementById('groupInfoSheet').classList.add('show');
+  } catch(e) { toast('Failed to load group info', 'err'); }
+}
+
+function closeGroupInfo() {
+  document.getElementById('groupInfoSheet').classList.remove('show');
+}
+
+async function leaveGroup() {
+  const gid = document.getElementById('groupInfoSheet')._gid;
+  if (!gid) return;
+  if (!confirm('Leave this group?')) return;
+  try {
+    const r = await fetch('/api/groups/' + gid + '/leave', { method:'POST' });
+    const d = await r.json();
+    if (d.success) {
+      toast('Left group', 'ok');
+      closeGroupInfo();
+      groups = groups.filter(x => x.id !== gid);
+      if (currentGroupId === gid) {
+        currentGroupId = null; currentGroupChatId = null; currentChatId = null;
+        document.getElementById('chnm').textContent = 'Hepozy';
+        document.getElementById('chsub').textContent = '';
+        document.querySelector('.iarea').style.display = 'none';
+        if (window.innerWidth <= 720) goBackToList();
+      }
+      renderGroups();
+    } else { toast(d.error || 'Failed', 'err'); }
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+async function deleteGroup() {
+  const gid = document.getElementById('groupInfoSheet')._gid;
+  if (!gid) return;
+  if (!confirm('Delete this group for everyone? This cannot be undone.')) return;
+  try {
+    const r = await fetch('/api/groups/' + gid, { method:'DELETE' });
+    const d = await r.json();
+    if (d.success) {
+      toast('Group deleted', 'ok');
+      closeGroupInfo();
+      groups = groups.filter(x => x.id !== gid);
+      if (currentGroupId === gid) {
+        currentGroupId = null; currentGroupChatId = null; currentChatId = null;
+        document.getElementById('chnm').textContent = 'Hepozy';
+        document.getElementById('chsub').textContent = '';
+        document.querySelector('.iarea').style.display = 'none';
+        if (window.innerWidth <= 720) goBackToList();
+      }
+      renderGroups();
+    } else { toast(d.error || 'Failed', 'err'); }
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+// ── Rename group ──
+function openGroupRename() {
+  if (!_giCurrentGroup) return;
+  document.getElementById('grName').value = _giCurrentGroup.name;
+  document.getElementById('grDesc').value = _giCurrentGroup.description || '';
+  document.getElementById('groupRenameSheet').style.transform = 'translateX(0)';
+}
+function closeGroupRename() {
+  document.getElementById('groupRenameSheet').style.transform = 'translateX(100%)';
+}
+async function submitGroupRename() {
+  const gid  = document.getElementById('groupInfoSheet')._gid;
+  const name = document.getElementById('grName').value.trim();
+  const desc = document.getElementById('grDesc').value.trim();
+  if (!name) { toast('Group name cannot be empty', 'err'); return; }
+  try {
+    const r = await fetch('/api/groups/' + gid + '/rename', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, description: desc })
+    });
+    const d = await r.json();
+    if (d.success) {
+      toast('Group updated ✅', 'ok');
+      closeGroupRename();
+      closeGroupInfo();
+      await loadGroups();
+    } else { toast(d.error || 'Failed', 'err'); }
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+// ── Add members to group ──
+function openAddMember() {
+  const gid = document.getElementById('groupInfoSheet')._gid;
+  if (!gid || !_giCurrentGroup) return;
+  _amSelectedIds.clear();
+  const existingIds = new Set(_giCurrentGroup.members.map(m => m.id));
+  const eligible = friends.filter(f => !existingIds.has(f.id));
+  const list = document.getElementById('amFriendsList');
+  if (!eligible.length) {
+    list.innerHTML = '<div style="color:var(--mute);font-size:13px;padding:12px;">All your friends are already in this group.</div>';
+  } else {
+    list.innerHTML = eligible.map(f => `
+      <label class="cg-friend-row">
+        <input type="checkbox" value="${f.id}" onchange="amToggle(${f.id})">
+        <div class="cg-friend-av" style="background:var(--brand);">${f.username[0].toUpperCase()}</div>
+        <div class="cg-friend-name">${esc(f.username)}</div>
+      </label>
+    `).join('');
+  }
+  document.getElementById('addMemberSheet').style.transform = 'translateX(0)';
+  document.getElementById('amAddBtn').disabled = true;
+  document.getElementById('amAddBtn').style.opacity = '.4';
+}
+
+function closeAddMember() {
+  document.getElementById('addMemberSheet').style.transform = 'translateX(100%)';
+}
+
+function amToggle(fid) {
+  if (_amSelectedIds.has(fid)) _amSelectedIds.delete(fid);
+  else _amSelectedIds.add(fid);
+  const btn = document.getElementById('amAddBtn');
+  const hasAny = _amSelectedIds.size > 0;
+  btn.disabled = !hasAny;
+  btn.style.opacity = hasAny ? '1' : '.4';
+}
+
+async function submitAddMember() {
+  const gid = document.getElementById('groupInfoSheet')._gid;
+  if (!gid || !_amSelectedIds.size) return;
+  const btn = document.getElementById('amAddBtn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+  let added = 0;
+  for (const uid of _amSelectedIds) {
+    try {
+      const r = await fetch('/api/groups/' + gid + '/add_member', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ user_id: uid })
+      });
+      const d = await r.json();
+      if (d.success) added++;
+    } catch(e) {}
+  }
+  btn.textContent = 'Add';
+  if (added > 0) {
+    toast(`Added ${added} member${added>1?'s':''} ✅`, 'ok');
+    closeAddMember();
+    await openGroupInfo(gid);  // refresh
+    await loadGroups();
+  } else {
+    toast('Failed to add members', 'err');
+    btn.disabled = false;
+  }
+}
+
+// ── Create Group Sheet ──
+function openCreateGroup(startType) {
+  _cgSelectedIds.clear();
+  _cgType  = startType || 'permanent';
+  _cgColor = '#7c6aff';
+  // Reset fields
+  document.getElementById('cgName').value = '';
+  document.getElementById('cgDesc').value = '';
+  document.getElementById('cgCreateBtn').disabled = true;
+  document.getElementById('cgCreateBtn').textContent = 'Create';
+  // Type buttons
+  document.getElementById('cgTypePerm').classList.toggle('selected', _cgType === 'permanent');
+  document.getElementById('cgTypeTemp').classList.toggle('selected', _cgType === 'temporary');
+  document.getElementById('cgExpiryRow').style.display = _cgType === 'temporary' ? 'block' : 'none';
+  // Reset color
+  document.querySelectorAll('.cg-color').forEach(el => {
+    el.classList.toggle('selected', el.dataset.color === '#7c6aff');
+  });
+  document.getElementById('cgSelectedCount').textContent = '0';
+  // Populate friends list with search
+  _renderCgFriends('');
+  document.getElementById('cgSearch').value = '';
+  document.getElementById('createGroupSheet').classList.add('show');
+  setTimeout(() => document.getElementById('cgName').focus(), 300);
+}
+
+function _renderCgFriends(query) {
+  const list = document.getElementById('cgFriendsList');
+  const q    = query.toLowerCase().trim();
+  const pool = q ? friends.filter(f => f.username.toLowerCase().includes(q)) : friends;
+  if (!pool.length) {
+    list.innerHTML = `<div style="color:var(--mute);font-size:13px;padding:12px;text-align:center;">${q ? 'No friends match "'+esc(q)+'"' : 'No friends yet — add some first!'}</div>`;
+    return;
+  }
+  list.innerHTML = pool.map(f => {
+    const checked = _cgSelectedIds.has(f.id);
+    return `<label class="cg-friend-row${checked?' cg-checked':''}">
+      <input type="checkbox" value="${f.id}" ${checked?'checked':''} onchange="cgToggle(${f.id},this)">
+      <div class="cg-friend-av" style="background:var(--brand);">${f.username[0].toUpperCase()}</div>
+      <div class="cg-friend-name">${esc(f.username)}</div>
+      ${checked ? '<span style="color:var(--brand);font-size:14px;margin-left:auto;">✓</span>' : ''}
+    </label>`;
+  }).join('');
+}
+
+function closeCreateGroup() {
+  document.getElementById('createGroupSheet').classList.remove('show');
+}
+function cgCheckName() {
+  const name = document.getElementById('cgName').value.trim();
+  document.getElementById('cgCreateBtn').disabled = name.length < 1;
+}
+function cgToggle(fid, el) {
+  if (_cgSelectedIds.has(fid)) _cgSelectedIds.delete(fid);
+  else _cgSelectedIds.add(fid);
+  document.getElementById('cgSelectedCount').textContent = _cgSelectedIds.size;
+  // Re-render to show checkmark on the row
+  _renderCgFriends(document.getElementById('cgSearch').value || '');
+}
+function cgPickType(type) {
+  _cgType = type;
+  document.getElementById('cgTypePerm').classList.toggle('selected', type === 'permanent');
+  document.getElementById('cgTypeTemp').classList.toggle('selected', type === 'temporary');
+  document.getElementById('cgExpiryRow').style.display = type === 'temporary' ? 'block' : 'none';
+  const hint = document.getElementById('cgTypeHint');
+  if (hint) hint.textContent = type === 'temporary'
+    ? 'Auto-archives after the event · great for trips, parties, projects'
+    : 'Stays forever · great for friend groups, teams, or family';
+}
+function cgPickColor(el) {
+  _cgColor = el.dataset.color;
+  document.querySelectorAll('.cg-color').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+async function submitCreateGroup() {
+  const name = document.getElementById('cgName').value.trim();
+  if (!name) { toast('Enter a group name', 'err'); return; }
+  if (name.length < 2) { toast('Name must be at least 2 characters', 'err'); return; }
+  const description  = document.getElementById('cgDesc').value.trim();
+  const member_ids   = [..._cgSelectedIds];
+  const is_temporary = _cgType === 'temporary';
+  const expires_hours = is_temporary ? parseInt(document.getElementById('cgExpiryHours').value) : null;
+  const btn = document.getElementById('cgCreateBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const r = await fetch('/api/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, member_ids, is_temporary, expires_hours, avatar_color: _cgColor })
+    });
+    const d = await r.json();
+    if (d.success) {
+      toast('Group "' + name + '" created! 🎉', 'ok');
+      closeCreateGroup();
+      await loadGroups();
+      // Auto-open the new group
+      const g = groups.find(x => x.id === d.group.id);
+      if (g) openGroupChat(g);
+    } else {
+      toast(d.error || 'Failed to create group', 'err');
+    }
+  } catch(e) { toast('Failed', 'err'); }
+  finally { btn.disabled = false; btn.textContent = 'Create'; }
+}
+
+// ── Load groups on init + refresh expiry countdowns every minute ──
+loadGroups();
+setInterval(() => {
+  // Re-render group list to update expiry countdowns without full server fetch
+  if (groups.length) renderGroups();
+}, 60000);
+
 </script>
 <!-- REACTION SHEET (full emoji picker) -->
 <div class="react-sheet-ov" id="reactSheetOv" onclick="closeReactSheet()"></div>
@@ -5939,5 +7037,231 @@ setTimeout(loadPinnedChats,500);
   </div>
   <div class="stories-popup-list" id="storiesPopupList"></div>
 </div>
+
+<!-- ═══ MOOD WARNING SHEET ═══ -->
+<!-- moodWarnSheet is the active mood warning sheet -->
+
+<!-- ═══ TIME CAPSULE SHEET ═══ -->
+<div id="capsuleSheet">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    <div style="font-size:28px;">⏳</div>
+    <div style="flex:1;">
+      <div class="capsule-title">Time Capsule</div>
+      <div class="capsule-sub">Deliver a message at any future date or time.</div>
+    </div>
+    <button onclick="closeCapsuleSheet()" style="background:none;border:none;color:var(--mute);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;">✕</button>
+  </div>
+  <!-- Tabs -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--bdr);padding-bottom:12px;">
+    <button id="capsuleTab_compose" class="ct-tab ct-active" onclick="capsuleSwitchTab('compose')">✏️ Compose</button>
+    <button id="capsuleTab_list"    class="ct-tab"            onclick="capsuleSwitchTab('list')">📋 Scheduled</button>
+  </div>
+  <!-- Compose pane -->
+  <div id="capsulePane_compose">
+    <div class="capsule-banner">📡 Stored on server · delivered on time even if you're offline</div>
+    <div class="capsule-field">
+      <label>Your message</label>
+      <textarea id="capsuleMsg" placeholder="Write something meaningful…" rows="4" style="resize:none;width:100%;background:var(--hov);border:1px solid var(--bdr);border-radius:12px;padding:11px 13px;color:var(--txt);font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
+    </div>
+    <div class="capsule-field">
+      <label>Deliver on</label>
+      <input type="datetime-local" id="capsuleDate" style="cursor:pointer;width:100%;background:var(--hov);border:1px solid var(--bdr);border-radius:12px;padding:11px 13px;color:var(--txt);font-size:14px;outline:none;box-sizing:border-box;">
+    </div>
+    <div id="capsuleCountdown" style="font-size:12px;color:var(--brand);font-weight:600;margin-bottom:14px;min-height:18px;"></div>
+    <button id="capsuleSendBtn" class="capsule-send" onclick="submitCapsule()">⏳ Schedule message</button>
+  </div>
+  <!-- List pane -->
+  <div id="capsulePane_list" style="display:none;">
+    <div id="capsuleListBody"></div>
+  </div>
+</div>
+
+<!-- ═══ MOOD WARNING SHEET ═══ -->
+<div id="moodWarnSheet">
+  <div id="moodWarnIcon" style="font-size:44px;margin-bottom:8px;text-align:center;">😤</div>
+  <div style="font-size:18px;font-weight:700;color:var(--txt);margin-bottom:5px;text-align:center;">Hold on a sec…</div>
+  <div id="moodWarnLabel" style="font-size:13px;color:var(--mute);margin-bottom:6px;line-height:1.6;text-align:center;">
+    Your message has an intense tone.
+  </div>
+  <div style="font-size:12px;color:var(--mute);margin-bottom:14px;text-align:center;opacity:.7;">
+    Only you see this · no one else will ever know
+  </div>
+  <div id="moodMsgPreview" style="
+    background:rgba(239,68,68,.07);
+    border-left:3px solid #ef4444;
+    border-radius:0 12px 12px 0;
+    padding:11px 14px;
+    font-size:13px;color:var(--txt);
+    margin-bottom:20px;
+    word-break:break-word;
+    max-height:100px;overflow:hidden;
+    line-height:1.55;
+    font-style:italic;
+  "></div>
+  <button onclick="moodEdit()" style="
+    width:100%;padding:14px;border-radius:14px;border:none;
+    background:var(--brand);color:#fff;
+    font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;
+    box-shadow:0 4px 14px rgba(124,106,255,.35);
+  ">✏️ Edit my message</button>
+  <button onclick="moodSendAnyway()" style="
+    width:100%;padding:13px;border-radius:14px;border:none;
+    background:rgba(239,68,68,.09);color:#ef4444;
+    font-size:14px;font-weight:600;cursor:pointer;
+    border:1px solid rgba(239,68,68,.2);
+  ">Send anyway</button>
+</div>
+
+<!-- ═══ FADING RELATIONSHIP BANNER ═══ -->
+<div id="fadingBanner">
+  <div class="fb-icon" id="fadingIcon">💛</div>
+  <div class="fb-text" id="fadingText">
+    Loading…
+  </div>
+  <button class="fb-chat-btn" onclick="fadingBannerChat()">Say hi 👋</button>
+  <button class="fb-close" onclick="closeFadingBanner(false)">✕</button>
+</div>
+
+<!-- ═══ CREATE GROUP SHEET (full screen) ═══ -->
+<div id="createGroupSheet">
+  <div class="cg-hdr">
+    <button class="cg-back" onclick="closeCreateGroup()">‹</button>
+    <div class="cg-title">New Group</div>
+    <button class="cg-create-btn" id="cgCreateBtn" onclick="submitCreateGroup()" disabled>Create</button>
+  </div>
+  <div class="cg-body">
+
+    <!-- Group name (most important — top, prominent) -->
+    <div class="cg-section">
+      <div class="cg-label">Group Name <span style="color:#ef4444;">*</span></div>
+      <input class="cg-input" id="cgName" type="text" placeholder="e.g. Trip to Baguio, Study Squad…"
+        oninput="cgCheckName()" maxlength="60" autocomplete="off">
+    </div>
+
+    <!-- Description -->
+    <div class="cg-section">
+      <div class="cg-label">Description <span style="color:var(--mute);font-weight:400;">(optional)</span></div>
+      <input class="cg-input" id="cgDesc" type="text" placeholder="What's this group about?" maxlength="200" autocomplete="off">
+    </div>
+
+    <!-- Color picker -->
+    <div class="cg-section">
+      <div class="cg-label">Color</div>
+      <div class="cg-color-row" id="cgColorRow">
+        <div class="cg-color selected" style="background:#7c6aff" data-color="#7c6aff" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#a855f7" data-color="#a855f7" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#06b6d4" data-color="#06b6d4" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#22c55e" data-color="#22c55e" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#f59e0b" data-color="#f59e0b" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#ef4444" data-color="#ef4444" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#ec4899" data-color="#ec4899" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#3b82f6" data-color="#3b82f6" onclick="cgPickColor(this)"></div>
+      </div>
+    </div>
+
+    <!-- Group Type -->
+    <div class="cg-section">
+      <div class="cg-label">Type</div>
+      <div class="cg-type-row">
+        <button class="cg-type-btn selected" id="cgTypePerm" onclick="cgPickType('permanent')">
+          🏠 Permanent
+        </button>
+        <button class="cg-type-btn" id="cgTypeTemp" onclick="cgPickType('temporary')">
+          ⏱ Event Group
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--mute);margin-top:7px;line-height:1.5;" id="cgTypeHint">
+        Stays forever · great for friend groups, teams, or family
+      </div>
+      <div id="cgExpiryRow" style="display:none;margin-top:10px;">
+        <div class="cg-label" style="margin-bottom:6px;">Auto-archive after</div>
+        <select class="cg-input" id="cgExpiryHours" style="cursor:pointer;">
+          <option value="12">12 hours</option>
+          <option value="24" selected>1 day</option>
+          <option value="48">2 days</option>
+          <option value="72">3 days</option>
+          <option value="168">1 week</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Members with search -->
+    <div class="cg-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="cg-label" style="margin:0;">Add Members</div>
+        <span style="font-size:12px;color:var(--brand);font-weight:600;"><span id="cgSelectedCount">0</span> selected</span>
+      </div>
+      <input class="cg-input" id="cgSearch" type="text" placeholder="🔍 Search friends…"
+        oninput="_renderCgFriends(this.value)" style="margin-bottom:10px;" autocomplete="off">
+      <div class="cg-friends-list" id="cgFriendsList">
+        <div style="color:var(--mute);font-size:13px;padding:8px;">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ GROUP INFO SHEET ═══ -->
+<div id="groupInfoSheet">
+  <div class="gi-hdr">
+    <button class="cg-back" onclick="closeGroupInfo()">‹</button>
+    <div class="cg-title">Group Info</div>
+    <button id="giEditBtn" onclick="openGroupRename()" style="background:none;border:none;color:var(--brand);font-size:14px;font-weight:600;cursor:pointer;display:none;">Edit</button>
+  </div>
+  <div class="gi-body">
+    <div class="gi-av" id="giAv"></div>
+    <div class="gi-name" id="giName"></div>
+    <div class="gi-desc" id="giDesc"></div>
+    <!-- Expiry bar for event groups -->
+    <div id="giExpiryBar" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:9px 13px;margin-bottom:14px;font-size:12px;color:#f59e0b;font-weight:600;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cg-label" style="margin:0;">Members (<span id="giMemberCount">0</span>)</div>
+      <button id="giAddMemberBtn" onclick="openAddMember()" style="background:none;border:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer;display:none;">+ Add</button>
+    </div>
+    <div id="giMembers"></div>
+    <div style="margin-top:18px;display:flex;gap:10px;">
+      <button class="gi-leave" onclick="leaveGroup()" style="flex:1;">🚪 Leave</button>
+      <button id="giDeleteBtn" onclick="deleteGroup()" style="flex:1;padding:12px;border-radius:12px;border:none;background:rgba(239,68,68,.1);color:#ef4444;font-size:14px;font-weight:600;cursor:pointer;display:none;">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD MEMBER TO GROUP SHEET ═══ -->
+<div id="addMemberSheet" style="position:fixed;inset:0;background:var(--card);z-index:3500;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,0,1);">
+  <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--bdr);">
+    <button onclick="closeAddMember()" style="background:none;border:none;font-size:24px;color:var(--txt);cursor:pointer;padding:0;">‹</button>
+    <div style="font-size:17px;font-weight:700;color:var(--txt);flex:1;">Add Members</div>
+    <button id="amAddBtn" onclick="submitAddMember()" disabled style="background:var(--brand);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:14px;font-weight:600;cursor:pointer;opacity:.4;">Add</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:16px;">
+    <div id="amFriendsList"></div>
+  </div>
+</div>
+
+<!-- ═══ GROUP RENAME SHEET ═══ -->
+<div id="groupRenameSheet" style="position:fixed;inset:0;background:var(--card);z-index:3500;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,0,1);">
+  <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--bdr);">
+    <button onclick="closeGroupRename()" style="background:none;border:none;font-size:24px;color:var(--txt);cursor:pointer;padding:0;">‹</button>
+    <div style="font-size:17px;font-weight:700;color:var(--txt);flex:1;">Edit Group</div>
+    <button onclick="submitGroupRename()" style="background:var(--brand);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:14px;font-weight:600;cursor:pointer;">Save</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;">
+    <div style="margin-bottom:16px;">
+      <div class="cg-label">Group Name</div>
+      <input id="grName" class="cg-input" type="text" maxlength="60" placeholder="Group name…" oninput="">
+    </div>
+    <div>
+      <div class="cg-label">Description</div>
+      <input id="grDesc" class="cg-input" type="text" maxlength="200" placeholder="What is this group about?…">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MOOD BACKDROP ═══ -->
+<div id="moodBackdrop" onclick="moodEdit()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
+<!-- ═══ CAPSULE BACKDROP ═══ -->
+<div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
+
 </body>
 </html>
