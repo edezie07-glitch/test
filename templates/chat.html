@@ -1359,7 +1359,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
       <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
       <!-- Search is accessible via ☰ menu -->
-      <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;visibility:hidden;position:absolute;">🔍</button>
+      <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
       <button class="chdr-btn" id="pinnedBtn" onclick="showPinned()" title="Pinned messages" style="display:none;">📌</button>
       <!-- ADDED: conversation 3-line menu -->
       <button class="conv3-btn chdr-btn" id="conv3Btn" onclick="openConv3Menu(event)" title="More options" style="display:none;">☰</button>
@@ -4436,7 +4436,7 @@ function openChat(fid,fname,chatId){
   const isOnline=onlineUsers.has(fid);
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
   document.getElementById('chsub').className=isOnline?'chdr-sub online':'chdr-sub';
-  ['videoCallBtn','voiceCallBtn','pinnedBtn','conv3Btn'].forEach(id=>{
+  ['videoCallBtn','voiceCallBtn','searchBtn','pinnedBtn','conv3Btn'].forEach(id=>{
     document.getElementById(id).style.display='block';
   });
   document.querySelector('.iarea').style.display='flex';
@@ -6860,6 +6860,8 @@ function openGroupChat(g) {
   });
   const pinnedBtn = document.getElementById('pinnedBtn');
   if (pinnedBtn) pinnedBtn.style.display = 'block';
+  const searchBtnEl = document.getElementById('searchBtn');
+  if (searchBtnEl) searchBtnEl.style.display = 'block';
 
   const c3 = document.getElementById('conv3Btn');
   if (c3) {
