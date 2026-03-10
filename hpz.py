@@ -218,6 +218,49 @@ class Music(db.Model):
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+# ── Group chat models ──
+class Group(db.Model):
+    __tablename__ = 'groups'
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(300), default='')
+    avatar_color= db.Column(db.String(20), default='#7c6aff')
+    created_by  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    is_temporary= db.Column(db.Boolean, default=False)   # event group
+    expires_at  = db.Column(db.DateTime, nullable=True)  # None = permanent
+    created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    @property
+    def chat_id(self):
+        return f'group-{self.id}'
+
+    @property
+    def is_expired(self):
+        if not self.expires_at:
+            return False
+        return datetime.now(timezone.utc) > self.expires_at.replace(tzinfo=timezone.utc)
+
+class GroupMember(db.Model):
+    __tablename__ = 'group_members'
+    id       = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False, index=True)
+    user_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    role     = db.Column(db.String(20), default='member')  # 'admin' or 'member'
+    joined_at= db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('group_id', 'user_id'),)
+
+# ── Time-capsule messages ──
+class ScheduledMessage(db.Model):
+    __tablename__ = 'scheduled_messages'
+    id           = db.Column(db.Integer, primary_key=True)
+    sender_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    chat_id      = db.Column(db.String(100), nullable=False)
+    content      = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(20), default='text')
+    deliver_at   = db.Column(db.DateTime, nullable=False)
+    delivered    = db.Column(db.Boolean, default=False)
+    created_at   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
 # ============================================================
 # DATABASE INITIALIZATION
 # ============================================================
@@ -1335,6 +1378,303 @@ def get_pinned_chats():
     return jsonify({'success': True, 'pinned': [p.chat_id for p in pins]})
 
 # ============================================================
+# GROUP CHAT API
+# ============================================================
+
+@app.route('/api/groups', methods=['GET'])
+@login_required
+def get_groups():
+    user_id = int(session['user_id'])
+    memberships = GroupMember.query.filter_by(user_id=user_id).all()
+    result = []
+    for m in memberships:
+        g = Group.query.get(m.group_id)
+        if not g or g.is_expired:
+            continue
+        last_msg = Message.query.filter_by(chat_id=g.chat_id).order_by(Message.created_at.desc()).first()
+        unread = 0
+        if last_msg:
+            unread = Message.query.filter(
+                Message.chat_id == g.chat_id,
+                Message.sender_id != user_id,
+                ~Message.id.in_(db.session.query(MessageRead.message_id).filter_by(user_id=user_id))
+            ).count()
+        members = GroupMember.query.filter_by(group_id=g.id).all()
+        result.append({
+            'id': g.id,
+            'chat_id': g.chat_id,
+            'name': g.name,
+            'description': g.description,
+            'avatar_color': g.avatar_color,
+            'created_by': g.created_by,
+            'is_temporary': g.is_temporary,
+            'expires_at': g.expires_at.isoformat() if g.expires_at else None,
+            'member_count': len(members),
+            'my_role': m.role,
+            'last_message': _group_preview(last_msg),
+            'last_message_time': last_msg.created_at.isoformat() if last_msg else g.created_at.isoformat(),
+            'unread_count': unread,
+        })
+    result.sort(key=lambda x: x['last_message_time'], reverse=True)
+    return jsonify({'success': True, 'groups': result})
+
+def _group_preview(msg):
+    if not msg: return None
+    sender = User.query.get(msg.sender_id)
+    name = sender.username if sender else 'Unknown'
+    if msg.message_type == 'image': return name+' sent a photo 📷'
+    if msg.message_type == 'audio': return name+': 🎵 Voice message'
+    return name+': '+(msg.content[:50] if msg.content else '')
+
+@app.route('/api/groups', methods=['POST'])
+@login_required
+def create_group():
+    user_id = int(session['user_id'])
+    data = request.get_json() or {}
+    name = data.get('name','').strip()
+    if not name:
+        return jsonify({'success':False,'error':'Group name required'}),400
+    description   = data.get('description','').strip()
+    member_ids    = data.get('member_ids',[])
+    is_temporary  = bool(data.get('is_temporary', False))
+    expires_hours = int(data.get('expires_hours', 24)) if is_temporary else None
+    avatar_color  = data.get('avatar_color','#7c6aff')
+    colors = ['#7c6aff','#a855f7','#06b6d4','#22c55e','#f59e0b','#ef4444','#ec4899','#3b82f6']
+    if avatar_color not in colors: avatar_color = colors[0]
+    try:
+        expires_at = None
+        if is_temporary and expires_hours:
+            expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_hours)
+        g = Group(name=name, description=description, created_by=user_id,
+                  is_temporary=is_temporary, expires_at=expires_at, avatar_color=avatar_color)
+        db.session.add(g)
+        db.session.flush()
+        # Add creator as admin
+        db.session.add(GroupMember(group_id=g.id, user_id=user_id, role='admin'))
+        # Add other members
+        added = set([user_id])
+        for mid in member_ids:
+            try:
+                mid = int(mid)
+                if mid not in added and are_friends(user_id, mid):
+                    db.session.add(GroupMember(group_id=g.id, user_id=mid, role='member'))
+                    added.add(mid)
+            except: pass
+        db.session.commit()
+        # Notify members via socket
+        for uid in added:
+            sid = get_sid(uid)
+            if sid and uid != user_id:
+                socketio.emit('group_created', {
+                    'group_id': g.id, 'name': g.name,
+                    'created_by': User.query.get(user_id).username,
+                    'is_temporary': is_temporary,
+                }, room=sid)
+            if sid:
+                socketio.emit('join_group_room', {'chat_id': g.chat_id}, room=sid)
+        return jsonify({'success':True,'group':{'id':g.id,'chat_id':g.chat_id,'name':g.name,
+            'avatar_color':g.avatar_color,'is_temporary':is_temporary,'expires_at':g.expires_at.isoformat() if g.expires_at else None}})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/groups/<int:gid>', methods=['GET'])
+@login_required
+def get_group(gid):
+    user_id = int(session['user_id'])
+    g = Group.query.get(gid)
+    if not g: return jsonify({'success':False,'error':'Not found'}),404
+    if not GroupMember.query.filter_by(group_id=gid,user_id=user_id).first():
+        return jsonify({'success':False,'error':'Not a member'}),403
+    members = GroupMember.query.filter_by(group_id=gid).all()
+    member_list = []
+    for m in members:
+        u = User.query.get(m.user_id)
+        if u: member_list.append({'id':u.id,'username':u.username,'role':m.role,'online':is_user_online(u.id)})
+    return jsonify({'success':True,'group':{
+        'id':g.id,'chat_id':g.chat_id,'name':g.name,'description':g.description,
+        'avatar_color':g.avatar_color,'created_by':g.created_by,
+        'is_temporary':g.is_temporary,'expires_at':g.expires_at.isoformat() if g.expires_at else None,
+        'members':member_list,
+    }})
+
+@app.route('/api/groups/<int:gid>/add_member', methods=['POST'])
+@login_required
+def add_group_member(gid):
+    user_id = int(session['user_id'])
+    g = Group.query.get(gid)
+    if not g: return jsonify({'success':False,'error':'Not found'}),404
+    me = GroupMember.query.filter_by(group_id=gid,user_id=user_id).first()
+    if not me or me.role != 'admin':
+        return jsonify({'success':False,'error':'Not an admin'}),403
+    data = request.get_json() or {}
+    new_uid = int(data.get('user_id',0))
+    if GroupMember.query.filter_by(group_id=gid,user_id=new_uid).first():
+        return jsonify({'success':False,'error':'Already a member'}),400
+    try:
+        db.session.add(GroupMember(group_id=gid,user_id=new_uid,role='member'))
+        db.session.commit()
+        sid = get_sid(new_uid)
+        if sid:
+            socketio.emit('group_created',{'group_id':g.id,'name':g.name,'created_by':User.query.get(user_id).username,'is_temporary':g.is_temporary},room=sid)
+            socketio.emit('join_group_room',{'chat_id':g.chat_id},room=sid)
+        return jsonify({'success':True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/groups/<int:gid>/leave', methods=['POST'])
+@login_required
+def leave_group(gid):
+    user_id = int(session['user_id'])
+    m = GroupMember.query.filter_by(group_id=gid,user_id=user_id).first()
+    if not m: return jsonify({'success':False,'error':'Not a member'}),404
+    try:
+        db.session.delete(m)
+        db.session.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/groups/<int:gid>', methods=['DELETE'])
+@login_required
+def delete_group(gid):
+    user_id = int(session['user_id'])
+    g = Group.query.get(gid)
+    if not g: return jsonify({'success':False,'error':'Not found'}),404
+    m = GroupMember.query.filter_by(group_id=gid,user_id=user_id).first()
+    if not m or m.role != 'admin':
+        return jsonify({'success':False,'error':'Only admins can delete the group'}),403
+    try:
+        # Notify all members before deleting
+        members = GroupMember.query.filter_by(group_id=gid).all()
+        for mem in members:
+            if mem.user_id in online_users:
+                sid = online_users[mem.user_id]['sid']
+                socketio.emit('group_deleted', {'group_id': gid, 'name': g.name}, room=sid)
+        # Delete messages, members, then group
+        Message.query.filter_by(chat_id=g.chat_id).delete()
+        GroupMember.query.filter_by(group_id=gid).delete()
+        db.session.delete(g)
+        db.session.commit()
+        return jsonify({'success':True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/groups/<int:gid>/rename', methods=['PUT'])
+@login_required
+def rename_group(gid):
+    user_id = int(session['user_id'])
+    g = Group.query.get(gid)
+    if not g: return jsonify({'success':False,'error':'Not found'}),404
+    m = GroupMember.query.filter_by(group_id=gid,user_id=user_id).first()
+    if not m or m.role != 'admin':
+        return jsonify({'success':False,'error':'Only admins can edit the group'}),403
+    data = request.get_json() or {}
+    name = data.get('name','').strip()
+    description = data.get('description','').strip()
+    if not name: return jsonify({'success':False,'error':'Name cannot be empty'}),400
+    try:
+        g.name = name[:100]
+        g.description = description[:300]
+        db.session.commit()
+        # Notify all members of the rename
+        members = GroupMember.query.filter_by(group_id=gid).all()
+        for mem in members:
+            if mem.user_id in online_users:
+                sid = online_users[mem.user_id]['sid']
+                socketio.emit('group_updated', {'group_id': gid, 'name': g.name, 'description': g.description}, room=sid)
+        return jsonify({'success':True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/messages/group/<chat_id>')
+@login_required
+def get_group_messages(chat_id):
+    user_id = int(session['user_id'])
+    if not chat_id.startswith('group-'):
+        return jsonify({'success':False,'error':'Not a group chat'}),400
+    gid = int(chat_id.split('-')[1])
+    if not GroupMember.query.filter_by(group_id=gid,user_id=user_id).first():
+        return jsonify({'success':False,'error':'Not a member'}),403
+    messages = Message.query.filter_by(chat_id=chat_id).order_by(Message.created_at).all()
+    return jsonify({'success':True,'messages':[format_message(m,user_id) for m in messages]})
+
+# ============================================================
+# SCHEDULED (TIME-CAPSULE) MESSAGES API
+# ============================================================
+
+@app.route('/api/scheduled', methods=['POST'])
+@login_required
+def schedule_message():
+    user_id = int(session['user_id'])
+    data = request.get_json() or {}
+    chat_id = data.get('chat_id','').strip()
+    content = data.get('content','').strip()
+    deliver_at_str = data.get('deliver_at','')
+    if not chat_id or not content or not deliver_at_str:
+        return jsonify({'success':False,'error':'Missing fields'}),400
+    try:
+        deliver_at = datetime.fromisoformat(deliver_at_str.replace('Z','+00:00'))
+        if deliver_at.tzinfo is None:
+            deliver_at = deliver_at.replace(tzinfo=timezone.utc)
+        if deliver_at <= datetime.now(timezone.utc):
+            return jsonify({'success':False,'error':'Delivery time must be in the future'}),400
+        sm = ScheduledMessage(sender_id=user_id,chat_id=chat_id,content=content,deliver_at=deliver_at)
+        db.session.add(sm)
+        db.session.commit()
+        return jsonify({'success':True,'id':sm.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+
+@app.route('/api/scheduled', methods=['GET'])
+@login_required
+def get_scheduled():
+    user_id = int(session['user_id'])
+    msgs = ScheduledMessage.query.filter_by(sender_id=user_id,delivered=False).order_by(ScheduledMessage.deliver_at).all()
+    return jsonify({'success':True,'messages':[{
+        'id':m.id,'chat_id':m.chat_id,'content':m.content,
+        'deliver_at':m.deliver_at.isoformat(),'created_at':m.created_at.isoformat()
+    } for m in msgs]})
+
+@app.route('/api/scheduled/<int:mid>', methods=['DELETE'])
+@login_required
+def delete_scheduled(mid):
+    user_id = int(session['user_id'])
+    m = ScheduledMessage.query.get(mid)
+    if not m or m.sender_id != user_id:
+        return jsonify({'success':False,'error':'Not found'}),404
+    db.session.delete(m); db.session.commit()
+    return jsonify({'success':True})
+
+# Background job: deliver scheduled messages (called on every message send + connect)
+def deliver_scheduled_messages():
+    try:
+        now = datetime.now(timezone.utc)
+        due = ScheduledMessage.query.filter(
+            ScheduledMessage.delivered == False,
+            ScheduledMessage.deliver_at <= now
+        ).all()
+        for sm in due:
+            sender = User.query.get(sm.sender_id)
+            if not sender: sm.delivered=True; continue
+            msg = Message(chat_id=sm.chat_id,sender_id=sm.sender_id,content=sm.content,message_type=sm.message_type)
+            db.session.add(msg)
+            sm.delivered = True
+            db.session.flush()
+            msg_data = format_message(msg, sm.sender_id)
+            msg_data['is_capsule'] = True
+            socketio.emit('new_message', msg_data, room=sm.chat_id)
+        if due: db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f'[scheduled] error: {e}')
+
+# ============================================================
 # SOCKET.IO EVENTS
 # ============================================================
 @socketio.on('connect')
@@ -1364,7 +1704,17 @@ def handle_connect():
             emit('user_online', {'user_id': user_id, 'online': True},
                  room=online_users[friend_id]['sid'])
 
-    print(f"✅ User {user_id} connected and joined {len(friendships)} chat rooms")
+    # Also join all group chat rooms
+    memberships = GroupMember.query.filter_by(user_id=user_id).all()
+    for m in memberships:
+        g = Group.query.get(m.group_id)
+        if g and not g.is_expired:
+            join_room(g.chat_id)
+
+    # Deliver any pending scheduled messages
+    deliver_scheduled_messages()
+
+    print(f"✅ User {user_id} connected — {len(friendships)} friend chats, {len(memberships)} groups")
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -1413,18 +1763,27 @@ def handle_send_message(data):
     if not content or not chat_id:
         return
 
-    parts = chat_id.split('-')
-    if len(parts) != 2:
-        return
-
-    user1_id, user2_id = int(parts[0]), int(parts[1])
-    if user_id not in [user1_id, user2_id]:
-        return
-
-    other_user_id = user2_id if user_id == user1_id else user1_id
-    if is_blocked(user_id, other_user_id):
-        emit('error', {'message': 'Cannot send message to blocked user'})
-        return
+    # Validate the chat_id — either friend chat (N-M) or group chat (group-N)
+    if chat_id.startswith('group-'):
+        try:
+            gid = int(chat_id.split('-')[1])
+        except:
+            return
+        g = Group.query.get(gid)
+        if not g or g.is_expired:
+            emit('error', {'message': 'Group not found or expired'}); return
+        if not GroupMember.query.filter_by(group_id=gid, user_id=user_id).first():
+            emit('error', {'message': 'Not a member of this group'}); return
+    else:
+        parts = chat_id.split('-')
+        if len(parts) != 2:
+            return
+        user1_id, user2_id = int(parts[0]), int(parts[1])
+        if user_id not in [user1_id, user2_id]:
+            return
+        other_user_id = user2_id if user_id == user1_id else user1_id
+        if is_blocked(user_id, other_user_id):
+            emit('error', {'message': 'Cannot send message to blocked user'}); return
 
     try:
         msg = Message(
@@ -1439,13 +1798,20 @@ def handle_send_message(data):
         db.session.commit()
 
         msg_data = format_message(msg, user_id)
-
-        # Broadcast to room — both users auto-joined on connect
+        # Deliver any pending scheduled messages while we're here
+        deliver_scheduled_messages()
+        # Broadcast to room
         emit('new_message', msg_data, room=chat_id)
 
     except Exception as e:
         db.session.rollback()
         print(f"Error sending message: {e}")
+
+@socketio.on('join_group_room')
+def handle_join_group_room(data):
+    chat_id = data.get('chat_id')
+    if chat_id:
+        join_room(chat_id)
 
 @socketio.on('typing_start')
 def handle_typing_start(data):
