@@ -2467,16 +2467,12 @@ function connectSocket(){
   socket.on('typing_stop',hideTyping);
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
   socket.on('friend_request_accepted',(data)=>{
-    toast(data.username+' accepted your friend request! 🎉','ok');
-    showInAppNotif(data.username, '🎉 accepted your friend request! You are now friends.', null);
-    if(prefs.sound) beep();
+    // Refresh silently — no notification needed when someone accepts your request
     loadFriends();
     loadRequests();
   });
-  // New: notify the ACCEPTOR that a new friendship is formed
+  // Refresh when you accept someone — no notification needed
   socket.on('new_friend_added',(data)=>{
-    toast('You are now friends with '+data.username+' 🎉','ok');
-    showInAppNotif(data.username, '👋 You are now connected as friends!', null);
     loadFriends();
   });
   socket.on('friend_request_received',(data)=>{
@@ -4630,7 +4626,7 @@ function showInAppNotif(name, text, chatId){
   const stack = document.getElementById('notifStack');
   const key = chatId || ('__'+name);
 
-  // Deduplicate: if same chat already showing, just update text + reset timer
+  // Deduplicate: if same key already showing, update text+time and re-bump timer
   const existing = stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
   if(existing){
     existing.querySelector('.notif-text').textContent = text;
@@ -4653,15 +4649,26 @@ function showInAppNotif(name, text, chatId){
     <button class="notif-close" onclick="event.stopPropagation();dismissNotif(this.closest('.notif-bubble'));">✕</button>
   `;
 
-  // Tap bubble → open chat
+  // Tap bubble → open chat if chatId, else open notifications/requests panel
   el.addEventListener('click', ()=>{
     dismissNotif(el);
-    if(!chatId) return;
-    const f = friends.find(fr=>{
-      const cid = fr.chat_id || [Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
-      return cid === chatId;
-    });
-    if(f) openChat(f.id, f.username, f.chat_id);
+    if(chatId){
+      // Message or group notification — open that chat
+      if(chatId.startsWith('group-')){
+        const g = groups.find(x=>x.chat_id===chatId);
+        if(g) openGroupChat(g);
+      } else {
+        const f = friends.find(fr=>{
+          const cid = fr.chat_id || [Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
+          return cid === chatId;
+        });
+        if(f) openChat(f.id, f.username, f.chat_id);
+      }
+    } else {
+      // Friend request / social notification — open the bell panel
+      const rqBtn = document.getElementById('rqBtn') || document.getElementById('rqBtnClp');
+      if(rqBtn) rqBtn.click();
+    }
   });
 
   stack.appendChild(el);
@@ -7436,16 +7443,7 @@ setInterval(() => {
   <div class="fwd-list" id="fwdList"></div>
   <button class="savebtn" style="margin-top:12px;" onclick="doForward()">Forward 📤</button>
 </div>
-<!-- GLOBAL SEARCH MODAL -->
-<div class="gsearch-modal" id="gsearchModal">
-  <div class="gsearch-head">
-    <button class="closebtn" onclick="closeGlobalSearch()" style="flex-shrink:0;">✕</button>
-    <input class="gsearch-inp" id="gsearchInp" placeholder="Search all messages…" oninput="doGlobalSearch(this.value)" autocomplete="off">
-  </div>
-  <div class="gsearch-body" id="gsearchBody">
-    <div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>
-  </div>
-</div>
+
 
 <!-- STORIES POPUP PANEL -->
 <div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPanel()"></div>
