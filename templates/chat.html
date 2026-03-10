@@ -774,11 +774,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* ── FORWARD LABEL on message ── */
 .fwd-label{font-size:10px;color:var(--mute);margin-bottom:4px;display:flex;align-items:center;gap:4px;}
 /* ── GLOBAL SEARCH ── */
-.gsearch-modal{position:fixed;inset:0;z-index:1200;background:var(--bg);display:none;flex-direction:column;}
-.gsearch-modal.show{display:flex;}
-.gsearch-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);}
-.gsearch-inp{flex:1;background:var(--inp);border:1px solid var(--ibdr);border-radius:20px;padding:10px 16px;color:var(--txt);font-size:14px;outline:none;}
-.gsearch-body{flex:1;overflow-y:auto;padding:12px;}
+
 .gs-result{padding:12px 14px;border-radius:12px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:6px;}
 .gs-result:hover{background:var(--hov);border-color:var(--bdr);}
 .gs-from{font-size:11px;font-weight:700;color:var(--brand);margin-bottom:3px;}
@@ -1356,7 +1352,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="chdr-sub" id="chsub"></div>
     </div>
     <div class="chdr-actions">
-      <button class="chdr-btn" id="gsearchBtn" onclick="openGlobalSearch()" title="Search all chats">🔎</button>
+
       <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
       <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
       <!-- Search is accessible via ☰ menu -->
@@ -2467,7 +2463,9 @@ function connectSocket(){
   socket.on('typing_stop',hideTyping);
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
   socket.on('friend_request_accepted',(data)=>{
-    // Refresh silently — no notification needed when someone accepts your request
+    // The person who sent the request gets notified their request was accepted
+    showInAppNotif(data.username, '🎉 accepted your friend request! You are now friends.', null);
+    if(prefs.sound) beep();
     loadFriends();
     loadRequests();
   });
@@ -4457,7 +4455,7 @@ function toggleP(id){
   }
 }
 async function addFriend(uid){try{const r=await fetch('/api/friends/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to_user_id:uid})});const d=await r.json();if(d.success){toast('Friend request sent! 🎉','ok');clearSearch();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
-async function acceptReq(reqId){try{const r=await fetch('/api/friends/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});const d=await r.json();if(d.success){toast('Friend added! 🎉','ok');await loadFriends();await loadRequests();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function acceptReq(reqId){try{const r=await fetch('/api/friends/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});const d=await r.json();if(d.success){await loadFriends();await loadRequests();}else toast(d.error,'err');}catch(e){toast('Failed','err');}}
 async function rejectReq(reqId){try{await fetch('/api/friends/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId})});await loadRequests();}catch(e){}}
 async function quickAccept(userId){let rq=pendingReqs.find(r=>r.user_id===userId);if(!rq){await loadRequests();rq=pendingReqs.find(r=>r.user_id===userId);}if(rq)await acceptReq(rq.request_id);}
 
@@ -6347,48 +6345,7 @@ async function doForward(){
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — GLOBAL SEARCH
 // ═══════════════════════════════════════════════════════════
-let gsTimer=null;
-function openGlobalSearch(){
-  document.getElementById('gsearchModal').classList.add('show');
-  setTimeout(()=>document.getElementById('gsearchInp').focus(),80);
-}
-function closeGlobalSearch(){
-  document.getElementById('gsearchModal').classList.remove('show');
-  document.getElementById('gsearchInp').value='';
-  document.getElementById('gsearchBody').innerHTML='<div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>';
-}
-function doGlobalSearch(q){
-  clearTimeout(gsTimer);
-  if(!q.trim()){
-    document.getElementById('gsearchBody').innerHTML='<div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>';
-    return;
-  }
-  document.getElementById('gsearchBody').innerHTML='<div class="lempty" style="padding-top:40px;">Searching…</div>';
-  gsTimer=setTimeout(async()=>{
-    try{
-      const r=await fetch(`/api/messages/search/global?q=${encodeURIComponent(q)}`);
-      const d=await r.json();
-      const body=document.getElementById('gsearchBody');
-      if(!d.success||!d.results.length){
-        body.innerHTML='<div class="lempty" style="padding-top:40px;">No results found</div>';
-        return;
-      }
-      body.innerHTML=d.results.map(m=>`
-        <div class="gs-result" onclick="jumpToResult('${m.other_id}','${esc(m.other_username)}','${m.chat_id}',${m.id})">
-          <div class="gs-from">${esc(m.sender_username)}</div>
-          <div class="gs-chat">in chat with ${esc(m.other_username)}</div>
-          <div class="gs-content">${esc(m.content)}</div>
-          <div class="gs-time">${fmtTime(m.created_at)}</div>
-        </div>`).join('');
-    }catch(e){document.getElementById('gsearchBody').innerHTML='<div class="lempty">Search failed</div>';}
-  },350);
-}
-function jumpToResult(otherId,otherName,chatId,msgId){
-  closeGlobalSearch();
-  openChat(parseInt(otherId),otherName,chatId);
-  // After messages load, scroll to that message
-  setTimeout(()=>scrollToMsg(msgId),600);
-}
+
 
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — PINNED CHATS
@@ -7444,15 +7401,7 @@ setInterval(() => {
   <button class="savebtn" style="margin-top:12px;" onclick="doForward()">Forward 📤</button>
 </div>
 <!-- GLOBAL SEARCH MODAL -->
-<div class="gsearch-modal" id="gsearchModal">
-  <div class="gsearch-head">
-    <button class="closebtn" onclick="closeGlobalSearch()" style="flex-shrink:0;">✕</button>
-    <input class="gsearch-inp" id="gsearchInp" placeholder="Search all messages…" oninput="doGlobalSearch(this.value)" autocomplete="off">
-  </div>
-  <div class="gsearch-body" id="gsearchBody">
-    <div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>
-  </div>
-</div>
+
 
 <!-- STORIES POPUP PANEL -->
 <div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPanel()"></div>
