@@ -4782,7 +4782,7 @@ function openCrowCtxAt(x,y,fid){
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxDo('profile')">👤 View Profile</div>
     <div class="crow-ctx-item danger" onclick="crowCtxDo('delete-conv')">🗑️ Delete Conversation</div>
-  \`;
+  `;
   const mx=Math.min(x,window.innerWidth-195);
   const my=Math.min(y,window.innerHeight-160);
   menu.style.left=mx+'px';
@@ -4851,7 +4851,7 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item danger" onclick="crowCtxConvDo('delete-conv')">🗑️ Delete Conversation</div>
-  \`;
+  `;
   // Position below the button, aligned to right edge
   const mx=Math.min(rect.right-180,window.innerWidth-195);
   const my=rect.bottom+6;
