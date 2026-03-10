@@ -7443,7 +7443,16 @@ setInterval(() => {
   <div class="fwd-list" id="fwdList"></div>
   <button class="savebtn" style="margin-top:12px;" onclick="doForward()">Forward 📤</button>
 </div>
-
+<!-- GLOBAL SEARCH MODAL -->
+<div class="gsearch-modal" id="gsearchModal">
+  <div class="gsearch-head">
+    <button class="closebtn" onclick="closeGlobalSearch()" style="flex-shrink:0;">✕</button>
+    <input class="gsearch-inp" id="gsearchInp" placeholder="Search all messages…" oninput="doGlobalSearch(this.value)" autocomplete="off">
+  </div>
+  <div class="gsearch-body" id="gsearchBody">
+    <div class="lempty" style="padding-top:40px;">🔎 Search across all your chats</div>
+  </div>
+</div>
 
 <!-- STORIES POPUP PANEL -->
 <div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPanel()"></div>
