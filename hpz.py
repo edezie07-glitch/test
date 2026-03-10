@@ -926,6 +926,38 @@ def delete_message(msg_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/conversations/<chat_id>/clear', methods=['DELETE'])
+@login_required
+def clear_conversation(chat_id):
+    user_id = session['user_id']
+    # Validate user belongs to this chat
+    parts = chat_id.split('-')
+    if len(parts) == 2:
+        try:
+            uid1, uid2 = int(parts[0]), int(parts[1])
+            if user_id not in [uid1, uid2]:
+                return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid chat'}), 400
+    elif chat_id.startswith('group-'):
+        gid = int(chat_id.split('-')[1])
+        member = GroupMember.query.filter_by(group_id=gid, user_id=user_id).first()
+        if not member or member.role != 'admin':
+            return jsonify({'success': False, 'error': 'Only admins can clear group chat'}), 403
+    else:
+        return jsonify({'success': False, 'error': 'Invalid chat'}), 400
+    try:
+        msgs = Message.query.filter_by(chat_id=chat_id).all()
+        for m in msgs:
+            m.is_deleted = True
+            m.content = '[Message deleted]'
+        db.session.commit()
+        socketio.emit('conversation_cleared', {'chat_id': chat_id}, room=chat_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/messages/<int:msg_id>/pin', methods=['POST'])
 @login_required
 def toggle_pin_message(msg_id):
