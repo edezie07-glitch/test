@@ -3781,14 +3781,54 @@ function toggleVideo(){
 
 // ── doCall: caller initiates ──
 async function startVoiceCall(){
+  if(currentGroupId){ startGroupCall('voice'); return; }
   if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
   if(f) await doCall(f,'voice');
 }
 async function startVideoCall(){
+  if(currentGroupId){ startGroupCall('video'); return; }
   if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
   if(f) await doCall(f,'video');
+}
+
+// ── Group call: show member picker ──
+function startGroupCall(type) {
+  const g = _giCurrentGroup || groups.find(x => x.id === currentGroupId);
+  if (!g) { toast('Group not found', 'err'); return; }
+  const members = g._members || g.members;
+  if (!members || !members.length) { toast('No members to call', 'err'); return; }
+  const others = members.filter(m => m.id !== ME_ID);
+  if (!others.length) { toast('No other members to call', 'err'); return; }
+
+  // Build picker sheet
+  const sheet = document.getElementById('gcallPickerSheet');
+  const list  = document.getElementById('gcallPickerList');
+  document.getElementById('gcallPickerTitle').textContent =
+    (type === 'video' ? '📹 Video Call' : '📞 Voice Call') + ' — pick a member';
+  list.innerHTML = others.map(m => `
+    <div class="gi-member" style="cursor:pointer;border-radius:12px;padding:10px 12px;transition:background .15s;"
+      onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background=''"
+      onclick="closeGcallPicker();doCall({id:${m.id},username:'${esc(m.username)}'},'${type}')">
+      <div class="gi-member-av" style="background:var(--brand);">${m.username[0].toUpperCase()}</div>
+      <div style="flex:1;">
+        <div class="gi-member-name">${esc(m.username)}</div>
+        ${m.online ? '<div style="font-size:11px;color:#22c55e;">● Online</div>' : '<div style="font-size:11px;color:var(--mute);">Offline</div>'}
+      </div>
+    </div>
+  `).join('');
+  sheet.style.transform = 'translateY(0)';
+  sheet.style.opacity   = '1';
+  sheet.style.pointerEvents = 'all';
+  document.getElementById('gcallPickerOv').style.display = 'block';
+}
+function closeGcallPicker() {
+  const sheet = document.getElementById('gcallPickerSheet');
+  sheet.style.transform = 'translateY(100%)';
+  sheet.style.opacity   = '0';
+  sheet.style.pointerEvents = 'none';
+  document.getElementById('gcallPickerOv').style.display = 'none';
 }
 
 async function doCall(friend, type){
@@ -6854,11 +6894,18 @@ function openGroupChat(g) {
   sub.textContent = g.member_count + ' member' + (g.member_count === 1 ? '' : 's');
   sub.className   = 'chdr-sub';  // no online class
 
-  // ── Buttons: hide calls, show group info via ☰ ──
-  ['videoCallBtn', 'voiceCallBtn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
+  // ── Buttons: show calls + other controls ──
+  // Video call in group — calls first admin/member found (or shows picker later)
+  const vcBtn = document.getElementById('videoCallBtn');
+  if (vcBtn) {
+    vcBtn.style.display = 'block';
+    vcBtn.onclick = () => startGroupCall('video', g);
+  }
+  const acBtn = document.getElementById('voiceCallBtn');
+  if (acBtn) {
+    acBtn.style.display = 'block';
+    acBtn.onclick = () => startGroupCall('voice', g);
+  }
   const pinnedBtn = document.getElementById('pinnedBtn');
   if (pinnedBtn) pinnedBtn.style.display = 'block';
   const searchBtnEl = document.getElementById('searchBtn');
@@ -6867,7 +6914,7 @@ function openGroupChat(g) {
   const c3 = document.getElementById('conv3Btn');
   if (c3) {
     c3.style.display = 'block';
-    c3.onclick = (e) => { e.stopPropagation(); openGroupInfo(g.id); };
+    c3.onclick = (e) => { e.stopPropagation(); openConv3Menu(e); };
   }
 
   // ── Show input area ──
@@ -6911,7 +6958,42 @@ socket && socket.on('group_created', data => {
 socket && socket.on('join_group_room', data => {
   if (data.chat_id) socket.emit('join_chat', { chat_id: data.chat_id });
 });
-socket && socket.on('group_deleted', data => {
+socket && socket.on('removed_from_group', data => {
+  // Current user was kicked out
+  toast(`You were removed from "${data.name}"`, 'err');
+  groups = groups.filter(g => g.id !== data.group_id);
+  if (currentGroupId === data.group_id) {
+    currentGroupId = null;
+    currentGroupChatId = null;
+    currentChatId = null;
+    document.querySelector('.iarea').style.display = 'none';
+    ['videoCallBtn','voiceCallBtn','searchBtn','pinnedBtn','conv3Btn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('marea').innerHTML = '';
+    document.getElementById('chnm').textContent = '';
+    document.getElementById('chsub').textContent = '';
+    if (window.innerWidth <= 720) goBackToList();
+  }
+  renderFriends();
+});
+
+socket.on('group_member_removed', data => {
+  // A member was removed — update local group data
+  const g = groups.find(x => x.id === data.group_id);
+  if (g) {
+    if (g._members) g._members = g._members.filter(m => m.id !== data.user_id);
+    if (g.member_count > 0) g.member_count--;
+    if (currentGroupId === data.group_id) {
+      const sub = document.getElementById('chsub');
+      if (sub) sub.textContent = g.member_count + ' member' + (g.member_count === 1 ? '' : 's');
+    }
+  }
+  renderFriends();
+});
+
+socket.on('group_deleted', data => {
   toast('🗑 Group "' + data.name + '" was deleted', 'info');
   groups = groups.filter(x => x.id !== data.group_id);
   if (currentGroupId === data.group_id) {
@@ -6987,25 +7069,69 @@ async function openGroupInfo(gid) {
     if (addBtn)    addBtn.style.display    = isAdmin ? 'block' : 'none';
     if (deleteBtn) deleteBtn.style.display = isAdmin ? 'block' : 'none';
 
-    // Render members
-    document.getElementById('giMembers').innerHTML = g.members.map(m => `
-      <div class="gi-member">
-        <div class="gi-member-av" style="background:var(--brand);">${m.username[0].toUpperCase()}</div>
-        <div style="flex:1;">
-          <div class="gi-member-name">${esc(m.username)}${m.id === ME_ID ? ' <span style="font-size:10px;color:var(--mute);">· you</span>' : ''}</div>
-          ${m.online ? '<div style="font-size:10px;color:#22c55e;margin-top:2px;">● Online</div>' : ''}
+    // Render members — admin sees remove button on each non-self member
+    document.getElementById('giMembers').innerHTML = g.members.map(m => {
+      const isSelf   = m.id === ME_ID;
+      const removeBtn = (isAdmin && !isSelf)
+        ? `<button onclick="removeMember(${gid},${m.id},'${esc(m.username)}')"
+             style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);
+                    border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;
+                    flex-shrink:0;transition:background .15s;"
+             onmouseover="this.style.background='rgba(239,68,68,.2)'"
+             onmouseout="this.style.background='rgba(239,68,68,.1)'">Remove</button>`
+        : '';
+      return `
+        <div class="gi-member">
+          <div class="gi-member-av" style="background:var(--brand);">${m.username[0].toUpperCase()}</div>
+          <div style="flex:1;">
+            <div class="gi-member-name">${esc(m.username)}${isSelf ? ' <span style="font-size:10px;color:var(--mute);">· you</span>' : ''}</div>
+            ${m.online ? '<div style="font-size:10px;color:#22c55e;margin-top:2px;">● Online</div>' : ''}
+          </div>
+          ${m.role === 'admin' ? '<span class="gi-role">Admin</span>' : '<span style="font-size:10px;color:var(--mute);">Member</span>'}
+          ${removeBtn}
         </div>
-        ${m.role === 'admin' ? '<span class="gi-role">Admin</span>' : '<span style="font-size:10px;color:var(--mute);">Member</span>'}
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     document.getElementById('groupInfoSheet')._gid = gid;
     document.getElementById('groupInfoSheet').classList.add('show');
+    // Also cache members on the group object for startGroupCall
+    const gObj = groups.find(x => x.id === gid);
+    if (gObj) gObj._members = g.members;
   } catch(e) { toast('Failed to load group info', 'err'); }
 }
 
 function closeGroupInfo() {
   document.getElementById('groupInfoSheet').classList.remove('show');
+}
+
+async function removeMember(gid, userId, username) {
+  if (!confirm(`Remove ${username} from the group?`)) return;
+  try {
+    const r = await fetch(`/api/groups/${gid}/remove_member`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    const d = await r.json();
+    if (d.success) {
+      toast(`${username} removed`, 'ok');
+      await openGroupInfo(gid);  // refresh the sheet
+      // Update member count in header
+      const g = groups.find(x => x.id === gid);
+      if (g && g.member_count > 0) {
+        g.member_count--;
+        if (g._members) g._members = g._members.filter(m => m.id !== userId);
+        if (currentGroupId === gid) {
+          const sub = document.getElementById('chsub');
+          if (sub) sub.textContent = g.member_count + ' member' + (g.member_count === 1 ? '' : 's');
+        }
+      }
+      renderFriends();
+    } else {
+      toast(d.error || 'Failed to remove', 'err');
+    }
+  } catch(e) { toast('Failed', 'err'); }
 }
 
 async function leaveGroup() {
@@ -7550,6 +7676,16 @@ setInterval(() => {
       <input id="grDesc" class="cg-input" type="text" maxlength="200" placeholder="What is this group about?…">
     </div>
   </div>
+</div>
+
+<!-- ═══ GROUP CALL MEMBER PICKER ═══ -->
+<div id="gcallPickerOv" onclick="closeGcallPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3600;backdrop-filter:blur(2px);"></div>
+<div id="gcallPickerSheet" style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-radius:22px 22px 0 0;z-index:3700;max-height:70vh;display:flex;flex-direction:column;transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;box-shadow:0 -8px 40px rgba(0,0,0,.3);">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px;">
+    <div id="gcallPickerTitle" style="font-size:16px;font-weight:700;color:var(--txt);"></div>
+    <button onclick="closeGcallPicker()" style="background:var(--hov);border:none;border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--sub);display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+  <div id="gcallPickerList" style="flex:1;overflow-y:auto;padding:8px 12px 24px;"></div>
 </div>
 
 <!-- ═══ MOOD BACKDROP ═══ -->
