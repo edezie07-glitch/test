@@ -2151,6 +2151,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
       <div id="SC_rotWrap" style="display:contents;touch-action:none;"><img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;"></div>
       <video id="SC_vid" style="max-width:100%;max-height:100%;object-fit:contain;display:none;" playsinline autoplay loop muted></video>
+      <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
       <!-- Text story bg + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#7c6aff,#a855f7);"></div>
       <textarea id="SC_textBox" placeholder="Tap to type…" style="
@@ -5930,13 +5931,20 @@ let _storyTimer = null;
 let _storyPaused = false;
 let _storyRemaining = 0;
 let _storyStartTime = 0;
-const STORY_DURATION = 17000; // 17 seconds
+// Story duration: 30s for video, 15s for image/text
+const STORY_DURATION_VIDEO  = 30000; // 30 seconds
+const STORY_DURATION_MEDIA  = 15000; // 15 seconds for image
+const STORY_DURATION_TEXT   = 15000; // 15 seconds for text
+function getStoryDuration(story){
+  if(story && story.media_type === 'video') return STORY_DURATION_VIDEO;
+  return STORY_DURATION_MEDIA;
+}
 
 function showStory(){
   if(!currentStories.length) return;
   const story = currentStories[currentStoryIndex];
   _storyPaused = false;
-  _storyRemaining = STORY_DURATION;
+  _storyRemaining = getStoryDuration(story);
 
   // Show viewer
   const viewer = document.getElementById('storyViewer');
@@ -5960,8 +5968,23 @@ function showStory(){
 
   if(story.media_url){
     if(story.media_type === 'video'){
+      // Clear old event handlers so they don't stack across stories
+      vidEl.onloadedmetadata = null;
+      vidEl.onended = null;
       vidEl.src = story.media_url;
       vidEl.style.display = 'block';
+      // When real duration is known, cap progress bar to min(actual, 30s)
+      vidEl.onloadedmetadata = ()=>{
+        if(vidEl.duration && isFinite(vidEl.duration)){
+          const realMs = Math.min(Math.ceil(vidEl.duration * 1000), STORY_DURATION_VIDEO);
+          if(realMs !== _storyRemaining){
+            _storyRemaining = realMs;
+            startStoryTimer(); // restart bar with accurate duration
+          }
+        }
+      };
+      // If the video ends before the 30 s timeout, go straight to next story
+      vidEl.onended = ()=>{ if(!_storyPaused) nextStory(); };
       vidEl.play().catch(()=>{});
     } else {
       imgEl.src = story.media_url;
@@ -6135,7 +6158,7 @@ function closeStoryViewer(){
   const audio = document.getElementById('storyBgAudio');
   if(audio){ audio.pause(); audio.remove(); }
   const vid = document.getElementById('storyVideo');
-  if(vid){ vid.pause(); vid.src=''; }
+  if(vid){ vid.onloadedmetadata=null; vid.onended=null; vid.pause(); vid.src=''; }
   document.getElementById('storyViewer').style.display = 'none';
   document.body.style.overflow = '';
   loadStories();
@@ -6172,7 +6195,8 @@ function closePrivacySheet(){
   document.getElementById('privacySheet').classList.remove('show');
   document.getElementById('privacySheetOv').classList.remove('show');
   // resume story timer
-  _storyTimer = setTimeout(()=>nextStory(), STORY_DURATION);
+  // Resume from where we left off (respects video vs photo/text duration)
+  if(_storyRemaining > 0) startStoryTimer();
 }
 async function setStoryPrivacy(privacy){
   if(!_privacyStoryId) return;
@@ -6246,10 +6270,39 @@ function scChoose(type){
 // ── Gallery ──
 function scGalleryPicked(input){
   const file = input.files[0]; if(!file) return;
+  const isVideo = file.type.startsWith('video/');
+  // Size check: 100MB for video, 10MB for images
+  const maxBytes = isVideo ? 100*1024*1024 : 10*1024*1024;
+  if(file.size > maxBytes){
+    toast(isVideo ? 'Video too large (max 100 MB)' : 'Image too large (max 10 MB)', 'err');
+    input.value = '';
+    return;
+  }
   SC.mediaFile = file;
-  SC.mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+  SC.mediaType = isVideo ? 'video' : 'image';
   SC.mediaURL = URL.createObjectURL(file);
-  scLoadEditor();
+  if(isVideo){
+    // Check video duration: must be ≤ 60 seconds (viewer shows up to 30s)
+    const tmp = document.createElement('video');
+    tmp.preload = 'metadata';
+    tmp.onloadedmetadata = ()=>{
+      URL.revokeObjectURL(tmp.src);
+      const dur = tmp.duration;
+      if(dur > 30){
+        toast('Video too long ('+Math.round(dur)+'s) — max 30 seconds for a story','err');
+        SC.mediaFile = null; SC.mediaURL = null; SC.mediaType = null;
+        input.value = '';
+        return;
+      }
+      // Store duration so the story bar can use exactly the right length
+      SC.videoDuration = Math.round(dur * 1000); // ms
+      scLoadEditor();
+    };
+    tmp.onerror = ()=>{ scLoadEditor(); }; // can't read duration, let it through
+    tmp.src = SC.mediaURL;
+  } else {
+    scLoadEditor();
+  }
 }
 
 function scLoadEditor(){
@@ -6280,6 +6333,14 @@ function scLoadEditor(){
     setTimeout(()=>tx.focus(),300);
   } else if(SC.mediaType==='video'){
     vid.src=SC.mediaURL; vid.style.display='block';
+    // Show duration label
+    const durLabel=$('SC_vidDuration');
+    if(durLabel && SC.videoDuration){
+      const s=Math.round(SC.videoDuration/1000);
+      durLabel.textContent=s+'s / 30s';
+      durLabel.style.color=s>30?'#ef4444':'#fff';
+      durLabel.style.display='block';
+    } else if(durLabel){ durLabel.style.display='none'; }
   } else {
     img.src=SC.mediaURL; img.style.display='block';
     img.style.filter='none'; SC.filter='none';
@@ -6692,8 +6753,38 @@ async function scPost(){
 
   // upload media (bake rotation+filter via canvas for images)
   if(SC.mediaFile){
+    // ── Client-side validation ──
+    if(SC.mediaType === 'video'){
+      // Check video duration before uploading
+      try{
+        const dur = await new Promise((resolve, reject) => {
+          const tmpVid = document.createElement('video');
+          tmpVid.preload = 'metadata';
+          const objUrl = URL.createObjectURL(SC.mediaFile);
+          tmpVid.onloadedmetadata = () => { URL.revokeObjectURL(objUrl); resolve(tmpVid.duration); };
+          tmpVid.onerror = () => { URL.revokeObjectURL(objUrl); resolve(null); };
+          tmpVid.src = objUrl;
+        });
+        if(dur !== null && dur > 60){
+          toast(`Video is ${Math.round(dur)}s — max 60 seconds for stories`, 'err');
+          btn.disabled=false; btn.textContent='✨ Share Story'; return;
+        }
+      } catch(e){ /* metadata check failed — allow upload anyway */ }
+      // File size check — must match server MAX_CONTENT_LENGTH (100MB)
+      if(SC.mediaFile.size > 100 * 1024 * 1024){
+        toast('Video too large (max 100 MB)', 'err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
+    } else {
+      // Image size check (10MB)
+      if(SC.mediaFile.size > 10 * 1024 * 1024){
+        toast('Image too large (max 10 MB)', 'err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
+    }
     try{
-      btn.textContent='Uploading…';
+      const sizeMB = (SC.mediaFile.size / (1024*1024)).toFixed(1);
+      btn.textContent = `Uploading… (${sizeMB} MB)`;
       let uploadFile = SC.mediaFile;
       // bake rotation + filter for images using offscreen canvas
       if(SC.mediaType==='image' && (SC.rotation!==0 || SC.filter!=='none')){
@@ -6704,7 +6795,7 @@ async function scPost(){
       const ud=await up.json();
       if(!ud.success){ toast('Upload failed: '+(ud.error||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
       mediaUrl=ud.url; mediaType=ud.media_type;
-    } catch(e){ toast('Upload error','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+    } catch(e){ toast('Upload error: '+(e.message||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
   } else {
     // text story
     content=($('SC_textBox').value||'').trim();
@@ -6740,8 +6831,8 @@ async function scPost(){
   btn.disabled=false; btn.textContent='✨ Share Story';
 }
 
-async function createStory(){ scPost(); } // legacy alias
-
+// createStory() is an alias — all story creation goes through scPost()
+function createStory(){ scPost(); }
 function toggleStoryType(){}
 function switchStoryTab(){}
 function previewStoryMedia(){}
@@ -6750,76 +6841,6 @@ function previewStoryAudio(){}
 function clearStoryAudio(){}
 function clearStoryMedia(){}
 function loadCustomFriendsList(){}
-async function createStory(){
-  const btn = document.querySelector('#createStoryModal .savebtn');
-  const resetBtn = ()=>{ if(btn){btn.disabled=false;btn.textContent='📸 Post Story';} };
-  if(btn){btn.disabled=true;btn.textContent='Posting...';}
-
-  // figure out which tab is active
-  const textInput  = document.getElementById('storyTextInput');
-  const mediaInput = document.getElementById('storyMediaInput');
-  const isTextTab  = textInput && textInput.style.display !== 'none';
-  const privacy    = document.getElementById('storyPrivacy')?.value || 'friends';
-  let content = '', mediaUrl = '', mediaType = 'text';
-
-  // ── Validate & collect content ──
-  if(isTextTab){
-    content = (document.getElementById('storyTextContent')?.value || '').trim();
-    if(!content){ toast('Please write something','err'); resetBtn(); return; }
-  } else {
-    const file = document.getElementById('storyMediaFile')?.files[0];
-    if(!file){ toast('Please select a photo or video','err'); resetBtn(); return; }
-    try{
-      if(btn) btn.textContent = 'Uploading...';
-      const fd = new FormData(); fd.append('media', file);
-      const up = await fetch('/api/upload/media',{method:'POST',body:fd});
-      const ud = await up.json();
-      if(!ud.success){ toast('Upload failed: '+(ud.error||'unknown'),'err'); resetBtn(); return; }
-      mediaUrl  = ud.url;
-      mediaType = ud.media_type; // 'image' or 'video'
-    } catch(e){ toast('Upload error: '+e.message,'err'); resetBtn(); return; }
-  }
-
-  let customUsers = [];
-  if(privacy === 'custom'){
-    customUsers = Array.from(document.querySelectorAll('#customFriendsList input:checked')).map(cb=>parseInt(cb.value));
-    if(!customUsers.length){ toast('Select at least one friend','err'); resetBtn(); return; }
-  }
-
-  // ── Upload audio if provided ──
-  let audioUrl = '', audioName = '';
-  const audioFile = document.getElementById('storyAudioFile')?.files[0];
-  if(audioFile){
-    try{
-      if(btn) btn.textContent = 'Uploading audio...';
-      const afd = new FormData(); afd.append('audio', audioFile);
-      const aup = await fetch('/api/upload/audio',{method:'POST',body:afd});
-      const aud = await aup.json();
-      if(aud.success){ audioUrl = aud.url; audioName = audioFile.name.replace(/\.[^.]+$/,''); }
-      else toast('Audio upload failed','err');
-    } catch(e){ toast('Audio upload error','err'); }
-  }
-
-  // ── Post ──
-  try{
-    const r = await fetch('/api/stories/create',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({content, media_url:mediaUrl, media_type:mediaType, privacy, custom_users:customUsers, audio_url:audioUrl, audio_name:audioName})
-    });
-    const d = await r.json();
-    if(d.success){
-      toast('✅ Story posted!','ok');
-      closeCreateStory();
-      loadStories();
-    } else {
-      toast(d.error||'Failed to post','err');
-    }
-  } catch(e){
-    toast('Network error: '+e.message,'err');
-  }
-  resetBtn();
-}
 setTimeout(loadStories,1000);
 
 // ═══════════════════════════════════════════════════════════
