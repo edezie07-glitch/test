@@ -914,13 +914,30 @@ def edit_message(msg_id):
 def delete_message(msg_id):
     user_id = session['user_id']
     msg = Message.query.get(msg_id)
-    if not msg or msg.sender_id != user_id:
+    if not msg:
         return jsonify({'success': False, 'error': 'Message not found'}), 404
+    data = request.get_json(silent=True) or {}
+    for_everyone = data.get('for_everyone', False)
+    # Only the sender can delete for everyone
+    if for_everyone and msg.sender_id != user_id:
+        return jsonify({'success': False, 'error': 'Only the sender can delete for everyone'}), 403
+    # Anyone in the chat can delete for themselves (just remove from their view)
+    # For simplicity: "delete for me" on your own messages = same as for everyone (server side)
+    # "delete for me" on received messages = soft-delete only for requester (we mark hidden)
     try:
-        msg.is_deleted = True
-        msg.content = '[Message deleted]'
-        db.session.commit()
-        socketio.emit('message_deleted', {'id': msg.id, 'chat_id': msg.chat_id}, room=msg.chat_id)
+        if for_everyone or msg.sender_id == user_id:
+            # Full delete visible to everyone
+            msg.is_deleted = True
+            msg.content = '[Message deleted]'
+            db.session.commit()
+            socketio.emit('message_deleted', {'id': msg.id, 'chat_id': msg.chat_id}, room=msg.chat_id)
+        else:
+            # Delete for me only — just tell the frontend to remove it locally
+            db.session.commit()
+            # Emit only to the requesting user's socket session
+            user_info = online_users.get(user_id)
+            if user_info and user_info.get('sid'):
+                socketio.emit('message_deleted', {'id': msg.id, 'chat_id': msg.chat_id}, room=user_info['sid'])
         return jsonify({'success': True, 'message': 'Message deleted'})
     except Exception as e:
         db.session.rollback()
@@ -1893,6 +1910,49 @@ def handle_typing_start(data):
     chat_id = data.get('chatId')
     if chat_id:
         emit('typing_start', {'username': user.username}, room=chat_id, include_self=False)
+
+@socketio.on('set_incognito')
+def on_set_incognito(data):
+    user_id = session.get('user_id')
+    if user_id:
+        # Update online_users to mark incognito — broadcast updated presence
+        socketio.emit('user_online', {'user_id': user_id, 'online': not data.get('incognito', False)}, skip_sid=request.sid)
+
+@socketio.on('update_status')
+def on_update_status(data):
+    user_id = session.get('user_id')
+    if not user_id: return
+    # Broadcast status update to all friends
+    friends = Friendship.query.filter(
+        db.or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
+    ).all()
+    for fr in friends:
+        fid = fr.user2_id if fr.user1_id == user_id else fr.user1_id
+        sid = get_sid(fid)
+        if sid:
+            socketio.emit('friend_status_updated', {'user_id': user_id, 'status': data.get('status', '')}, room=sid)
+
+@socketio.on('update_now_playing')
+def on_update_now_playing(data):
+    user_id = session.get('user_id')
+    if not user_id: return
+    friends = Friendship.query.filter(
+        db.or_(Friendship.user1_id == user_id, Friendship.user2_id == user_id)
+    ).all()
+    for fr in friends:
+        fid = fr.user2_id if fr.user1_id == user_id else fr.user1_id
+        sid = get_sid(fid)
+        if sid:
+            socketio.emit('friend_now_playing', {'user_id': user_id, 'track': data.get('track', '')}, room=sid)
+
+@socketio.on('call_recording_consent')
+def on_call_recording_consent(data):
+    user_id = session.get('user_id')
+    target_id = data.get('target_id')
+    if not target_id: return
+    sid = get_sid(target_id)
+    if sid:
+        socketio.emit('call_recording_consent', {'recording': data.get('recording', False)}, room=sid)
 
 @socketio.on('typing_stop')
 def handle_typing_stop(data):
