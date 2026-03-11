@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hepozy</title>
+<meta name="hepozy-version" content="v3.1-features">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -4479,14 +4480,20 @@ function handleSearch(q){
 }
 async function doSearch(q){
   try{
-    const r=await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);const d=await r.json();
-    const html=!d.success||!d.results.length
+    const r=await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+    if(!r.ok){const errHtml='<div class="lempty" style="padding:12px;color:#ef4444;">Error: '+r.status+'</div>';document.getElementById('srList').innerHTML=errHtml;return;}
+    const d=await r.json();
+    const html=!d.success||!d.results||!d.results.length
       ?'<div class="lempty" style="padding:12px;">No users found</div>'
-      :d.results.map(u=>`<div class="sr-row"><div class="sr-l"><div class="av sm">${u.username[0].toUpperCase()}</div><div><div class="sr-nm">${esc(u.username)}</div><div class="sr-st">${u.is_online?'Online':esc(u.status)}</div></div></div>${srBtn(u)}</div>`).join('');
+      :d.results.map(u=>`<div class="sr-row"><div class="sr-l"><div class="av sm">${u.username[0].toUpperCase()}</div><div><div class="sr-nm">${esc(u.username)}</div><div class="sr-st">${u.is_online?'🟢 Online':esc(u.status||'')}</div></div></div>${srBtn(u)}</div>`).join('');
     document.getElementById('srList').innerHTML=html;
     const mobileList=document.getElementById('srListClp');
     if(mobileList)mobileList.innerHTML=html;
-  }catch(e){console.error(e);}
+  }catch(e){
+    const errHtml='<div class="lempty" style="padding:12px;color:#ef4444;">Search failed: '+e.message+'</div>';
+    const el=document.getElementById('srList');if(el)el.innerHTML=errHtml;
+    console.error('doSearch error:',e);
+  }
 }
 function srBtn(u){
   if(u.relationship==='friend')return`<button class="pill p-msg" onclick="openChat(${u.id},'${esc(u.username)}')">Message</button>`;
@@ -5018,8 +5025,8 @@ function closeCallSummary(){
 // ══════════════════════════════════════════════════
 function toggleDND(){
   prefs.dndEnabled=!prefs.dndEnabled;
-  document.getElementById('tDND').classList.toggle('on',prefs.dndEnabled);
-  document.getElementById('dndTimeRow').style.display=prefs.dndEnabled?'flex':'none';
+  const tDND=document.getElementById('tDND');if(tDND)tDND.classList.toggle('on',prefs.dndEnabled);
+  const dr=document.getElementById('dndTimeRow');if(dr)dr.style.display=prefs.dndEnabled?'flex':'none';
   savePrefs();
   toast(prefs.dndEnabled?'🔕 DND enabled':'🔔 DND disabled','info');
 }
