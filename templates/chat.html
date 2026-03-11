@@ -1202,6 +1202,95 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* @mention chip in messages */
 .mention{color:var(--brand);font-weight:700;background:rgba(124,106,255,.12);border-radius:5px;padding:1px 5px;}
 .mention.me{background:rgba(124,106,255,.22);}
+
+/* ── Post-call summary card ── */
+#callSummary{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;}
+#callSummary.show{display:flex;}
+.cscard{background:var(--card);border-radius:22px;padding:28px 24px;width:92%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.cscard h3{margin:0;font-size:18px;font-weight:700;color:var(--txt);}
+.cscard .cs-row{display:flex;justify-content:space-between;width:100%;font-size:14px;color:var(--sub);}
+.cscard .cs-val{font-weight:700;color:var(--txt);}
+.cs-stars{display:flex;gap:8px;font-size:28px;cursor:pointer;}
+.cs-stars span{opacity:.35;transition:opacity .15s,transform .15s;}
+.cs-stars span.lit{opacity:1;transform:scale(1.18);}
+.cs-close{width:100%;padding:11px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
+
+/* ── Background blur panel ── */
+#callBgPanel{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(20,16,40,.92);backdrop-filter:blur(20px);border-radius:16px;padding:14px 18px;display:none;flex-direction:row;gap:10px;z-index:50;align-items:center;}
+#callBgPanel.show{display:flex;}
+.bgopt{width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:border-color .15s;}
+.bgopt.active{border-color:#fff;}
+
+/* ── DND settings ── */
+.dnd-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;}
+.dnd-inp{background:var(--inp);border:1px solid var(--ibdr);border-radius:8px;padding:6px 10px;color:var(--txt);font-size:13px;width:100px;}
+
+/* ── Contact labels ── */
+.label-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid transparent;}
+.label-work{background:rgba(59,130,246,.15);color:#3b82f6;border-color:rgba(59,130,246,.3);}
+.label-family{background:rgba(34,197,94,.15);color:#22c55e;border-color:rgba(34,197,94,.3);}
+.label-close{background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);}
+.label-other{background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3);}
+
+/* ── Label filter bar ── */
+#labelFilterBar{display:flex;gap:6px;padding:6px 14px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+#labelFilterBar::-webkit-scrollbar{display:none;}
+.lf-chip{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--card);color:var(--sub);white-space:nowrap;transition:background .15s,color .15s;}
+.lf-chip.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+
+/* ── Status badge ── */
+.status-badge{font-size:11px;color:var(--mute);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+
+/* ── Chat lock overlay ── */
+#chatLockOverlay{position:fixed;inset:0;z-index:1500;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+#chatLockOverlay.show{display:flex;}
+.lock-icon{font-size:52px;}
+.lock-title{font-size:18px;font-weight:700;color:var(--txt);}
+.lock-inp{background:var(--inp);border:1px solid var(--ibdr);border-radius:12px;padding:12px 16px;color:var(--txt);font-size:20px;letter-spacing:6px;text-align:center;width:180px;outline:none;}
+.lock-btn{padding:11px 32px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+.lock-cancel{font-size:13px;color:var(--mute);cursor:pointer;margin-top:4px;}
+
+/* ── Icebreaker sheet ── */
+.ice-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:22px 20px 32px;z-index:1201;transition:transform .28s cubic-bezier(.34,1.1,.64,1);display:flex;flex-direction:column;gap:14px;}
+.ice-sheet.show{transform:translateX(-50%) translateY(0);}
+.ice-q{font-size:16px;font-weight:600;color:var(--txt);line-height:1.4;min-height:48px;}
+.ice-actions{display:flex;gap:10px;}
+
+/* ── Mini game ── */
+.game-board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:180px;margin:0 auto;}
+.game-cell{height:54px;background:var(--inp);border-radius:10px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:background .12s;}
+.game-cell:hover{background:var(--hov);}
+.game-msg-board{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;width:120px;}
+.game-msg-cell{height:36px;background:var(--inp);border-radius:6px;border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;}
+
+/* ── Now Playing ── */
+.now-playing-bar{display:flex;align-items:center;gap:8px;background:var(--inp);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--sub);}
+.np-dot{width:8px;height:8px;border-radius:50%;background:#1db954;animation:nppulse 1.2s infinite;}
+@keyframes nppulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ── Translation bubble ── */
+.translated-text{font-size:12px;color:var(--mute);margin-top:4px;padding-top:4px;border-top:1px solid var(--bdr);font-style:italic;}
+
+/* ── Smart search ── */
+.ss-modal{position:fixed;inset:0;z-index:1200;background:var(--bg);display:none;flex-direction:column;}
+.ss-modal.show{display:flex;}
+.ss-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);}
+.ss-inp{flex:1;background:var(--inp);border:1px solid var(--ibdr);border-radius:20px;padding:10px 16px;color:var(--txt);font-size:14px;outline:none;}
+.ss-filters{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;border-bottom:1px solid var(--bdr);scrollbar-width:none;}
+.ss-filters::-webkit-scrollbar{display:none;}
+.ss-f{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--bdr);background:var(--card);color:var(--sub);cursor:pointer;white-space:nowrap;}
+.ss-f.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+.ss-body{flex:1;overflow-y:auto;padding:12px;}
+.ss-result{padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--bdr);margin-bottom:8px;cursor:pointer;}
+.ss-result:hover{background:var(--hov);}
+.ss-from{font-size:11px;font-weight:700;color:var(--brand);}
+.ss-content{font-size:13px;color:var(--txt);margin:3px 0;}
+.ss-time{font-size:10px;color:var(--mute);}
+
+/* ── Recording consent banner ── */
+.rec-consent{position:absolute;top:54px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.9);color:#fff;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;z-index:60;display:none;}
+.rec-consent.show{display:block;}
+
 </style>
 </head>
 <body>
@@ -1227,6 +1316,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div class="msg-sheet-ov" id="delSheetOv" onclick="hideDelSheet()"></div>
 <div class="del-sheet" id="delSheet">
   <div class="del-sheet-title">Delete message?</div>
+  <button class="ms-act" onclick="doTranslate()"><span class="ms-act-icon">🌐</span>Translate</button>
   <button class="ms-act danger" onclick="doDeleteForMe()"><span class="ms-act-icon">🗑️</span>Delete for me</button>
   <button class="ms-act danger" onclick="doDeleteForEveryone()"><span class="ms-act-icon">🗑️</span>Delete for everyone</button>
   <button class="ms-act" onclick="hideDelSheet()" style="color:var(--mute);"><span class="ms-act-icon">✕</span>Cancel</button>
@@ -1261,6 +1351,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="clp-tabs" style="position:relative;">
     <div class="clp-tab active" id="tabAll" onclick="switchTab('all')">All</div>
     <div class="clp-tab" id="tabUnread" onclick="switchTab('unread')">Unread</div>
+  </div>
+  <!-- Label filter bar -->
+  <div id="labelFilterBar">
+    <div class="lf-chip active" id="lfAll" onclick="setLabelFilter('all')">All</div>
+    <div class="lf-chip" id="lfWork" onclick="setLabelFilter('Work')">💼 Work</div>
+    <div class="lf-chip" id="lfFamily" onclick="setLabelFilter('Family')">👨‍👩‍👧 Family</div>
+    <div class="lf-chip" id="lfClose" onclick="setLabelFilter('Close Friends')">❤️ Close</div>
+    <div class="lf-chip" id="lfOther" onclick="setLabelFilter('Other')">🏷️ Other</div>
+  </div>
+  <div style="display:none;"><!-- tab close dummy -->
     <button id="storiesArrowBtn" onclick="openStoriesPanel()" style="
       position:absolute;right:0;top:0;bottom:0;
       width:36px;border:none;background:transparent;
@@ -1606,6 +1706,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
       <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
       <button class="profile-action-btn" onclick="startVideoCall()">📹 Video Call</button>
+      <div id="profileNowPlaying" class="now-playing-bar" style="display:none;margin-top:8px;">
+        <div class="np-dot"></div>
+        <span id="profileNPText" style="font-size:13px;color:var(--sub);"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -1707,8 +1811,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button class="ccb end-btn" id="endBtn" title="End">📵</button>
       <button class="ccb" id="speakerBtn" title="Speaker">🔊</button>
       <button class="ccb" id="videoBtn"   title="Camera" style="display:none;">📹</button>
+      <button class="ccb rec-btn" id="callRecBtn" title="Record call" onclick="toggleCallRecording()">⏺</button>
+      <button class="ccb" id="callBgBtn" title="Background" onclick="toggleCallBgPanel()" style="display:none;">🖼</button>
     </div>
-    <button id="callDockToggle">
+    <!-- Recording consent banner -->
+  <div class="rec-consent" id="callRecConsent">⏺ Recording in progress — all parties notified</div>
+  <!-- Background blur panel -->
+  <div id="callBgPanel">
+    <div class="bgopt active" id="bgNone" onclick="setCallBg('none')" title="No filter">🚫</div>
+    <div class="bgopt" id="bgBlur" onclick="setCallBg('blur')" title="Blur">🔲</div>
+    <div class="bgopt" id="bgColor1" onclick="setCallBg('#1a1035')" style="background:#1a1035;"></div>
+    <div class="bgopt" id="bgColor2" onclick="setCallBg('#0d3d1f')" style="background:#0d3d1f;"></div>
+    <div class="bgopt" id="bgColor3" onclick="setCallBg('#1e1a38')" style="background:#1e1a38;"></div>
+    <div class="bgopt" id="bgColor4" onclick="setCallBg('#2d1b00')" style="background:#2d1b00;"></div>
+  </div>
+  <button id="callDockToggle">
       <div id="callDockChevrons">
         <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <polyline points="2,13 14,2 26,13" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -1718,6 +1835,65 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </button>
   </div>
 </div>
+
+<!-- POST-CALL SUMMARY CARD -->
+<div id="callSummary">
+  <div class="cscard">
+    <div style="font-size:40px;">📞</div>
+    <h3>Call Ended</h3>
+    <div class="cs-row"><span>Duration</span><span class="cs-val" id="csDuration">0:00</span></div>
+    <div class="cs-row"><span>Signal Quality</span><span class="cs-val" id="csSignal">—</span></div>
+    <div class="cs-row"><span>Type</span><span class="cs-val" id="csType">Voice</span></div>
+    <div style="font-size:13px;color:var(--sub);text-align:center;">How was the call quality?</div>
+    <div class="cs-stars" id="csStars">
+      <span onclick="rateCall(1)">⭐</span>
+      <span onclick="rateCall(2)">⭐</span>
+      <span onclick="rateCall(3)">⭐</span>
+      <span onclick="rateCall(4)">⭐</span>
+      <span onclick="rateCall(5)">⭐</span>
+    </div>
+    <button class="cs-close" onclick="closeCallSummary()">Done</button>
+  </div>
+</div>
+
+<!-- CHAT LOCK OVERLAY -->
+<div id="chatLockOverlay">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title" id="lockTitle">This chat is locked</div>
+  <input class="lock-inp" type="password" id="lockPinInp" maxlength="6" placeholder="••••" oninput="checkLockPin()">
+  <button class="lock-btn" onclick="checkLockPin()">Unlock</button>
+  <div class="lock-cancel" onclick="cancelChatLock()">← Go back</div>
+</div>
+
+<!-- ICEBREAKER SHEET -->
+<div class="sov" id="iceOv" onclick="closeIcebreaker()" style="display:none;"></div>
+<div class="ice-sheet" id="iceSheet">
+  <div style="font-size:22px;text-align:center;">🎲 Icebreaker</div>
+  <div class="ice-q" id="iceQuestion">Loading...</div>
+  <div class="ice-actions">
+    <button class="savebtn" style="flex:1;" onclick="sendIcebreaker()">Send ❄️</button>
+    <button class="savebtn" style="flex:1;background:var(--inp);color:var(--txt);" onclick="newIcebreaker()">Another 🔄</button>
+  </div>
+  <button class="closebtn" onclick="closeIcebreaker()" style="position:absolute;top:14px;right:14px;">✕</button>
+</div>
+
+<!-- SMART SEARCH MODAL -->
+<div class="ss-modal" id="ssModal">
+  <div class="ss-head">
+    <button class="closebtn" onclick="closeSS()">✕</button>
+    <input class="ss-inp" id="ssInp" placeholder="Search messages, people, media…" oninput="doSmartSearch()" autocomplete="off">
+  </div>
+  <div class="ss-filters">
+    <div class="ss-f active" id="ssAll" onclick="setSsFilter('all')">All</div>
+    <div class="ss-f" id="ssText" onclick="setSsFilter('text')">💬 Text</div>
+    <div class="ss-f" id="ssMedia" onclick="setSsFilter('media')">📷 Media</div>
+    <div class="ss-f" id="ssFrom" onclick="setSsFilter('from')">👤 Person</div>
+  </div>
+  <div class="ss-body" id="ssBody">
+    <div class="lempty" style="padding-top:40px;">🔍 Search across all your chats</div>
+  </div>
+</div>
+
 <!-- SETTINGS DRAWER -->
 <div class="sov" id="sov" onclick="closeSettings()"></div>
 <div class="sdraw" id="sdraw">
@@ -1782,10 +1958,44 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Privacy</div>
       <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
-        <div class="sleft">
-          <div class="sic re">🚫</div>
-          <div><div class="slb">Blocked Users</div><div class="sdb">Manage blocked friends</div></div>
-        </div>
+        <div class="sleft"><div class="sic re">🚫</div><div><div class="slb">Blocked Users</div><div class="sdb">Manage blocked friends</div></div></div>
+        <span style="color:var(--sub);font-size:14px;">›</span>
+      </div>
+      <div class="srow" style="margin-top:8px;">
+        <div class="sleft"><div class="sic" style="background:rgba(124,106,255,.12);">🕵️</div><div><div class="slb">Incognito Mode</div><div class="sdb">Hide last seen &amp; story views</div></div></div>
+        <button class="tog" id="tIncognito" onclick="toggleIncognito()"></button>
+      </div>
+      <div class="srow" style="margin-top:8px;">
+        <div class="sleft"><div class="sic" style="background:rgba(34,197,94,.12);">✅</div><div><div class="slb">Read Receipts</div><div class="sdb">Show when you've read messages</div></div></div>
+        <button class="tog on" id="tReadReceipts" onclick="toggleReadReceipts()"></button>
+      </div>
+    </div>
+    <!-- Do Not Disturb -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Do Not Disturb</div>
+      <div class="srow">
+        <div class="sleft"><div class="sic" style="background:rgba(239,68,68,.12);">🔕</div><div><div class="slb">DND Schedule</div><div class="sdb">Silence calls during set hours</div></div></div>
+        <button class="tog" id="tDND" onclick="toggleDND()"></button>
+      </div>
+      <div class="dnd-row" id="dndTimeRow" style="display:none;">
+        <span style="font-size:12px;color:var(--sub);">From</span>
+        <input class="dnd-inp" type="time" id="dndStart" value="22:00" onchange="saveDND()">
+        <span style="font-size:12px;color:var(--sub);">To</span>
+        <input class="dnd-inp" type="time" id="dndEnd" value="08:00" onchange="saveDND()">
+      </div>
+    </div>
+    <!-- Profile extras -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Profile Extras</div>
+      <div class="ef"><label>Status (24hr)</label><input class="ei" id="eStatus" placeholder="e.g. Busy 🔥" maxlength="60" oninput="saveStatusText()"></div>
+      <div class="ef"><label>Birthday</label><input class="ei" type="date" id="eBirthday" onchange="saveBirthday()"></div>
+      <div class="ef"><label>Now Playing 🎵</label><input class="ei" id="eNowPlaying" placeholder="e.g. Doja Cat – Paint The Town Red" oninput="saveNowPlaying()"></div>
+    </div>
+    <!-- Chat Features -->
+    <div class="ssec" style="margin-top:6px;">
+      <div class="ssec-t">Chat Features</div>
+      <div class="srow" onclick="openSS()" style="cursor:pointer;">
+        <div class="sleft"><div class="sic" style="background:rgba(124,106,255,.12);">🔍</div><div><div class="slb">Smart Search</div><div class="sdb">Search across all chats</div></div></div>
         <span style="color:var(--sub);font-size:14px;">›</span>
       </div>
     </div>
@@ -2353,7 +2563,7 @@ function switchEmojiCat(cat){
 const ME_ID = {{ user_id }};
 const ME_NAME = '{{ user.username }}';
 let socket=null,currentChatId=null,currentFriendId=null,friends=[],pendingReqs=[],searchTimer=null,typingTimer=null;
-let prefs={theme:'dark',sound:true};
+let prefs={theme:'dark',sound:true,dndEnabled:false,dndStart:'22:00',dndEnd:'08:00',incognito:false,readReceipts:true,notifSounds:{},contactLabels:{},chatLocks:{},birthday:'',nowPlaying:'',statusText:''};
 let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
 (function boot(){
   loadPrefs();
@@ -2430,8 +2640,10 @@ function connectSocket(){
       }
       // Always notify for messages from others — new friends, existing friends, groups
       if(msg.sender_id!==ME_ID){
-        showInAppNotif(msg.sender_username, preview, msg.chat_id);
-        if(prefs.sound) beep();
+        if(!isDNDActive()){
+          showInAppNotif(msg.sender_username, preview, msg.chat_id);
+          if(prefs.sound) playChatNotifSound(msg.chat_id);
+        }
       }
     }
     if(prefs.sound&&msg.sender_id!==ME_ID&&currentChatId===msg.chat_id) beep();
@@ -2502,6 +2714,19 @@ function connectSocket(){
   // A friend updated their profile/avatar — refresh friend list so name/avatar is current
   socket.on('profile_updated',(data)=>{
     loadFriends();
+  });
+  socket.on('friend_status_updated',(data)=>{
+    // Update status display in friend list — re-render will pick it up from profileCache
+    if(!window._friendStatusCache) window._friendStatusCache={};
+    window._friendStatusCache[data.user_id]=data.status;
+    renderFriends();
+  });
+  socket.on('friend_now_playing',(data)=>{
+    if(!window._friendNPCache) window._friendNPCache={};
+    window._friendNPCache[data.user_id]=data.track;
+  });
+  socket.on('call_recording_consent',(data)=>{
+    if(data.recording) toast('⏺ This call is being recorded by the other person','info');
   });
   socket.on('missed_call_notify',(data)=>{
     showInAppNotif(data.caller_name,'📵 Missed call',null);
@@ -3447,6 +3672,8 @@ function startSignalMonitor(pc){
           if(s.roundTripTime!=null) rtt = s.roundTripTime*1000;
         }
       });
+      // collect samples for post-call summary
+      if(rtt!==null){ if(!cd._sigSamples)cd._sigSamples=[]; cd._sigSamples.push(rtt); }
       const dot   = document.getElementById('callSignalDot');
       const label = document.getElementById('callSignalLabel');
       if(!dot) return;
@@ -3685,6 +3912,8 @@ function showCallModal(name, status, isVideo){
 
   document.getElementById('callDock').style.opacity='0';
   document.getElementById('callModal').classList.add('show');
+  const _bgBtnEl=document.getElementById('callBgBtn');
+  if(_bgBtnEl) _bgBtnEl.style.display=(cd.type==='video'?'flex':'none');
   showCallUI(true); // Show UI for 3s at call start
 }
 
@@ -3746,6 +3975,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   wire('callDockToggle',  toggleCallDock);
   wire('muteBtn',         toggleMute);
   wire('videoBtn',        toggleVideo);
+  wire('callRecBtn',      toggleCallRecording);
+  wire('callBgBtn',       toggleCallBgPanel);
   wire('flipBtn',         flipCamera);
   wire('speakerBtn',      toggleSpeaker);
   wire('endBtn',          endCall);
@@ -3923,8 +4154,13 @@ function endCall(){
   const wasMissed = cd.active && cd.duration===0;
   if(tid) socket.emit('call_end',{ target_id:tid, was_missed:wasMissed });
   const dur=cd.duration||0, type=cd.type||'voice', startT=cd.startTimeStr;
+  const avgSig=cd._sigSamples&&cd._sigSamples.length?Math.round(cd._sigSamples.reduce((a,b)=>a+b,0)/cd._sigSamples.length):null;
+  // Stop any active call recording
+  if(cd._recorder&&cd._recorder.state!=='inactive'){try{cd._recorder.stop();}catch(e){}}
   cleanupCall();
   appendCallMsg(type, dur, startT, false);
+  // Show post-call summary if call was actually connected (dur > 0)
+  if(dur>0) showCallSummary(dur, type, avgSig);
 }
 
 function cleanupCall(){
@@ -3948,6 +4184,11 @@ function setupCallListeners(){
   socket.on('incoming_call', data=>{
     if(cd.active){
       socket.emit('call_answer',{ caller_id:data.caller_id, accepted:false, busy:true });
+      return;
+    }
+    if(isDNDActive()){
+      socket.emit('call_answer',{ caller_id:data.caller_id, accepted:false, dnd:true });
+      socket.emit('missed_call_notify_sender',{caller_id:data.caller_id});
       return;
     }
     cd.incoming = data;
@@ -4111,6 +4352,15 @@ function hideDelSheet(){
   document.getElementById('delSheet').classList.remove('show');
   document.getElementById('delSheetOv').classList.remove('show');
   sheetDeleteId = null;
+}
+function doTranslate(){
+  if(!sheetDeleteId) return;
+  const msgId = sheetDeleteId;
+  const el=document.querySelector(`[data-msg-id="${msgId}"] .bub`);
+  const text=el?el.textContent.replace(/[\u00a0]/g,' ').trim():'';
+  hideDelSheet();
+  if(!text){toast('No text to translate','err');return;}
+  translateMessage(msgId, text);
 }
 async function doDeleteForMe(){
   if(!sheetDeleteId) return;
@@ -4342,7 +4592,10 @@ function buildCrowEl(f){
         <span class="cuname">${esc(f.username)}</span>
         ${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''}
       </div>
-      <div class="cprev" style="color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.last_message?esc(f.last_message):'Start a conversation…'}</div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div class="cprev" style="color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${f.last_message?esc(f.last_message):'Start a conversation…'}</div>
+        ${getLabelChip(f.id)}
+      </div>
     </div>
     <span class="unread-badge" style="display:${uCount>0?'flex':'none'};background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:20px;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0;margin-right:32px;">${uCount>99?'99+':uCount}</span>
     <button class="crow-menu-btn" title="More">⋯</button>
@@ -4461,6 +4714,15 @@ async function quickAccept(userId){let rq=pendingReqs.find(r=>r.user_id===userId
 
 // ── openChat: works on both desktop and mobile ──
 function openChat(fid,fname,chatId){
+  if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
+  // Check chat lock
+  if(prefs.chatLocks[chatId]){
+    requireChatLock(chatId,fid,fname,chatId);
+    return;
+  }
+  _openChatUnlocked(fid,fname,chatId);
+}
+function _openChatUnlockedReal(fid,fname,chatId){
   if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
   currentChatId=chatId;currentFriendId=fid;
   currentGroupId=null;currentGroupChatId=null;  // clear group state
@@ -4618,6 +4880,581 @@ function showTyping(name){document.getElementById('tytxt').textContent=`${name} 
 function hideTyping(){document.getElementById('tybar').style.display='none';}
 function beep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.value=880;g.gain.setValueAtTime(.1,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}catch(e){}}
 function requestNotifPermission(){if(!('Notification' in window))return;if(Notification.permission==='default'){Notification.requestPermission().then(p=>{if(p==='granted')toast('🔔 Notifications enabled','ok');});}}
+
+// ══════════════════════════════════════════════════
+// CALL RECORDING
+// ══════════════════════════════════════════════════
+function toggleCallRecording(){
+  if(!cd.active){toast('No active call','err');return;}
+  if(cd._recorder&&cd._recorder.state==='recording'){
+    cd._recorder.stop();
+    return;
+  }
+  // Show consent notice to both sides
+  socket.emit('call_recording_consent',{target_id:cd.calleeId||cd.callerId,recording:true});
+  showRecConsent(true);
+  const streams=[cd.localStream,cd.remoteStream].filter(Boolean);
+  const ctx=new AudioContext();
+  const dest=ctx.createMediaStreamDestination();
+  streams.forEach(s=>{ try{ const src=ctx.createMediaStreamSource(s); src.connect(dest); }catch(e){} });
+  // For video calls, combine video track too
+  let recordStream=dest.stream;
+  if(cd.type==='video'&&cd.localStream){
+    const vt=cd.localStream.getVideoTracks()[0];
+    if(vt) recordStream=new MediaStream([...dest.stream.getTracks(),vt]);
+  }
+  const chunks=[];
+  const mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')?'video/webm;codecs=vp9,opus':
+              MediaRecorder.isTypeSupported('video/webm')?'video/webm':'audio/webm';
+  const rec=new MediaRecorder(recordStream,{mimeType:mime});
+  rec.ondataavailable=e=>{ if(e.data&&e.data.size>0) chunks.push(e.data); };
+  rec.onstop=()=>{
+    showRecConsent(false);
+    const blob=new Blob(chunks,{type:mime});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='call-recording-'+Date.now()+(mime.startsWith('video')?'.webm':'.webm');
+    a.click(); URL.revokeObjectURL(url);
+    const btn=document.getElementById('callRecBtn'); if(btn){btn.innerHTML='⏺';btn.classList.remove('recording');}
+    toast('Recording saved 💾','ok');
+  };
+  rec.start(1000);
+  cd._recorder=rec;
+  const btn=document.getElementById('callRecBtn'); if(btn){btn.innerHTML='⏹';btn.classList.add('recording');}
+  toast('🔴 Recording started','info');
+}
+function showRecConsent(show){
+  const el=document.getElementById('callRecConsent'); if(el) el.classList.toggle('show',show);
+}
+socket&&socket.on&&socket.on('call_recording_consent',data=>{
+  if(data.recording) toast('⏺ This call is being recorded','info');
+});
+
+// ══════════════════════════════════════════════════
+// CALL BACKGROUND BLUR / VIRTUAL BG
+// ══════════════════════════════════════════════════
+let _bgCanvas=null,_bgCtx=null,_bgAnimFrame=null,_bgMode='none';
+function toggleCallBgPanel(){
+  const p=document.getElementById('callBgPanel'); if(p) p.classList.toggle('show');
+}
+function setCallBg(mode){
+  _bgMode=mode;
+  // Update active state
+  ['bgNone','bgBlur','bgColor1','bgColor2','bgColor3','bgColor4'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('active');
+  });
+  if(mode==='none') document.getElementById('bgNone').classList.add('active');
+  else if(mode==='blur') document.getElementById('bgBlur').classList.add('active');
+  else {
+    // find color button
+    ['bgColor1','bgColor2','bgColor3','bgColor4'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&el.style.background===mode) el.classList.add('active');
+    });
+  }
+  applyCallBg();
+  document.getElementById('callBgPanel').classList.remove('show');
+}
+function applyCallBg(){
+  const lv=document.getElementById('localVideo'); if(!lv||!lv.srcObject) return;
+  if(_bgMode==='none'){
+    if(_bgCanvas){ cancelAnimationFrame(_bgAnimFrame); _bgCanvas.style.display='none'; lv.style.display='block'; }
+    return;
+  }
+  if(!_bgCanvas){
+    _bgCanvas=document.createElement('canvas');
+    _bgCanvas.style.cssText=lv.style.cssText+'position:absolute;';
+    lv.parentNode.insertBefore(_bgCanvas,lv);
+    _bgCtx=_bgCanvas.getContext('2d');
+  }
+  _bgCanvas.width=lv.videoWidth||160; _bgCanvas.height=lv.videoHeight||120;
+  _bgCanvas.style.display='block'; lv.style.display='none';
+  function drawFrame(){
+    if(_bgMode==='none'){lv.style.display='block';_bgCanvas.style.display='none';return;}
+    _bgCtx.drawImage(lv,0,0,_bgCanvas.width,_bgCanvas.height);
+    if(_bgMode==='blur'){
+      _bgCtx.filter='blur(12px)';
+      _bgCtx.drawImage(lv,0,0,_bgCanvas.width,_bgCanvas.height);
+      _bgCtx.filter='none';
+      // Draw center unblurred (simple approach)
+      const mw=_bgCanvas.width*0.7,mh=_bgCanvas.height*0.85;
+      const mx=(_bgCanvas.width-mw)/2,my=(_bgCanvas.height-mh)/2;
+      _bgCtx.drawImage(lv,mx,my,mw,mh,mx,my,mw,mh);
+    } else {
+      _bgCtx.fillStyle=_bgMode; _bgCtx.fillRect(0,0,_bgCanvas.width,_bgCanvas.height);
+      const mw=_bgCanvas.width*0.65,mh=_bgCanvas.height*0.8;
+      const mx=(_bgCanvas.width-mw)/2,my=(_bgCanvas.height-mh)/2;
+      _bgCtx.save(); _bgCtx.beginPath(); _bgCtx.ellipse(mx+mw/2,my+mh/2,mw/2,mh/2,0,0,Math.PI*2); _bgCtx.clip();
+      _bgCtx.drawImage(lv,mx,my,mw,mh,mx,my,mw,mh); _bgCtx.restore();
+    }
+    _bgAnimFrame=requestAnimationFrame(drawFrame);
+  }
+  cancelAnimationFrame(_bgAnimFrame); drawFrame();
+}
+
+// ══════════════════════════════════════════════════
+// POST-CALL SUMMARY
+// ══════════════════════════════════════════════════
+let _csRating=0;
+function showCallSummary(dur,type,avgRtt){
+  const mm=Math.floor(dur/60),ss=String(dur%60).padStart(2,'0');
+  document.getElementById('csDuration').textContent=mm+':'+ss;
+  document.getElementById('csType').textContent=type==='video'?'📹 Video':'📞 Voice';
+  let sigText='—';
+  if(avgRtt!==null){
+    if(avgRtt<120) sigText='🟢 Excellent';
+    else if(avgRtt<280) sigText='🟡 Good';
+    else sigText='🔴 Poor';
+  }
+  document.getElementById('csSignal').textContent=sigText;
+  _csRating=0;
+  document.querySelectorAll('#csStars span').forEach(s=>s.classList.remove('lit'));
+  document.getElementById('callSummary').classList.add('show');
+}
+function rateCall(n){
+  _csRating=n;
+  document.querySelectorAll('#csStars span').forEach((s,i)=>s.classList.toggle('lit',i<n));
+}
+function closeCallSummary(){
+  document.getElementById('callSummary').classList.remove('show');
+  if(_csRating>0) toast('Thanks for rating! ⭐'.repeat(_csRating>3?2:1),'ok');
+}
+
+// ══════════════════════════════════════════════════
+// DND SCHEDULE
+// ══════════════════════════════════════════════════
+function toggleDND(){
+  prefs.dndEnabled=!prefs.dndEnabled;
+  document.getElementById('tDND').classList.toggle('on',prefs.dndEnabled);
+  document.getElementById('dndTimeRow').style.display=prefs.dndEnabled?'flex':'none';
+  savePrefs();
+  toast(prefs.dndEnabled?'🔕 DND enabled':'🔔 DND disabled','info');
+}
+function saveDND(){
+  prefs.dndStart=document.getElementById('dndStart').value;
+  prefs.dndEnd=document.getElementById('dndEnd').value;
+  savePrefs();
+}
+function isDNDActive(){
+  if(!prefs.dndEnabled) return false;
+  const now=new Date();
+  const cur=now.getHours()*60+now.getMinutes();
+  const [sh,sm]=prefs.dndStart.split(':').map(Number);
+  const [eh,em]=prefs.dndEnd.split(':').map(Number);
+  const start=sh*60+sm, end=eh*60+em;
+  if(start<=end) return cur>=start&&cur<end;
+  return cur>=start||cur<end; // overnight
+}
+
+// ══════════════════════════════════════════════════
+// INCOGNITO MODE
+// ══════════════════════════════════════════════════
+function toggleIncognito(){
+  prefs.incognito=!prefs.incognito;
+  document.getElementById('tIncognito').classList.toggle('on',prefs.incognito);
+  savePrefs();
+  toast(prefs.incognito?'🕵️ Incognito on — you\'re invisible':'👁️ Incognito off','info');
+  // Emit presence update
+  if(socket) socket.emit('set_incognito',{incognito:prefs.incognito});
+}
+
+// ══════════════════════════════════════════════════
+// READ RECEIPTS
+// ══════════════════════════════════════════════════
+function toggleReadReceipts(){
+  prefs.readReceipts=!prefs.readReceipts;
+  document.getElementById('tReadReceipts').classList.toggle('on',prefs.readReceipts);
+  savePrefs();
+  toast(prefs.readReceipts?'✅ Read receipts on':'🚫 Read receipts off','info');
+}
+
+// ══════════════════════════════════════════════════
+// STATUS TEXT (24hr)
+// ══════════════════════════════════════════════════
+function saveStatusText(){
+  prefs.statusText=document.getElementById('eStatus').value;
+  savePrefs();
+  if(socket) socket.emit('update_status',{status:prefs.statusText});
+}
+function saveBirthday(){
+  prefs.birthday=document.getElementById('eBirthday').value;
+  savePrefs();
+  checkBirthdayToday();
+}
+function checkBirthdayToday(){
+  if(!prefs.birthday) return;
+  const today=new Date();
+  const [,mm,dd]=prefs.birthday.split('-');
+  if(parseInt(mm)===today.getMonth()+1&&parseInt(dd)===today.getDate()){
+    // Show birthday banner in chat header
+    toast('🎂 Happy Birthday to you! 🎉🎈','ok');
+  }
+}
+function saveNowPlaying(){
+  prefs.nowPlaying=document.getElementById('eNowPlaying').value;
+  savePrefs();
+  if(socket) socket.emit('update_now_playing',{track:prefs.nowPlaying});
+}
+
+// ══════════════════════════════════════════════════
+// CONTACT LABELS
+// ══════════════════════════════════════════════════
+let _activeLabelFilter='all';
+const LABELS=['Work','Family','Close Friends','Other'];
+function openLabelPicker(fid){
+  const f=friends.find(x=>x.id===fid); if(!f) return;
+  const cur=prefs.contactLabels[fid]||'';
+  const opts=['None',...LABELS].map(l=>`<option value="${l}" ${cur===l||(!cur&&l==='None')?'selected':''}>${l}</option>`).join('');
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:18px;padding:24px;width:300px;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:17px;font-weight:700;color:var(--txt);">🏷️ Label for ${esc(f.username)}</div>
+    <select id="_lblSel" style="background:var(--inp);border:1px solid var(--ibdr);border-radius:10px;padding:10px;color:var(--txt);font-size:14px;">${opts}</select>
+    <div style="display:flex;gap:10px;">
+      <button onclick="saveLbl(${fid},document.getElementById('_lblSel').value)" style="flex:1;padding:11px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Save</button>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:11px;background:var(--inp);color:var(--txt);border:none;border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function saveLbl(fid,label){
+  if(label==='None') delete prefs.contactLabels[fid];
+  else prefs.contactLabels[fid]=label;
+  savePrefs(); renderFriends();
+  document.querySelectorAll('[style*="position:fixed"][style*="z-index:2000"]').forEach(e=>{
+    if(e.querySelector('#_lblSel')) e.remove();
+  });
+  toast('Label saved 🏷️','ok');
+}
+function setLabelFilter(label){
+  _activeLabelFilter=label;
+  ['All','Work','Family','Close Friends','Other'].forEach(l=>{
+    const id='lf'+(l==='All'?'All':l==='Close Friends'?'Close':l==='Work'?'Work':l==='Family'?'Family':'Other');
+    const el=document.getElementById(id); if(el) el.classList.toggle('active',l===label||(label==='all'&&l==='All'));
+  });
+  renderFriends();
+}
+function getLabelChip(fid){
+  const lbl=prefs.contactLabels[fid]; if(!lbl) return '';
+  const cls={Work:'label-work',Family:'label-family','Close Friends':'label-close',Other:'label-other'}[lbl]||'label-other';
+  return `<span class="label-chip ${cls}">${lbl}</span>`;
+}
+
+// ══════════════════════════════════════════════════
+// CHAT LOCK (PIN)
+// ══════════════════════════════════════════════════
+let _lockPendingChatId=null, _lockPendingFid=null, _lockPendingFname=null, _lockPendingOrigCid=null;
+function toggleChatLock(chatId){
+  if(prefs.chatLocks[chatId]){
+    // Unlock — ask for PIN
+    _lockPendingChatId=chatId;
+    document.getElementById('lockTitle').textContent='Enter PIN to unlock';
+    document.getElementById('lockPinInp').value='';
+    document.getElementById('chatLockOverlay').classList.add('show');
+  } else {
+    // Set new PIN
+    const pin=prompt('Set a 4–6 digit PIN for this chat:');
+    if(!pin||pin.length<4) return;
+    prefs.chatLocks[chatId]=pin; savePrefs();
+    toast('🔒 Chat locked','ok');
+  }
+}
+function requireChatLock(chatId,fid,fname,origChatId){
+  _lockPendingChatId=chatId; _lockPendingFid=fid; _lockPendingFname=fname; _lockPendingOrigCid=origChatId;
+  document.getElementById('lockTitle').textContent='🔒 This chat is locked';
+  document.getElementById('lockPinInp').value='';
+  document.getElementById('chatLockOverlay').classList.add('show');
+}
+function checkLockPin(){
+  const pin=document.getElementById('lockPinInp').value;
+  if(!_lockPendingChatId) return;
+  const stored=prefs.chatLocks[_lockPendingChatId];
+  if(pin===stored){
+    document.getElementById('chatLockOverlay').classList.remove('show');
+    if(_lockPendingFid){
+      // Was trying to open chat — proceed
+      _openChatUnlocked(_lockPendingFid,_lockPendingFname,_lockPendingOrigCid);
+    } else {
+      // Was unlocking from menu
+      delete prefs.chatLocks[_lockPendingChatId]; savePrefs();
+      toast('🔓 Chat unlocked','ok');
+    }
+    _lockPendingChatId=null; _lockPendingFid=null;
+  } else {
+    document.getElementById('lockPinInp').value='';
+    document.getElementById('lockPinInp').placeholder='Wrong PIN';
+    setTimeout(()=>document.getElementById('lockPinInp').placeholder='••••',1500);
+  }
+}
+function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
+let _openChatUnlocked=(fid,fname,cid)=>_openChatUnlockedReal(fid,fname,cid);
+
+// ══════════════════════════════════════════════════
+// PER-CHAT NOTIFICATION SOUND
+// ══════════════════════════════════════════════════
+const NOTIF_SOUNDS={default:'Default',chime:'Chime 🎵',ping:'Ping 🔔',pop:'Pop 🫧',none:'Silent 🔕'};
+function openNotifSoundPicker(chatId){
+  const cur=prefs.notifSounds[chatId]||'default';
+  const opts=Object.entries(NOTIF_SOUNDS).map(([k,v])=>`<option value="${k}" ${cur===k?'selected':''}>${v}</option>`).join('');
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:18px;padding:24px;width:300px;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:17px;font-weight:700;color:var(--txt);">🔔 Notification Sound</div>
+    <select id="_sndSel" style="background:var(--inp);border:1px solid var(--ibdr);border-radius:10px;padding:10px;color:var(--txt);font-size:14px;">${opts}</select>
+    <div style="display:flex;gap:10px;">
+      <button onclick="saveNotifSound('${chatId}',document.getElementById('_sndSel').value)" style="flex:1;padding:11px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Save</button>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:11px;background:var(--inp);color:var(--txt);border:none;border-radius:10px;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function saveNotifSound(chatId,sound){
+  if(sound==='default') delete prefs.notifSounds[chatId];
+  else prefs.notifSounds[chatId]=sound;
+  savePrefs();
+  document.querySelectorAll('[style*="position:fixed"][style*="z-index:2000"]').forEach(e=>{
+    if(e.querySelector('#_sndSel')) e.remove();
+  });
+  toast('Sound saved 🔔','ok');
+}
+function playChatNotifSound(chatId){
+  const s=prefs.notifSounds[chatId]||'default';
+  if(s==='none') return;
+  if(s==='default'){ beep(); return; }
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  if(s==='chime'){osc.frequency.value=880;gain.gain.setValueAtTime(.3,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);osc.start();osc.stop(ctx.currentTime+.5);}
+  else if(s==='ping'){osc.frequency.value=1200;gain.gain.setValueAtTime(.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);osc.start();osc.stop(ctx.currentTime+.2);}
+  else if(s==='pop'){osc.frequency.value=400;osc.type='sine';gain.gain.setValueAtTime(.4,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}
+}
+
+// ══════════════════════════════════════════════════
+// ICEBREAKER
+// ══════════════════════════════════════════════════
+const ICEBREAKERS=[
+  'Would you rather travel back in time or forward 100 years?',
+  'If you could only eat one meal forever, what would it be?',
+  'What's a skill you wish you had?',
+  'If you won the lottery tomorrow, what's the first thing you'd do?',
+  'What's the weirdest dream you remember?',
+  'Desert island: book, movie, or music album?',
+  'Would you rather be able to fly or be invisible?',
+  'What's your most controversial food opinion?',
+  'If your life was a movie genre, what would it be?',
+  'What app could you absolutely not live without?',
+  'What's one thing on your bucket list?',
+  'If you could have dinner with anyone (alive or dead), who?',
+  'What's your go-to karaoke song?',
+  'Morning person or night owl — and why?',
+  'What's a show you can rewatch endlessly?',
+];
+let _curIceQ='';
+function openIcebreaker(){
+  if(!currentChatId){toast('Open a chat first','err');return;}
+  newIcebreaker();
+  document.getElementById('iceOv').style.display='block';
+  document.getElementById('iceSheet').classList.add('show');
+}
+function closeIcebreaker(){
+  document.getElementById('iceSheet').classList.remove('show');
+  document.getElementById('iceOv').style.display='none';
+}
+function newIcebreaker(){
+  _curIceQ=ICEBREAKERS[Math.floor(Math.random()*ICEBREAKERS.length)];
+  document.getElementById('iceQuestion').textContent='🎲 ' + _curIceQ;
+}
+function sendIcebreaker(){
+  if(!_curIceQ||!currentChatId) return;
+  document.getElementById('msgInput').value='🎲 ' + _curIceQ;
+  closeIcebreaker();
+  document.getElementById('msgInput').focus();
+}
+
+// ══════════════════════════════════════════════════
+// MINI GAME — Tic-Tac-Toe via messages
+// ══════════════════════════════════════════════════
+let _gameState=null;
+function openMiniGame(){
+  if(!currentChatId){toast('Open a chat first','err');return;}
+  const modal=document.createElement('div');
+  modal.id='miniGameModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:var(--card);border-radius:20px;padding:24px;width:280px;display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div style="font-size:22px;font-weight:700;color:var(--txt);">🎮 Tic-Tac-Toe</div>
+    <div style="font-size:13px;color:var(--sub);text-align:center;">You are ✕. Moves are sent as messages.</div>
+    <div id="mgStatus" style="font-size:14px;font-weight:600;color:var(--brand);">Your turn (✕)</div>
+    <div class="game-board" id="mgBoard"></div>
+    <div style="display:flex;gap:10px;width:100%;">
+      <button onclick="mgReset()" style="flex:1;padding:10px;background:var(--inp);color:var(--txt);border:none;border-radius:10px;cursor:pointer;">↺ Reset</button>
+      <button onclick="document.getElementById('miniGameModal').remove()" style="flex:1;padding:10px;background:var(--hov);color:var(--sub);border:none;border-radius:10px;cursor:pointer;">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  mgReset();
+}
+function mgReset(){
+  _gameState={board:Array(9).fill(''),turn:'X',over:false};
+  mgRender();
+}
+function mgRender(){
+  const b=document.getElementById('mgBoard'); if(!b) return;
+  b.innerHTML=_gameState.board.map((v,i)=>`<div class="game-cell" onclick="mgMove(${i})">${v}</div>`).join('');
+  const s=document.getElementById('mgStatus'); if(s){
+    s.textContent=_gameState.over?(_gameState.winner?(_gameState.winner==='X'?'You win! 🎉':'Opponent wins!'):"It's a draw!"):(_gameState.turn==='X'?'Your turn (✕)':'Opponent\'s turn (○)');
+  }
+}
+function mgMove(i){
+  if(!_gameState||_gameState.over||_gameState.board[i]||_gameState.turn!=='X') return;
+  _gameState.board[i]='✕';
+  const w=mgCheckWinner();
+  if(w){_gameState.over=true;_gameState.winner='X';}
+  else if(_gameState.board.every(v=>v)){_gameState.over=true;}
+  else {
+    _gameState.turn='O';
+    // Send move as message
+    const moveMsg='🎮 Tic-Tac-Toe move: cell '+(i+1)+' ['+_gameState.board.map((v,j)=>v||'·').join('')+']';
+    document.getElementById('msgInput').value=moveMsg;
+    // AI plays after short delay
+    setTimeout(()=>{
+      if(_gameState&&!_gameState.over&&_gameState.turn==='O'){
+        const empty=_gameState.board.map((v,j)=>v?null:j).filter(x=>x!==null);
+        if(empty.length){
+          const ai=empty[Math.floor(Math.random()*empty.length)];
+          _gameState.board[ai]='○';
+          const w2=mgCheckWinner();
+          if(w2){_gameState.over=true;_gameState.winner='O';}
+          else if(_gameState.board.every(v=>v)){_gameState.over=true;}
+          else _gameState.turn='X';
+        }
+        mgRender();
+      }
+    },600);
+  }
+  mgRender();
+}
+function mgCheckWinner(){
+  const b=_gameState.board;
+  const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(const [a,x,y] of wins){ if(b[a]&&b[a]===b[x]&&b[a]===b[y]) return b[a]; }
+  return null;
+}
+
+// ══════════════════════════════════════════════════
+// MESSAGE TRANSLATION
+// ══════════════════════════════════════════════════
+async function translateMessage(msgId, text){
+  // Use a free translation approach via MyMemory API (no key needed)
+  const el=document.querySelector(`[data-msg-id="${msgId}"]`);
+  if(!el) return;
+  const existing=el.querySelector('.translated-text');
+  if(existing){existing.remove();return;} // toggle off
+  const tDiv=document.createElement('div');
+  tDiv.className='translated-text';
+  tDiv.textContent='Translating…';
+  el.querySelector('.bub').appendChild(tDiv);
+  try{
+    const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|en`);
+    const d=await r.json();
+    tDiv.textContent='🌐 '+(d.responseData&&d.responseData.translatedText?d.responseData.translatedText:'Translation unavailable');
+  }catch(e){tDiv.textContent='Translation failed';}
+}
+
+// ══════════════════════════════════════════════════
+// SMART SEARCH
+// ══════════════════════════════════════════════════
+let _ssFilter='all',_ssTimer=null;
+function openSS(){
+  closeSettings();
+  document.getElementById('ssModal').classList.add('show');
+  setTimeout(()=>document.getElementById('ssInp').focus(),80);
+}
+function closeSS(){ document.getElementById('ssModal').classList.remove('show'); }
+function setSsFilter(f){
+  _ssFilter=f;
+  ['all','text','media','from'].forEach(k=>{
+    const el=document.getElementById('ss'+k.charAt(0).toUpperCase()+k.slice(1)); if(el) el.classList.toggle('active',k===f);
+  });
+  doSmartSearch();
+}
+function doSmartSearch(){
+  clearTimeout(_ssTimer);
+  const q=document.getElementById('ssInp').value.trim();
+  const body=document.getElementById('ssBody');
+  if(!q){body.innerHTML='<div class="lempty" style="padding-top:40px;">🔍 Search across all your chats</div>';return;}
+  body.innerHTML='<div class="lempty" style="padding-top:40px;">Searching…</div>';
+  _ssTimer=setTimeout(async()=>{
+    try{
+      let url=`/api/messages/search/global?q=${encodeURIComponent(q)}`;
+      if(_ssFilter==='media') url+='&type=media';
+      else if(_ssFilter==='from') url+='&sender='+encodeURIComponent(q);
+      const r=await fetch(url); const d=await r.json();
+      if(!d.success||!d.results||!d.results.length){body.innerHTML='<div class="lempty" style="padding-top:40px;">No results</div>';return;}
+      body.innerHTML=d.results.map(m=>`
+        <div class="ss-result" onclick="jumpToSSResult('${m.other_id}','${esc(m.other_username)}','${m.chat_id}',${m.id})">
+          <div class="ss-from">${esc(m.sender_username)} → ${esc(m.other_username)}</div>
+          <div class="ss-content">${esc((m.content||'').substring(0,120))}</div>
+          <div class="ss-time">${fmtTime(m.created_at)}</div>
+        </div>`).join('');
+    }catch(e){body.innerHTML='<div class="lempty">Search failed</div>';}
+  },350);
+}
+function jumpToSSResult(otherId,otherName,chatId,msgId){
+  closeSS();
+  openChat(parseInt(otherId),otherName,chatId);
+  setTimeout(()=>scrollToMsg(msgId),600);
+}
+
+// ══════════════════════════════════════════════════
+// CHAT EXPORT
+// ══════════════════════════════════════════════════
+async function exportChat(){
+  if(!currentChatId){toast('No chat open','err');return;}
+  toast('Preparing export…','info');
+  try{
+    const r=await fetch(`/api/messages/${currentChatId}?limit=2000`);
+    const d=await r.json();
+    const msgs=(d.messages||[]).reverse();
+    const f=friends.find(x=>x.chat_id===currentChatId||x.id===currentFriendId);
+    const name=f?f.username:'Chat';
+    let txt=`Hepozy Chat Export — ${name}
+Exported: ${new Date().toLocaleString()}
+${'─'.repeat(50)}
+
+`;
+    msgs.forEach(m=>{
+      const t=new Date(m.created_at).toLocaleString();
+      const content=m.message_type==='image'?'[Photo]':m.message_type==='audio'?'[Voice Message]':(m.content||'');
+      txt+=`[${t}] ${m.sender_username}: ${content}
+`;
+    });
+    const blob=new Blob([txt],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`chat-${name}-${Date.now()}.txt`; a.click();
+    URL.revokeObjectURL(url);
+    toast('Chat exported 📤','ok');
+  }catch(e){toast('Export failed','err');}
+}
+
+// ══════════════════════════════════════════════════
+// BIRTHDAY CHECK on load
+// ══════════════════════════════════════════════════
+setTimeout(()=>{
+  // Load saved values into settings UI
+  const es=document.getElementById('eStatus'); if(es) es.value=prefs.statusText||'';
+  const eb=document.getElementById('eBirthday'); if(eb) eb.value=prefs.birthday||'';
+  const en=document.getElementById('eNowPlaying'); if(en) en.value=prefs.nowPlaying||'';
+  document.getElementById('tIncognito').classList.toggle('on',prefs.incognito);
+  document.getElementById('tReadReceipts').classList.toggle('on',prefs.readReceipts);
+  document.getElementById('tDND').classList.toggle('on',prefs.dndEnabled);
+  if(prefs.dndEnabled) document.getElementById('dndTimeRow').style.display='flex';
+  if(prefs.dndStart) document.getElementById('dndStart').value=prefs.dndStart;
+  if(prefs.dndEnd) document.getElementById('dndEnd').value=prefs.dndEnd;
+  checkBirthdayToday();
+},500);
+
+
 // ── In-app notification bubble (slides in from top-right) ──
 let _notifTimer={};
 function showInAppNotif(name, text, chatId){
@@ -4784,6 +5621,13 @@ function renderMobileChatList(){
 
   // Filter to unread only if that tab is active
   if (currentTab === 'unread') all = all.filter(x => x.unread > 0);
+  // Label filter (only applies to friends, not groups)
+  if(typeof _activeLabelFilter!=='undefined'&&_activeLabelFilter!=='all'){
+    all = all.filter(x=>{
+      if(x.type==='group') return true; // always show groups regardless of label filter
+      return prefs.contactLabels[x.id]===_activeLabelFilter;
+    });
+  }
 
   // Sort: pinned first, then by last activity descending
   all.sort((a, b) => {
@@ -4828,6 +5672,8 @@ function openCrowCtxAt(x,y,fid){
     <div class="crow-ctx-item" onclick="crowCtxDo('archive')">${isArchived?'📤 Unarchive':'🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxDo('profile')">👤 View Profile</div>
+    <div class="crow-ctx-item" onclick="crowCtxDo('label')">🏷️ Contact Label</div>
+    <div class="crow-ctx-item" onclick="crowCtxDo('lock')">🔒 Lock/Unlock Chat</div>
     <div class="crow-ctx-item danger" onclick="crowCtxDo('delete-conv')">🗑️ Delete Conversation</div>
   `;
   const mx=Math.min(x,window.innerWidth-195);
@@ -4855,6 +5701,8 @@ function crowCtxDo(action){
   }
   else if(action==='profile'){currentFriendId=fid;showFriendProfile();}
   else if(action==='delete-conv'){ confirmDeleteConversation(f.chat_id, f.id); }
+  else if(action==='label'){openLabelPicker(f.id);}
+  else if(action==='lock'){const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');toggleChatLock(cid);}
 }
 
 // ════════════════════════════════════════════════════
@@ -4894,6 +5742,12 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('schedule')">⏳ Schedule Message</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('pin-chat')">${isPinned?'📌 Unpin Chat':'📌 Pin Chat'}</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('label')">🏷️ Contact Label</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('lock')">🔒 ${prefs.chatLocks[currentChatId]?'Unlock Chat':'Lock Chat'}</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('notif-sound')">🔔 Notification Sound</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('icebreaker')">🎲 Icebreaker</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('game')">🎮 Mini Game</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('export')">📤 Export Chat</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
@@ -4941,6 +5795,12 @@ function crowCtxConvDo(action){
     saveGroupArchive();
     renderFriends();
   }
+  else if(action==='label'){openLabelPicker(currentFriendId);}
+  else if(action==='lock'){toggleChatLock(currentChatId);}
+  else if(action==='notif-sound'){openNotifSoundPicker(currentChatId);}
+  else if(action==='icebreaker'){openIcebreaker();}
+  else if(action==='game'){openMiniGame();}
+  else if(action==='export'){exportChat();}
 }
 
 // ════════════════════════════════════════════════════
