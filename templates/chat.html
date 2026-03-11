@@ -1316,7 +1316,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div class="msg-sheet-ov" id="delSheetOv" onclick="hideDelSheet()"></div>
 <div class="del-sheet" id="delSheet">
   <div class="del-sheet-title">Delete message?</div>
-  <button class="ms-act" onclick="doTranslate()"><span class="ms-act-icon">🌐</span>Translate</button>
   <button class="ms-act danger" onclick="doDeleteForMe()"><span class="ms-act-icon">🗑️</span>Delete for me</button>
   <button class="ms-act danger" onclick="doDeleteForEveryone()"><span class="ms-act-icon">🗑️</span>Delete for everyone</button>
   <button class="ms-act" onclick="hideDelSheet()" style="color:var(--mute);"><span class="ms-act-icon">✕</span>Cancel</button>
@@ -1351,16 +1350,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="clp-tabs" style="position:relative;">
     <div class="clp-tab active" id="tabAll" onclick="switchTab('all')">All</div>
     <div class="clp-tab" id="tabUnread" onclick="switchTab('unread')">Unread</div>
-  </div>
-  <!-- Label filter bar -->
-  <div id="labelFilterBar">
-    <div class="lf-chip active" id="lfAll" onclick="setLabelFilter('all')">All</div>
-    <div class="lf-chip" id="lfWork" onclick="setLabelFilter('Work')">💼 Work</div>
-    <div class="lf-chip" id="lfFamily" onclick="setLabelFilter('Family')">👨‍👩‍👧 Family</div>
-    <div class="lf-chip" id="lfClose" onclick="setLabelFilter('Close Friends')">❤️ Close</div>
-    <div class="lf-chip" id="lfOther" onclick="setLabelFilter('Other')">🏷️ Other</div>
-  </div>
-  <div style="display:none;"><!-- tab close dummy -->
     <button id="storiesArrowBtn" onclick="openStoriesPanel()" style="
       position:absolute;right:0;top:0;bottom:0;
       width:36px;border:none;background:transparent;
@@ -1376,6 +1365,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       "></span>
       ›
     </button>
+  </div>
+  <!-- Label filter bar -->
+  <div id="labelFilterBar">
+    <div class="lf-chip active" id="lfAll" onclick="setLabelFilter('all')">All</div>
+    <div class="lf-chip" id="lfWork" onclick="setLabelFilter('Work')">💼 Work</div>
+    <div class="lf-chip" id="lfFamily" onclick="setLabelFilter('Family')">👨‍👩‍👧 Family</div>
+    <div class="lf-chip" id="lfClose" onclick="setLabelFilter('Close Friends')">❤️ Close</div>
+    <div class="lf-chip" id="lfOther" onclick="setLabelFilter('Other')">🏷️ Other</div>
   </div>
   <!-- Chat list body -->
   <div class="clp-body" id="clpBody">
@@ -1865,17 +1862,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="lock-cancel" onclick="cancelChatLock()">← Go back</div>
 </div>
 
-<!-- ICEBREAKER SHEET -->
-<div class="sov" id="iceOv" onclick="closeIcebreaker()" style="display:none;"></div>
-<div class="ice-sheet" id="iceSheet">
-  <div style="font-size:22px;text-align:center;">🎲 Icebreaker</div>
-  <div class="ice-q" id="iceQuestion">Loading...</div>
-  <div class="ice-actions">
-    <button class="savebtn" style="flex:1;" onclick="sendIcebreaker()">Send ❄️</button>
-    <button class="savebtn" style="flex:1;background:var(--inp);color:var(--txt);" onclick="newIcebreaker()">Another 🔄</button>
-  </div>
-  <button class="closebtn" onclick="closeIcebreaker()" style="position:absolute;top:14px;right:14px;">✕</button>
-</div>
+
 
 <!-- SMART SEARCH MODAL -->
 <div class="ss-modal" id="ssModal">
@@ -2578,6 +2565,18 @@ function loadPrefs(){
   applyTheme();
   document.getElementById('tDark').classList.toggle('on',prefs.theme==='dark');
   document.getElementById('tSound').classList.toggle('on',prefs.sound);
+  // New toggles — safe to call even before DOM ready since these run on DOMContentLoaded
+  requestAnimationFrame(()=>{
+    const ti=document.getElementById('tIncognito'); if(ti) ti.classList.toggle('on',prefs.incognito);
+    const tr=document.getElementById('tReadReceipts'); if(tr) tr.classList.toggle('on',!!prefs.readReceipts);
+    const td=document.getElementById('tDND'); if(td) td.classList.toggle('on',prefs.dndEnabled);
+    const dr=document.getElementById('dndTimeRow'); if(dr) dr.style.display=prefs.dndEnabled?'flex':'none';
+    const ds=document.getElementById('dndStart'); if(ds) ds.value=prefs.dndStart||'22:00';
+    const de=document.getElementById('dndEnd'); if(de) de.value=prefs.dndEnd||'08:00';
+    const es=document.getElementById('eStatus'); if(es) es.value=prefs.statusText||'';
+    const eb=document.getElementById('eBirthday'); if(eb) eb.value=prefs.birthday||'';
+    const en=document.getElementById('eNowPlaying'); if(en) en.value=prefs.nowPlaying||'';
+  });
 }
 function savePrefs(){localStorage.setItem('hpz_prefs',JSON.stringify(prefs));}
 function applyTheme(){document.documentElement.setAttribute('data-theme',prefs.theme);}
@@ -4313,6 +4312,7 @@ function showMsgSheet(event, msgId, isSent){
     { icon:'↩️', label:'Reply',           fn: ()=>{ const from=ME_NAME; const content=previewText; setReply(msgId,from,content); hideMsgSheet(); }},
     { icon:'↪️', label:'Forward',         fn: ()=>{ openForward(msgId); hideMsgSheet(); }},
     { icon:'📋', label:'Copy',            fn: ()=>{ navigator.clipboard?.writeText(previewText)||copyFallback(previewText); toast('Copied','ok'); hideMsgSheet(); }},
+    { icon:'🌐', label:'Translate',       fn: ()=>{ hideMsgSheet(); translateMessage(msgId, previewText); }},
     { icon:'📌', label:'Pin / Unpin',     fn: ()=>{ togglePin(msgId); hideMsgSheet(); }},
     { icon:'✏️', label:'Edit',            fn: ()=>{ startEdit(msgId, previewText); hideMsgSheet(); }},
     { icon:'🗑️', label:'Delete',          fn: ()=>{ hideMsgSheet(); openDelSheet(msgId); }, danger:true },
@@ -4320,6 +4320,7 @@ function showMsgSheet(event, msgId, isSent){
     { icon:'↩️', label:'Reply',           fn: ()=>{ const fromEl=msgEl.querySelector('.mfrom'); const from=fromEl?.textContent||''; setReply(msgId,from,previewText); hideMsgSheet(); }},
     { icon:'↪️', label:'Forward',         fn: ()=>{ openForward(msgId); hideMsgSheet(); }},
     { icon:'📋', label:'Copy',            fn: ()=>{ navigator.clipboard?.writeText(previewText)||copyFallback(previewText); toast('Copied','ok'); hideMsgSheet(); }},
+    { icon:'🌐', label:'Translate',       fn: ()=>{ hideMsgSheet(); translateMessage(msgId, previewText); }},
     { icon:'📌', label:'Pin / Unpin',     fn: ()=>{ togglePin(msgId); hideMsgSheet(); }},
   ];
 
@@ -4353,15 +4354,7 @@ function hideDelSheet(){
   document.getElementById('delSheetOv').classList.remove('show');
   sheetDeleteId = null;
 }
-function doTranslate(){
-  if(!sheetDeleteId) return;
-  const msgId = sheetDeleteId;
-  const el=document.querySelector(`[data-msg-id="${msgId}"] .bub`);
-  const text=el?el.textContent.replace(/[\u00a0]/g,' ').trim():'';
-  hideDelSheet();
-  if(!text){toast('No text to translate','err');return;}
-  translateMessage(msgId, text);
-}
+// doTranslate removed — translate is now in long-press sheet rows
 async function doDeleteForMe(){
   if(!sheetDeleteId) return;
   const msgId = sheetDeleteId;  // capture before hideDelSheet nulls it
@@ -5229,135 +5222,33 @@ function playChatNotifSound(chatId){
   else if(s==='pop'){osc.frequency.value=400;osc.type='sine';gain.gain.setValueAtTime(.4,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}
 }
 
-// ══════════════════════════════════════════════════
-// ICEBREAKER
-// ══════════════════════════════════════════════════
-const ICEBREAKERS=[
-  'Would you rather travel back in time or forward 100 years?',
-  'If you could only eat one meal forever, what would it be?',
-  'What's a skill you wish you had?',
-  'If you won the lottery tomorrow, what's the first thing you'd do?',
-  'What's the weirdest dream you remember?',
-  'Desert island: book, movie, or music album?',
-  'Would you rather be able to fly or be invisible?',
-  'What's your most controversial food opinion?',
-  'If your life was a movie genre, what would it be?',
-  'What app could you absolutely not live without?',
-  'What's one thing on your bucket list?',
-  'If you could have dinner with anyone (alive or dead), who?',
-  'What's your go-to karaoke song?',
-  'Morning person or night owl — and why?',
-  'What's a show you can rewatch endlessly?',
-];
-let _curIceQ='';
-function openIcebreaker(){
-  if(!currentChatId){toast('Open a chat first','err');return;}
-  newIcebreaker();
-  document.getElementById('iceOv').style.display='block';
-  document.getElementById('iceSheet').classList.add('show');
-}
-function closeIcebreaker(){
-  document.getElementById('iceSheet').classList.remove('show');
-  document.getElementById('iceOv').style.display='none';
-}
-function newIcebreaker(){
-  _curIceQ=ICEBREAKERS[Math.floor(Math.random()*ICEBREAKERS.length)];
-  document.getElementById('iceQuestion').textContent='🎲 ' + _curIceQ;
-}
-function sendIcebreaker(){
-  if(!_curIceQ||!currentChatId) return;
-  document.getElementById('msgInput').value='🎲 ' + _curIceQ;
-  closeIcebreaker();
-  document.getElementById('msgInput').focus();
-}
-
-// ══════════════════════════════════════════════════
-// MINI GAME — Tic-Tac-Toe via messages
-// ══════════════════════════════════════════════════
-let _gameState=null;
-function openMiniGame(){
-  if(!currentChatId){toast('Open a chat first','err');return;}
-  const modal=document.createElement('div');
-  modal.id='miniGameModal';
-  modal.style.cssText='position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;';
-  modal.innerHTML=`<div style="background:var(--card);border-radius:20px;padding:24px;width:280px;display:flex;flex-direction:column;align-items:center;gap:14px;">
-    <div style="font-size:22px;font-weight:700;color:var(--txt);">🎮 Tic-Tac-Toe</div>
-    <div style="font-size:13px;color:var(--sub);text-align:center;">You are ✕. Moves are sent as messages.</div>
-    <div id="mgStatus" style="font-size:14px;font-weight:600;color:var(--brand);">Your turn (✕)</div>
-    <div class="game-board" id="mgBoard"></div>
-    <div style="display:flex;gap:10px;width:100%;">
-      <button onclick="mgReset()" style="flex:1;padding:10px;background:var(--inp);color:var(--txt);border:none;border-radius:10px;cursor:pointer;">↺ Reset</button>
-      <button onclick="document.getElementById('miniGameModal').remove()" style="flex:1;padding:10px;background:var(--hov);color:var(--sub);border:none;border-radius:10px;cursor:pointer;">Close</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  mgReset();
-}
-function mgReset(){
-  _gameState={board:Array(9).fill(''),turn:'X',over:false};
-  mgRender();
-}
-function mgRender(){
-  const b=document.getElementById('mgBoard'); if(!b) return;
-  b.innerHTML=_gameState.board.map((v,i)=>`<div class="game-cell" onclick="mgMove(${i})">${v}</div>`).join('');
-  const s=document.getElementById('mgStatus'); if(s){
-    s.textContent=_gameState.over?(_gameState.winner?(_gameState.winner==='X'?'You win! 🎉':'Opponent wins!'):"It's a draw!"):(_gameState.turn==='X'?'Your turn (✕)':'Opponent\'s turn (○)');
-  }
-}
-function mgMove(i){
-  if(!_gameState||_gameState.over||_gameState.board[i]||_gameState.turn!=='X') return;
-  _gameState.board[i]='✕';
-  const w=mgCheckWinner();
-  if(w){_gameState.over=true;_gameState.winner='X';}
-  else if(_gameState.board.every(v=>v)){_gameState.over=true;}
-  else {
-    _gameState.turn='O';
-    // Send move as message
-    const moveMsg='🎮 Tic-Tac-Toe move: cell '+(i+1)+' ['+_gameState.board.map((v,j)=>v||'·').join('')+']';
-    document.getElementById('msgInput').value=moveMsg;
-    // AI plays after short delay
-    setTimeout(()=>{
-      if(_gameState&&!_gameState.over&&_gameState.turn==='O'){
-        const empty=_gameState.board.map((v,j)=>v?null:j).filter(x=>x!==null);
-        if(empty.length){
-          const ai=empty[Math.floor(Math.random()*empty.length)];
-          _gameState.board[ai]='○';
-          const w2=mgCheckWinner();
-          if(w2){_gameState.over=true;_gameState.winner='O';}
-          else if(_gameState.board.every(v=>v)){_gameState.over=true;}
-          else _gameState.turn='X';
-        }
-        mgRender();
-      }
-    },600);
-  }
-  mgRender();
-}
-function mgCheckWinner(){
-  const b=_gameState.board;
-  const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  for(const [a,x,y] of wins){ if(b[a]&&b[a]===b[x]&&b[a]===b[y]) return b[a]; }
-  return null;
-}
 
 // ══════════════════════════════════════════════════
 // MESSAGE TRANSLATION
 // ══════════════════════════════════════════════════
 async function translateMessage(msgId, text){
-  // Use a free translation approach via MyMemory API (no key needed)
   const el=document.querySelector(`[data-msg-id="${msgId}"]`);
   if(!el) return;
-  const existing=el.querySelector('.translated-text');
-  if(existing){existing.remove();return;} // toggle off
+  const bub=el.querySelector('.bub');
+  if(!bub) return;
+  // Toggle off if already translated
+  const existing=bub.querySelector('.translated-text');
+  if(existing){existing.remove();return;}
   const tDiv=document.createElement('div');
   tDiv.className='translated-text';
-  tDiv.textContent='Translating…';
-  el.querySelector('.bub').appendChild(tDiv);
+  tDiv.textContent='🌐 Translating…';
+  bub.appendChild(tDiv);
   try{
-    const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|en`);
+    const cleanText=text.replace(/[\u{1F000}-\u{1FFFF}]/gu,'').trim()||text;
+    const url=`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText.substring(0,500))}&langpair=autodetect|en`;
+    const r=await fetch(url);
     const d=await r.json();
-    tDiv.textContent='🌐 '+(d.responseData&&d.responseData.translatedText?d.responseData.translatedText:'Translation unavailable');
-  }catch(e){tDiv.textContent='Translation failed';}
+    if(d.responseStatus===200&&d.responseData?.translatedText){
+      tDiv.textContent='🌐 '+d.responseData.translatedText;
+    } else {
+      tDiv.textContent='🌐 Could not translate';
+    }
+  }catch(e){tDiv.textContent='🌐 Translation failed (network)';}
 }
 
 // ══════════════════════════════════════════════════
@@ -5372,9 +5263,9 @@ function openSS(){
 function closeSS(){ document.getElementById('ssModal').classList.remove('show'); }
 function setSsFilter(f){
   _ssFilter=f;
-  ['all','text','media','from'].forEach(k=>{
-    const el=document.getElementById('ss'+k.charAt(0).toUpperCase()+k.slice(1)); if(el) el.classList.toggle('active',k===f);
-  });
+  document.querySelectorAll('.ss-f').forEach(el=>el.classList.remove('active'));
+  const map={all:'ssAll',text:'ssText',media:'ssMedia',from:'ssFrom'};
+  const el=document.getElementById(map[f]); if(el) el.classList.add('active');
   doSmartSearch();
 }
 function doSmartSearch(){
@@ -5412,7 +5303,7 @@ async function exportChat(){
   if(!currentChatId){toast('No chat open','err');return;}
   toast('Preparing export…','info');
   try{
-    const r=await fetch(`/api/messages/${currentChatId}?limit=2000`);
+    const r=await fetch(`/api/messages/${currentChatId}`);
     const d=await r.json();
     const msgs=(d.messages||[]).reverse();
     const f=friends.find(x=>x.chat_id===currentChatId||x.id===currentFriendId);
@@ -5440,19 +5331,7 @@ ${'─'.repeat(50)}
 // ══════════════════════════════════════════════════
 // BIRTHDAY CHECK on load
 // ══════════════════════════════════════════════════
-setTimeout(()=>{
-  // Load saved values into settings UI
-  const es=document.getElementById('eStatus'); if(es) es.value=prefs.statusText||'';
-  const eb=document.getElementById('eBirthday'); if(eb) eb.value=prefs.birthday||'';
-  const en=document.getElementById('eNowPlaying'); if(en) en.value=prefs.nowPlaying||'';
-  document.getElementById('tIncognito').classList.toggle('on',prefs.incognito);
-  document.getElementById('tReadReceipts').classList.toggle('on',prefs.readReceipts);
-  document.getElementById('tDND').classList.toggle('on',prefs.dndEnabled);
-  if(prefs.dndEnabled) document.getElementById('dndTimeRow').style.display='flex';
-  if(prefs.dndStart) document.getElementById('dndStart').value=prefs.dndStart;
-  if(prefs.dndEnd) document.getElementById('dndEnd').value=prefs.dndEnd;
-  checkBirthdayToday();
-},500);
+setTimeout(checkBirthdayToday, 1000);
 
 
 // ── In-app notification bubble (slides in from top-right) ──
@@ -5745,8 +5624,6 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('label')">🏷️ Contact Label</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('lock')">🔒 ${prefs.chatLocks[currentChatId]?'Unlock Chat':'Lock Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('notif-sound')">🔔 Notification Sound</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('icebreaker')">🎲 Icebreaker</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('game')">🎮 Mini Game</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('export')">📤 Export Chat</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
@@ -5798,8 +5675,6 @@ function crowCtxConvDo(action){
   else if(action==='label'){openLabelPicker(currentFriendId);}
   else if(action==='lock'){toggleChatLock(currentChatId);}
   else if(action==='notif-sound'){openNotifSoundPicker(currentChatId);}
-  else if(action==='icebreaker'){openIcebreaker();}
-  else if(action==='game'){openMiniGame();}
   else if(action==='export'){exportChat();}
 }
 
