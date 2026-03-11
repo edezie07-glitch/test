@@ -40,7 +40,7 @@ def _get_secret_key():
     return 'hpz-fallback-key-set-SECRET_KEY-env-var-in-render-dashboard'
 
 app.config['SECRET_KEY'] = _get_secret_key()
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max — supports 30-second story videos
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -274,6 +274,10 @@ with app.app_context():
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({'success': False, 'error': 'File too large (max 100MB)'}), 413
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
