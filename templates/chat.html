@@ -2126,33 +2126,50 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 ══════════════════════════════════════════ -->
 <div id="SC" style="display:none;position:fixed;inset:0;z-index:6000;background:#000;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 
-  <!-- PAGE 0: Type chooser (3 buttons) -->
-  <div id="SC_p0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;padding:24px;">
-    <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;letter-spacing:.4px;">Create Story</div>
+  <!-- PAGE 0: Type chooser -->
+  <div id="SC_p0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:28px;">
+    <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:.3px;">Create Story</div>
+
+    <!-- Photo/Video gallery (any length) -->
     <button class="sc-type-btn" onclick="scChoose('photo')">
       <span style="font-size:30px;">🖼️</span>
-      <span>Photo Story</span>
+      <span>Photo / Video</span>
     </button>
+
+    <!-- Take Photo with camera -->
     <button class="sc-type-btn" onclick="scChoose('camera')">
       <span style="font-size:30px;">📷</span>
       <span>Take Photo</span>
     </button>
+
+    <!-- Text story -->
     <button class="sc-type-btn" onclick="scChoose('text')">
       <span style="font-size:30px;">📝</span>
       <span>Text Story</span>
     </button>
-    <button onclick="scClose()" style="margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.6);padding:10px 28px;border-radius:24px;font-size:14px;cursor:pointer;">Cancel</button>
+
+    <button onclick="scClose()" style="margin-top:6px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.6);padding:10px 28px;border-radius:24px;font-size:14px;cursor:pointer;">Cancel</button>
   </div>
 
-  <!-- PAGE 1: EDITOR (photo/video/text/camera result) -->
+  <!-- PAGE 1: EDITOR (photo / video / text / camera) -->
   <div id="SC_p1" style="display:none;height:100%;flex-direction:column;position:relative;">
 
     <!-- Canvas / preview area -->
     <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
-      <div id="SC_rotWrap" style="display:contents;touch-action:none;"><img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;"></div>
+      <div id="SC_rotWrap" style="display:contents;touch-action:none;">
+        <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
+      </div>
       <video id="SC_vid" style="max-width:100%;max-height:100%;object-fit:contain;display:none;" playsinline autoplay loop muted></video>
-      <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
-      <!-- Text story bg + text -->
+
+      <!-- Video duration badge (bottom-right of preview) -->
+      <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
+
+      <!-- ✂️ Trim button — only visible for videos that exceed 30s -->
+      <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
+        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Trim to 30s</button>
+      </div>
+
+      <!-- Text story background + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#7c6aff,#a855f7);"></div>
       <textarea id="SC_textBox" placeholder="Tap to type…" style="
         display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -2162,7 +2179,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         text-shadow:0 2px 8px rgba(0,0,0,.5);
         caret-color:#fff;min-height:80px;
       " rows="4"></textarea>
-      <!-- Overlaid caption (for photo/video) -->
+
+      <!-- Caption overlay (photo/video) -->
       <div id="SC_caption" style="
         display:none;position:absolute;bottom:90px;left:0;right:0;
         padding:10px 18px;text-align:center;
@@ -2172,155 +2190,147 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       "></div>
     </div>
 
-    <!-- TOP-LEFT: Delete button -->
-    <div style="position:absolute;top:16px;left:14px;z-index:10;">
-      <button id="SC_delBtn" onclick="scShowDeleteMenu()" style="
+    <!-- TOP-LEFT: Back to chooser -->
+    <div style="position:absolute;top:14px;left:12px;z-index:10;">
+      <button onclick="scBackToChooser()" style="
         background:rgba(0,0,0,.45);border:none;color:#fff;
-        border-radius:50%;width:40px;height:40px;font-size:19px;
+        border-radius:50%;width:40px;height:40px;font-size:22px;
         cursor:pointer;display:flex;align-items:center;justify-content:center;
-        backdrop-filter:blur(4px);
-      ">🗑️</button>
+        backdrop-filter:blur(4px);">‹</button>
     </div>
 
     <!-- TOP-RIGHT: 3-dots settings -->
-    <div style="position:absolute;top:16px;right:14px;z-index:10;">
+    <div style="position:absolute;top:14px;right:12px;z-index:10;">
       <button onclick="scToggleSettings()" style="
         background:rgba(0,0,0,.45);border:none;color:#fff;
         border-radius:50%;width:40px;height:40px;font-size:20px;
         cursor:pointer;display:flex;align-items:center;justify-content:center;
-        backdrop-filter:blur(4px);letter-spacing:2px;font-weight:900;
-      ">⋯</button>
+        backdrop-filter:blur(4px);letter-spacing:2px;font-weight:900;">⋯</button>
     </div>
 
     <!-- Settings dropdown -->
     <div id="SC_settings" style="
-      display:none;position:absolute;top:64px;right:14px;z-index:20;
+      display:none;position:absolute;top:62px;right:12px;z-index:20;
       background:rgba(24,24,36,.95);border:1px solid rgba(255,255,255,.12);
       border-radius:14px;padding:6px 0;min-width:180px;
-      backdrop-filter:blur(8px);
-    ">
+      backdrop-filter:blur(8px);">
       <div onclick="scSettingsPrivacy()" style="padding:11px 18px;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">🔒 <span>Story Privacy</span></div>
       <div style="height:1px;background:rgba(255,255,255,.08);margin:2px 0;"></div>
       <div onclick="scClose()" style="padding:11px 18px;color:#ef4444;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">✕ <span>Discard Story</span></div>
     </div>
 
-    <!-- BOTTOM-CENTER: Double-arrow toggle for edit tools -->
+    <!-- BOTTOM-CENTER: double-arrow toggle for edit tools -->
     <div style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);z-index:10;">
       <button id="SC_arrowBtn" onclick="scToggleTools()" style="
-        background:rgba(0,0,0,.5);border:none;color:#fff;
-        border-radius:20px;padding:6px 14px;
-        cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0;
-        backdrop-filter:blur(6px);
-        border:1px solid rgba(255,255,255,.18);
-        transition:background .15s;
-        -webkit-tap-highlight-color:transparent;
-      ">
+        background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.18);color:#fff;
+        border-radius:20px;padding:6px 14px;cursor:pointer;
+        display:flex;flex-direction:column;align-items:center;gap:0;
+        backdrop-filter:blur(6px);transition:background .15s;
+        -webkit-tap-highlight-color:transparent;">
         <svg id="SC_arrowSvg" width="22" height="20" viewBox="0 0 22 20" fill="none" style="transition:transform .25s cubic-bezier(.4,0,.2,1);display:block;">
-          <!-- outer chevron -->
-          <polyline id="SC_chevOuter" points="2,14 11,5 20,14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <!-- inner chevron (smaller, lower) -->
-          <polyline id="SC_chevInner" points="5,18 11,12 17,18" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <polyline points="2,14 11,5 20,14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <polyline points="5,18 11,12 17,18" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         </svg>
       </button>
     </div>
 
-    <!-- Tap-outside overlay to close tools -->
+    <!-- Tap-outside overlay -->
     <div id="SC_toolsOv" onclick="scCloseTools()" style="
-      display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;
-      background:rgba(0,0,0,.18);
-    "></div>
+      display:none;position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.18);"></div>
 
     <!-- Edit tools panel (slides up) -->
     <div id="SC_tools" style="
       position:absolute;bottom:0;left:0;right:0;z-index:11;
-      background:rgba(14,14,22,.92);
-      border-top:1px solid rgba(255,255,255,.1);
+      background:rgba(14,14,22,.92);border-top:1px solid rgba(255,255,255,.1);
       padding:12px 16px 28px;
-      transform:translateY(100%);
-      transition:transform .28s cubic-bezier(.4,0,.2,1);
-      backdrop-filter:blur(8px);
-    ">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
-        <!-- Contrast -->
+      transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+      backdrop-filter:blur(8px);">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+        <!-- Adjust -->
         <button onclick="scShowContrast()" style="
           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-          color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
-          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
-        "><span style="font-size:20px;">🎨</span>Contrast</button>
-        <!-- Song -->
-        <button onclick="scOpenMusicPicker()" style="
+          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
+          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">🎨</span>Adjust
+        </button>
+        <!-- Add Song — opens full-screen song page (PAGE 4) -->
+        <button id="SC_songBtn" onclick="scOpenSongPage()" style="
           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-          color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
-          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
-        " id="SC_songBtn"><span style="font-size:20px;">🎵</span>Add Song</button>
-        <!-- Text overlay -->
-        <button onclick="scAddCaption()" style="
+          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
+          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">🎵</span><span id="SC_songBtnLabel">Add Song</span>
+        </button>
+        <!-- Add Text -->
+        <button id="SC_captionBtn" onclick="scAddCaption()" style="
           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-          color:#fff;border-radius:12px;padding:12px 6px;font-size:12px;font-weight:600;
-          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
-        " id="SC_captionBtn"><span style="font-size:20px;">✏️</span>Add Text</button>
+          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
+          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✏️</span>Add Text
+        </button>
+        <!-- Trim Video (only visible for video) -->
+        <button id="SC_trimToolBtn" onclick="scOpenTrimmer()" style="
+          display:none;
+          background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);
+          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
+          cursor:pointer;display:none;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✂️</span>Trim Clip
+        </button>
       </div>
-      <!-- Contrast / Adjust panel -->
+
+      <!-- Adjust sliders -->
       <div id="SC_contrastPanel" style="display:none;margin-bottom:10px;padding:10px 4px 0;">
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <!-- Brightness -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">☀️ Brightness</span>
             <input type="range" id="SC_slBrightness" min="0" max="200" value="100" oninput="scApplyAdjust()" class="sc-slider">
             <span id="SC_slBrightnessVal" class="sc-slider-val">100</span>
           </div>
-          <!-- Contrast -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">◑ Contrast</span>
             <input type="range" id="SC_slContrast" min="0" max="200" value="100" oninput="scApplyAdjust()" class="sc-slider">
             <span id="SC_slContrastVal" class="sc-slider-val">100</span>
           </div>
-          <!-- Saturation -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">🌈 Saturation</span>
             <input type="range" id="SC_slSaturate" min="0" max="200" value="100" oninput="scApplyAdjust()" class="sc-slider">
             <span id="SC_slSaturateVal" class="sc-slider-val">100</span>
           </div>
-          <!-- Blur -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">💧 Blur</span>
             <input type="range" id="SC_slBlur" min="0" max="10" value="0" step="0.1" oninput="scApplyAdjust()" class="sc-slider">
             <span id="SC_slBlurVal" class="sc-slider-val">0</span>
           </div>
-          <!-- Warmth -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:11px;color:rgba(255,255,255,.6);width:72px;flex-shrink:0;">🌡️ Warmth</span>
             <input type="range" id="SC_slWarm" min="0" max="100" value="0" oninput="scApplyAdjust()" class="sc-slider" style="accent-color:#f59e0b;">
             <span id="SC_slWarmVal" class="sc-slider-val">0</span>
           </div>
-          <!-- Reset -->
           <button onclick="scResetAdjust()" style="align-self:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);border-radius:8px;padding:7px 20px;font-size:11px;cursor:pointer;margin-top:4px;">↺ Reset</button>
         </div>
       </div>
+
       <!-- Caption input -->
       <div id="SC_captionInput" style="display:none;margin-bottom:10px;">
-        <input id="SC_captionText" type="text" placeholder="Add caption…" maxlength="120" style="
-          width:100%;padding:10px 13px;border-radius:10px;
-          border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);
-          color:#fff;font-size:14px;outline:none;
-        " oninput="scUpdateCaption(this.value)">
+        <input id="SC_captionText" type="text" placeholder="Add caption…" maxlength="120"
+          style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;outline:none;"
+          oninput="scUpdateCaption(this.value)">
       </div>
-      <!-- Song display -->
-      <div id="SC_songDisplay" style="display:none;padding:8px 12px;background:rgba(124,106,255,.2);border-radius:10px;margin-bottom:10px;display:none;align-items:center;gap:8px;">
+
+      <!-- Selected song display -->
+      <div id="SC_songDisplay" style="display:none;padding:8px 12px;background:rgba(124,106,255,.2);border-radius:10px;margin-bottom:10px;align-items:center;gap:8px;">
         <span style="font-size:16px;">🎵</span>
         <span id="SC_songName" style="color:#fff;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <button onclick="scClearSong()" style="background:transparent;border:none;color:#ef4444;font-size:16px;cursor:pointer;">✕</button>
       </div>
     </div>
 
-    <!-- BOTTOM-RIGHT: Next button -->
+    <!-- BOTTOM-RIGHT: Next → Share page -->
     <div style="position:absolute;bottom:16px;right:14px;z-index:12;">
       <button onclick="scGoShare()" style="
         background:var(--brand);border:none;color:#fff;
         border-radius:24px;padding:12px 24px;font-size:15px;font-weight:700;
         cursor:pointer;display:flex;align-items:center;gap:6px;
-        box-shadow:0 4px 18px rgba(124,106,255,.5);
-      ">Next →</button>
+        box-shadow:0 4px 18px rgba(124,106,255,.5);">Next →</button>
     </div>
   </div>
 
@@ -2330,188 +2340,217 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button onclick="scBackToEditor()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
       <span style="color:#fff;font-size:16px;font-weight:700;">Share Story</span>
     </div>
-    <!-- Mini preview -->
     <div style="margin:16px;border-radius:14px;overflow:hidden;max-height:200px;background:#111;display:flex;align-items:center;justify-content:center;">
       <img id="SC_shareThumb" style="max-width:100%;max-height:200px;object-fit:cover;display:none;">
-      <div id="SC_shareThumbText" style="display:none;padding:24px;color:#fff;font-size:16px;font-weight:600;text-align:center;background:linear-gradient(135deg,#7c6aff,#a855f7);width:100%;min-height:100px;display:none;align-items:center;justify-content:center;"></div>
+      <div id="SC_shareThumbText" style="display:none;padding:24px;color:#fff;font-size:16px;font-weight:600;text-align:center;background:linear-gradient(135deg,#7c6aff,#a855f7);width:100%;min-height:100px;align-items:center;justify-content:center;"></div>
     </div>
-    <!-- Privacy picker -->
     <div style="padding:0 16px 12px;">
       <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Who can see this</div>
       <div style="display:flex;flex-direction:column;gap:8px;" id="SC_privacyPicker">
         <label class="sc-privacy-opt" id="scpo_friends">
           <input type="radio" name="scPrivacy" value="friends" checked style="display:none;">
-          <span class="sc-privacy-radio"></span>
-          <span>👥 Friends only</span>
+          <span class="sc-privacy-radio"></span><span>👥 Friends only</span>
         </label>
         <label class="sc-privacy-opt" id="scpo_public">
           <input type="radio" name="scPrivacy" value="public" style="display:none;">
-          <span class="sc-privacy-radio"></span>
-          <span>🌍 Public</span>
+          <span class="sc-privacy-radio"></span><span>🌍 Public</span>
         </label>
         <label class="sc-privacy-opt" id="scpo_custom">
           <input type="radio" name="scPrivacy" value="custom" style="display:none;">
-          <span class="sc-privacy-radio"></span>
-          <span>✏️ Custom</span>
+          <span class="sc-privacy-radio"></span><span>✏️ Custom</span>
         </label>
       </div>
       <div id="SC_customList" style="display:none;margin-top:10px;max-height:130px;overflow-y:auto;background:rgba(255,255,255,.05);border-radius:10px;padding:8px;"></div>
     </div>
-    <!-- Share button -->
     <div style="padding:0 16px;margin-top:auto;padding-bottom:32px;">
       <button id="SC_shareBtn" onclick="scPost()" style="
         width:100%;padding:15px;border-radius:14px;border:none;
         background:var(--brand);color:#fff;font-size:16px;font-weight:800;
-        cursor:pointer;letter-spacing:.3px;
-      ">✨ Share Story</button>
+        cursor:pointer;letter-spacing:.3px;">✨ Share Story</button>
     </div>
   </div>
 
   <!-- PAGE 3: CAMERA -->
   <div id="SC_p3" style="display:none;height:100%;flex-direction:column;position:relative;background:#000;">
     <video id="SC_camVid" style="width:100%;height:100%;object-fit:cover;" autoplay playsinline muted></video>
-    <!-- Shutter button -->
+    <!-- Shutter -->
     <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);">
       <button onclick="scSnap()" style="
         width:72px;height:72px;border-radius:50%;
         border:4px solid #fff;background:rgba(255,255,255,.25);
         cursor:pointer;display:flex;align-items:center;justify-content:center;
-        -webkit-tap-highlight-color:transparent;
-      "><div style="width:56px;height:56px;border-radius:50%;background:#fff;"></div></button>
+        -webkit-tap-highlight-color:transparent;">
+        <div style="width:56px;height:56px;border-radius:50%;background:#fff;"></div>
+      </button>
     </div>
-    <!-- Close -->
-    <button onclick="scCloseCam()" style="position:absolute;top:16px;left:14px;background:rgba(0,0,0,.4);border:none;color:#fff;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    <!-- Back from camera → page 0 -->
+    <button onclick="scCloseCam();scPage(0);" style="
+      position:absolute;top:16px;left:14px;
+      background:rgba(0,0,0,.45);border:none;color:#fff;
+      border-radius:50%;width:40px;height:40px;font-size:22px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      backdrop-filter:blur(4px);">‹</button>
     <canvas id="SC_snapCanvas" style="display:none;"></canvas>
   </div>
 
-  <!-- DELETE MENU -->
-  <div id="SC_delMenu" style="
-    display:none;position:absolute;inset:0;z-index:30;
-    background:rgba(0,0,0,.6);align-items:flex-end;
-    backdrop-filter:blur(2px);
-  " onclick="scHideDeleteMenu()">
-    <div style="width:100%;background:#1a1d27;border-radius:18px 18px 0 0;padding:12px 16px 32px;" onclick="event.stopPropagation()">
-      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px;"></div>
-      <button onclick="scClose()" style="width:100%;padding:14px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">🗑️ Delete Story</button>
-      <button onclick="scHideDeleteMenu()" style="width:100%;padding:14px;border-radius:12px;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">← Back</button>
-    </div>
-  </div>
-</div>
-
-<!-- Hidden file inputs for story creator -->
-<input type="file" id="SC_galleryInput" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
-<input type="file" id="SC_audioInput" accept="audio/*" style="display:none;" onchange="scAudioPicked(this)">
-
-<!-- ── MUSIC PICKER MODAL ── -->
-<div id="musicPickerOverlay" style="
-  display:none;position:fixed;inset:0;z-index:7500;
-  background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
-  flex-direction:column;align-items:center;justify-content:flex-end;
-" onclick="e=>{if(e.target===this)scCloseMusicPicker();}">
-  <div id="musicPickerSheet" style="
-    width:100%;max-width:520px;
-    background:linear-gradient(180deg,#1a1035 0%,#0f0c1a 100%);
-    border-radius:22px 22px 0 0;
-    padding:0 0 env(safe-area-inset-bottom,0);
-    max-height:85vh;display:flex;flex-direction:column;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  " onclick="event.stopPropagation()">
-    <!-- Handle -->
-    <div style="display:flex;justify-content:center;padding:12px 0 4px;">
-      <div style="width:36px;height:4px;border-radius:4px;background:rgba(255,255,255,.2);"></div>
-    </div>
+  <!-- PAGE 4: SONG PICKER (full-screen, Instagram-style) -->
+  <div id="SC_p4" style="display:none;height:100%;flex-direction:column;background:linear-gradient(180deg,#1a1035 0%,#0d0a1a 100%);">
     <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 10px;">
-      <h3 style="color:#fff;font-size:18px;font-weight:800;margin:0;">🎵 Music</h3>
-      <div style="display:flex;gap:10px;align-items:center;">
-        <button onclick="scOpenMusicUpload()" style="
-          background:rgba(124,106,255,.25);border:1px solid rgba(124,106,255,.5);
-          color:var(--brand,#7c6aff);border-radius:10px;padding:6px 12px;
-          font-size:12px;font-weight:700;cursor:pointer;
-        ">+ Upload</button>
-        <button onclick="scCloseMusicPicker()" style="
-          background:rgba(255,255,255,.1);border:none;color:#fff;
-          border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;
-        ">✕</button>
-      </div>
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);">
+      <button onclick="scCloseSongPage()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
+      <span style="color:#fff;font-size:16px;font-weight:800;flex:1;">🎵 Add Music</span>
+      <button onclick="scOpenMusicUpload()" style="
+        background:rgba(124,106,255,.25);border:1px solid rgba(124,106,255,.5);
+        color:#a78fff;border-radius:10px;padding:6px 13px;
+        font-size:12px;font-weight:700;cursor:pointer;">+ Upload</button>
     </div>
-    <!-- Search bar -->
-    <div style="padding:0 16px 12px;">
+    <!-- Search -->
+    <div style="padding:12px 14px 8px;">
       <div style="position:relative;">
-        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;">🔍</span>
-        <input id="musicSearchInput" placeholder="Search songs or artists…"
-          oninput="scMusicSearch(this.value)"
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">🔍</span>
+        <input id="SC_songSearch" placeholder="Search songs or artists…"
+          oninput="scSongSearch(this.value)"
           style="width:100%;box-sizing:border-box;
             background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
             border-radius:12px;padding:10px 12px 10px 36px;
             color:#fff;font-size:14px;outline:none;">
       </div>
     </div>
-    <!-- Track list -->
-    <div id="musicTrackList" style="
-      flex:1;overflow-y:auto;padding:0 12px 16px;
-      display:flex;flex-direction:column;gap:4px;
-    ">
-      <div style="text-align:center;color:rgba(255,255,255,.4);padding:24px;font-size:14px;">Loading music…</div>
-    </div>
-    <!-- Current playing preview bar -->
-    <div id="musicPreviewBar" style="
-      display:none;margin:0 16px 12px;
-      background:rgba(124,106,255,.2);border:1px solid rgba(124,106,255,.4);
-      border-radius:14px;padding:10px 14px;
-      display:flex;align-items:center;gap:10px;
-    ">
-      <button onclick="scStopMusicPreview()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">⏹</button>
+    <!-- Currently selected banner -->
+    <div id="SC_currentSongBanner" style="display:none;margin:0 14px 8px;padding:10px 14px;background:rgba(124,106,255,.22);border:1px solid rgba(124,106,255,.4);border-radius:12px;align-items:center;gap:10px;">
+      <span style="font-size:18px;">🎵</span>
       <div style="flex:1;min-width:0;">
-        <div id="musicPreviewTitle" style="color:#fff;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-        <div id="musicPreviewArtist" style="color:rgba(255,255,255,.5);font-size:11px;"></div>
+        <div id="SC_currentSongTitle" style="color:#fff;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div style="color:rgba(255,255,255,.45);font-size:11px;margin-top:1px;">Currently added</div>
       </div>
+      <button onclick="scClearSong()" style="background:transparent;border:none;color:#ef4444;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <!-- Track list -->
+    <div id="SC_songList" style="flex:1;overflow-y:auto;padding:0 10px 16px;display:flex;flex-direction:column;gap:4px;">
+      <div style="text-align:center;color:rgba(255,255,255,.35);padding:40px;font-size:14px;">Loading songs…</div>
+    </div>
+    <!-- Preview bar (pinned to bottom) -->
+    <div id="SC_songPreviewBar" style="display:none;margin:0 14px 14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 14px;align-items:center;gap:10px;">
+      <button onclick="scStopSongPreview()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:14px;cursor:pointer;">⏹</button>
+      <div style="flex:1;min-width:0;">
+        <div id="SC_songPreviewTitle" style="color:#fff;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="SC_songPreviewArtist" style="color:rgba(255,255,255,.45);font-size:11px;margin-top:1px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 5: VIDEO TRIMMER -->
+  <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#000;position:relative;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.1);">
+      <button onclick="scCloseTrimmer()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
+      <span style="color:#fff;font-size:16px;font-weight:700;flex:1;">✂️ Trim Video</span>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="
+        background:var(--brand,#7c6aff);border:none;color:#fff;
+        border-radius:12px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer;">Use Clip</button>
+    </div>
+
+    <!-- Video preview -->
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;">
+      <video id="SC_trimVid" style="max-width:100%;max-height:100%;object-fit:contain;" playsinline muted></video>
+      <!-- Time display -->
+      <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
+    </div>
+
+    <!-- Scrubber / trim handles -->
+    <div style="padding:16px 18px 24px;background:#0d0f1a;">
+      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:10px;text-align:center;" id="SC_trimHint">Drag handles to select up to 30 seconds</div>
+
+      <!-- Waveform / trim bar -->
+      <div id="SC_trimBar" style="position:relative;height:48px;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;cursor:pointer;"
+        onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
+
+        <!-- Progress indicator (current playhead) -->
+        <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
+
+        <!-- Selected region highlight -->
+        <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.35);border:1px solid rgba(124,106,255,.8);border-radius:6px;z-index:2;pointer-events:none;"></div>
+
+        <!-- Left handle -->
+        <div id="SC_trimL" style="
+          position:absolute;top:0;bottom:0;width:18px;
+          background:#7c6aff;border-radius:6px 0 0 6px;
+          cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;
+          touch-action:none;left:0%;"
+          onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
+          <div style="width:3px;height:18px;background:rgba(255,255,255,.7);border-radius:2px;"></div>
+        </div>
+
+        <!-- Right handle -->
+        <div id="SC_trimR" style="
+          position:absolute;top:0;bottom:0;width:18px;
+          background:#7c6aff;border-radius:0 6px 6px 0;
+          cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;
+          touch-action:none;right:0%;"
+          onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
+          <div style="width:3px;height:18px;background:rgba(255,255,255,.7);border-radius:2px;"></div>
+        </div>
+      </div>
+
+      <!-- Start / End time labels -->
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <span id="SC_trimStartLbl" style="font-size:12px;color:rgba(255,255,255,.55);">0.0s</span>
+        <span id="SC_trimDurLbl"   style="font-size:12px;color:#a78fff;font-weight:700;">30.0s selected</span>
+        <span id="SC_trimEndLbl"   style="font-size:12px;color:rgba(255,255,255,.55);">30.0s</span>
+      </div>
+
+      <!-- Note about trim method -->
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:12px;color:rgba(255,255,255,.45);text-align:center;line-height:1.5;">
+        ℹ️ The selected clip will be used as your story. The video plays from start point to end point.
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE MENU -->
+  <div id="SC_delMenu" style="
+    display:none;position:absolute;inset:0;z-index:30;
+    background:rgba(0,0,0,.6);align-items:flex-end;
+    backdrop-filter:blur(2px);" onclick="scHideDeleteMenu()">
+    <div style="width:100%;background:#1a1d27;border-radius:18px 18px 0 0;padding:12px 16px 32px;" onclick="event.stopPropagation()">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 16px;"></div>
+      <button onclick="scClose()" style="width:100%;padding:14px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">🗑️ Discard Story</button>
+      <button onclick="scHideDeleteMenu()" style="width:100%;padding:14px;border-radius:12px;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">← Keep Editing</button>
     </div>
   </div>
 </div>
 
-<!-- ── MUSIC UPLOAD MODAL ── -->
+<!-- Hidden inputs for story creator -->
+<input type="file" id="SC_galleryInput" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
+<input type="file" id="SC_audioInput"   accept="audio/*"         style="display:none;" onchange="scAudioPicked(this)">
+
+<!-- Music Upload Modal (used from song page) -->
 <div id="musicUploadOverlay" style="
   display:none;position:fixed;inset:0;z-index:7600;
   background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
-  align-items:center;justify-content:center;
-">
+  align-items:center;justify-content:center;">
   <div style="
     background:linear-gradient(180deg,#1a1035,#0f0c1a);
-    border-radius:20px;padding:24px;width:calc(100%-40px);max-width:400px;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  " onclick="event.stopPropagation()">
+    border-radius:20px;padding:24px;width:calc(100% - 40px);max-width:400px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" onclick="event.stopPropagation()">
     <h3 style="color:#fff;margin:0 0 18px;font-size:18px;">🎵 Upload Song</h3>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      <input id="muTitle" placeholder="Song title" style="
-        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
-        border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
-      <input id="muArtist" placeholder="Artist name" style="
-        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
-        border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
-      <input id="muGenre" placeholder="Genre (optional)" style="
-        background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
-        border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <input id="muTitle"  placeholder="Song title"         style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <input id="muArtist" placeholder="Artist name"        style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
+      <input id="muGenre"  placeholder="Genre (optional)"   style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
       <div id="muAudioLabel" onclick="document.getElementById('muAudioFile').click()" style="
         background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.25);
         border-radius:10px;padding:14px;text-align:center;color:rgba(255,255,255,.6);
-        font-size:13px;cursor:pointer;">
-        🎵 Tap to choose audio file (mp3, m4a, wav…)
-      </div>
+        font-size:13px;cursor:pointer;">🎵 Tap to choose audio file (mp3, m4a, wav…)</div>
       <input id="muAudioFile" type="file" accept="audio/*" style="display:none;" onchange="muAudioChosen(this)">
     </div>
     <div style="display:flex;gap:10px;margin-top:20px;">
-      <button onclick="scCloseMusicUpload()" style="
-        flex:1;background:rgba(255,255,255,.1);border:none;color:#fff;
-        border-radius:12px;padding:12px;font-size:14px;cursor:pointer;">Cancel</button>
-      <button onclick="muSubmit()" id="muSubmitBtn" style="
-        flex:2;background:linear-gradient(135deg,#7c6aff,#a855f7);border:none;color:#fff;
-        border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Upload Song</button>
+      <button onclick="scCloseMusicUpload()" style="flex:1;background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:12px;padding:12px;font-size:14px;cursor:pointer;">Cancel</button>
+      <button onclick="muSubmit()" id="muSubmitBtn" style="flex:2;background:linear-gradient(135deg,#7c6aff,#a855f7);border:none;color:#fff;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Upload Song</button>
     </div>
   </div>
 </div>
 
-<!-- Privacy Sheet (used from viewer) -->
+<!-- Privacy Sheet (story viewer) -->
 <div class="del-sheet-ov" id="privacySheetOv" onclick="closePrivacySheet()"></div>
 <div class="del-sheet" id="privacySheet">
   <div style="padding:14px 16px 8px;font-size:15px;font-weight:700;color:var(--txt);">🔒 Story Privacy</div>
@@ -2523,9 +2562,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
-<!-- Compat shims (old IDs still referenced elsewhere) -->
+<!-- Compat shims -->
 <input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
-<input type="file" id="storyAudioFile" accept="audio/*" style="display:none;" onchange="scAudioPicked(this)">
+<input type="file" id="storyAudioFile" accept="audio/*"         style="display:none;" onchange="scAudioPicked(this)">
 <input type="text" id="storyTextContent" style="display:none;">
 <select id="storyPrivacy" style="display:none;"><option value="friends">Friends</option><option value="public">Public</option><option value="custom">Custom</option></select>
 <div id="customPrivacySection" style="display:none;"><div id="customFriendsList"></div></div>
@@ -5968,22 +6007,32 @@ function showStory(){
 
   if(story.media_url){
     if(story.media_type === 'video'){
-      // Clear old event handlers so they don't stack across stories
+      // Clear old handlers to prevent stacking across stories
       vidEl.onloadedmetadata = null;
-      vidEl.onended = null;
+      vidEl.ontimeupdate   = null;
+      vidEl.onended        = null;
       vidEl.src = story.media_url;
       vidEl.style.display = 'block';
-      // When real duration is known, cap progress bar to min(actual, 30s)
+      const trimStart = story.trim_start || 0;
+      const trimEnd   = story.trim_end   || null; // null = use full duration
       vidEl.onloadedmetadata = ()=>{
-        if(vidEl.duration && isFinite(vidEl.duration)){
-          const realMs = Math.min(Math.ceil(vidEl.duration * 1000), STORY_DURATION_VIDEO);
-          if(realMs !== _storyRemaining){
-            _storyRemaining = realMs;
-            startStoryTimer(); // restart bar with accurate duration
-          }
+        const total = vidEl.duration;
+        const end   = trimEnd != null ? Math.min(trimEnd, total) : Math.min(total, 30);
+        const clipMs = Math.ceil((end - trimStart) * 1000);
+        // Seek to trim start
+        vidEl.currentTime = trimStart;
+        // Set story bar to exactly the clip length
+        if(clipMs > 0 && clipMs !== _storyRemaining){
+          _storyRemaining = clipMs;
+          startStoryTimer();
         }
+        // Loop back to trimStart when clip end is reached
+        vidEl.ontimeupdate = ()=>{
+          if(vidEl.currentTime >= end - 0.05){
+            if(!_storyPaused) nextStory();
+          }
+        };
       };
-      // If the video ends before the 30 s timeout, go straight to next story
       vidEl.onended = ()=>{ if(!_storyPaused) nextStory(); };
       vidEl.play().catch(()=>{});
     } else {
@@ -6216,12 +6265,13 @@ async function setStoryPrivacy(privacy){
 // STORY CREATOR — multi-page flow
 // ══════════════════════════════════════════════
 const SC = {
-  type: null,
-  mediaFile: null,
-  mediaType: null,
-  mediaURL: null,
-  audioFile: null,
-  audioName: '',
+  type: null,        // 'photo'|'camera'|'text'
+  mediaFile: null,   // File object (image or video)
+  mediaType: null,   // 'image'|'video'
+  mediaURL: null,    // object URL
+  audioFile: null,   // uploaded audio File (or null if library track)
+  audioUrl: '',      // library track URL or uploaded audio URL
+  audioName: '',     // display name for the track
   caption: '',
   filter: 'none',
   rotation: 0,
@@ -6229,37 +6279,53 @@ const SC = {
   camStream: null,
   toolsOpen: false,
   settingsOpen: false,
+  videoDuration: null,  // ms — actual duration of picked video
+  trimStart: 0,         // seconds
+  trimEnd: null,        // seconds (null = full length)
 };
 
-function $ (id){ return document.getElementById(id); }
+// Shortcut getElementById
+function $(id){ return document.getElementById(id); }
 
-// ── Open / Close ──
-function openCreateStoryModal(){ scOpen(); }  // alias
-function closeCreateStory(){ scClose(); }     // alias
+// ─── Aliases ────────────────────────────────────────────
+function openCreateStoryModal(){ scOpen(); }
+function closeCreateStory(){ scClose(); }
+
+// ─── Open / Close ────────────────────────────────────────
 function scOpen(){
-  Object.assign(SC,{type:null,mediaFile:null,mediaType:null,mediaURL:null,audioFile:null,audioUrl:'',audioName:'',caption:'',filter:'none',toolsOpen:false,settingsOpen:false});
+  Object.assign(SC,{
+    type:null,mediaFile:null,mediaType:null,mediaURL:null,
+    audioFile:null,audioUrl:'',audioName:'',caption:'',
+    filter:'none',rotation:0,rotStartAngle:0,
+    toolsOpen:false,settingsOpen:false,
+    videoDuration:null,trimStart:0,trimEnd:null,
+  });
   $('SC').style.display='flex';
   document.body.style.overflow='hidden';
   scPage(0);
 }
 function scClose(){
   scCloseCam();
+  scStopSongPreview();
+  scTrimStop();
   $('SC').style.display='none';
   document.body.style.overflow='';
 }
+
+// ─── Page switcher (0–5) ────────────────────────────────
 function scPage(n){
-  [0,1,2,3].forEach(i=>{
+  [0,1,2,3,4,5].forEach(i=>{
     const el=$('SC_p'+i);
-    if(el) el.style.display = i===n?'flex':'none';
+    if(el) el.style.display = i===n ? 'flex' : 'none';
   });
 }
 
-// ── Type chooser ──
+// ─── PAGE 0 → chooser actions ───────────────────────────
 function scChoose(type){
   SC.type = type;
-  if(type==='photo'){
+  if(type === 'photo'){
     $('SC_galleryInput').click();
-  } else if(type==='camera'){
+  } else if(type === 'camera'){
     scOpenCam();
   } else {
     scSetupText();
@@ -6267,49 +6333,53 @@ function scChoose(type){
   }
 }
 
-// ── Gallery ──
+// ─── Gallery picker ──────────────────────────────────────
 function scGalleryPicked(input){
   const file = input.files[0]; if(!file) return;
   const isVideo = file.type.startsWith('video/');
-  // Size check: 100MB for video, 10MB for images
-  const maxBytes = isVideo ? 100*1024*1024 : 10*1024*1024;
+
+  // File size guard
+  const maxBytes = isVideo ? 200*1024*1024 : 10*1024*1024;
   if(file.size > maxBytes){
-    toast(isVideo ? 'Video too large (max 100 MB)' : 'Image too large (max 10 MB)', 'err');
-    input.value = '';
-    return;
+    toast(isVideo ? 'Video too large (max 200 MB)' : 'Image too large (max 10 MB)', 'err');
+    input.value=''; return;
   }
+
   SC.mediaFile = file;
   SC.mediaType = isVideo ? 'video' : 'image';
-  SC.mediaURL = URL.createObjectURL(file);
+  SC.mediaURL  = URL.createObjectURL(file);
+  SC.type      = isVideo ? 'video' : 'photo';
+  SC.trimStart = 0;
+  SC.trimEnd   = null;
+
   if(isVideo){
-    // Check video duration: must be ≤ 60 seconds (viewer shows up to 30s)
+    // Read actual duration metadata
     const tmp = document.createElement('video');
     tmp.preload = 'metadata';
     tmp.onloadedmetadata = ()=>{
       URL.revokeObjectURL(tmp.src);
-      const dur = tmp.duration;
-      if(dur > 30){
-        toast('Video too long ('+Math.round(dur)+'s) — max 30 seconds for a story','err');
-        SC.mediaFile = null; SC.mediaURL = null; SC.mediaType = null;
-        input.value = '';
-        return;
-      }
-      // Store duration so the story bar can use exactly the right length
-      SC.videoDuration = Math.round(dur * 1000); // ms
+      SC.videoDuration = tmp.duration; // seconds (float)
+      // Default trimEnd = min(duration, 30)
+      SC.trimEnd = Math.min(tmp.duration, 30);
       scLoadEditor();
     };
-    tmp.onerror = ()=>{ scLoadEditor(); }; // can't read duration, let it through
+    tmp.onerror = ()=>{ URL.revokeObjectURL(tmp.src); scLoadEditor(); };
     tmp.src = SC.mediaURL;
   } else {
     scLoadEditor();
   }
 }
 
+// ─── Load the editor (page 1) ────────────────────────────
 function scLoadEditor(){
   scPage(1);
-  const img = $('SC_img'), vid = $('SC_vid'), tb = $('SC_textBg'), tx = $('SC_textBox'), cap = $('SC_caption');
-  img.style.display='none'; vid.style.display='none';
-  tb.style.display='none'; tx.style.display='none';
+  const img=$('SC_img'), vid=$('SC_vid'), tb=$('SC_textBg'),
+        tx=$('SC_textBox'), cap=$('SC_caption');
+  // Reset all content elements
+  img.style.display='none';
+  vid.style.display='none';
+  tb.style.display='none';
+  tx.style.display='none';
   cap.style.display='none'; cap.textContent=''; tx.value=''; SC.caption='';
   $('SC_contrastPanel').style.display='none';
   $('SC_captionInput').style.display='none';
@@ -6317,46 +6387,95 @@ function scLoadEditor(){
   SC.settingsOpen=false; SC.toolsOpen=false;
   $('SC_tools').style.transform='translateY(100%)';
   $('SC_toolsOv').style.display='none';
-  const _asv=$('SC_arrowSvg'); if(_asv) _asv.style.transform='rotate(0deg)';
-  // Reset adjust sliders
-  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{const el=$(id);if(el)el.value=100;});
-  const _sb=$('SC_slBlur'); if(_sb) _sb.value=0;
-  const _sw=$('SC_slWarm'); if(_sw) _sw.value=0;
-  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{const el=$(id);if(el)el.textContent='100';});
-  const _sbv=$('SC_slBlurVal'); if(_sbv) _sbv.textContent='0.0';
-  const _swv=$('SC_slWarmVal'); if(_swv) _swv.textContent='0';
-  // Reset rotation
+  const asv=$('SC_arrowSvg'); if(asv) asv.style.transform='rotate(0deg)';
+  // Reset sliders
+  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{
+    const el=$(id); if(el)el.value=100;
+  });
+  const sb=$('SC_slBlur'); if(sb)sb.value=0;
+  const sw=$('SC_slWarm'); if(sw)sw.value=0;
+  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{
+    const el=$(id); if(el)el.textContent='100';
+  });
+  const sbv=$('SC_slBlurVal'); if(sbv)sbv.textContent='0.0';
+  const swv=$('SC_slWarmVal'); if(swv)swv.textContent='0';
   SC.rotation=0; SC.rotStartAngle=0;
-  const _img=$('SC_img'); if(_img){_img.style.filter='none'; _img.style.transform='rotate(0deg)';}
+  img.style.filter='none'; img.style.transform='rotate(0deg)';
+
+  // Mount content
   if(SC.type==='text'){
     tb.style.display='block'; tx.style.display='block';
     setTimeout(()=>tx.focus(),300);
+    _scHideVideoUI();
   } else if(SC.mediaType==='video'){
-    vid.src=SC.mediaURL; vid.style.display='block';
-    // Show duration label
-    const durLabel=$('SC_vidDuration');
-    if(durLabel && SC.videoDuration){
-      const s=Math.round(SC.videoDuration/1000);
-      durLabel.textContent=s+'s / 30s';
-      durLabel.style.color=s>30?'#ef4444':'#fff';
-      durLabel.style.display='block';
-    } else if(durLabel){ durLabel.style.display='none'; }
+    vid.src = SC.mediaURL;
+    vid.style.display='block';
+    _scShowVideoUI();
   } else {
-    img.src=SC.mediaURL; img.style.display='block';
+    img.src = SC.mediaURL;
+    img.style.display='block';
     img.style.filter='none'; SC.filter='none';
+    _scHideVideoUI();
   }
-  // reset song button
-  $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>Add Song';
-  SC.audioUrl='';
-  $('SC_songDisplay').style.display='none';
+
+  // Reset song button label
+  _scUpdateSongBtn();
 }
 
+function _scShowVideoUI(){
+  // Duration badge
+  const durLabel=$('SC_vidDuration');
+  const trimBtnWrap=$('SC_trimBtnWrap');
+  const trimToolBtn=$('SC_trimToolBtn');
+  if(SC.videoDuration != null){
+    const totalS = SC.videoDuration;
+    const clipS  = SC.trimEnd != null ? SC.trimEnd - SC.trimStart : totalS;
+    const durStr = clipS.toFixed(1)+'s';
+    if(durLabel){
+      durLabel.textContent = totalS > 30
+        ? `✂️ ${durStr} / ${totalS.toFixed(0)}s total`
+        : durStr;
+      durLabel.style.color = '#fff';
+      durLabel.style.display='block';
+    }
+    // Show Trim button in both places only if video is longer than 30s
+    const needsTrim = totalS > 30;
+    if(trimBtnWrap)  trimBtnWrap.style.display  = needsTrim ? 'block' : 'none';
+    if(trimToolBtn)  trimToolBtn.style.display   = needsTrim ? 'flex' : 'none';
+  } else {
+    if(durLabel) durLabel.style.display='none';
+    if(trimBtnWrap) trimBtnWrap.style.display='none';
+    if(trimToolBtn) trimToolBtn.style.display='none';
+  }
+}
+function _scHideVideoUI(){
+  const d=$('SC_vidDuration'), tw=$('SC_trimBtnWrap'), tb=$('SC_trimToolBtn');
+  if(d)  d.style.display='none';
+  if(tw) tw.style.display='none';
+  if(tb) tb.style.display='none';
+}
+function _scUpdateSongBtn(){
+  const lbl=$('SC_songBtnLabel');
+  const sd=$('SC_songDisplay');
+  const banner=$('SC_currentSongBanner');
+  const curTitle=$('SC_currentSongTitle');
+  if(SC.audioName){
+    if(lbl) lbl.textContent=SC.audioName.substring(0,14)+(SC.audioName.length>14?'…':'');
+    if(sd){ $('SC_songName').textContent=SC.audioName; sd.style.display='flex'; }
+    if(banner){ curTitle.textContent=SC.audioName; banner.style.display='flex'; }
+  } else {
+    if(lbl) lbl.textContent='Add Song';
+    if(sd) sd.style.display='none';
+    if(banner) banner.style.display='none';
+  }
+}
+
+// ─── Text story setup ────────────────────────────────────
 function scSetupText(){
-  SC.mediaFile=null; SC.mediaType='text'; SC.mediaURL=null;
-  scLoadEditor();
+  SC.type='text'; SC.mediaFile=null; SC.mediaType=null; SC.mediaURL=null;
 }
 
-// ── Camera ──
+// ─── Camera (page 3) ────────────────────────────────────
 function scOpenCam(){
   scPage(3);
   navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
@@ -6368,7 +6487,7 @@ function scOpenCam(){
 }
 function scCloseCam(){
   if(SC.camStream){ SC.camStream.getTracks().forEach(t=>t.stop()); SC.camStream=null; }
-  $('SC_camVid').srcObject=null;
+  const cv=$('SC_camVid'); if(cv) cv.srcObject=null;
 }
 function scSnap(){
   const vid=$('SC_camVid'), canvas=$('SC_snapCanvas');
@@ -6376,462 +6495,584 @@ function scSnap(){
   canvas.getContext('2d').drawImage(vid,0,0);
   scCloseCam();
   canvas.toBlob(blob=>{
-    SC.mediaFile = new File([blob],'snap.jpg',{type:'image/jpeg'});
-    SC.mediaType = 'image';
-    SC.mediaURL  = URL.createObjectURL(SC.mediaFile);
-    SC.type = 'camera';
+    SC.mediaFile=new File([blob],'snap.jpg',{type:'image/jpeg'});
+    SC.mediaType='image';
+    SC.mediaURL=URL.createObjectURL(SC.mediaFile);
+    SC.type='camera';
     scLoadEditor();
   },'image/jpeg',0.92);
 }
 
-// ── Tools ──
+// ─── Navigation ─────────────────────────────────────────
+function scBackToChooser(){
+  // From editor → back to page 0 chooser
+  scCloseCam();
+  SC.mediaFile=null; SC.mediaURL=null; SC.mediaType=null; SC.type=null;
+  SC.trimStart=0; SC.trimEnd=null; SC.videoDuration=null;
+  scPage(0);
+}
+function scBackToEditor(){ scPage(1); }
+
+// ─── Tools panel ────────────────────────────────────────
 function scToggleTools(){
-  SC.toolsOpen = !SC.toolsOpen;
-  const tools = $('SC_tools'), ov = $('SC_toolsOv'), svg = $('SC_arrowSvg');
-  tools.style.transform = SC.toolsOpen ? 'translateY(0)' : 'translateY(100%)';
-  ov.style.display = SC.toolsOpen ? 'block' : 'none';
-  // flip double chevrons to point down when open
-  if(svg) svg.style.transform = SC.toolsOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  SC.toolsOpen=!SC.toolsOpen;
+  const tools=$('SC_tools'), ov=$('SC_toolsOv'), svg=$('SC_arrowSvg');
+  tools.style.transform=SC.toolsOpen?'translateY(0)':'translateY(100%)';
+  ov.style.display=SC.toolsOpen?'block':'none';
+  if(svg) svg.style.transform=SC.toolsOpen?'rotate(180deg)':'rotate(0deg)';
 }
 function scCloseTools(){
-  SC.toolsOpen = false;
-  $('SC_tools').style.transform = 'translateY(100%)';
-  $('SC_toolsOv').style.display = 'none';
-  const svg = $('SC_arrowSvg');
-  if(svg) svg.style.transform = 'rotate(0deg)';
+  SC.toolsOpen=false;
+  $('SC_tools').style.transform='translateY(100%)';
+  $('SC_toolsOv').style.display='none';
+  const svg=$('SC_arrowSvg'); if(svg) svg.style.transform='rotate(0deg)';
 }
 
+// ─── Settings ───────────────────────────────────────────
 function scToggleSettings(){
-  SC.settingsOpen = !SC.settingsOpen;
-  $('SC_settings').style.display = SC.settingsOpen ? 'block' : 'none';
+  SC.settingsOpen=!SC.settingsOpen;
+  $('SC_settings').style.display=SC.settingsOpen?'block':'none';
 }
 function scSettingsPrivacy(){
-  scToggleSettings();
-  // jump to share page privacy section
-  scGoShare();
-}
-
-// Delete menu
-function scShowDeleteMenu(){
-  $('SC_delMenu').style.display='flex';
-  $('SC_settings').style.display='none';
   SC.settingsOpen=false;
+  $('SC_settings').style.display='none';
+  // open privacy sheet (used from story viewer too)
+  if(typeof openPrivacySheet==='function') openPrivacySheet();
+  else toast('Privacy set on share page','info');
 }
-function scHideDeleteMenu(){ $('SC_delMenu').style.display='none'; }
 
-// ── Contrast / Adjust ──
+// ─── Delete menu ────────────────────────────────────────
+function scShowDeleteMenu(){ const m=$('SC_delMenu'); m.style.display='flex'; }
+function scHideDeleteMenu(){ const m=$('SC_delMenu'); m.style.display='none'; }
+
+// ─── Contrast / Adjust ──────────────────────────────────
 function scShowContrast(){
   const p=$('SC_contrastPanel');
-  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  p.style.display=p.style.display==='none'?'block':'none';
 }
 function scApplyAdjust(){
-  const br = $('SC_slBrightness').value;
-  const ct = $('SC_slContrast').value;
-  const sa = $('SC_slSaturate').value;
-  const bl = $('SC_slBlur').value;
-  const wm = $('SC_slWarm') ? $('SC_slWarm').value : 0;
-  $('SC_slBrightnessVal').textContent = br;
-  $('SC_slContrastVal').textContent   = ct;
-  $('SC_slSaturateVal').textContent   = sa;
-  $('SC_slBlurVal').textContent       = parseFloat(bl).toFixed(1);
-  if($('SC_slWarmVal')) $('SC_slWarmVal').textContent = wm;
-  // warmth = sepia blend via CSS filter
-  const sep = parseFloat(wm)/100;
-  const f = `brightness(${br}%) contrast(${ct}%) saturate(${sa}%) sepia(${sep.toFixed(2)}) blur(${bl}px)`;
-  SC.filter = f;
-  const img=$('SC_img'), vid=$('SC_vid');
-  if(img) img.style.filter = f;
-  if(vid) vid.style.filter = f;
+  const b=+($('SC_slBrightness').value);
+  const c=+($('SC_slContrast').value);
+  const s=+($('SC_slSaturate').value);
+  const bl=+($('SC_slBlur').value);
+  const w=+($('SC_slWarm').value);
+  $('SC_slBrightnessVal').textContent=b;
+  $('SC_slContrastVal').textContent=c;
+  $('SC_slSaturateVal').textContent=s;
+  $('SC_slBlurVal').textContent=bl.toFixed(1);
+  $('SC_slWarmVal').textContent=w;
+  let f=`brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  if(bl>0) f+=` blur(${bl}px)`;
+  if(w>0) f+=` sepia(${Math.min(w*0.8,80)}%) hue-rotate(-${w*0.3}deg)`;
+  SC.filter=f;
+  const img=$('SC_img'); if(img) img.style.filter=f;
 }
 function scResetAdjust(){
-  $('SC_slBrightness').value=100; $('SC_slBrightnessVal').textContent='100';
-  $('SC_slContrast').value=100;   $('SC_slContrastVal').textContent='100';
-  $('SC_slSaturate').value=100;   $('SC_slSaturateVal').textContent='100';
-  $('SC_slBlur').value=0;         $('SC_slBlurVal').textContent='0.0';
-  if($('SC_slWarm')){ $('SC_slWarm').value=0; $('SC_slWarmVal').textContent='0'; }
+  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{const el=$(id);if(el)el.value=100;});
+  const b=$('SC_slBlur');if(b)b.value=0;
+  const w=$('SC_slWarm');if(w)w.value=0;
+  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{const el=$(id);if(el)el.textContent='100';});
+  const bv=$('SC_slBlurVal');if(bv)bv.textContent='0.0';
+  const wv=$('SC_slWarmVal');if(wv)wv.textContent='0';
   SC.filter='none';
-  const img=$('SC_img'), vid=$('SC_vid');
-  if(img) img.style.filter='none';
-  if(vid) vid.style.filter='none';
+  const img=$('SC_img');if(img)img.style.filter='none';
 }
 
-// ── Pinch-Rotate touch on canvas ──
-(function(){
-  function getAngle(t1,t2){
-    return Math.atan2(t2.clientY-t1.clientY, t2.clientX-t1.clientX) * 180/Math.PI;
-  }
-  let _active=false, _startAngle=0, _baseRot=0;
-  document.addEventListener('touchstart',function(e){
-    if(!$('SC_p1') || $('SC_p1').style.display==='none') return;
-    const canvas=$('SC_canvas');
-    if(!canvas.contains(e.target)) return;
-    if(e.touches.length===2){
-      _active=true;
-      _startAngle=getAngle(e.touches[0],e.touches[1]);
-      _baseRot=SC.rotation;
-      e.preventDefault();
-    }
-  },{passive:false});
-  document.addEventListener('touchmove',function(e){
-    if(!_active||e.touches.length<2) return;
-    const angle=getAngle(e.touches[0],e.touches[1]);
-    SC.rotation = _baseRot + (angle-_startAngle);
-    const img=$('SC_img');
-    if(img) img.style.transform='rotate('+SC.rotation+'deg)';
-    e.preventDefault();
-  },{passive:false});
-  document.addEventListener('touchend',function(e){
-    if(e.touches.length<2) _active=false;
-  });
-})();
-
-// ── Caption ──
+// ─── Caption ────────────────────────────────────────────
 function scAddCaption(){
   const ci=$('SC_captionInput');
-  ci.style.display = ci.style.display==='none' ? 'block' : 'none';
-  if(ci.style.display==='block') $('SC_captionText').focus();
+  ci.style.display=ci.style.display==='none'?'block':'none';
+  if(ci.style.display==='block') setTimeout(()=>$('SC_captionText').focus(),80);
 }
 function scUpdateCaption(v){
   SC.caption=v;
-  const cap=$('SC_caption');
-  cap.textContent=v;
-  cap.style.display = v ? 'block' : 'none';
+  const el=$('SC_caption');
+  if(el){ el.textContent=v; el.style.display=v?'block':'none'; }
 }
 
-// ── Song ──
-// ══════════════════════════════════════════════════
-// MUSIC LIBRARY PICKER
-// ══════════════════════════════════════════════════
-let _musicPreviewAudio = null;
-let _musicSearchTimer  = null;
-let _musicAllTracks    = [];
+// ─── Song ────────────────────────────────────────────────
+function scClearSong(){
+  SC.audioFile=null; SC.audioUrl=''; SC.audioName='';
+  _scUpdateSongBtn();
+  // Refresh song page highlight if open
+  if($('SC_p4').style.display==='flex') _scRenderSongList(_scLastSongQuery||'');
+}
 
-function scOpenMusicPicker(){
-  const ov = document.getElementById('musicPickerOverlay');
-  if(!ov) return;
-  ov.style.display='flex';
-  document.getElementById('musicSearchInput').value='';
-  scLoadMusicLibrary('');
+// ─── Song page (Page 4) ──────────────────────────────────
+let _scSongSearchTimer=null, _scLastSongQuery='', _scSongTracks=[], _scSongPreviewAudio=null;
+
+function scOpenSongPage(){
+  scCloseTools();
+  scPage(4);
+  $('SC_songSearch').value='';
+  _scLoadSongs('');
 }
-function scCloseMusicPicker(){
-  const ov = document.getElementById('musicPickerOverlay');
-  if(ov) ov.style.display='none';
-  scStopMusicPreview();
+function scCloseSongPage(){
+  scStopSongPreview();
+  scPage(1);
 }
-function scMusicSearch(q){
-  clearTimeout(_musicSearchTimer);
-  _musicSearchTimer = setTimeout(()=>scLoadMusicLibrary(q), 280);
+function scSongSearch(q){
+  _scLastSongQuery=q;
+  clearTimeout(_scSongSearchTimer);
+  _scSongSearchTimer=setTimeout(()=>_scLoadSongs(q),280);
 }
-async function scLoadMusicLibrary(q){
-  const list = document.getElementById('musicTrackList');
-  if(!list) return;
-  list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.4);padding:24px;font-size:14px;">Loading…</div>';
+async function _scLoadSongs(q){
+  const list=$('SC_songList');
+  list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.35);padding:40px;font-size:14px;">Loading…</div>';
   try{
-    const r = await fetch('/api/music/search?q='+encodeURIComponent(q||'')+'&limit=50');
-    const d = await r.json();
+    const r=await fetch('/api/music/search?q='+encodeURIComponent(q||'')+'&limit=60');
+    const d=await r.json();
     if(!d.success||!d.tracks.length){
-      list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.35);padding:32px;font-size:13px;">'+(q?'No results for "'+q+'"':'No songs yet — upload the first one! ☝️')+'</div>';
+      list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.35);padding:40px;font-size:13px;">'+(q?'No results for "'+escHtml(q)+'"':'No songs yet — upload the first one ☝️')+'</div>';
       return;
     }
-    _musicAllTracks = d.tracks;
-    list.innerHTML = d.tracks.map(t=>musicTrackRow(t)).join('');
+    _scSongTracks=d.tracks;
+    _scRenderSongList(q);
   }catch(e){
-    list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.3);padding:24px;">Failed to load</div>';
+    list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.3);padding:30px;">Failed to load</div>';
   }
 }
-function musicTrackRow(t){
-  const dur = t.duration>0 ? Math.floor(t.duration/60)+':'+String(t.duration%60).padStart(2,'0') : '';
-  const cover = t.cover_url
-    ? `<img src="${t.cover_url}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
-    : `<div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#7c6aff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎵</div>`;
-  const isSelected = SC.audioName === t.title+' – '+t.artist;
-  return `<div onclick="scSelectLibraryTrack(${t.id})" style="
-    display:flex;align-items:center;gap:12px;
-    padding:10px 10px;border-radius:12px;cursor:pointer;
-    background:${isSelected?'rgba(124,106,255,.25)':'rgba(255,255,255,.05)'};
-    border:1px solid ${isSelected?'rgba(124,106,255,.5)':'transparent'};
-    transition:background .15s;
-  " onmouseenter="this.style.background='rgba(255,255,255,.1)'" onmouseleave="this.style.background='${isSelected?'rgba(124,106,255,.25)':'rgba(255,255,255,.05)'}'" >
+function _scRenderSongList(q){
+  const list=$('SC_songList');
+  if(!list||!_scSongTracks.length) return;
+  list.innerHTML=_scSongTracks.map(t=>_scSongRow(t)).join('');
+  // Update currently-selected banner
+  const banner=$('SC_currentSongBanner'), title=$('SC_currentSongTitle');
+  if(SC.audioName){ banner.style.display='flex'; title.textContent=SC.audioName; }
+  else banner.style.display='none';
+}
+function _scSongRow(t){
+  const dur=t.duration>0?Math.floor(t.duration/60)+':'+String(t.duration%60).padStart(2,'0'):'';
+  const cover=t.cover_url
+    ?`<img src="${t.cover_url}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;">`
+    :`<div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#7c6aff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎵</div>`;
+  const isSelected=SC.audioUrl===t.audio_url;
+  return `<div onclick="scPickSongTrack(${t.id})" style="
+    display:flex;align-items:center;gap:12px;padding:10px 10px;border-radius:14px;cursor:pointer;
+    background:${isSelected?'rgba(124,106,255,.28)':'transparent'};
+    border:1px solid ${isSelected?'rgba(124,106,255,.6)':'transparent'};
+    transition:background .12s;" onmouseenter="if(!${isSelected})this.style.background='rgba(255,255,255,.07)'" onmouseleave="if(!${isSelected})this.style.background='transparent'">
     ${cover}
     <div style="flex:1;min-width:0;">
       <div style="color:#fff;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(t.title)}</div>
       <div style="color:rgba(255,255,255,.45);font-size:12px;margin-top:2px;">${escHtml(t.artist)}${t.genre?' · '+escHtml(t.genre):''}${dur?' · '+dur:''}</div>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <button onclick="event.stopPropagation();scPreviewTrack(${t.id},'${escHtml(t.title).replace(/'/g,"\'")}','${escHtml(t.artist).replace(/'/g,"\'")}','${t.audio_url}')" style="
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+      <button onclick="event.stopPropagation();scPreviewSong(${t.id},'${escHtml(t.title).replace(/'/g,"\\'")}','${escHtml(t.artist).replace(/'/g,"\\'")}','${t.audio_url}')" style="
         background:rgba(255,255,255,.1);border:none;color:#fff;
-        width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;
-      ">▶</button>
-      ${isSelected?`<span style="color:#7c6aff;font-size:18px;">✓</span>`:''}
+        width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;">▶</button>
+      ${isSelected?'<span style="color:#7c6aff;font-size:20px;font-weight:900;">✓</span>':''}
     </div>
   </div>`;
 }
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function scSelectLibraryTrack(trackId){
-  const t = _musicAllTracks.find(x=>x.id===trackId);
+function scPickSongTrack(trackId){
+  const t=_scSongTracks.find(x=>x.id===trackId);
   if(!t) return;
-  scStopMusicPreview();
-  // Store as a library URL reference (not a file upload)
-  SC.audioFile   = null;           // no file — it's a library URL
-  SC.audioUrl    = t.audio_url;    // direct URL to use when posting
-  SC.audioName   = t.title+' – '+t.artist;
-  const btn = document.getElementById('SC_songBtn');
-  if(btn) btn.innerHTML='<span style="font-size:16px;">🎵</span><span style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+SC.audioName+'</span>';
-  const sn = document.getElementById('SC_songName');
-  if(sn) sn.textContent = SC.audioName;
-  scCloseMusicPicker();
-  toast('🎵 '+t.title+' added to story','ok');
+  scStopSongPreview();
+  SC.audioFile=null;
+  SC.audioUrl=t.audio_url;
+  SC.audioName=t.title+' – '+t.artist;
+  _scUpdateSongBtn();
+  _scRenderSongList(_scLastSongQuery);
+  toast('🎵 '+t.title+' added','ok');
 }
+function scPreviewSong(id,title,artist,url){
+  scStopSongPreview();
+  _scSongPreviewAudio=new Audio(url);
+  _scSongPreviewAudio.volume=0.8;
+  _scSongPreviewAudio.play().catch(()=>{});
+  const bar=$('SC_songPreviewBar'), pt=$('SC_songPreviewTitle'), pa=$('SC_songPreviewArtist');
+  if(bar) bar.style.display='flex';
+  if(pt) pt.textContent=title;
+  if(pa) pa.textContent=artist;
+}
+function scStopSongPreview(){
+  if(_scSongPreviewAudio){ _scSongPreviewAudio.pause(); _scSongPreviewAudio=null; }
+  const bar=$('SC_songPreviewBar'); if(bar) bar.style.display='none';
+}
+// Legacy aliases (old music picker functions still called elsewhere)
+function scOpenMusicPicker(){ scOpenSongPage(); }
+function scCloseMusicPicker(){ scCloseSongPage(); }
+function scMusicSearch(q){ scSongSearch(q); }
+async function scLoadMusicLibrary(q){ await _scLoadSongs(q); }
+function scSelectLibraryTrack(id){ scPickSongTrack(id); }
+function scPreviewTrack(id,title,artist,url){ scPreviewSong(id,title,artist,url); }
+function scStopMusicPreview(){ scStopSongPreview(); }
+function musicTrackRow(t){ return _scSongRow(t); }
 
-function scPreviewTrack(id, title, artist, url){
-  scStopMusicPreview();
-  _musicPreviewAudio = new Audio(url);
-  _musicPreviewAudio.volume = 0.8;
-  _musicPreviewAudio.play().catch(()=>{});
-  const bar = document.getElementById('musicPreviewBar');
-  if(bar){ bar.style.display='flex'; }
-  const pt = document.getElementById('musicPreviewTitle');
-  const pa = document.getElementById('musicPreviewArtist');
-  if(pt) pt.textContent = title;
-  if(pa) pa.textContent = artist;
-}
-function scStopMusicPreview(){
-  if(_musicPreviewAudio){ _musicPreviewAudio.pause(); _musicPreviewAudio=null; }
-  const bar = document.getElementById('musicPreviewBar');
-  if(bar) bar.style.display='none';
-}
-
-// ── Music upload ──
-let _muAudioFile = null;
+// ─── Music Upload (from song page) ──────────────────────
+let _muAudioFile=null;
+let _musicSearchTimer=null, _musicAllTracks=[], _musicPreviewAudio=null;
 function scOpenMusicUpload(){
-  scCloseMusicPicker();
-  const ov = document.getElementById('musicUploadOverlay');
+  const ov=$('musicUploadOverlay');
   if(ov){ ov.style.display='flex'; _muAudioFile=null; }
-  document.getElementById('muTitle').value='';
-  document.getElementById('muArtist').value='';
-  document.getElementById('muGenre').value='';
-  document.getElementById('muAudioLabel').textContent='🎵 Tap to choose audio file (mp3, m4a, wav…)';
-  document.getElementById('muAudioFile').value='';
+  $('muTitle').value=''; $('muArtist').value=''; $('muGenre').value='';
+  $('muAudioLabel').textContent='🎵 Tap to choose audio file (mp3, m4a, wav…)';
+  $('muAudioFile').value='';
 }
 function scCloseMusicUpload(){
-  const ov = document.getElementById('musicUploadOverlay');
-  if(ov) ov.style.display='none';
+  const ov=$('musicUploadOverlay'); if(ov)ov.style.display='none';
   _muAudioFile=null;
 }
 function muAudioChosen(input){
-  _muAudioFile = input.files[0];
+  _muAudioFile=input.files[0];
   if(_muAudioFile){
-    const lbl = document.getElementById('muAudioLabel');
+    const lbl=$('muAudioLabel');
     if(lbl) lbl.textContent='🎵 '+_muAudioFile.name;
-    // Auto-fill title from filename if empty
-    const ti = document.getElementById('muTitle');
-    if(ti&&!ti.value) ti.value = _muAudioFile.name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ');
+    const ti=$('muTitle');
+    if(ti&&!ti.value) ti.value=_muAudioFile.name.replace(/\.[^.]+$/,'').replace(/[_-]/g,' ');
   }
 }
 async function muSubmit(){
   if(!_muAudioFile){ toast('Choose an audio file first','err'); return; }
-  const title  = document.getElementById('muTitle').value.trim()||_muAudioFile.name;
-  const artist = document.getElementById('muArtist').value.trim()||'Unknown';
-  const genre  = document.getElementById('muGenre').value.trim();
-  const btn    = document.getElementById('muSubmitBtn');
+  const title=$('muTitle').value.trim()||_muAudioFile.name;
+  const artist=$('muArtist').value.trim()||'Unknown';
+  const genre=$('muGenre').value.trim();
+  const btn=$('muSubmitBtn');
   if(btn){ btn.disabled=true; btn.textContent='Uploading…'; }
   try{
-    const fd = new FormData();
+    const fd=new FormData();
     fd.append('audio',_muAudioFile);
     fd.append('title',title);
     fd.append('artist',artist);
     fd.append('genre',genre);
-    const r = await fetch('/api/music/upload',{method:'POST',body:fd});
-    const d = await r.json();
+    const r=await fetch('/api/music/upload',{method:'POST',body:fd});
+    const d=await r.json();
     if(d.success){
-      toast('🎵 Song uploaded to library!','ok');
+      toast('🎵 Song uploaded!','ok');
       scCloseMusicUpload();
-      // Auto-select the just-uploaded track
+      // Auto-select the uploaded track
       SC.audioFile=null; SC.audioUrl=d.track.audio_url;
       SC.audioName=d.track.title+' – '+d.track.artist;
-      const sbtn=document.getElementById('SC_songBtn');
-      if(sbtn) sbtn.innerHTML='<span style="font-size:16px;">🎵</span><span style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+SC.audioName+'</span>';
-    } else { toast(d.error||'Upload failed','err'); }
+      _scUpdateSongBtn();
+      // Reload song list
+      await _scLoadSongs(_scLastSongQuery||'');
+    } else toast(d.error||'Upload failed','err');
   }catch(e){ toast('Upload failed','err'); }
   finally{ if(btn){ btn.disabled=false; btn.textContent='Upload Song'; } }
 }
-
-function scPickSong(){ $('SC_audioInput').click(); }  // kept for compat
 function scAudioPicked(input){
   const file=input.files[0]; if(!file) return;
-  SC.audioFile=file;
+  SC.audioFile=file; SC.audioUrl='';
   SC.audioName=file.name.replace(/\.[^.]+$/,'').substring(0,30);
-  $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>'+SC.audioName;
-  $('SC_songName').textContent=SC.audioName;
-  const sd=$('SC_songDisplay'); sd.style.display='flex';
+  _scUpdateSongBtn();
 }
-function scClearSong(){
-  SC.audioFile=null; SC.audioName='';
-  $('SC_audioInput').value='';
-  $('SC_songBtn').innerHTML='<span style="font-size:20px;">🎵</span>Add Song';
-  $('SC_songDisplay').style.display='none';
+function scPickSong(){ $('SC_audioInput').click(); }
+
+// ─── Video Trimmer (Page 5) ──────────────────────────────
+let _trimDrag=null, _trimVidRAF=null;
+
+function scOpenTrimmer(){
+  if(!SC.mediaFile||SC.mediaType!=='video'){ toast('No video loaded','err'); return; }
+  scCloseTools();
+  scPage(5);
+  const vid=$('SC_trimVid');
+  vid.src=SC.mediaURL;
+  vid.onloadedmetadata=()=>{
+    const total=vid.duration;
+    // Init trim region: keep existing SC.trimStart/trimEnd or default first 30s
+    if(SC.trimEnd===null) SC.trimEnd=Math.min(total,30);
+    _trimUpdate(total);
+    vid.currentTime=SC.trimStart;
+    vid.play().catch(()=>{});
+    // Playhead updater
+    clearInterval(_trimVidRAF);
+    _trimVidRAF=setInterval(()=>{
+      if(!vid.paused){
+        if(vid.currentTime>=SC.trimEnd){ vid.currentTime=SC.trimStart; }
+        const pct=(vid.currentTime-SC.trimStart)/(SC.trimEnd-SC.trimStart)*100;
+        const ph=$('SC_trimPlayhead');
+        if(ph){
+          const barW=$('SC_trimBar').offsetWidth;
+          const lPct=SC.trimStart/total*100;
+          const rPct=SC.trimEnd/total*100;
+          const innerPct=lPct+(rPct-lPct)*pct/100;
+          ph.style.left=innerPct+'%';
+        }
+      }
+    },50);
+  };
+}
+function _trimUpdate(total){
+  const start=SC.trimStart, end=SC.trimEnd;
+  const dur=end-start;
+  const lPct=start/total*100;
+  const rPct=end/total*100;
+  // Handles
+  const lh=$('SC_trimL'), rh=$('SC_trimR'), rg=$('SC_trimRegion');
+  if(lh) lh.style.left=lPct+'%';
+  if(rh) rh.style.right=(100-rPct)+'%';
+  if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
+  // Labels
+  const sl=$('SC_trimStartLbl'), el=$('SC_trimEndLbl'), dl=$('SC_trimDurLbl'), tl=$('SC_trimTimeLabel');
+  const fmt=s=>s.toFixed(1)+'s';
+  if(sl) sl.textContent=fmt(start);
+  if(el) el.textContent=fmt(end);
+  if(dl){
+    const ok=dur<=30;
+    dl.textContent=fmt(dur)+' selected'+(ok?'':' ⚠️ over 30s');
+    dl.style.color=ok?'#a78fff':'#ef4444';
+  }
+  if(tl) tl.textContent=fmt(start)+' – '+fmt(end);
+}
+function scTrimBarClick(e){
+  if(e.target.id==='SC_trimL'||e.target.id==='SC_trimR') return;
+  const bar=$('SC_trimBar');
+  const rect=bar.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  const vid=$('SC_trimVid');
+  const t=pct*vid.duration;
+  vid.currentTime=Math.max(SC.trimStart,Math.min(SC.trimEnd,t));
+}
+function scTrimBarTouch(e){
+  scTrimBarClick({clientX:e.touches[0].clientX,target:e.target});
+}
+function scTrimDragStart(e,side){
+  e.preventDefault(); e.stopPropagation();
+  _trimDrag=side;
+  const onMove=ev=>{
+    const clientX=ev.touches?ev.touches[0].clientX:ev.clientX;
+    const bar=$('SC_trimBar');
+    const rect=bar.getBoundingClientRect();
+    const vid=$('SC_trimVid');
+    const total=vid.duration||1;
+    let pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+    let t=pct*total;
+    if(side==='L'){
+      t=Math.max(0,Math.min(SC.trimEnd-0.5,t));
+      SC.trimStart=t;
+    } else {
+      t=Math.min(total,Math.max(SC.trimStart+0.5,t));
+      SC.trimEnd=t;
+      // Warn if > 30s selection
+      const dur=SC.trimEnd-SC.trimStart;
+      const hint=$('SC_trimHint');
+      if(hint) hint.style.color=dur>30?'#ef4444':'rgba(255,255,255,.45)';
+    }
+    _trimUpdate(total);
+  };
+  const onUp=()=>{
+    _trimDrag=null;
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('touchend',onUp);
+    // Seek video to trim start
+    const vid=$('SC_trimVid');
+    vid.currentTime=SC.trimStart;
+  };
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+}
+function scTrimStop(){
+  clearInterval(_trimVidRAF); _trimVidRAF=null;
+  const vid=$('SC_trimVid');
+  if(vid){ vid.pause(); vid.src=''; }
+}
+function scCloseTrimmer(){
+  scTrimStop();
+  scPage(1);
+  // Refresh editor to show updated duration badge
+  _scShowVideoUI();
+}
+function scApplyTrim(){
+  const vid=$('SC_trimVid');
+  const total=vid.duration||1;
+  const dur=SC.trimEnd-SC.trimStart;
+  if(dur>30){
+    toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');
+    return;
+  }
+  if(dur<0.5){
+    toast('Selection too short (min 0.5s)','err');
+    return;
+  }
+  // Store trim points — they'll be passed to the backend/post
+  // Update the duration shown
+  SC.videoDuration=total;
+  toast('✂️ Clip set: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
+  scCloseTrimmer();
 }
 
-// ── Share page ──
+// ─── Share page (page 2) ─────────────────────────────────
 function scGoShare(){
-  // close tools/settings
   $('SC_tools').style.transform='translateY(100%)';
   $('SC_settings').style.display='none';
   SC.toolsOpen=false; SC.settingsOpen=false;
-  // set thumbnail
+
+  // Validate video clip length before proceeding
+  if(SC.mediaType==='video'){
+    const clipDur=(SC.trimEnd||0)-(SC.trimStart||0);
+    if(clipDur>30){
+      toast('Clip is '+clipDur.toFixed(1)+'s — use ✂️ Trim Clip to cut it to 30s first','err');
+      return;
+    }
+  }
+
+  // Thumbnail preview
   const si=$('SC_shareThumb'), st=$('SC_shareThumbText');
   si.style.display='none'; st.style.display='none';
   if(SC.mediaURL && SC.mediaType==='image'){
     si.src=SC.mediaURL; si.style.display='block';
   } else if(SC.type==='text'){
     const txt=($('SC_textBox').value||'').trim();
-    st.textContent=txt||'Text Story';
-    st.style.display='flex';
+    st.textContent=txt||'Text Story'; st.style.display='flex';
+  } else if(SC.mediaType==='video'){
+    // Show a video seek thumbnail
+    const tmpV=document.createElement('video');
+    tmpV.src=SC.mediaURL; tmpV.currentTime=SC.trimStart||0;
+    tmpV.onloadeddata=()=>{
+      const cv=document.createElement('canvas');
+      cv.width=120; cv.height=200;
+      cv.getContext('2d').drawImage(tmpV,0,0,120,200);
+      si.src=cv.toDataURL(); si.style.display='block';
+    };
   }
-  // privacy options
+
+  // Privacy
   scUpdatePrivacyUI('friends');
-  // build custom list
   const cl=$('SC_customList');
   cl.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join('');
-  // radio change
   document.querySelectorAll('[name=scPrivacy]').forEach(r=>{
-    r.onchange=()=>{ scUpdatePrivacyUI(r.value); };
+    r.onchange=()=>scUpdatePrivacyUI(r.value);
   });
   scPage(2);
 }
 function scUpdatePrivacyUI(val){
   document.querySelectorAll('[name=scPrivacy]').forEach(r=>{
     r.checked=(r.value===val);
-    r.closest('label').classList.toggle('selected', r.value===val);
+    r.closest('label').classList.toggle('selected',r.value===val);
   });
-  $('SC_customList').style.display = val==='custom' ? 'block' : 'none';
-  if(val==='custom') $('SC_customList').innerHTML.length<10 && ($('SC_customList').innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join(''));
+  $('SC_customList').style.display=val==='custom'?'block':'none';
+  if(val==='custom'){
+    const cl=$('SC_customList');
+    if(cl.innerHTML.length<10)
+      cl.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join('');
+  }
 }
-function scBackToEditor(){ scPage(1); }
 
-// ── POST ──
-// Bake rotation + CSS filter onto offscreen canvas → returns File
+// ─── Bake image (rotation + filter) ─────────────────────
 async function scBakeImage(){
-  return new Promise((resolve)=>{
-    const img = new Image();
-    img.onload = ()=>{
-      const rad = SC.rotation * Math.PI/180;
-      const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
-      const w = img.naturalWidth, h = img.naturalHeight;
-      const cw = Math.round(w*cos + h*sin);
-      const ch = Math.round(w*sin + h*cos);
-      const cv = document.createElement('canvas');
-      cv.width=cw; cv.height=ch;
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const rad=SC.rotation*Math.PI/180;
+      const cos=Math.abs(Math.cos(rad)), sin=Math.abs(Math.sin(rad));
+      const w=img.naturalWidth, h=img.naturalHeight;
+      const cw=Math.round(w*cos+h*sin), ch=Math.round(w*sin+h*cos);
+      const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
       const ctx=cv.getContext('2d');
-      // apply CSS filter via ctx.filter if supported
-      if(SC.filter && SC.filter!=='none'){
-        ctx.filter = SC.filter;
-      }
-      ctx.translate(cw/2, ch/2);
-      ctx.rotate(rad);
-      ctx.drawImage(img, -w/2, -h/2, w, h);
-      cv.toBlob(blob=>{
-        resolve(new File([blob],'story.jpg',{type:'image/jpeg'}));
-      },'image/jpeg',0.92);
+      if(SC.filter&&SC.filter!=='none') ctx.filter=SC.filter;
+      ctx.translate(cw/2,ch/2); ctx.rotate(rad);
+      ctx.drawImage(img,-w/2,-h/2,w,h);
+      cv.toBlob(blob=>resolve(new File([blob],'story.jpg',{type:'image/jpeg'})),'image/jpeg',0.92);
     };
-    img.src = SC.mediaURL;
+    img.src=SC.mediaURL;
   });
 }
 
+// ─── POST ────────────────────────────────────────────────
 async function scPost(){
   const btn=$('SC_shareBtn');
   btn.disabled=true; btn.textContent='Posting…';
-  const privacy = document.querySelector('[name=scPrivacy]:checked')?.value||'friends';
-  const customUsers = privacy==='custom'
-    ? Array.from($('SC_customList').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value))
-    : [];
-  if(privacy==='custom'&&!customUsers.length){ toast('Select at least one friend','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+  const privacy=document.querySelector('[name=scPrivacy]:checked')?.value||'friends';
+  const customUsers=privacy==='custom'
+    ?Array.from($('SC_customList').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value))
+    :[];
+  if(privacy==='custom'&&!customUsers.length){
+    toast('Select at least one friend','err');
+    btn.disabled=false; btn.textContent='✨ Share Story'; return;
+  }
 
   let content='', mediaUrl='', mediaType='text';
   const textVal=($('SC_textBox').value||SC.caption||'').trim();
 
-  // upload media (bake rotation+filter via canvas for images)
   if(SC.mediaFile){
-    // ── Client-side validation ──
-    if(SC.mediaType === 'video'){
-      // Check video duration before uploading
-      try{
-        const dur = await new Promise((resolve, reject) => {
-          const tmpVid = document.createElement('video');
-          tmpVid.preload = 'metadata';
-          const objUrl = URL.createObjectURL(SC.mediaFile);
-          tmpVid.onloadedmetadata = () => { URL.revokeObjectURL(objUrl); resolve(tmpVid.duration); };
-          tmpVid.onerror = () => { URL.revokeObjectURL(objUrl); resolve(null); };
-          tmpVid.src = objUrl;
-        });
-        if(dur !== null && dur > 60){
-          toast(`Video is ${Math.round(dur)}s — max 60 seconds for stories`, 'err');
-          btn.disabled=false; btn.textContent='✨ Share Story'; return;
-        }
-      } catch(e){ /* metadata check failed — allow upload anyway */ }
-      // File size check — must match server MAX_CONTENT_LENGTH (100MB)
-      if(SC.mediaFile.size > 100 * 1024 * 1024){
-        toast('Video too large (max 100 MB)', 'err');
+    // Validate clip length for video
+    if(SC.mediaType==='video'){
+      const clipDur=(SC.trimEnd||0)-(SC.trimStart||0);
+      if(clipDur>30){
+        toast('Clip is '+clipDur.toFixed(1)+'s — trim to max 30s first','err');
         btn.disabled=false; btn.textContent='✨ Share Story'; return;
       }
-    } else {
-      // Image size check (10MB)
-      if(SC.mediaFile.size > 10 * 1024 * 1024){
-        toast('Image too large (max 10 MB)', 'err');
+      if(SC.mediaFile.size>200*1024*1024){
+        toast('Video too large (max 200 MB)','err');
         btn.disabled=false; btn.textContent='✨ Share Story'; return;
       }
+    } else if(SC.mediaFile.size>10*1024*1024){
+      toast('Image too large (max 10 MB)','err');
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
     }
+
     try{
-      const sizeMB = (SC.mediaFile.size / (1024*1024)).toFixed(1);
-      btn.textContent = `Uploading… (${sizeMB} MB)`;
-      let uploadFile = SC.mediaFile;
-      // bake rotation + filter for images using offscreen canvas
-      if(SC.mediaType==='image' && (SC.rotation!==0 || SC.filter!=='none')){
-        uploadFile = await scBakeImage();
+      const sizeMB=(SC.mediaFile.size/(1024*1024)).toFixed(1);
+      btn.textContent=`Uploading… (${sizeMB} MB)`;
+      let uploadFile=SC.mediaFile;
+      if(SC.mediaType==='image'&&(SC.rotation!==0||SC.filter!=='none')){
+        uploadFile=await scBakeImage();
       }
-      const fd=new FormData(); fd.append('media', uploadFile);
+      const fd=new FormData(); fd.append('media',uploadFile);
       const up=await fetch('/api/upload/media',{method:'POST',body:fd});
       const ud=await up.json();
-      if(!ud.success){ toast('Upload failed: '+(ud.error||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+      if(!ud.success){
+        toast('Upload failed: '+(ud.error||''),'err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
       mediaUrl=ud.url; mediaType=ud.media_type;
-    } catch(e){ toast('Upload error: '+(e.message||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+    }catch(e){
+      toast('Upload error: '+(e.message||''),'err');
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
+    }
   } else {
-    // text story
     content=($('SC_textBox').value||'').trim();
-    if(!content){ toast('Please type something','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+    if(!content){
+      toast('Please type something','err');
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
+    }
     mediaType='text';
   }
 
-  // caption as content for photo/video
-  if(mediaUrl && textVal) content=textVal;
+  if(mediaUrl&&textVal) content=textVal;
 
-  // audio: either a library URL (SC.audioUrl) or an uploaded file (SC.audioFile)
-  let audioUrl = SC.audioUrl||'', audioName = SC.audioName||'';
-  if(SC.audioFile && !SC.audioUrl){
+  // Audio
+  let audioUrl=SC.audioUrl||'', audioName=SC.audioName||'';
+  if(SC.audioFile&&!SC.audioUrl){
     try{
       btn.textContent='Uploading audio…';
       const afd=new FormData(); afd.append('audio',SC.audioFile);
       const aup=await fetch('/api/upload/audio',{method:'POST',body:afd});
       const aud=await aup.json();
       if(aud.success){ audioUrl=aud.url; audioName=SC.audioName; }
-    } catch(e){}
+    }catch(e){}
   }
+
+  // Include trim points for video so backend/viewer can handle them
+  const trimData = SC.mediaType==='video' && SC.trimStart!=null
+    ? {trim_start: SC.trimStart, trim_end: SC.trimEnd}
+    : {};
 
   try{
     const r=await fetch('/api/stories/create',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({content,media_url:mediaUrl,media_type:mediaType,privacy,custom_users:customUsers,audio_url:audioUrl,audio_name:audioName})
+      body:JSON.stringify({
+        content,media_url:mediaUrl,media_type:mediaType,
+        privacy,custom_users:customUsers,
+        audio_url:audioUrl,audio_name:audioName,
+        ...trimData
+      })
     });
     const d=await r.json();
     if(d.success){ toast('✅ Story shared!','ok'); scClose(); loadStories(); }
     else toast(d.error||'Failed','err');
-  } catch(e){ toast('Network error','err'); }
+  }catch(e){ toast('Network error','err'); }
   btn.disabled=false; btn.textContent='✨ Share Story';
 }
 
-// createStory() is an alias — all story creation goes through scPost()
+// ─── Single createStory alias ────────────────────────────
 function createStory(){ scPost(); }
 function toggleStoryType(){}
 function switchStoryTab(){}
