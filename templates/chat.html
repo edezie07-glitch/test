@@ -2159,7 +2159,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div id="SC_rotWrap" style="display:contents;touch-action:none;">
         <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
       </div>
-      <video id="SC_vid" style="max-width:100%;max-height:100%;object-fit:contain;display:none;" playsinline autoplay loop muted></video>
+      <video id="SC_vid" style="width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;display:none;background:#000;" playsinline autoplay loop muted></video>
 
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
@@ -6408,8 +6408,13 @@ function scLoadEditor(){
     setTimeout(()=>tx.focus(),300);
     _scHideVideoUI();
   } else if(SC.mediaType==='video'){
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.load();
     vid.src = SC.mediaURL;
     vid.style.display='block';
+    vid.load();
+    vid.oncanplay = () => { vid.play().catch(()=>{}); vid.oncanplay=null; };
     _scShowVideoUI();
   } else {
     img.src = SC.mediaURL;
