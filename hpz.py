@@ -1977,6 +1977,324 @@ def health():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now(timezone.utc).isoformat()})
 
 # ============================================================
+# ============================================================
+# MUSIC LIBRARY PAGE — /music
+# Any logged-in user can browse; uploading is open to all users
+# ============================================================
+@app.route('/music')
+@login_required
+def music_page():
+    tracks = Music.query.order_by(Music.title).all()
+    user_id = session.get('user_id')
+    is_admin = session.get('username') == 'admin'
+    tracks_html = ""
+    for t in tracks:
+        can_delete = (t.uploaded_by == user_id) or is_admin
+        del_btn = f'''<button onclick="deleteSong({t.id}, this)"
+          style="background:#ef4444;border:none;color:#fff;border-radius:8px;
+          padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;">Delete</button>''' if can_delete else ""
+        duration_str = f"{int(t.duration//60)}:{int(t.duration%60):02d}" if t.duration else "—"
+        cover_html = f'''<img src="{t.cover_url}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;">''' if t.cover_url else '''<div style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#7c6aff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎵</div>'''
+        tracks_html += f"""
+        <div class="track-row" id="tr_{t.id}">
+          {cover_html}
+          <div class="track-info">
+            <div class="track-title">{t.title}</div>
+            <div class="track-sub">{t.artist}{(' · ' + t.genre) if t.genre else ''} {(' · ' + duration_str) if t.duration else ''}</div>
+          </div>
+          <div class="track-actions">
+            <button onclick="playPreview('{t.audio_url}', this)"
+              style="background:rgba(255,255,255,.1);border:none;color:#fff;
+              border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;">▶</button>
+            {del_btn}
+          </div>
+        </div>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>🎵 Music Library — Hepozy</title>
+  <style>
+    *{{box-sizing:border-box;margin:0;padding:0;}}
+    body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background:#0d0f1a;color:#e8eaf0;min-height:100vh;padding:0 0 60px;}}
+    header{{background:#111320;border-bottom:1px solid #1e2138;
+      padding:16px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;}}
+    header a{{color:#a78fff;text-decoration:none;font-size:20px;font-weight:700;}}
+    header h1{{font-size:18px;font-weight:800;flex:1;}}
+    .search-wrap{{padding:16px 18px 8px;}}
+    .search-wrap input{{width:100%;padding:11px 16px;border-radius:12px;
+      border:1px solid #2a2d3e;background:#161926;color:#e8eaf0;
+      font-size:15px;outline:none;}}
+    .search-wrap input::placeholder{{color:#555;}}
+    .upload-card{{margin:12px 18px 4px;background:#161926;
+      border:1px solid #2a2d3e;border-radius:16px;padding:20px;}}
+    .upload-card h2{{font-size:15px;font-weight:800;margin-bottom:14px;color:#a78fff;}}
+    .form-row{{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}}
+    .form-row input{{padding:10px 14px;border-radius:10px;border:1px solid #2a2d3e;
+      background:#0d0f1a;color:#e8eaf0;font-size:14px;outline:none;}}
+    .file-label{{padding:12px 14px;border-radius:10px;
+      border:1px dashed #3a3d52;background:#0d0f1a;color:#888;
+      font-size:13px;cursor:pointer;text-align:center;}}
+    .file-label.has-file{{border-color:#7c6aff;color:#a78fff;}}
+    .btn-upload{{width:100%;padding:13px;border-radius:12px;border:none;
+      background:linear-gradient(135deg,#7c6aff,#a855f7);color:#fff;
+      font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px;}}
+    .btn-upload:disabled{{opacity:.5;cursor:not-allowed;}}
+    .section-title{{padding:20px 18px 8px;font-size:13px;font-weight:700;
+      color:#555;text-transform:uppercase;letter-spacing:.6px;}}
+    #trackList{{padding:0 10px;display:flex;flex-direction:column;gap:4px;}}
+    .track-row{{display:flex;align-items:center;gap:12px;padding:10px 8px;
+      border-radius:14px;background:#161926;border:1px solid #1e2138;}}
+    .track-row.playing{{border-color:#7c6aff;background:rgba(124,106,255,.12);}}
+    .track-info{{flex:1;min-width:0;}}
+    .track-title{{font-size:14px;font-weight:700;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;}}
+    .track-sub{{font-size:12px;color:#666;margin-top:2px;}}
+    .track-actions{{display:flex;gap:8px;align-items:center;flex-shrink:0;}}
+    .toast{{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+      background:#222;color:#fff;padding:10px 22px;border-radius:20px;
+      font-size:14px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;}}
+    .toast.show{{opacity:1;transform:translateX(-50%) translateY(0);}}
+    #nowPlaying{{display:none;position:fixed;bottom:0;left:0;right:0;
+      background:#1a1d2e;border-top:1px solid #2a2d3e;
+      padding:12px 18px;align-items:center;gap:12px;z-index:50;}}
+    #nowPlaying .np-title{{font-size:14px;font-weight:700;flex:1;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+    #npStopBtn{{background:rgba(255,255,255,.1);border:none;color:#fff;
+      border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;}}
+    .empty{{text-align:center;padding:48px 20px;color:#444;font-size:14px;}}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/">← Hepozy</a>
+  <h1>🎵 Music Library</h1>
+  <span style="font-size:12px;color:#555;" id="trackCount">{len(tracks)} songs</span>
+</header>
+
+<!-- Search -->
+<div class="search-wrap">
+  <input type="search" id="searchInput" placeholder="🔍  Search songs, artists, genres…" oninput="filterTracks(this.value)">
+</div>
+
+<!-- Upload form -->
+<div class="upload-card">
+  <h2>⬆️ Add a Song</h2>
+  <div class="form-row">
+    <input type="text" id="upTitle"  placeholder="Song title" maxlength="120">
+    <input type="text" id="upArtist" placeholder="Artist name" maxlength="80">
+    <input type="text" id="upGenre"  placeholder="Genre (optional)" maxlength="60">
+  </div>
+  <div class="file-label" id="audioLabel" onclick="document.getElementById('audioFile').click()">
+    🎵 Tap to choose audio file  (mp3 · m4a · wav · ogg)
+  </div>
+  <input type="file" id="audioFile" accept="audio/*" style="display:none;" onchange="audioChosen(this)">
+  <div style="margin-top:8px;">
+    <div class="file-label" id="coverLabel" onclick="document.getElementById('coverFile').click()" style="font-size:12px;padding:8px;">
+      🖼️ Album art (optional)
+    </div>
+    <input type="file" id="coverFile" accept="image/*" style="display:none;" onchange="coverChosen(this)">
+  </div>
+  <button class="btn-upload" id="uploadBtn" onclick="doUpload()" style="margin-top:14px;">Upload Song</button>
+  <div id="uploadProgress" style="display:none;margin-top:10px;font-size:13px;color:#a78fff;text-align:center;"></div>
+</div>
+
+<!-- Track list -->
+<div class="section-title">Library <span id="filteredCount" style="color:#7c6aff;"></span></div>
+<div id="trackList">
+  {'<div class="empty">No songs yet — upload the first one above ☝️</div>' if not tracks else tracks_html}
+</div>
+
+<!-- Now playing bar -->
+<div id="nowPlaying">
+  <span style="font-size:20px;">🎵</span>
+  <span class="np-title" id="npTitle">—</span>
+  <button id="npStopBtn" onclick="stopPreview()">⏹</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+let _audio = null, _audioFile = null, _coverFile = null, _allRows = null;
+
+function toast(msg, type) {{
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'err' ? '#7f1d1d' : '#1a1035';
+  el.style.border = type === 'err' ? '1px solid #ef4444' : '1px solid #7c6aff';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}}
+
+function audioChosen(inp) {{
+  _audioFile = inp.files[0];
+  const lbl = document.getElementById('audioLabel');
+  if (_audioFile) {{
+    lbl.textContent = '🎵 ' + _audioFile.name;
+    lbl.classList.add('has-file');
+    const ti = document.getElementById('upTitle');
+    if (ti && !ti.value)
+      ti.value = _audioFile.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ');
+  }}
+}}
+
+function coverChosen(inp) {{
+  _coverFile = inp.files[0];
+  const lbl = document.getElementById('coverLabel');
+  if (_coverFile) {{
+    lbl.textContent = '🖼️ ' + _coverFile.name;
+    lbl.classList.add('has-file');
+  }}
+}}
+
+async function doUpload() {{
+  if (!_audioFile) {{ toast('Choose an audio file first', 'err'); return; }}
+  const title  = document.getElementById('upTitle').value.trim() || _audioFile.name.replace(/\.[^.]+$/,'');
+  const artist = document.getElementById('upArtist').value.trim() || 'Unknown';
+  const genre  = document.getElementById('upGenre').value.trim();
+  const btn    = document.getElementById('uploadBtn');
+  const prog   = document.getElementById('uploadProgress');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  prog.style.display = 'block'; prog.textContent = 'Uploading audio…';
+  const fd = new FormData();
+  fd.append('audio', _audioFile);
+  fd.append('title', title);
+  fd.append('artist', artist);
+  fd.append('genre', genre);
+  if (_coverFile) fd.append('cover', _coverFile);
+  try {{
+    const r = await fetch('/api/music/upload', {{ method: 'POST', credentials: 'include', body: fd }});
+    const d = await r.json();
+    if (d.success) {{
+      toast('✅ ' + d.track.title + ' uploaded!');
+      prog.textContent = '';
+      // Inject new row at top of list
+      const list = document.getElementById('trackList');
+      const empty = list.querySelector('.empty');
+      if (empty) empty.remove();
+      const t = d.track;
+      const div = document.createElement('div');
+      div.className = 'track-row'; div.id = 'tr_' + t.id;
+      div.innerHTML = renderRow(t, true);
+      list.prepend(div);
+      // Update count
+      const cnt = document.getElementById('trackCount');
+      if (cnt) cnt.textContent = (parseInt(cnt.textContent) + 1) + ' songs';
+      // Reset form
+      document.getElementById('upTitle').value = '';
+      document.getElementById('upArtist').value = '';
+      document.getElementById('upGenre').value = '';
+      document.getElementById('audioLabel').textContent = '🎵 Tap to choose audio file  (mp3 · m4a · wav · ogg)';
+      document.getElementById('audioLabel').classList.remove('has-file');
+      document.getElementById('coverLabel').textContent = '🖼️ Album art (optional)';
+      document.getElementById('coverLabel').classList.remove('has-file');
+      document.getElementById('audioFile').value = '';
+      document.getElementById('coverFile').value = '';
+      _audioFile = null; _coverFile = null;
+    }} else {{
+      toast(d.error || 'Upload failed', 'err');
+    }}
+  }} catch(e) {{
+    toast('Network error: ' + e.message, 'err');
+  }}
+  btn.disabled = false; btn.textContent = 'Upload Song';
+  prog.style.display = 'none';
+}}
+
+function renderRow(t, canDelete) {{
+  const dur = t.duration > 0 ? Math.floor(t.duration/60) + ':' + String(t.duration%60).padStart(2,'0') : '';
+  const cover = t.cover_url
+    ? `<img src="${{t.cover_url}}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
+    : `<div style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#7c6aff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎵</div>`;
+  const del = canDelete
+    ? `<button onclick="deleteSong(${{t.id}}, this)" style="background:#ef4444;border:none;color:#fff;border-radius:8px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;">Delete</button>`
+    : '';
+  return `${{cover}}<div class="track-info"><div class="track-title">${{t.title}}</div><div class="track-sub">${{t.artist}}${{t.genre?' · '+t.genre:''}}${{dur?' · '+dur:''}}</div></div><div class="track-actions"><button onclick="playPreview('${{t.audio_url}}', '${{t.title}}', this)" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;">▶</button>${{del}}</div>`;
+}}
+
+function playPreview(url, title, btn) {{
+  stopPreview();
+  _audio = new Audio(url);
+  _audio.volume = 0.85;
+  _audio.play().catch(() => toast('Could not play audio', 'err'));
+  _audio.onended = () => stopPreview();
+  document.querySelectorAll('.track-row').forEach(r => r.classList.remove('playing'));
+  const row = btn ? btn.closest('.track-row') : null;
+  if (row) row.classList.add('playing');
+  const np = document.getElementById('nowPlaying');
+  document.getElementById('npTitle').textContent = title || '—';
+  np.style.display = 'flex';
+  btn.textContent = '⏸';
+  btn.onclick = () => stopPreview();
+}}
+
+function stopPreview() {{
+  if (_audio) {{ _audio.pause(); _audio = null; }}
+  document.getElementById('nowPlaying').style.display = 'none';
+  document.querySelectorAll('.track-row').forEach(r => r.classList.remove('playing'));
+  document.querySelectorAll('.track-actions button:first-child').forEach(b => {{
+    b.textContent = '▶';
+    b.onclick = null;
+    // Re-bind — extract url and title from parent row data
+  }});
+  // Re-bind all play buttons properly
+  document.querySelectorAll('.track-row').forEach(row => {{
+    const playBtn = row.querySelector('.track-actions button:first-child');
+    if (playBtn && playBtn.textContent.includes('⏸')) {{
+      playBtn.textContent = '▶';
+    }}
+  }});
+}}
+
+async function deleteSong(id, btn) {{
+  if (!confirm('Delete this song from the library?')) return;
+  btn.disabled = true; btn.textContent = '…';
+  try {{
+    const r = await fetch('/api/music/delete/' + id, {{ method: 'DELETE', credentials: 'include' }});
+    const d = await r.json();
+    if (d.success) {{
+      const row = document.getElementById('tr_' + id);
+      if (row) row.remove();
+      toast('🗑️ Song deleted');
+      const cnt = document.getElementById('trackCount');
+      if (cnt) {{
+        const n = Math.max(0, parseInt(cnt.textContent) - 1);
+        cnt.textContent = n + ' songs';
+      }}
+    }} else {{
+      toast(d.error || 'Delete failed', 'err');
+      btn.disabled = false; btn.textContent = 'Delete';
+    }}
+  }} catch(e) {{
+    toast('Network error', 'err');
+    btn.disabled = false; btn.textContent = 'Delete';
+  }}
+}}
+
+function filterTracks(q) {{
+  q = q.toLowerCase().trim();
+  const rows = document.querySelectorAll('#trackList .track-row');
+  let visible = 0;
+  rows.forEach(row => {{
+    const text = row.querySelector('.track-title')?.textContent.toLowerCase() + ' ' +
+                 row.querySelector('.track-sub')?.textContent.toLowerCase();
+    const show = !q || text.includes(q);
+    row.style.display = show ? 'flex' : 'none';
+    if (show) visible++;
+  }});
+  const fc = document.getElementById('filteredCount');
+  if (fc) fc.textContent = q ? '(' + visible + ' results)' : '';
+}}
+</script>
+</body>
+</html>"""
+
+
 # ADMIN DASHBOARD — /admin?pw=YOUR_PASSWORD
 # ============================================================
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'hepozy2024')
@@ -2070,7 +2388,7 @@ a.btn{{display:inline-flex;align-items:center;gap:6px;background:#7c6aff;color:#
 </style>
 </head><body>
 <h1>📊 Hepozy Admin</h1>
-<div class="sub">Real-time site stats &nbsp;·&nbsp; <a href="/admin?pw={pw}" style="color:#7c6aff;">🔄 Refresh</a></div>
+<div class="sub">Real-time site stats &nbsp;·&nbsp; <a href="/admin?pw={pw}" style="color:#7c6aff;">🔄 Refresh</a> &nbsp;·&nbsp; <a href="/music" style="color:#7c6aff;">🎵 Music Library</a></div>
 
 <div class="grid">
   <div class="card"><div class="val c1">{total_users}</div><div class="lbl">Total Users</div></div>
