@@ -172,6 +172,8 @@ class Story(db.Model):
     audio_url = db.Column(db.String(500), default='')
     audio_name = db.Column(db.String(200), default='')
     privacy = db.Column(db.String(20), default='friends')
+    trim_start = db.Column(db.Float, default=0.0)      # video trim start (seconds)
+    trim_end = db.Column(db.Float, default=None, nullable=True)  # video trim end (seconds, None = full)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at = db.Column(db.DateTime)
     user = db.relationship('User', backref='stories')
@@ -1091,13 +1093,16 @@ def create_story():
     audio_name = data.get('audio_name', '')
     privacy = data.get('privacy', 'friends')
     custom_users = data.get('custom_users', [])
+    trim_start = float(data.get('trim_start', 0) or 0)
+    trim_end_raw = data.get('trim_end', None)
+    trim_end = float(trim_end_raw) if trim_end_raw is not None else None
     if not content and not media_url:
         return jsonify({'success': False, 'error': 'Content or media required'}), 400
     try:
         story = Story(
             user_id=user_id, content=content, media_url=media_url,
             media_type=media_type, audio_url=audio_url, audio_name=audio_name,
-            privacy=privacy,
+            privacy=privacy, trim_start=trim_start, trim_end=trim_end,
             expires_at=datetime.now(timezone.utc) + timedelta(hours=24)
         )
         db.session.add(story)
@@ -1158,7 +1163,7 @@ def get_friends_stories():
             stories_by_user[friend_id] = {
                 'user_id': friend_id, 'username': user.username, 'avatar_url': user.avatar_url,
                 'has_unviewed': unviewed,
-                'stories': [{'id': s.id, 'content': s.content, 'media_url': s.media_url, 'media_type': s.media_type, 'audio_url': getattr(s,'audio_url',''), 'audio_name': getattr(s,'audio_name',''), 'created_at': s.created_at.isoformat(), 'expires_at': s.expires_at.isoformat(), 'is_own': s.user_id == user_id, 'username': user.username} for s in visible_stories]
+                'stories': [{'id': s.id, 'content': s.content, 'media_url': s.media_url, 'media_type': s.media_type, 'audio_url': getattr(s,'audio_url',''), 'audio_name': getattr(s,'audio_name',''), 'trim_start': getattr(s,'trim_start',0.0) or 0.0, 'trim_end': getattr(s,'trim_end',None), 'created_at': s.created_at.isoformat(), 'expires_at': s.expires_at.isoformat(), 'is_own': s.user_id == user_id, 'username': user.username} for s in visible_stories]
             }
     return jsonify({'success': True, 'stories': list(stories_by_user.values())})
 
