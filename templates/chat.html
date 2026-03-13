@@ -283,7 +283,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* IN-APP NOTIFICATION BUBBLE — slides in from top */
 .notif-stack{
   position:fixed;top:12px;right:12px;
-  z-index:99999;  /* always on top of everything */
+  z-index:99999;
   display:flex;flex-direction:column;gap:8px;
   pointer-events:none;
   width:min(320px, calc(100vw - 24px));
@@ -293,35 +293,123 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   border:1px solid var(--bdr);
   border-left:3.5px solid var(--brand);
   border-radius:14px;
-  padding:11px 13px;
-  display:flex;align-items:center;gap:11px;
+  padding:10px 11px;
+  display:flex;align-items:center;gap:10px;
   box-shadow:0 8px 32px rgba(0,0,0,.28);
   pointer-events:auto;cursor:pointer;
   opacity:0;
   transform:translateX(110%);
   transition:opacity .22s ease, transform .28s cubic-bezier(.34,1.1,.64,1);
   width:100%;
+  position:relative;
 }
 .notif-bubble.show{opacity:1;transform:translateX(0);}
 .notif-bubble.hide{opacity:0;transform:translateX(110%);}
 .notif-av{
-  width:40px;height:40px;border-radius:12px;
+  width:38px;height:38px;border-radius:10px;
   background:var(--brand);color:#fff;
-  font-size:16px;font-weight:700;
+  font-size:15px;font-weight:700;
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;
 }
 .notif-body{flex:1;min-width:0;}
-.notif-name{font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notif-name{
+  font-size:13px;font-weight:700;color:var(--brand);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  cursor:pointer;display:inline-block;max-width:100%;
+}
+.notif-name:hover{text-decoration:underline;}
 .notif-text{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:2px;}
-.notif-close{
-  width:20px;height:20px;border-radius:50%;border:none;
-  background:var(--hov);color:var(--mute);
-  font-size:12px;line-height:1;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;pointer-events:auto;
+/* 3-dot menu button */
+.notif-menu-btn{
+  width:28px;height:28px;border-radius:8px;border:none;
+  background:transparent;color:var(--mute);
+  font-size:16px;font-weight:900;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;pointer-events:auto;letter-spacing:1px;
+  transition:background .15s;
 }
+.notif-menu-btn:hover{background:var(--hov);}
+/* Delete/back action row (shown on tap of ⋮) */
+.notif-actions{
+  display:none;position:absolute;right:8px;top:100%;margin-top:4px;
+  background:var(--card);border:1px solid var(--bdr);border-radius:10px;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;overflow:hidden;min-width:120px;
+}
+.notif-actions.show{display:block;}
+.notif-act-btn{
+  display:flex;align-items:center;gap:8px;
+  width:100%;padding:10px 14px;border:none;background:transparent;
+  color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;text-align:left;
+}
+.notif-act-btn:hover{background:var(--hov);}
+.notif-act-btn.del{color:#ef4444;}
+/* Persistent notification panel */
+.notif-panel-ov{
+  display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.4);
+  backdrop-filter:blur(2px);
+}
+.notif-panel-ov.show{display:block;}
+.notif-panel{
+  position:fixed;top:0;right:0;width:min(360px,100vw);height:100%;height:100dvh;
+  background:var(--bg);border-left:1px solid var(--bdr);
+  display:flex;flex-direction:column;z-index:9001;
+  box-shadow:-8px 0 32px rgba(0,0,0,.3);
+  overscroll-behavior:contain;
+}
+@media(max-width:480px){
+  .notif-panel{width:100vw;border-left:none;}
+}
+.notif-panel-hdr{
+  padding:16px 16px 12px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--bdr);flex-shrink:0;
+}
+.notif-panel-hdr h2{font-size:16px;font-weight:800;flex:1;color:var(--txt);}
+.notif-panel-body{flex:1;overflow-y:auto;padding:8px 10px 16px;}
+.notif-pitem{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 10px;border-radius:12px;
+  border:1px solid var(--bdr);background:var(--card);
+  margin-bottom:6px;position:relative;cursor:pointer;
+}
+.notif-pitem.unread{border-left:3px solid var(--brand);}
+.notif-pitem-av{
+  width:36px;height:36px;border-radius:9px;
+  background:var(--brand);color:#fff;
+  font-size:14px;font-weight:700;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.notif-pitem-body{flex:1;min-width:0;}
+.notif-pitem-name{
+  font-size:13px;font-weight:700;color:var(--brand);
+  cursor:pointer;display:inline;
+}
+.notif-pitem-name:hover{text-decoration:underline;}
+.notif-pitem-text{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4;}
+.notif-pitem-time{font-size:10px;color:var(--mute);margin-top:4px;}
+.notif-pitem-menu{
+  width:28px;height:28px;border:none;background:transparent;
+  color:var(--mute);font-size:15px;font-weight:900;cursor:pointer;
+  border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  letter-spacing:1px;
+}
+.notif-pitem-menu:hover{background:var(--hov);}
+.notif-pitem-actions{
+  display:none;position:absolute;right:8px;top:36px;
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.25);
+  z-index:20;min-width:120px;overflow:hidden;
+}
+.notif-pitem-actions.show{display:block;}
+.notif-pitem-act{
+  display:flex;align-items:center;gap:8px;
+  width:100%;padding:10px 14px;border:none;background:transparent;
+  color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;
+}
+.notif-pitem-act:hover{background:var(--hov);}
+.notif-pitem-act.del{color:#ef4444;}
+.np-empty{text-align:center;padding:48px 20px;color:var(--mute);font-size:14px;}
 /* Context Menu */
 /* ── LONG-PRESS MESSAGE SHEET ── */
 .msg-sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;backdrop-filter:blur(2px);}
@@ -1328,7 +1416,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="clp-header">
     <div class="clp-title"><a href="/" onclick="location.reload();return false;" title="Refresh" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--txt);"><img src="/logo" alt="Hepozy" style="width:32px;height:32px;object-fit:cover;border-radius:50%;cursor:pointer;" onerror="this.style.display='none'"><span>Hepozy</span></a></div>
     <div class="clp-btns">
-      <button class="ib" style="position:relative;" onclick="toggleP('rqPanelClp')" title="Requests">🔔<span class="nbadge hidden" id="rqBadgeClp">0</span></button>
+      <button class="ib" style="position:relative;" onclick="openNotifPanel()" title="Notifications">🔔<span class="nbadge hidden" id="rqBadgeClp">0</span></button>
       <button class="new-group-btn" onclick="openCreateGroup()" title="New Group" style="width:30px;height:30px;">👥</button>
       <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
     </div>
@@ -1407,7 +1495,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="sh-top">
       <div class="brand"><a href="/" onclick="location.reload();return false;" title="Refresh"><img src="/logo" alt="Hepozy Logo" style="width:40px;height:40px;object-fit:cover;border-radius:50%;cursor:pointer;transition:opacity .15s;" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'"></a></div>
       <div class="hbtns">
-        <button class="ib" id="rqBtn" onclick="toggleP('rqPanel')" title="Requests">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
+        <button class="ib" id="rqBtn" onclick="openNotifPanel()" title="Notifications">🔔<span class="nbadge hidden" id="rqBadge">0</span></button>
         <button class="new-group-btn" onclick="openCreateGroup()" title="New Group">👥</button>
         <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
       </div>
@@ -1996,6 +2084,20 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 <div class="tstack" id="tstack"></div>
 <div class="notif-stack" id="notifStack"></div>
+
+<!-- Persistent Notification Panel -->
+<div class="notif-panel-ov" id="notifPanelOv" onclick="closeNotifPanel()"></div>
+<div class="notif-panel" id="notifPanel" style="transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
+  <div class="notif-panel-hdr">
+    <div style="width:36px;height:36px;border-radius:10px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;">🔔</div>
+    <h2>Notifications</h2>
+    <button onclick="clearAllNotifs()" style="background:transparent;border:none;color:var(--mute);font-size:12px;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:8px;" title="Clear all">Clear all</button>
+    <button onclick="closeNotifPanel()" style="background:var(--hov);border:none;color:var(--txt);width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+  </div>
+  <div class="notif-panel-body" id="notifPanelBody">
+    <div class="np-empty" id="notifPanelEmpty">🔔<br>No notifications yet</div>
+  </div>
+</div>
 <!-- Blocklist Modal -->
 <div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
 <div class="sdraw" id="blocklistDraw">
@@ -2130,10 +2232,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div id="SC_p0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:28px;">
     <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:.3px;">Create Story</div>
 
-    <!-- Photo/Video gallery (any length) -->
-    <button class="sc-type-btn" onclick="scChoose('photo')">
+    <!-- Photo from gallery -->
+    <button class="sc-type-btn" onclick="document.getElementById('SC_photoInput').click()">
       <span style="font-size:30px;">🖼️</span>
-      <span>Photo / Video</span>
+      <span>Photo</span>
+    </button>
+
+    <!-- Video from gallery — separate input so mobile shows video files -->
+    <button class="sc-type-btn" onclick="document.getElementById('SC_videoInput').click()">
+      <span style="font-size:30px;">🎬</span>
+      <span>Video</span>
     </button>
 
     <!-- Take Photo with camera -->
@@ -2520,7 +2628,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 
 <!-- Hidden inputs for story creator -->
-<input type="file" id="SC_galleryInput" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
+<!-- SC_galleryInput kept for compat (camera snap etc.) -->
+<input type="file" id="SC_galleryInput" accept="image/*,video/*,video/mp4,video/quicktime,video/x-m4v,video/webm,video/3gpp" style="display:none;" onchange="scGalleryPicked(this)">
+<!-- Dedicated photo picker — only images, ensures gallery opens on all phones -->
+<input type="file" id="SC_photoInput" accept="image/*" style="display:none;" onchange="scGalleryPicked(this)">
+<!-- Dedicated video picker — explicit video MIME types, reliable on iOS & Android -->
+<input type="file" id="SC_videoInput" accept="video/*,video/mp4,video/quicktime,video/x-m4v,video/webm,video/3gpp,video/x-matroska" style="display:none;" onchange="scGalleryPicked(this)">
 <input type="file" id="SC_audioInput"   accept="audio/*"         style="display:none;" onchange="scAudioPicked(this)">
 
 <!-- Music Upload Modal (used from song page) -->
@@ -2563,7 +2676,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 
 <!-- Compat shims -->
-<input type="file" id="storyMediaFile" accept="image/*,video/*" style="display:none;" onchange="scGalleryPicked(this)">
+<input type="file" id="storyMediaFile" accept="image/*,video/*,video/mp4,video/quicktime,video/x-m4v,video/webm,video/3gpp" style="display:none;" onchange="scGalleryPicked(this)">
 <input type="file" id="storyAudioFile" accept="audio/*"         style="display:none;" onchange="scAudioPicked(this)">
 <input type="text" id="storyTextContent" style="display:none;">
 <select id="storyPrivacy" style="display:none;"><option value="friends">Friends</option><option value="public">Public</option><option value="custom">Custom</option></select>
@@ -2681,7 +2794,7 @@ function connectSocket(){
       // Always notify for messages from others — new friends, existing friends, groups
       if(msg.sender_id!==ME_ID){
         if(!isDNDActive()){
-          showInAppNotif(msg.sender_username, preview, msg.chat_id);
+          showInAppNotif(msg.sender_username, preview, msg.chat_id, msg.sender_id);
           if(prefs.sound) playChatNotifSound(msg.chat_id);
         }
       }
@@ -2715,26 +2828,26 @@ function connectSocket(){
   socket.on('typing_stop',hideTyping);
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
   socket.on('friend_request_accepted',(data)=>{
-    // The person who sent the request gets notified their request was accepted
-    showInAppNotif(data.username, '🎉 accepted your friend request! You are now friends.', null);
-    if(prefs.sound) beep();
+    // Sender of the request: "{name} accepted your friend request"
+    showInAppNotif(data.username, '🎉 accepted your friend request! Say hi to your new friend '+data.username+' 👋', null, data.user_id);
     loadFriends();
     loadRequests();
   });
-  // Refresh when you accept someone — no notification needed
+  // Acceptor: "Say hi to your new friend {name}"
   socket.on('new_friend_added',(data)=>{
+    showInAppNotif(data.username, '👋 Say hi to your new friend '+data.username+'!', null, data.user_id);
     loadFriends();
   });
   socket.on('friend_request_received',(data)=>{
     // New friend request arrived — update badge + list instantly, no refresh needed
     loadRequests();
-    showInAppNotif(data.username, '👋 sent you a friend request', null);
+    showInAppNotif(data.username, '👋 sent you a friend request', null, data.from_user_id);
     if(prefs.sound) beep();
   });
   socket.on('new_story',(data)=>{
     // A friend just posted a story — reload the story bar instantly
     loadStories();
-    showInAppNotif(data.username, '📖 posted a new story', null);
+    showInAppNotif(data.username, '📖 posted a new story', null, data.user_id);
   });
   // Friend request rejected — update your sent requests list quietly
   socket.on('friend_request_rejected',(data)=>{
@@ -2746,7 +2859,7 @@ function connectSocket(){
   });
   // Someone viewed YOUR story — update view count live
   socket.on('story_viewed',(data)=>{
-    showInAppNotif(data.viewer_username, '👁️ viewed your story', null);
+    showInAppNotif(data.viewer_username, '👁️ viewed your story', null, data.viewer_id);
     // If story viewer section is currently open, refresh it
     const viewersEl = document.getElementById('storyViewers');
     if(viewersEl && viewersEl.innerHTML !== '') loadStoryViewers(data.story_id);
@@ -2769,7 +2882,7 @@ function connectSocket(){
     if(data.recording) toast('⏺ This call is being recorded by the other person','info');
   });
   socket.on('missed_call_notify',(data)=>{
-    showInAppNotif(data.caller_name,'📵 Missed call',null);
+    showInAppNotif(data.caller_name,'📵 Missed call',null,data.caller_id);
     showNotification(data.caller_name,'📵 Missed call');
     toast('📵 Missed call from '+data.caller_name,'err');
     if(prefs.sound)beep();
@@ -4822,13 +4935,21 @@ function handleMentionInput(e) {
   const query = val.slice(atPos + 1, pos).toLowerCase();
 
   // Only show for group chats
-  if (!currentGroupId) { closeMentionDropdown(); return; }
+  // Build candidate list: group members OR the friend in a DM
+  let candidates = [];
+  if (currentGroupId) {
+    const g = groups.find(x => x.id === currentGroupId);
+    if (g && g._members) {
+      candidates = g._members.filter(m => m.id !== ME_ID);
+    }
+  } else if (currentFriendId) {
+    // DM — suggest the person you're chatting with
+    const f = friends.find(x => x.id === currentFriendId);
+    if (f) candidates = [{ id: f.id, username: f.username }];
+  }
 
-  const g = groups.find(x => x.id === currentGroupId);
-  if (!g || !g._members) { closeMentionDropdown(); return; }
-
-  _mentionList = g._members
-    .filter(m => m.id !== ME_ID && m.username.toLowerCase().startsWith(query))
+  _mentionList = candidates
+    .filter(m => m.username.toLowerCase().startsWith(query))
     .slice(0, 6);
 
   if (!_mentionList.length) { closeMentionDropdown(); return; }
@@ -4838,7 +4959,11 @@ function handleMentionInput(e) {
   _mentionIdx    = 0;
 
   const dd = document.getElementById('mentionDropdown');
-  dd.innerHTML = _mentionList.map((m, i) => `
+  const isDM = !currentGroupId && !!currentFriendId;
+  dd.innerHTML = (isDM && _mentionList.length
+    ? `<div style="padding:4px 12px 2px;font-size:10px;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Tag</div>`
+    : '') +
+  _mentionList.map((m, i) => `
     <div class="mention-item${i===0?' active':''}" data-idx="${i}" onclick="insertMention(${i})">
       <div class="mav">${m.username[0].toUpperCase()}</div>
       <span>@${esc(m.username)}</span>
@@ -4910,11 +5035,27 @@ async function _cacheGroupMembers(gid) {
 // Render @mentions as highlighted chips in message bubbles
 function renderMentions(text) {
   if (!text || !text.includes('@')) return esc(text);
-  // Replace @username with chip — check against group members + current user
   return esc(text).replace(/@(\w+)/g, (match, name) => {
     const isMe = name.toLowerCase() === ME_NAME.toLowerCase();
-    return `<span class="mention${isMe?' me':''}">${match}</span>`;
+    // Find the user's id from friends or group members
+    let uid = '';
+    const f = friends.find(x => x.username.toLowerCase() === name.toLowerCase());
+    if (f) uid = f.id;
+    else if (currentGroupId) {
+      const g = groups.find(x => x.id === currentGroupId);
+      if (g && g._members) {
+        const m = g._members.find(x => x.username.toLowerCase() === name.toLowerCase());
+        if (m) uid = m.id;
+      }
+    }
+    return `<span class="mention${isMe?' me':''}" data-mention-uid="${uid}" data-mention-name="${esc(name)}" onclick="mentionTapProfile(this)" style="cursor:pointer;">${match}</span>`;
   });
+}
+
+function mentionTapProfile(el){
+  const uid = parseInt(el.dataset.mentionUid) || null;
+  const name = el.dataset.mentionName || '';
+  _openUserProfile(uid, name);
 }
 function showTyping(name){document.getElementById('tytxt').textContent=`${name} is typing`;document.getElementById('tybar').style.display='flex';}
 function hideTyping(){document.getElementById('tybar').style.display='none';}
@@ -5381,87 +5522,294 @@ ${'─'.repeat(50)}
 setTimeout(checkBirthdayToday, 1000);
 
 
-// ── In-app notification bubble (slides in from top-right) ──
-let _notifTimer={};
-function showInAppNotif(name, text, chatId){
+// ═══════════════════════════════════════════════════════
+// NOTIFICATION SYSTEM
+// - Toast bubbles slide in top-right, auto-dismiss after 5s
+// - Every notification also saved to persistent panel
+// - Panel opened via 🔔 bell, notifications never disappear
+//   unless user explicitly deletes them
+// - Tapping a name opens that user's profile
+// ═══════════════════════════════════════════════════════
+let _notifTimer = {};
+let _persistNotifs = JSON.parse(localStorage.getItem('hpz_notifs') || '[]');
+let _notifUnread = 0;
+
+function _saveNotifs(){
+  // Keep max 100
+  if(_persistNotifs.length > 100) _persistNotifs = _persistNotifs.slice(-100);
+  localStorage.setItem('hpz_notifs', JSON.stringify(_persistNotifs));
+}
+
+function nowNotifTime(){
+  const d=new Date(),h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');
+  return (h%12||12)+':'+m+(h>=12?' PM':' AM');
+}
+
+// ── Main entry: show toast + save to persistent panel ──
+function showInAppNotif(name, text, chatId, userId){
+  // 1. Save to persistent store
+  const notif = {
+    id: Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    name: name||'',
+    text: text||'',
+    chatId: chatId||null,
+    userId: userId||null,
+    time: nowNotifTime(),
+    ts: Date.now(),
+    read: false,
+  };
+  _persistNotifs.unshift(notif);
+  _saveNotifs();
+  _notifUnread++;
+  _updateNotifBadge();
+  _renderNotifPanel();
+
+  // 2. Show toast bubble
   const stack = document.getElementById('notifStack');
+  if(!stack) return;
   const key = chatId || ('__'+name);
 
-  // Deduplicate: if same key already showing, update text+time and re-bump timer
+  // Deduplicate: if same key already toasting, update text+time
   const existing = stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
   if(existing){
     existing.querySelector('.notif-text').textContent = text;
-    existing.querySelector('.notif-time').textContent = nowNotifTime();
+    existing.querySelector('.notif-time').textContent = notif.time;
     clearTimeout(_notifTimer[key]);
-    _notifTimer[key] = setTimeout(()=>dismissNotif(existing), 5000);
+    _notifTimer[key] = setTimeout(()=>_dismissToast(existing), 5000);
     return;
   }
 
   const el = document.createElement('div');
   el.className = 'notif-bubble';
   el.setAttribute('data-notif-key', key);
+  el.setAttribute('data-notif-id', notif.id);
   el.innerHTML = `
     <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
     <div class="notif-body">
-      <div class="notif-name">${esc(name)}</div>
+      <div class="notif-name" data-uid="${userId||''}">${esc(name)}</div>
       <div class="notif-text">${esc(text)}</div>
     </div>
-    <div class="notif-time">${nowNotifTime()}</div>
-    <button class="notif-close" onclick="event.stopPropagation();dismissNotif(this.closest('.notif-bubble'));">✕</button>
+    <div class="notif-time">${notif.time}</div>
+    <button class="notif-menu-btn" title="Options">⋮</button>
+    <div class="notif-actions">
+      <button class="notif-act-btn del">🗑️ Delete</button>
+      <button class="notif-act-btn">← Back</button>
+    </div>
   `;
 
-  // Tap bubble → open chat if chatId, else open notifications/requests panel
-  el.addEventListener('click', ()=>{
-    dismissNotif(el);
-    if(chatId){
-      // Message or group notification — open that chat
-      if(chatId.startsWith('group-')){
-        const g = groups.find(x=>x.chat_id===chatId);
-        if(g) openGroupChat(g);
-      } else {
-        const f = friends.find(fr=>{
-          const cid = fr.chat_id || [Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
-          return cid === chatId;
-        });
-        if(f) openChat(f.id, f.username, f.chat_id);
-      }
-    } else {
-      // Friend request / social notification — open the bell panel
-      const rqBtn = document.getElementById('rqBtn') || document.getElementById('rqBtnClp');
-      if(rqBtn) rqBtn.click();
-    }
+  // Name click → open profile
+  el.querySelector('.notif-name').addEventListener('click', ev=>{
+    ev.stopPropagation();
+    const uid = ev.currentTarget.dataset.uid;
+    if(uid) _openUserProfile(parseInt(uid), name);
+    else _openUserProfile(null, name);
+  });
+
+  // ⋮ menu
+  const menuBtn = el.querySelector('.notif-menu-btn');
+  const actions  = el.querySelector('.notif-actions');
+  menuBtn.addEventListener('click', ev=>{
+    ev.stopPropagation();
+    // Close all other open action menus
+    document.querySelectorAll('.notif-actions.show').forEach(a=>{
+      if(a!==actions) a.classList.remove('show');
+    });
+    actions.classList.toggle('show');
+  });
+  // Delete button
+  el.querySelector('.notif-act-btn.del').addEventListener('click', ev=>{
+    ev.stopPropagation();
+    _deleteNotifById(notif.id);
+    _dismissToast(el);
+  });
+  // Back button
+  el.querySelectorAll('.notif-act-btn')[1].addEventListener('click', ev=>{
+    ev.stopPropagation();
+    actions.classList.remove('show');
+  });
+
+  // Tap bubble body → open chat
+  el.addEventListener('click', ev=>{
+    if(ev.target.closest('.notif-menu-btn')||ev.target.closest('.notif-actions')||ev.target.closest('.notif-name')) return;
+    _dismissToast(el);
+    _notifNavigate(chatId);
   });
 
   stack.appendChild(el);
-  // Force reflow then animate in from right
   requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
 
-  // OS notification (always try, not just when hidden)
-  if('Notification' in window && Notification.permission === 'granted'){
+  // OS notification
+  if('Notification' in window && Notification.permission==='granted'){
     try{
-      const n = new Notification(name, {body:text, icon:'/logo', tag:'hpz-'+key, renotify:true, silent:!prefs.sound});
-      n.onclick = ()=>{ window.focus(); n.close(); };
-      setTimeout(()=>n.close(), 6000);
+      const n=new Notification(name,{body:text,tag:'hpz-'+key,renotify:true,silent:!prefs.sound});
+      n.onclick=()=>{window.focus();n.close();};
+      setTimeout(()=>n.close(),6000);
     }catch(e){}
   }
 
-  // Auto-dismiss after 5s
-  _notifTimer[key] = setTimeout(()=>dismissNotif(el), 5000);
+  if(prefs.sound) beep();
+
+  // Auto-dismiss toast after 5s (NOT removed from panel)
+  _notifTimer[key] = setTimeout(()=>_dismissToast(el), 5000);
 }
-function dismissNotif(el){
-  if(!el||!el.parentNode)return;
+
+function _dismissToast(el){
+  if(!el||!el.parentNode) return;
   el.classList.add('hide');
   el.classList.remove('show');
-  setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el);},280);
+  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 280);
 }
-function nowNotifTime(){
-  const d=new Date(),h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');
-  return (h%12||12)+':'+m+(h>=12?' PM':' AM');
+
+function _notifNavigate(chatId){
+  if(chatId){
+    if(chatId.startsWith('group-')){
+      const g=groups.find(x=>x.chat_id===chatId);
+      if(g) openGroupChat(g);
+    } else {
+      const f=friends.find(fr=>{
+        const cid=fr.chat_id||[Math.min(fr.id,ME_ID),Math.max(fr.id,ME_ID)].join('-');
+        return cid===chatId;
+      });
+      if(f) openChat(f.id,f.username,f.chat_id);
+    }
+  } else {
+    openNotifPanel();
+  }
 }
-// Keep legacy showNotification for missed calls etc.
-function showNotification(title,body){
-  showInAppNotif(title,body,null);
+
+function _deleteNotifById(id){
+  _persistNotifs = _persistNotifs.filter(n=>n.id!==id);
+  _saveNotifs();
+  _renderNotifPanel();
 }
+
+function _updateNotifBadge(){
+  const count = _persistNotifs.filter(n=>!n.read).length;
+  ['rqBadge','rqBadgeClp'].forEach(bid=>{
+    const b=document.getElementById(bid);
+    if(!b) return;
+    if(count>0){ b.textContent=count>99?'99+':count; b.classList.remove('hidden'); }
+    else b.classList.add('hidden');
+  });
+}
+
+function _renderNotifPanel(){
+  const body = document.getElementById('notifPanelBody');
+  const empty = document.getElementById('notifPanelEmpty');
+  if(!body) return;
+  // Remove all existing items (keep empty message)
+  body.querySelectorAll('.notif-pitem').forEach(el=>el.remove());
+  if(!_persistNotifs.length){
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  _persistNotifs.forEach(n=>{
+    const div=document.createElement('div');
+    div.className='notif-pitem'+(n.read?'':' unread');
+    div.setAttribute('data-nid',n.id);
+    div.innerHTML=`
+      <div class="notif-pitem-av">${(n.name||'?')[0].toUpperCase()}</div>
+      <div class="notif-pitem-body">
+        <span class="notif-pitem-name" data-uid="${n.userId||''}">${esc(n.name)}</span>
+        <div class="notif-pitem-text">${esc(n.text)}</div>
+        <div class="notif-pitem-time">${n.time||''}</div>
+      </div>
+      <button class="notif-pitem-menu" title="Options">⋮</button>
+      <div class="notif-pitem-actions">
+        <button class="notif-pitem-act del">🗑️ Delete</button>
+        <button class="notif-pitem-act">← Back</button>
+      </div>
+    `;
+    // Name → profile
+    div.querySelector('.notif-pitem-name').addEventListener('click', ev=>{
+      ev.stopPropagation();
+      const uid=parseInt(ev.currentTarget.dataset.uid)||null;
+      _openUserProfile(uid, n.name);
+    });
+    // ⋮ menu
+    const mb=div.querySelector('.notif-pitem-menu');
+    const ac=div.querySelector('.notif-pitem-actions');
+    mb.addEventListener('click', ev=>{
+      ev.stopPropagation();
+      document.querySelectorAll('.notif-pitem-actions.show').forEach(a=>{if(a!==ac)a.classList.remove('show');});
+      ac.classList.toggle('show');
+    });
+    // Delete
+    div.querySelector('.notif-pitem-act.del').addEventListener('click', ev=>{
+      ev.stopPropagation();
+      _deleteNotifById(n.id);
+    });
+    // Back
+    div.querySelectorAll('.notif-pitem-act')[1].addEventListener('click', ev=>{
+      ev.stopPropagation();
+      ac.classList.remove('show');
+    });
+    // Tap item → navigate
+    div.addEventListener('click', ev=>{
+      if(ev.target.closest('.notif-pitem-menu')||ev.target.closest('.notif-pitem-actions')||ev.target.closest('.notif-pitem-name')) return;
+      n.read=true; _saveNotifs(); div.classList.remove('unread'); _updateNotifBadge();
+      closeNotifPanel();
+      _notifNavigate(n.chatId);
+    });
+    body.appendChild(div);
+  });
+}
+
+function openNotifPanel(){
+  const ov=document.getElementById('notifPanelOv');
+  const pn=document.getElementById('notifPanel');
+  if(!ov||!pn) return;
+  ov.classList.add('show');
+  pn.style.transform='translateX(0)';
+  // Mark all as read
+  _persistNotifs.forEach(n=>n.read=true);
+  _saveNotifs();
+  _updateNotifBadge();
+  _renderNotifPanel();
+  // Also close any other open panels
+  document.querySelectorAll('.spanel.open').forEach(p=>p.classList.remove('open'));
+}
+function closeNotifPanel(){
+  const ov=document.getElementById('notifPanelOv');
+  const pn=document.getElementById('notifPanel');
+  if(ov) ov.classList.remove('show');
+  if(pn) pn.style.transform='translateX(100%)';
+}
+function clearAllNotifs(){
+  _persistNotifs=[];
+  _saveNotifs();
+  _updateNotifBadge();
+  _renderNotifPanel();
+}
+
+// Open user profile — find them in friends list or show a minimal profile card
+function _openUserProfile(userId, username){
+  closeNotifPanel();
+  // Try to find in friends
+  const f = friends.find(fr=>fr.id===userId || fr.username===username);
+  if(f){
+    openChat(f.id, f.username, f.chat_id||([Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-')));
+    setTimeout(()=>showFriendProfile(), 200);
+    return;
+  }
+  // Fallback: open friend requests panel to find them
+  const rqBtn=document.getElementById('rqBtn');
+  if(rqBtn) rqBtn.click();
+}
+
+// Keep legacy alias
+function showNotification(title,body){ showInAppNotif(title,body,null,null); }
+
+// Init: render panel with saved notifications immediately + on DOMContentLoaded
+(function _initNotifs(){
+  _updateNotifBadge();
+  _renderNotifPanel();
+})();
+document.addEventListener('DOMContentLoaded',()=>{
+  _updateNotifBadge();
+  _renderNotifPanel();
+});
 const unreadCounts={};
 function updateUnreadBadge(msg){
   if(msg.sender_id===ME_ID)return;
