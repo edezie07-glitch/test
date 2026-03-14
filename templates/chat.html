@@ -1155,6 +1155,26 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   font-size:12px;color:rgba(255,255,255,.55);
   width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;
 }
+/* Inline range sliders inside the video editor (SC_p5) */
+#SC_p5 input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  flex:1;height:20px;background:transparent;cursor:pointer;outline:none;
+}
+#SC_p5 input[type=range]::-webkit-slider-runnable-track{
+  height:4px;border-radius:4px;background:rgba(255,255,255,.25);
+}
+#SC_p5 input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px;height:20px;border-radius:50%;margin-top:-8px;
+  background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.5);
+}
+#SC_p5 input[type=range]::-moz-range-track{
+  height:4px;border-radius:4px;background:rgba(255,255,255,.25);
+}
+#SC_p5 input[type=range]::-moz-range-thumb{
+  width:20px;height:20px;border-radius:50%;border:none;
+  background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.5);
+}
 
 
 /* ── Mood Warning Sheet ─────────────────────────────────────── */
@@ -2678,7 +2698,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
     <!-- Video preview -->
     <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;">
-      <video id="SC_trimVid" style="max-width:100%;max-height:100%;object-fit:contain;" playsinline muted></video>
+      <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline></video>
       <!-- Time display -->
       <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
       <!-- Pause/Play button overlay -->
@@ -2716,7 +2736,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
 
       <!-- Horizontally scrollable adjustments -->
-      <div style="overflow-x:auto;padding:8px 16px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+      <div style="overflow-x:auto;overflow-y:hidden;padding:8px 16px 14px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">
         <div style="display:flex;gap:14px;min-width:max-content;align-items:flex-start;">
 
           <!-- Volume / Pitch Height -->
@@ -4045,40 +4065,51 @@ let _isMobileDevice = false;       // set in _initCameraCapabilities
 let _cameraDeviceIds = [];         // [frontId, backId] discovered via enumerateDevices
 
 async function _initCameraCapabilities() {
-  // Check touch capability — PCs with touch screens are excluded by also checking
-  // navigator.maxTouchPoints > 1 AND screen width, but the safest signal on mobile
-  // is finding a camera whose label/facingMode says "back" / "environment".
+  // The flip button must ONLY appear on phones/tablets that have a real back camera.
+  // Laptops/PCs never have a back camera even if they have 2 webcams (e.g. IR camera).
+  // Detection rule: a back camera MUST be explicitly identified by its label keywords
+  // ("back", "rear", "environment"). If no camera label contains those words we treat
+  // the device as a desktop/laptop and never show the flip button.
   _isMobileDevice = false;
   _cameraDeviceIds = [];
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const cams = devices.filter(d => d.kind === 'videoinput');
-    if (cams.length < 2) { _isMobileDevice = false; return; }
+    if (cams.length === 0) return;
 
-    // Classify each camera as front or back by label keywords
     let frontId = null, backId = null;
     for (const cam of cams) {
       const lbl = cam.label.toLowerCase();
-      const isBack = lbl.includes('back') || lbl.includes('rear') ||
-                     lbl.includes('environment') || lbl.includes('0,') ||
-                     /camera\s*[0-9]/.test(lbl) && !lbl.includes('front');
-      const isFront = lbl.includes('front') || lbl.includes('user') ||
-                      lbl.includes('facing') || lbl.includes('selfie');
-      if (isBack && !backId)   backId  = cam.deviceId;
+      // Back camera keywords — these ONLY appear on phones/tablets
+      const isBack = lbl.includes('back')        ||
+                     lbl.includes('rear')        ||
+                     lbl.includes('environment') ||
+                     lbl.includes('camera2 0')   ||
+                     lbl.includes('camera 0');
+      // Front camera keywords
+      const isFront = lbl.includes('front')   ||
+                      lbl.includes('user')    ||
+                      lbl.includes('selfie')  ||
+                      lbl.includes('facing')  ||
+                      lbl.includes('camera2 1') ||
+                      lbl.includes('camera 1');
+      if (isBack  && !backId)  backId  = cam.deviceId;
       if (isFront && !frontId) frontId = cam.deviceId;
     }
 
-    // If label detection didn't work, fallback: first cam = front, second = back
-    if (!frontId) frontId = cams[0].deviceId;
-    if (!backId)  backId  = cams[cams.length > 1 ? 1 : 0].deviceId;
-
-    // Only treat as mobile if we found two distinct cameras
-    if (frontId !== backId) {
-      _isMobileDevice = true;
-      _cameraDeviceIds = [frontId, backId];
+    // Only enable flip when a back camera was EXPLICITLY found by label.
+    // If backId is null no back camera was detected — this is a laptop/PC/monitor webcam.
+    if (backId) {
+      // Use first cam as front fallback if front label not found
+      if (!frontId) frontId = cams[0].deviceId;
+      // Make sure front and back are different devices
+      if (frontId !== backId) {
+        _isMobileDevice = true;
+        _cameraDeviceIds = [frontId, backId];
+      }
     }
+    // If backId is null → _isMobileDevice stays false → flip button stays hidden
   } catch(e) {
-    // enumerateDevices failed (e.g. desktop with no permissions yet)
     _isMobileDevice = false;
   }
 }
@@ -7720,31 +7751,42 @@ function scOpenTrimmer(){
   const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
   scPage(5);
   const vid=$('SC_trimVid');
-  vid.src=SC.mediaURL;
-  vid.onloadedmetadata=()=>{
-    const total=vid.duration;
-    // Init trim region: keep existing SC.trimStart/trimEnd or default first 30s
-    if(SC.trimEnd===null) SC.trimEnd=Math.min(total,30);
-    _trimUpdate(total);
-    vid.currentTime=SC.trimStart;
-    vid.play().catch(()=>{});
-    // Playhead updater
-    clearInterval(_trimVidRAF);
-    _trimVidRAF=setInterval(()=>{
-      if(!vid.paused){
-        if(vid.currentTime>=SC.trimEnd){ vid.currentTime=SC.trimStart; }
-        const pct=(vid.currentTime-SC.trimStart)/(SC.trimEnd-SC.trimStart)*100;
-        const ph=$('SC_trimPlayhead');
-        if(ph){
-          const barW=$('SC_trimBar').offsetWidth;
-          const lPct=SC.trimStart/total*100;
-          const rPct=SC.trimEnd/total*100;
-          const innerPct=lPct+(rPct-lPct)*pct/100;
-          ph.style.left=innerPct+'%';
+  // Clear any previous source fully before assigning new one
+  vid.pause();
+  vid.removeAttribute('src');
+  vid.load();
+  // Small delay so browser registers the cleared state
+  setTimeout(()=>{
+    vid.src = SC.mediaURL;
+    vid.muted = false;   // allow volume slider to work
+    vid.volume = 1.0;
+    vid.load();
+    vid.onloadedmetadata = ()=>{
+      const total = vid.duration;
+      if(SC.trimEnd === null) SC.trimEnd = Math.min(total, 30);
+      _trimUpdate(total);
+      vid.currentTime = SC.trimStart || 0;
+      vid.play().catch(()=>{});
+      const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
+      // Playhead updater
+      clearInterval(_trimVidRAF);
+      _trimVidRAF = setInterval(()=>{
+        if(!vid.paused){
+          if(vid.currentTime >= (SC.trimEnd||vid.duration)){
+            vid.currentTime = SC.trimStart||0;
+          }
+          const total2 = vid.duration;
+          const lPct = (SC.trimStart||0)/total2*100;
+          const rPct = (SC.trimEnd||total2)/total2*100;
+          const progress = (vid.currentTime-(SC.trimStart||0))/((SC.trimEnd||total2)-(SC.trimStart||0));
+          const innerPct = lPct + (rPct-lPct)*Math.max(0,Math.min(1,progress));
+          const ph=$('SC_trimPlayhead');
+          if(ph) ph.style.left = innerPct+'%';
         }
-      }
-    },50);
-  };
+      }, 50);
+    };
+    vid.onerror = ()=>{ toast('Could not load video for editing','err'); };
+  }, 40);
 }
 function _trimUpdate(total){
   const start=SC.trimStart, end=SC.trimEnd;
@@ -7822,7 +7864,13 @@ function scTrimDragStart(e,side){
 function scTrimStop(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
-  if(vid){ vid.pause(); vid.src=''; }
+  if(vid){
+    vid.pause();
+    vid.onloadedmetadata=null;
+    vid.onerror=null;
+    vid.removeAttribute('src');
+    vid.load();
+  }
 }
 
 // ── Pause/Play toggle ──────────────────────────────────
@@ -7878,8 +7926,12 @@ function scUpdatePitch(v){
 // ── Volume ──────────────────────────────────────────────
 function scUpdateVol(v){
   const val=parseFloat(v)/100;
-  const lbl=$('SC_volVal'); if(lbl) lbl.textContent=v+'%';
-  const vid=$('SC_trimVid'); if(vid) vid.volume=Math.min(1,val);
+  const lbl=$('SC_volVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
+  const vid=$('SC_trimVid');
+  if(vid){
+    vid.muted = (val === 0);
+    vid.volume = Math.min(1, val);
+  }
   SC.trimVolume=val;
 }
 
