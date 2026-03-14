@@ -4037,8 +4037,52 @@ function stopSignalMonitor(){
 }
 
 // ── Camera flip ──
+// ── Mobile detection: flip button only on phones/tablets ──────────────────
+// A device is "mobile" when it has touch + < 1025px screen OR has multiple cameras.
+// We detect this lazily when the call starts.
 let _currentFacing = 'user';
-// Sync _currentFacing from actual video track after getUserMedia
+let _isMobileDevice = false;       // set in _initCameraCapabilities
+let _cameraDeviceIds = [];         // [frontId, backId] discovered via enumerateDevices
+
+async function _initCameraCapabilities() {
+  // Check touch capability — PCs with touch screens are excluded by also checking
+  // navigator.maxTouchPoints > 1 AND screen width, but the safest signal on mobile
+  // is finding a camera whose label/facingMode says "back" / "environment".
+  _isMobileDevice = false;
+  _cameraDeviceIds = [];
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === 'videoinput');
+    if (cams.length < 2) { _isMobileDevice = false; return; }
+
+    // Classify each camera as front or back by label keywords
+    let frontId = null, backId = null;
+    for (const cam of cams) {
+      const lbl = cam.label.toLowerCase();
+      const isBack = lbl.includes('back') || lbl.includes('rear') ||
+                     lbl.includes('environment') || lbl.includes('0,') ||
+                     /camera\s*[0-9]/.test(lbl) && !lbl.includes('front');
+      const isFront = lbl.includes('front') || lbl.includes('user') ||
+                      lbl.includes('facing') || lbl.includes('selfie');
+      if (isBack && !backId)   backId  = cam.deviceId;
+      if (isFront && !frontId) frontId = cam.deviceId;
+    }
+
+    // If label detection didn't work, fallback: first cam = front, second = back
+    if (!frontId) frontId = cams[0].deviceId;
+    if (!backId)  backId  = cams[cams.length > 1 ? 1 : 0].deviceId;
+
+    // Only treat as mobile if we found two distinct cameras
+    if (frontId !== backId) {
+      _isMobileDevice = true;
+      _cameraDeviceIds = [frontId, backId];
+    }
+  } catch(e) {
+    // enumerateDevices failed (e.g. desktop with no permissions yet)
+    _isMobileDevice = false;
+  }
+}
+
 function _syncFacingFromStream(stream) {
   if (!stream) return;
   const track = stream.getVideoTracks()[0];
@@ -4048,7 +4092,6 @@ function _syncFacingFromStream(stream) {
     if (settings.facingMode) {
       _currentFacing = settings.facingMode;
     } else {
-      // Fallback: check track label
       const lbl = track.label.toLowerCase();
       if (lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment')) {
         _currentFacing = 'environment';
@@ -4058,60 +4101,84 @@ function _syncFacingFromStream(stream) {
     }
   } catch(e) { _currentFacing = 'user'; }
 }
-async function flipCamera(){
-  if(!cd.localStream || cd.type!=='video') return;
+
+// Show flip button only when device actually has a back camera
+function _updateFlipBtnVisibility() {
   const btn = document.getElementById('flipBtn');
-  if(btn){ btn.disabled=true; btn.style.opacity='.4'; }
-  const nextFacing = _currentFacing==='user' ? 'environment' : 'user';
-  try{
-    // Strategy: first try facingMode constraint (most reliable on mobile)
-    // then fall back to enumerateDevices to find the other camera by deviceId
+  if (!btn) return;
+  // Only show on mobile devices with multiple cameras, and only during video
+  if (_isMobileDevice && cd.localStream && cd.localStream.getVideoTracks().length > 0 && !cd.videoOff) {
+    btn.style.display = 'flex';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function flipCamera() {
+  if (!cd.localStream) return;
+  const btn = document.getElementById('flipBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.5'; }
+
+  try {
     let newStream = null;
-    try{
-      newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: nextFacing }, width:{ideal:1280}, height:{ideal:720} },
-        audio: false
-      });
-    }catch(facingErr){
-      // exact facingMode failed — try ideal
-      try{
+    const nextFacing = _currentFacing === 'user' ? 'environment' : 'user';
+
+    if (_isMobileDevice && _cameraDeviceIds.length === 2) {
+      // Use the exact deviceId of the other camera — most reliable on Android & iOS
+      const curTrack = cd.localStream.getVideoTracks()[0];
+      const curId    = curTrack ? curTrack.getSettings().deviceId : null;
+      const nextId   = _cameraDeviceIds.find(id => id !== curId) || _cameraDeviceIds[0];
+
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: nextId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch(e) {
+        // deviceId exact failed — fall back to facingMode
         newStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: nextFacing } },
           audio: false
         });
-      }catch(idealErr){
-        // Last resort: pick a different deviceId
-        const devices  = await navigator.mediaDevices.enumerateDevices();
-        const cameras  = devices.filter(d => d.kind === 'videoinput');
-        const curTrack = cd.localStream.getVideoTracks()[0];
-        const curId    = curTrack ? curTrack.getSettings().deviceId : null;
-        const other    = cameras.find(d => d.deviceId !== curId);
-        if(!other) throw new Error('No second camera found');
-        newStream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: other.deviceId } },
-          audio: false
-        });
       }
+    } else {
+      // Non-mobile or unknown — try facingMode ideal only
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: nextFacing } },
+        audio: false
+      });
     }
-    const newTrack  = newStream.getVideoTracks()[0];
-    if(!newTrack) throw new Error('No video track');
 
-    const sender = cd.pc?.getSenders().find(s=>s.track?.kind==='video');
-    if(sender) await sender.replaceTrack(newTrack);
+    const newTrack = newStream.getVideoTracks()[0];
+    if (!newTrack) throw new Error('No video track from new camera');
 
+    // Replace track in the WebRTC peer connection
+    const sender = cd.pc?.getSenders().find(s => s.track?.kind === 'video');
+    if (sender) await sender.replaceTrack(newTrack);
+
+    // Swap track in localStream
     const oldTrack = cd.localStream.getVideoTracks()[0];
-    if(oldTrack){ cd.localStream.removeTrack(oldTrack); oldTrack.stop(); }
+    if (oldTrack) { cd.localStream.removeTrack(oldTrack); oldTrack.stop(); }
     cd.localStream.addTrack(newTrack);
 
+    // Refresh local video element
     const lv = document.getElementById('localVideo');
-    if(lv){ lv.srcObject=null; await new Promise(r=>setTimeout(r,50)); lv.srcObject=cd.localStream; lv.play().catch(()=>{}); }
+    if (lv) {
+      lv.srcObject = null;
+      await new Promise(r => setTimeout(r, 50));
+      lv.srcObject = cd.localStream;
+      lv.play().catch(() => {});
+    }
 
     _currentFacing = nextFacing;
-  }catch(e){
-    console.warn('[flip]', e.name, e.message);
-    toast('Cannot switch camera', 'info');
-  }finally{
-    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+    _syncFacingFromStream(cd.localStream);
+
+  } catch(e) {
+    console.warn('[flipCamera]', e.name, e.message);
+    toast('Could not switch camera', 'info');
+  } finally {
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    _updateFlipBtnVisibility();
   }
 }
 
@@ -4230,15 +4297,15 @@ function showCallModal(name, status, isVideo){
     if(lv){ lv.style.display='block'; pipInitPos(); }
     if(vc) vc.style.display='none';
     if(vb) vb.style.display='none';
-    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex'; // always show cam toggle
-    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='flex';
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
+    _updateFlipBtnVisibility(); // only show flip on phones with back camera
   } else {
     if(rv) rv.style.display='none';
     if(lv) lv.style.display='none';
     if(vc){ vc.style.display='flex'; }
     if(vb){ vb.style.display='block'; }
-    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex'; // show in audio calls too
-    const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='none';
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
+    const fBtn=document.getElementById('flipBtn'); if(fBtn) fBtn.style.display='none'; // hidden until cam turned on
   }
 
   // Reset control buttons
@@ -4350,10 +4417,10 @@ async function toggleVideo(){
       cd.localStream.addTrack(camTrack);
       if(cd.pc) cd.pc.addTrack(camTrack, cd.localStream);
       if(lv){ lv.srcObject=cd.localStream; lv.style.display='block'; lv.play().catch(()=>{}); }
-      if(fBtn) fBtn.style.display='flex';
       cd.videoOff=false;
       if(btn){ btn.classList.remove('active'); btn.innerHTML='📹'; }
       _currentFacing = _currentFacing||'user';
+      _updateFlipBtnVisibility();
     }catch(e){ toast('Camera not available','err'); }
     return;
   }
@@ -4362,7 +4429,7 @@ async function toggleVideo(){
   if(btn){ btn.classList.toggle('active', cd.videoOff); btn.innerHTML=cd.videoOff?'📵':'📹'; }
   cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
   if(lv) lv.style.display=cd.videoOff?'none':'block';
-  if(fBtn) fBtn.style.display=cd.videoOff?'none':'flex';
+  _updateFlipBtnVisibility();
 }
 
 // ── doCall: caller initiates ──
@@ -4418,9 +4485,12 @@ function closeGcallPicker() {
 }
 
 async function doCall(friend, type){
+  // Discover camera capabilities before starting — sets _isMobileDevice
+  await _initCameraCapabilities();
   if(cd.active){ toast('Already in a call','info'); return; }
   await unlockAudio();
   _currentFacing='user'; _speakerOn=true;
+  const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
 
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id;
@@ -4463,6 +4533,7 @@ async function acceptCall(){
   await unlockAudio();
   hideIncomingCall();
   _currentFacing='user'; _speakerOn=true;
+  const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
   const d=cd.incoming;
   if(!d){ cleanupCall(); return; }
   cd.callerName=d.caller_name; cd.calleeName=d.caller_name;
@@ -4535,7 +4606,8 @@ function cleanupCall(){
   if(cd.pc){ try{cd.pc.close();}catch(e){} cd.pc=null; }
   const rv=document.getElementById('remoteVideo'); if(rv) rv.srcObject=null;
   const lv=document.getElementById('localVideo');  if(lv) lv.srcObject=null;
-  _currentFacing='user'; _speakerOn=true; _connectedFired=false;
+  _currentFacing='user'; _speakerOn=true;
+  const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none'; _connectedFired=false;
   hideCallModal();
   resetCd();
 }
