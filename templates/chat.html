@@ -410,6 +410,23 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .notif-pitem-act:hover{background:var(--hov);}
 .notif-pitem-act.del{color:#ef4444;}
 .np-empty{text-align:center;padding:48px 20px;color:var(--mute);font-size:14px;}
+/* Undo snackbar */
+.notif-undo-bar{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1e1e2e;border:1px solid rgba(124,106,255,.4);
+  color:#fff;border-radius:14px;padding:11px 18px;
+  display:flex;align-items:center;gap:14px;
+  font-size:13px;z-index:100000;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  transition:transform .28s cubic-bezier(.34,1.1,.64,1);
+  white-space:nowrap;
+}
+.notif-undo-bar.show{transform:translateX(-50%) translateY(0);}
+.notif-undo-btn{
+  background:var(--brand);border:none;color:#fff;
+  border-radius:8px;padding:5px 14px;font-size:12px;
+  font-weight:700;cursor:pointer;
+}
 /* Context Menu */
 /* ── LONG-PRESS MESSAGE SHEET ── */
 .msg-sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;backdrop-filter:blur(2px);}
@@ -521,7 +538,72 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .profile-header{padding:20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
 .profile-header h3{font-family:var(--font-h);font-size:18px;color:var(--txt);}
 .profile-body{padding:30px;text-align:center;}
-.profile-avatar-large{margin-bottom:20px;display:flex;justify-content:center;}
+.profile-avatar-large{margin-bottom:20px;display:flex;justify-content:center;position:relative;}
+.av-edit-dot{
+  position:absolute;bottom:4px;right:calc(50% - 64px);
+  width:28px;height:28px;border-radius:50%;
+  background:var(--brand);color:#fff;
+  font-size:14px;font-weight:900;border:2px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2;
+}
+/* Avatar 3-dot menu */
+.av-menu{
+  position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  background:var(--card);border:1px solid var(--bdr);
+  border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.3);
+  min-width:160px;z-index:10;overflow:hidden;display:none;
+}
+.av-menu.show{display:block;}
+.av-menu-item{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;border:none;background:transparent;
+  color:var(--txt);font-size:14px;font-weight:600;
+  cursor:pointer;width:100%;text-align:left;
+}
+.av-menu-item:hover{background:var(--hov);}
+/* Crop overlay */
+#avatarCropOverlay{
+  display:none;position:fixed;inset:0;z-index:9500;
+  background:#000;flex-direction:column;
+}
+#avatarCropOverlay.show{display:flex;}
+.crop-stage{
+  flex:1;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:#111;
+}
+#cropImg{
+  position:absolute;cursor:move;user-select:none;
+  -webkit-user-drag:none;touch-action:none;
+}
+.crop-circle-mask{
+  position:absolute;inset:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.crop-circle-mask::before{
+  content:'';display:block;
+  width:min(80vw,80vh,320px);height:min(80vw,80vh,320px);
+  border-radius:50%;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.62);
+  border:2px solid rgba(255,255,255,.5);
+}
+.crop-toolbar{
+  padding:16px 18px 32px;background:#0d0f1a;
+  display:flex;align-items:center;gap:10px;
+}
+.crop-size-hint{
+  font-size:11px;color:rgba(255,255,255,.4);
+  text-align:center;flex:1;
+}
+/* Full image viewer */
+#profileFullImg{
+  display:none;position:fixed;inset:0;z-index:9600;
+  background:rgba(0,0,0,.95);align-items:center;
+  justify-content:center;flex-direction:column;
+}
+#profileFullImg.show{display:flex;}
+#profileFullImg img{max-width:100%;max-height:90vh;object-fit:contain;border-radius:4px;}
 .profile-body h2{font-family:var(--font-h);font-size:24px;color:var(--txt);margin-bottom:5px;}
 .profile-bio-section{margin:20px 0;padding:20px;background:var(--sb2);border-radius:12px;text-align:left;}
 .profile-bio-section h4{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
@@ -1775,8 +1857,15 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="closebtn" onclick="closeProfileView()">✕</button>
   </div>
   <div class="profile-body">
-    <div class="profile-avatar-large">
-      <div class="av" id="profileAvLarge" style="width:120px;height:120px;font-size:48px;border-radius:24px;">U</div>
+    <div class="profile-avatar-large" id="profileAvWrap">
+      <div class="av" id="profileAvLarge" style="width:120px;height:120px;font-size:48px;border-radius:24px;cursor:pointer;overflow:hidden;" onclick="profileAvTap()">U</div>
+      <!-- ⋮ edit dot — only shown on own profile -->
+      <div class="av-edit-dot" id="profileAvEditDot" style="display:none;" onclick="event.stopPropagation();toggleAvMenu()">⋮</div>
+      <!-- 3-dot menu -->
+      <div class="av-menu" id="profileAvMenu">
+        <button class="av-menu-item" onclick="closeAvMenu();openAvatarCrop()">🖼️ Choose Photo</button>
+        <button class="av-menu-item" onclick="closeAvMenu()">← Keep Current</button>
+      </div>
     </div>
     <h2 id="profileName">Username</h2>
     <p id="profileStatus" style="color:var(--sub);margin:8px 0;">Available</p>
@@ -2084,6 +2173,37 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 <div class="tstack" id="tstack"></div>
 <div class="notif-stack" id="notifStack"></div>
+
+<!-- Avatar crop overlay -->
+<div id="avatarCropOverlay">
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.1);">
+    <button onclick="closeAvatarCrop()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+    <span style="color:#fff;font-size:16px;font-weight:700;flex:1;">Choose Profile Photo</span>
+    <button onclick="saveCroppedAvatar()" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;" id="cropSaveBtn">Save</button>
+  </div>
+  <div class="crop-stage" id="cropStage">
+    <img id="cropImg" src="" alt="crop">
+    <div class="crop-circle-mask"></div>
+  </div>
+  <div class="crop-toolbar">
+    <span style="font-size:12px;color:rgba(255,255,255,.5);">Pinch or scroll to zoom · drag to reposition</span>
+    <span class="crop-size-hint" id="cropSizeHint"></span>
+    <button onclick="document.getElementById('avatarFileInput').click()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;">📂 Change</button>
+  </div>
+</div>
+<input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="avatarFilePicked(this)">
+
+<!-- Full-size profile image viewer -->
+<div id="profileFullImg" onclick="closeProfileFullImg()">
+  <img id="profileFullImgEl" src="" alt="profile">
+  <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:12px;">Tap to close</div>
+</div>
+
+<!-- Undo delete snackbar -->
+<div class="notif-undo-bar" id="notifUndoBar">
+  <span id="notifUndoText">Notification deleted</span>
+  <button class="notif-undo-btn" onclick="notifUndoDelete()">Undo</button>
+</div>
 
 <!-- Persistent Notification Panel -->
 <div class="notif-panel-ov" id="notifPanelOv" onclick="closeNotifPanel()"></div>
@@ -2550,66 +2670,129 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <!-- PAGE 5: VIDEO TRIMMER -->
   <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#000;position:relative;">
     <!-- Header -->
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.1);">
-      <button onclick="scCloseTrimmer()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
-      <span style="color:#fff;font-size:16px;font-weight:700;flex:1;">✂️ Trim Video</span>
-      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="
-        background:var(--brand,#7c6aff);border:none;color:#fff;
-        border-radius:12px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer;">Use Clip</button>
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);">
+      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">‹</button>
+      <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">✂️ Edit Video</span>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;">Use Clip</button>
     </div>
 
     <!-- Video preview -->
-    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#111;">
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;">
       <video id="SC_trimVid" style="max-width:100%;max-height:100%;object-fit:contain;" playsinline muted></video>
       <!-- Time display -->
-      <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
+      <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
+      <!-- Pause/Play button overlay -->
+      <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.4);color:#fff;width:48px;height:48px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">⏸</button>
+      <!-- Cut point marker button -->
+      <button onclick="scAddCutPoint()" style="position:absolute;bottom:12px;right:14px;background:rgba(239,68,68,.8);border:none;color:#fff;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">✂️ Cut</button>
     </div>
 
-    <!-- Scrubber / trim handles -->
-    <div style="padding:16px 18px 24px;background:#0d0f1a;">
-      <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:10px;text-align:center;" id="SC_trimHint">Drag handles to select up to 30 seconds</div>
+    <!-- Bottom controls panel -->
+    <div style="background:#0d0f1a;padding-bottom:env(safe-area-inset-bottom,0);">
 
-      <!-- Waveform / trim bar -->
-      <div id="SC_trimBar" style="position:relative;height:48px;background:rgba(255,255,255,.08);border-radius:10px;overflow:visible;cursor:pointer;"
-        onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
-
-        <!-- Progress indicator (current playhead) -->
-        <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
-
-        <!-- Selected region highlight -->
-        <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.35);border:1px solid rgba(124,106,255,.8);border-radius:6px;z-index:2;pointer-events:none;"></div>
-
-        <!-- Left handle -->
-        <div id="SC_trimL" style="
-          position:absolute;top:0;bottom:0;width:18px;
-          background:#7c6aff;border-radius:6px 0 0 6px;
-          cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;
-          touch-action:none;left:0%;"
-          onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
-          <div style="width:3px;height:18px;background:rgba(255,255,255,.7);border-radius:2px;"></div>
+      <!-- Trim scrubber -->
+      <div style="padding:12px 16px 6px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
+          <span id="SC_trimDurLbl" style="font-size:11px;color:#a78fff;font-weight:700;">0.0s selected</span>
+          <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
         </div>
-
-        <!-- Right handle -->
-        <div id="SC_trimR" style="
-          position:absolute;top:0;bottom:0;width:18px;
-          background:#7c6aff;border-radius:0 6px 6px 0;
-          cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;
-          touch-action:none;right:0%;"
-          onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
-          <div style="width:3px;height:18px;background:rgba(255,255,255,.7);border-radius:2px;"></div>
+        <div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.07);border-radius:10px;cursor:pointer;"
+          onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
+          <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
+          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.3);border:1px solid rgba(124,106,255,.8);border-radius:6px;z-index:2;pointer-events:none;"></div>
+          <!-- Cut points container -->
+          <div id="SC_cutPoints"></div>
+          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:18px;background:#7c6aff;border-radius:6px 0 0 6px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
+            onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
+            <div style="width:3px;height:16px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
+          </div>
+          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:18px;background:#7c6aff;border-radius:0 6px 6px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
+            onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
+            <div style="width:3px;height:16px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
+          </div>
         </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.35);text-align:center;margin-top:4px;" id="SC_trimHint">Drag handles · tap ✂️ Cut to mark points</div>
       </div>
 
-      <!-- Start / End time labels -->
-      <div style="display:flex;justify-content:space-between;margin-top:8px;">
-        <span id="SC_trimStartLbl" style="font-size:12px;color:rgba(255,255,255,.55);">0.0s</span>
-        <span id="SC_trimDurLbl"   style="font-size:12px;color:#a78fff;font-weight:700;">30.0s selected</span>
-        <span id="SC_trimEndLbl"   style="font-size:12px;color:rgba(255,255,255,.55);">30.0s</span>
-      </div>
+      <!-- Horizontally scrollable adjustments -->
+      <div style="overflow-x:auto;padding:8px 16px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+        <div style="display:flex;gap:14px;min-width:max-content;align-items:flex-start;">
 
-      <!-- Note about trim method -->
-      <div style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,.05);border-radius:10px;font-size:12px;color:rgba(255,255,255,.45);text-align:center;line-height:1.5;">
-        ℹ️ The selected clip will be used as your story. The video plays from start point to end point.
+          <!-- Volume / Pitch Height -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
+            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🎵 Pitch</div>
+            <div style="display:flex;align-items:center;gap:6px;width:100%;">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">Low</span>
+              <input type="range" id="SC_pitchSlider" min="-6" max="6" step="0.5" value="0"
+                style="flex:1;accent-color:#7c6aff;height:4px;"
+                oninput="scUpdatePitch(this.value)">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">High</span>
+            </div>
+            <span id="SC_pitchVal" style="font-size:11px;color:#a78fff;font-weight:700;">0</span>
+          </div>
+
+          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+
+          <!-- Volume -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
+            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🔊 Volume</div>
+            <div style="display:flex;align-items:center;gap:6px;width:100%;">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">0</span>
+              <input type="range" id="SC_volSlider" min="0" max="200" step="1" value="100"
+                style="flex:1;accent-color:#22c55e;height:4px;"
+                oninput="scUpdateVol(this.value)">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">2×</span>
+            </div>
+            <span id="SC_volVal" style="font-size:11px;color:#22c55e;font-weight:700;">100%</span>
+          </div>
+
+          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+
+          <!-- Speed -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
+            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">⚡ Speed</div>
+            <div style="display:flex;align-items:center;gap:6px;width:100%;">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">0.5×</span>
+              <input type="range" id="SC_speedSlider" min="0.25" max="2" step="0.25" value="1"
+                style="flex:1;accent-color:#f59e0b;height:4px;"
+                oninput="scUpdateSpeed(this.value)">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">2×</span>
+            </div>
+            <span id="SC_speedVal" style="font-size:11px;color:#f59e0b;font-weight:700;">1.0×</span>
+          </div>
+
+          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+
+          <!-- Brightness -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
+            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">☀️ Brightness</div>
+            <div style="display:flex;align-items:center;gap:6px;width:100%;">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">−</span>
+              <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100"
+                style="flex:1;accent-color:#fbbf24;height:4px;"
+                oninput="scUpdateVidFilter()">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">+</span>
+            </div>
+            <span id="SC_vidBrightnessVal" style="font-size:11px;color:#fbbf24;font-weight:700;">100</span>
+          </div>
+
+          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+
+          <!-- Contrast -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
+            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">◑ Contrast</div>
+            <div style="display:flex;align-items:center;gap:6px;width:100%;">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">−</span>
+              <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100"
+                style="flex:1;accent-color:#38bdf8;height:4px;"
+                oninput="scUpdateVidFilter()">
+              <span style="font-size:10px;color:rgba(255,255,255,.4);">+</span>
+            </div>
+            <span id="SC_vidContrastVal" style="font-size:11px;color:#38bdf8;font-weight:700;">100</span>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
@@ -2839,10 +3022,9 @@ function connectSocket(){
     loadFriends();
   });
   socket.on('friend_request_received',(data)=>{
-    // New friend request arrived — update badge + list instantly, no refresh needed
     loadRequests();
-    showInAppNotif(data.username, '👋 sent you a friend request', null, data.from_user_id);
-    if(prefs.sound) beep();
+    // Show toast with inline Accept/Decline buttons
+    showFriendRequestNotif(data.username, data.from_user_id, data.request_id);
   });
   socket.on('new_story',(data)=>{
     // A friend just posted a story — reload the story bar instantly
@@ -3403,7 +3585,12 @@ function showFriendProfile(){
   document.getElementById('profileBio').textContent=friend.bio||'No bio yet';
   document.getElementById('profileRelationship').textContent=friend.relationship_status||'Prefer not to say';
   const av=document.getElementById('profileAvLarge');av.textContent=friend.username[0].toUpperCase();
-  if(friend.avatar_url)av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">`;
+  if(friend.avatar_url){
+    av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onclick="openProfileFullImg('${friend.avatar_url}')" data-fullsrc="${friend.avatar_url}">`;
+  }
+  // Show edit dot only on own profile
+  const editDot=document.getElementById('profileAvEditDot');
+  if(editDot) editDot.style.display = (friend.id===ME_ID)?'flex':'none';
   document.getElementById('profileOverlay').classList.add('show');document.getElementById('profileModal').classList.add('show');
 }
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
@@ -3483,7 +3670,7 @@ async function getMedia(type){
     suppressLocalAudioPlayback: { ideal:true },
   };
   const audioSD = { echoCancellation:true, noiseSuppression:true, autoGainControl:true };
-  const videoHD = { facingMode:'user', width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:30} };
+  const videoHD = { facingMode:'user', width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30}, aspectRatio:{ideal:16/9} };
 
   const chains = type==='video' ? [
     { video:videoHD,            audio:audioHD },
@@ -4043,14 +4230,14 @@ function showCallModal(name, status, isVideo){
     if(lv){ lv.style.display='block'; pipInitPos(); }
     if(vc) vc.style.display='none';
     if(vb) vb.style.display='none';
-    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex'; // always show cam toggle
     const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='flex';
   } else {
     if(rv) rv.style.display='none';
     if(lv) lv.style.display='none';
     if(vc){ vc.style.display='flex'; }
     if(vb){ vb.style.display='block'; }
-    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='none';
+    const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex'; // show in audio calls too
     const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display='none';
   }
 
@@ -4146,15 +4333,36 @@ function toggleMute(){
   btn.innerHTML = cd.muted ? '🔇' : '🎤';
   if(cd.localStream) cd.localStream.getAudioTracks().forEach(t=>t.enabled=!cd.muted);
 }
-function toggleVideo(){
+async function toggleVideo(){
   if(!cd.localStream) return;
+  const btn=document.getElementById('videoBtn');
+  const lv=document.getElementById('localVideo');
+  const fBtn=document.getElementById('flipBtn');
+
+  const existingVid = cd.localStream.getVideoTracks()[0];
+  if(!existingVid){
+    // Audio call — add camera track dynamically
+    try{
+      const camStream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ideal:_currentFacing||'user'}, width:{ideal:1280}, height:{ideal:720} }, audio:false
+      });
+      const camTrack = camStream.getVideoTracks()[0];
+      cd.localStream.addTrack(camTrack);
+      if(cd.pc) cd.pc.addTrack(camTrack, cd.localStream);
+      if(lv){ lv.srcObject=cd.localStream; lv.style.display='block'; lv.play().catch(()=>{}); }
+      if(fBtn) fBtn.style.display='flex';
+      cd.videoOff=false;
+      if(btn){ btn.classList.remove('active'); btn.innerHTML='📹'; }
+      _currentFacing = _currentFacing||'user';
+    }catch(e){ toast('Camera not available','err'); }
+    return;
+  }
+  // Toggle existing track
   cd.videoOff = !cd.videoOff;
-  const btn=document.getElementById('videoBtn'); if(!btn) return;
-  btn.classList.toggle('active', cd.videoOff);
-  btn.innerHTML = cd.videoOff ? '📵' : '📹';
+  if(btn){ btn.classList.toggle('active', cd.videoOff); btn.innerHTML=cd.videoOff?'📵':'📹'; }
   cd.localStream.getVideoTracks().forEach(t=>t.enabled=!cd.videoOff);
-  const lv=document.getElementById('localVideo'); if(lv) lv.style.display=cd.videoOff?'none':'block';
-  const fBtn=document.getElementById('flipBtn');  if(fBtn) fBtn.style.display=cd.videoOff?'none':'flex';
+  if(lv) lv.style.display=cd.videoOff?'none':'block';
+  if(fBtn) fBtn.style.display=cd.videoOff?'none':'flex';
 }
 
 // ── doCall: caller initiates ──
@@ -5677,10 +5885,43 @@ function _notifNavigate(chatId){
   }
 }
 
+let _notifUndoTimer = null;
+let _notifUndoItem  = null;
+
 function _deleteNotifById(id){
-  _persistNotifs = _persistNotifs.filter(n=>n.id!==id);
+  const idx = _persistNotifs.findIndex(n=>n.id===id);
+  if(idx === -1) return;
+  _notifUndoItem = { notif: _persistNotifs[idx], idx };
+  _persistNotifs.splice(idx, 1);
   _saveNotifs();
   _renderNotifPanel();
+  _showUndoBar('Notification deleted');
+}
+
+function _showUndoBar(msg){
+  const bar = document.getElementById('notifUndoBar');
+  const txt = document.getElementById('notifUndoText');
+  if(!bar) return;
+  if(txt) txt.textContent = msg;
+  bar.classList.add('show');
+  clearTimeout(_notifUndoTimer);
+  _notifUndoTimer = setTimeout(()=>{
+    bar.classList.remove('show');
+    _notifUndoItem = null;
+  }, 5000);
+}
+
+function notifUndoDelete(){
+  if(!_notifUndoItem) return;
+  const { notif, idx } = _notifUndoItem;
+  _persistNotifs.splice(idx, 0, notif);
+  _saveNotifs();
+  _renderNotifPanel();
+  _notifUndoItem = null;
+  clearTimeout(_notifUndoTimer);
+  const bar = document.getElementById('notifUndoBar');
+  if(bar) bar.classList.remove('show');
+  toast('Notification restored','ok');
 }
 
 function _updateNotifBadge(){
@@ -5800,6 +6041,268 @@ function _openUserProfile(userId, username){
 
 // Keep legacy alias
 function showNotification(title,body){ showInAppNotif(title,body,null,null); }
+
+// ═══════════════════════════════════════════════════════════
+// PROFILE AVATAR — 3-dot menu, crop editor, full-image view
+// ═══════════════════════════════════════════════════════════
+let _cropState = { img:null, x:0, y:0, scale:1, dragging:false, pinching:false,
+                   startX:0, startY:0, lastDist:0, naturalW:0, naturalH:0 };
+
+function profileAvTap(){
+  // If own profile → do nothing (edit dot handles it)
+  // If other's profile → show full image
+  const av = document.getElementById('profileAvLarge');
+  const src = av.querySelector('img')?.dataset.fullsrc || av.querySelector('img')?.src;
+  if(src && !src.startsWith('data:')) openProfileFullImg(src);
+}
+
+function toggleAvMenu(){
+  const m = document.getElementById('profileAvMenu');
+  if(m) m.classList.toggle('show');
+}
+function closeAvMenu(){
+  const m = document.getElementById('profileAvMenu');
+  if(m) m.classList.remove('show');
+}
+
+// Close menu on outside tap
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#profileAvWrap')) closeAvMenu();
+});
+
+function openAvatarCrop(){
+  document.getElementById('avatarFileInput').click();
+}
+
+function avatarFilePicked(input){
+  const file = input.files[0]; if(!file) return;
+  const url = URL.createObjectURL(file);
+  const img = document.getElementById('cropImg');
+  img.onload = ()=>{
+    _cropState.naturalW = img.naturalWidth;
+    _cropState.naturalH = img.naturalHeight;
+    const stage = document.getElementById('cropStage');
+    const stageW = stage.offsetWidth, stageH = stage.offsetHeight;
+    const circleD = Math.min(stageW, stageH) * 0.8;
+    // Fit image to fill the circle
+    const scale = Math.max(circleD/img.naturalWidth, circleD/img.naturalHeight);
+    _cropState.scale = scale;
+    _cropState.x = (stageW - img.naturalWidth*scale)/2;
+    _cropState.y = (stageH - img.naturalHeight*scale)/2;
+    _applyCropTransform();
+    const hint = document.getElementById('cropSizeHint');
+    if(hint) hint.textContent = img.naturalWidth+'×'+img.naturalHeight;
+  };
+  img.src = url;
+  const ov = document.getElementById('avatarCropOverlay');
+  if(ov) ov.classList.add('show');
+  _attachCropEvents();
+}
+
+function closeAvatarCrop(){
+  const ov = document.getElementById('avatarCropOverlay');
+  if(ov) ov.classList.remove('show');
+  const input = document.getElementById('avatarFileInput');
+  if(input) input.value='';
+}
+
+function _applyCropTransform(){
+  const img = document.getElementById('cropImg');
+  if(!img) return;
+  img.style.width  = (_cropState.naturalW * _cropState.scale)+'px';
+  img.style.height = (_cropState.naturalH * _cropState.scale)+'px';
+  img.style.left   = _cropState.x+'px';
+  img.style.top    = _cropState.y+'px';
+}
+
+function _attachCropEvents(){
+  const stage = document.getElementById('cropStage');
+  if(!stage || stage._cropEventsAttached) return;
+  stage._cropEventsAttached = true;
+  // Mouse drag
+  stage.addEventListener('mousedown', e=>{
+    _cropState.dragging=true; _cropState.startX=e.clientX-_cropState.x; _cropState.startY=e.clientY-_cropState.y;
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!_cropState.dragging) return;
+    _cropState.x=e.clientX-_cropState.startX; _cropState.y=e.clientY-_cropState.startY;
+    _applyCropTransform();
+  });
+  document.addEventListener('mouseup', ()=>{ _cropState.dragging=false; });
+  // Scroll to zoom
+  stage.addEventListener('wheel', e=>{
+    e.preventDefault();
+    _cropState.scale = Math.max(0.1, Math.min(10, _cropState.scale * (e.deltaY<0?1.1:0.9)));
+    _applyCropTransform();
+  },{passive:false});
+  // Touch drag + pinch zoom
+  stage.addEventListener('touchstart', e=>{
+    if(e.touches.length===1){
+      _cropState.dragging=true;
+      _cropState.startX=e.touches[0].clientX-_cropState.x;
+      _cropState.startY=e.touches[0].clientY-_cropState.y;
+    } else if(e.touches.length===2){
+      _cropState.dragging=false; _cropState.pinching=true;
+      const dx=e.touches[0].clientX-e.touches[1].clientX;
+      const dy=e.touches[0].clientY-e.touches[1].clientY;
+      _cropState.lastDist=Math.sqrt(dx*dx+dy*dy);
+    }
+  },{passive:true});
+  stage.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    if(e.touches.length===1&&_cropState.dragging){
+      _cropState.x=e.touches[0].clientX-_cropState.startX;
+      _cropState.y=e.touches[0].clientY-_cropState.startY;
+      _applyCropTransform();
+    } else if(e.touches.length===2&&_cropState.pinching){
+      const dx=e.touches[0].clientX-e.touches[1].clientX;
+      const dy=e.touches[0].clientY-e.touches[1].clientY;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const ratio=dist/_cropState.lastDist;
+      _cropState.scale=Math.max(0.1,Math.min(10,_cropState.scale*ratio));
+      _cropState.lastDist=dist;
+      _applyCropTransform();
+    }
+  },{passive:false});
+  stage.addEventListener('touchend', ()=>{ _cropState.dragging=false; _cropState.pinching=false; });
+}
+
+async function saveCroppedAvatar(){
+  const btn = document.getElementById('cropSaveBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  try{
+    const stage = document.getElementById('cropStage');
+    const img   = document.getElementById('cropImg');
+    const stageW = stage.offsetWidth, stageH = stage.offsetHeight;
+    const circleD = Math.min(stageW, stageH) * 0.8;
+    const cx = (stageW - circleD)/2, cy = (stageH - circleD)/2;
+    // Canvas: draw the cropped circle region
+    const canvas = document.createElement('canvas');
+    const OUT = 400;
+    canvas.width = OUT; canvas.height = OUT;
+    const ctx = canvas.getContext('2d');
+    // Clip to circle
+    ctx.beginPath(); ctx.arc(OUT/2,OUT/2,OUT/2,0,Math.PI*2); ctx.clip();
+    // Source coords in image space
+    const srcX = (cx - _cropState.x) / _cropState.scale;
+    const srcY = (cy - _cropState.y) / _cropState.scale;
+    const srcW = circleD / _cropState.scale;
+    const srcH = circleD / _cropState.scale;
+    ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, OUT, OUT);
+    // Also save full image for "view full" feature
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width  = _cropState.naturalW;
+    fullCanvas.height = _cropState.naturalH;
+    fullCanvas.getContext('2d').drawImage(img, 0,0);
+
+    // Convert to blob and upload
+    canvas.toBlob(async blob=>{
+      const fd = new FormData();
+      fd.append('avatar', blob, 'avatar.jpg');
+      const r = await fetch('/api/profile/avatar',{method:'POST',body:fd});
+      const d = await r.json();
+      if(d.success){
+        // Update profile sheet avatar immediately
+        const av=document.getElementById('profileAvLarge');
+        av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onclick="openProfileFullImg('${d.avatar_url}')" data-fullsrc="${d.avatar_url}">`;
+        // Update all avatars in chat header and friend list
+        document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
+        toast('✅ Profile picture updated!','ok');
+        closeAvatarCrop();
+      } else toast(d.error||'Upload failed','err');
+      if(btn){ btn.disabled=false; btn.textContent='Save'; }
+    },'image/jpeg',0.92);
+  }catch(e){
+    toast('Failed: '+e.message,'err');
+    if(btn){ btn.disabled=false; btn.textContent='Save'; }
+  }
+}
+
+function openProfileFullImg(url){
+  const ov  = document.getElementById('profileFullImg');
+  const img = document.getElementById('profileFullImgEl');
+  if(!ov||!img||!url) return;
+  img.src=url;
+  ov.classList.add('show');
+}
+function closeProfileFullImg(){
+  const ov=document.getElementById('profileFullImg');
+  if(ov) ov.classList.remove('show');
+}
+
+// ── Friend request notification with inline Accept/Decline ──
+function showFriendRequestNotif(name, userId, requestId){
+  // Save to persistent panel
+  const notif={
+    id: Date.now()+'_rq',
+    name, text:'👋 sent you a friend request',
+    chatId:null, userId,
+    requestId, type:'friend_request',
+    time:nowNotifTime(), ts:Date.now(), read:false
+  };
+  _persistNotifs.unshift(notif);
+  _saveNotifs();
+  _notifUnread++;
+  _updateNotifBadge();
+  _renderNotifPanel();
+
+  // Show toast bubble with accept/decline
+  const stack=document.getElementById('notifStack');
+  if(!stack) return;
+  const key='__rq_'+userId;
+  const existing=stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
+  if(existing){ _dismissToast(existing); }
+
+  const el=document.createElement('div');
+  el.className='notif-bubble';
+  el.setAttribute('data-notif-key',key);
+  el.style.flexDirection='column';
+  el.style.alignItems='stretch';
+  el.style.gap='8px';
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
+      <div class="notif-body">
+        <div class="notif-name" style="cursor:pointer;" onclick="event.stopPropagation();_openUserProfile(${userId},'${esc(name)}')">${esc(name)}</div>
+        <div class="notif-text">👋 sent you a friend request</div>
+      </div>
+      <div class="notif-time">${notif.time}</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="event.stopPropagation();notifDeclineReq(${requestId},this.closest('.notif-bubble'))"
+        style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">✕ Decline</button>
+      <button onclick="event.stopPropagation();notifAcceptReq(${requestId},this.closest('.notif-bubble'))"
+        style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">✓ Accept</button>
+    </div>
+  `;
+  stack.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  if(prefs.sound) beep();
+  // Auto-dismiss after 12s (longer for action)
+  _notifTimer[key]=setTimeout(()=>_dismissToast(el),12000);
+}
+
+async function notifAcceptReq(requestId, bubble){
+  if(bubble){ bubble.querySelector('button:last-child').textContent='…'; }
+  try{
+    const r=await fetch('/api/friends/accept',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:requestId})});
+    const d=await r.json();
+    if(d.success){
+      toast('✅ Friend accepted!','ok');
+      _dismissToast(bubble);
+      loadFriends(); loadRequests();
+    } else toast(d.error||'Failed','err');
+  }catch(e){ toast('Failed','err'); }
+}
+
+async function notifDeclineReq(requestId, bubble){
+  try{
+    const r=await fetch('/api/friends/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:requestId})});
+    await r.json();
+    _dismissToast(bubble);
+    loadRequests();
+  }catch(e){}
+}
 
 // Init: render panel with saved notifications immediately + on DOMContentLoaded
 (function _initNotifs(){
@@ -7128,6 +7631,21 @@ let _trimDrag=null, _trimVidRAF=null;
 function scOpenTrimmer(){
   if(!SC.mediaFile||SC.mediaType!=='video'){ toast('No video loaded','err'); return; }
   scCloseTools();
+  // Reset editor controls
+  _cutPoints=[];
+  _pitchVal=0;
+  ['SC_pitchSlider','SC_volSlider','SC_speedSlider','SC_vidBrightness','SC_vidContrast'].forEach(id=>{
+    const el=$(id); if(el){ el.value = id==='SC_volSlider'?100:id==='SC_speedSlider'?1:id.includes('Brightness')||id.includes('Contrast')?100:0; }
+  });
+  ['SC_pitchVal','SC_volVal','SC_speedVal','SC_vidBrightnessVal','SC_vidContrastVal'].forEach(id=>{
+    const el=$(id);
+    if(!el)return;
+    if(id==='SC_pitchVal') el.textContent='0';
+    else if(id==='SC_volVal') el.textContent='100%';
+    else if(id==='SC_speedVal') el.textContent='1.00×';
+    else el.textContent='100';
+  });
+  const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
   scPage(5);
   const vid=$('SC_trimVid');
   vid.src=SC.mediaURL;
@@ -7234,10 +7752,93 @@ function scTrimStop(){
   const vid=$('SC_trimVid');
   if(vid){ vid.pause(); vid.src=''; }
 }
+
+// ── Pause/Play toggle ──────────────────────────────────
+function scTrimTogglePlay(){
+  const vid=$('SC_trimVid'), btn=$('SC_trimPlayPause');
+  if(!vid) return;
+  if(vid.paused){ vid.play().catch(()=>{}); if(btn) btn.textContent='⏸'; }
+  else { vid.pause(); if(btn) btn.textContent='▶'; }
+}
+
+// ── Cut points ─────────────────────────────────────────
+let _cutPoints = [];
+function scAddCutPoint(){
+  const vid=$('SC_trimVid');
+  if(!vid||!vid.duration) return;
+  const t = vid.currentTime;
+  // Don't add if within 0.2s of existing
+  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){ toast('Cut point already here','info'); return; }
+  _cutPoints.push(t);
+  _cutPoints.sort((a,b)=>a-b);
+  _renderCutPoints(vid.duration);
+  toast('✂️ Cut at '+t.toFixed(1)+'s','ok');
+}
+function _renderCutPoints(total){
+  const cp=$('SC_cutPoints'); if(!cp) return;
+  cp.innerHTML='';
+  _cutPoints.forEach(t=>{
+    const pct=(t/total)*100;
+    const mk=document.createElement('div');
+    mk.style.cssText=`position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:4;pointer-events:none;left:${pct}%;`;
+    cp.appendChild(mk);
+  });
+}
+
+// ── Pitch (Web Audio API playback rate + detune) ────────
+let _pitchVal = 0;
+function scUpdatePitch(v){
+  _pitchVal = parseFloat(v);
+  const lbl=$('SC_pitchVal');
+  if(lbl) lbl.textContent = (_pitchVal>=0?'+':'')+_pitchVal;
+  // Pitch via playbackRate is an approximation; true pitch shift needs WebAudio
+  // We store the value and apply it as a detune hint on the video
+  const vid=$('SC_trimVid');
+  if(vid){
+    // Adjust playbackRate slightly to simulate pitch (±0.15 per semitone)
+    const baseRate = parseFloat($('SC_speedSlider')?.value||1);
+    // Pitch shift: each semitone ≈ 5.95% rate change
+    const pitchFactor = Math.pow(2, _pitchVal/12);
+    vid.playbackRate = Math.max(0.1, Math.min(4, baseRate * pitchFactor));
+  }
+}
+
+// ── Volume ──────────────────────────────────────────────
+function scUpdateVol(v){
+  const val=parseFloat(v)/100;
+  const lbl=$('SC_volVal'); if(lbl) lbl.textContent=v+'%';
+  const vid=$('SC_trimVid'); if(vid) vid.volume=Math.min(1,val);
+  SC.trimVolume=val;
+}
+
+// ── Speed ───────────────────────────────────────────────
+function scUpdateSpeed(v){
+  const val=parseFloat(v);
+  const lbl=$('SC_speedVal'); if(lbl) lbl.textContent=val.toFixed(2)+'×';
+  const vid=$('SC_trimVid');
+  if(vid){
+    const pitchFactor=Math.pow(2,(_pitchVal||0)/12);
+    vid.playbackRate=Math.max(0.1,Math.min(4,val*pitchFactor));
+  }
+  SC.trimSpeed=val;
+}
+
+// ── Video brightness/contrast filter ───────────────────
+function scUpdateVidFilter(){
+  const b=parseInt($('SC_vidBrightness')?.value||100);
+  const k=parseInt($('SC_vidContrast')?.value||100);
+  const bv=$('SC_vidBrightnessVal'), kv=$('SC_vidContrastVal');
+  if(bv) bv.textContent=b;
+  if(kv) kv.textContent=k;
+  const vid=$('SC_trimVid');
+  if(vid) vid.style.filter=`brightness(${b}%) contrast(${k}%)`;
+  SC.trimFilter=`brightness(${b}%) contrast(${k}%)`;
+}
 function scCloseTrimmer(){
   scTrimStop();
+  _cutPoints=[];
+  const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
   scPage(1);
-  // Refresh editor to show updated duration badge
   _scShowVideoUI();
 }
 function scApplyTrim(){
@@ -8396,10 +8997,10 @@ async function openGroupInfo(gid) {
     // Show/hide admin buttons
     const editBtn   = document.getElementById('giEditBtn');
     const addBtn    = document.getElementById('giAddMemberBtn');
-    const deleteBtn = document.getElementById('giDeleteBtn');
+    const deleteRow = document.getElementById('giDeleteRow');
     if (editBtn)   editBtn.style.display   = isAdmin ? 'block' : 'none';
     if (addBtn)    addBtn.style.display    = isAdmin ? 'block' : 'none';
-    if (deleteBtn) deleteBtn.style.display = isAdmin ? 'block' : 'none';
+    if (deleteRow) deleteRow.style.display = isAdmin ? 'block' : 'none';
 
     // Render members — admin sees remove button on each non-self member
     document.getElementById('giMembers').innerHTML = g.members.map(m => {
@@ -8464,6 +9065,23 @@ async function removeMember(gid, userId, username) {
       toast(d.error || 'Failed to remove', 'err');
     }
   } catch(e) { toast('Failed', 'err'); }
+}
+
+function giShowLeaveConfirm(){
+  document.getElementById('giLeaveRow').style.display='none';
+  document.getElementById('giLeaveConfirm').style.display='block';
+}
+function giHideLeaveConfirm(){
+  document.getElementById('giLeaveRow').style.display='block';
+  document.getElementById('giLeaveConfirm').style.display='none';
+}
+function giShowDeleteConfirm(){
+  document.getElementById('giDeleteRow').style.display='none';
+  document.getElementById('giDeleteConfirm').style.display='block';
+}
+function giHideDeleteConfirm(){
+  document.getElementById('giDeleteRow').style.display='flex';
+  document.getElementById('giDeleteConfirm').style.display='none';
 }
 
 async function leaveGroup() {
@@ -8964,9 +9582,35 @@ setInterval(() => {
       <button id="giAddMemberBtn" onclick="openAddMember()" style="background:none;border:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer;display:none;">+ Add</button>
     </div>
     <div id="giMembers"></div>
-    <div style="margin-top:18px;display:flex;gap:10px;">
-      <button class="gi-leave" onclick="leaveGroup()" style="flex:1;">🚪 Leave</button>
-      <button id="giDeleteBtn" onclick="deleteGroup()" style="flex:1;padding:12px;border-radius:12px;border:none;background:rgba(239,68,68,.1);color:#ef4444;font-size:14px;font-weight:600;cursor:pointer;display:none;">🗑 Delete</button>
+    <!-- Danger zone divider -->
+    <div style="margin-top:20px;display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;height:1px;background:rgba(239,68,68,.3);"></div>
+      <span style="font-size:10px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:.8px;">Danger Zone</span>
+      <div style="flex:1;height:1px;background:rgba(239,68,68,.3);"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+      <!-- Leave row -->
+      <div id="giLeaveRow">
+        <button onclick="giShowLeaveConfirm()" style="width:100%;padding:12px;border-radius:12px;border:none;background:rgba(245,158,11,.1);color:#f59e0b;font-size:14px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">🚪 Leave Group</button>
+      </div>
+      <div id="giLeaveConfirm" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:13px;color:#f59e0b;font-weight:600;margin-bottom:10px;">Leave this group?</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="giHideLeaveConfirm()" style="flex:1;padding:10px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;">← Back</button>
+          <button onclick="leaveGroup()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#f59e0b;color:#000;font-size:13px;font-weight:700;cursor:pointer;">🚪 Leave</button>
+        </div>
+      </div>
+      <!-- Delete row (owner only) -->
+      <div id="giDeleteRow" style="display:none;">
+        <button onclick="giShowDeleteConfirm()" style="width:100%;padding:12px;border-radius:12px;border:none;background:rgba(239,68,68,.1);color:#ef4444;font-size:14px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">🗑️ Delete Group</button>
+      </div>
+      <div id="giDeleteConfirm" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:13px;color:#ef4444;font-weight:600;margin-bottom:10px;">Permanently delete this group?</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="giHideDeleteConfirm()" style="flex:1;padding:10px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;">← Back</button>
+          <button onclick="deleteGroup()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Delete</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
