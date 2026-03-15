@@ -13,33 +13,12 @@ from sqlalchemy import or_, and_
 # APP CONFIGURATION
 # ============================================================
 app = Flask(__name__)
-# ── Stable SECRET_KEY: use env var, or generate once and persist to a file ──
-# os.urandom(32) on every restart invalidates all sessions — never use it in prod
-def _get_secret_key():
-    # 1. Always prefer the environment variable (set this in Render dashboard)
-    env_key = os.environ.get('SECRET_KEY')
-    if env_key:
-        return env_key
-    # 2. Try to persist a key to disk (works locally, fails gracefully on read-only hosts)
-    try:
-        base = os.path.dirname(os.path.abspath(__file__))
-        key_file = os.path.join(base, '.secret_key')
-        if os.path.exists(key_file):
-            with open(key_file, 'r') as f:
-                k = f.read().strip()
-                if len(k) >= 32:
-                    return k
-        import secrets
-        k = secrets.token_hex(32)
-        with open(key_file, 'w') as f:
-            f.write(k)
-        return k
-    except Exception:
-        pass
-    # 3. Stable fallback — set SECRET_KEY env var in Render for real security
-    return 'hpz-fallback-key-set-SECRET_KEY-env-var-in-render-dashboard'
-
-app.config['SECRET_KEY'] = _get_secret_key()
+# ── SECRET_KEY: MUST be set as an env var in Render dashboard ──
+# If not set, a stable hardcoded fallback is used.
+# NEVER use os.urandom() — it changes on every deploy and logs everyone out.
+# DO NOT write to disk — Render filesystem resets on every deploy.
+_SECRET_KEY = os.environ.get('SECRET_KEY') or 'hepozy-stable-key-2024-set-env-var-in-render'
+app.config['SECRET_KEY'] = _SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max — supports 30-second story videos
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
 app.config['SESSION_COOKIE_HTTPONLY'] = True
