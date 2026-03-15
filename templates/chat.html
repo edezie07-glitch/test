@@ -7,9 +7,9 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--brand:#7c6aff;--brand-dk:#6254e0;--radius:14px;--trans:.18s ease;--font-h:'Syne',sans-serif;--font-b:'Manrope',sans-serif;}
-[data-theme="dark"]{--bg:#0f0f17;--sb:#16161f;--sb2:#1c1c27;--card:#1c1c27;--inp:#1c1c27;--recv:#22222f;--sent:var(--brand);--hov:rgba(255,255,255,.05);--act:rgba(124,106,255,.15);--bdr:rgba(255,255,255,.07);--txt:#e8e8f4;--sub:rgba(255,255,255,.45);--mute:rgba(255,255,255,.25);--chat:#13131c;--hdr:#16161f;--ibdr:rgba(255,255,255,.12);--shad:0 4px 24px rgba(0,0,0,.4);--scr:rgba(124,106,255,.3);--online:#22c55e;--warn:#fb923c;}
-[data-theme="light"]{--bg:#f2f2fa;--sb:#fff;--sb2:#f7f7fd;--card:#fff;--inp:#f7f7fd;--recv:#fff;--sent:var(--brand);--hov:rgba(0,0,0,.04);--act:rgba(124,106,255,.1);--bdr:rgba(0,0,0,.07);--txt:#1a1a2e;--sub:rgba(0,0,0,.45);--mute:rgba(0,0,0,.3);--chat:#eaeaf4;--hdr:#fff;--ibdr:rgba(0,0,0,.12);--shad:0 4px 24px rgba(0,0,0,.1);--scr:rgba(124,106,255,.4);--online:#22c55e;--warn:#fb923c;}
+:root{--brand:#ec5b08;--brand-dk:#c94a06;--radius:14px;--trans:.18s ease;--font-h:'Syne',sans-serif;--font-b:'Manrope',sans-serif;}
+[data-theme="dark"]{--bg:#0f0f17;--sb:#16161f;--sb2:#1c1c27;--card:#1c1c27;--inp:#1c1c27;--recv:#22222f;--sent:var(--brand);--hov:rgba(255,255,255,.05);--act:rgba(236,91,8,.15);--bdr:rgba(255,255,255,.07);--txt:#e8e8f4;--sub:rgba(255,255,255,.45);--mute:rgba(255,255,255,.25);--chat:#13131c;--hdr:#16161f;--ibdr:rgba(255,255,255,.12);--shad:0 4px 24px rgba(0,0,0,.4);--scr:rgba(236,91,8,.30);--online:#22c55e;--warn:#fb923c;}
+[data-theme="light"]{--bg:#f2f2fa;--sb:#fff;--sb2:#f7f7fd;--card:#fff;--inp:#f7f7fd;--recv:#fff;--sent:var(--brand);--hov:rgba(0,0,0,.04);--act:rgba(236,91,8,.10);--bdr:rgba(0,0,0,.07);--txt:#1a1a2e;--sub:rgba(0,0,0,.45);--mute:rgba(0,0,0,.3);--chat:#eaeaf4;--hdr:#fff;--ibdr:rgba(0,0,0,.12);--shad:0 4px 24px rgba(0,0,0,.1);--scr:rgba(236,91,8,.4);--online:#22c55e;--warn:#fb923c;}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
 body{overflow-x:hidden;}
@@ -22,8 +22,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .brand{font-family:var(--font-h);font-size:16px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px;}
 .hbtns{display:flex;gap:5px;}
 .ib{width:33px;height:33px;border-radius:9px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background var(--trans),color var(--trans);position:relative;}
-.ib:hover{background:rgba(124,106,255,.15);color:var(--brand);}
-.ib.on{background:rgba(124,106,255,.2);color:var(--brand);}
+.ib:hover{background:rgba(236,91,8,.15);color:var(--brand);}
+.ib.on{background:rgba(236,91,8,.20);color:var(--brand);}
 .nbadge{position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
 .nbadge.hidden{display:none!important;}
 .sinp-w{position:relative;}
@@ -48,7 +48,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .pill{padding:4px 11px;border:none;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:opacity var(--trans);}
 .pill:hover{opacity:.85;}
 .p-add{background:var(--brand);color:#fff;}
-.p-msg{background:rgba(124,106,255,.15);color:var(--brand);}
+.p-msg{background:rgba(236,91,8,.15);color:var(--brand);}
 .p-pend{background:var(--hov);color:var(--mute);cursor:default;}
 .p-ok{background:#22c55e;color:#fff;}
 .p-no{background:var(--hov);color:var(--sub);}
@@ -99,7 +99,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .srow{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);margin-bottom:6px;transition:background .25s,border-color .25s;}
 .sleft{display:flex;align-items:center;gap:11px;}
 .sic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
-.sic.pu{background:rgba(124,106,255,.15);}
+.sic.pu{background:rgba(236,91,8,.15);}
 .sic.gr{background:rgba(34,197,94,.15);}
 .sic.or{background:rgba(251,146,60,.15);}
 .sic.re{background:rgba(239,68,68,.12);}
@@ -124,7 +124,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .chdr-sub.online{color:var(--online);}
 .chdr-actions{display:flex;gap:6px;}
 .chdr-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
-.chdr-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.chdr-btn:hover{background:rgba(236,91,8,.15);color:var(--brand);}
 /* Pinned Messages Banner */
 .pinned-banner{background:rgba(251,146,60,.08);border-bottom:1px solid rgba(251,146,60,.2);padding:8px 18px;display:none;cursor:pointer;transition:background var(--trans);}
 .pinned-banner:hover{background:rgba(251,146,60,.12);}
@@ -136,7 +136,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .clist{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none;-ms-overflow-style:none;}
 .clist::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}
 .daydiv{text-align:center;margin:10px 0 5px;}
-.daydiv span{background:rgba(124,106,255,.1);color:var(--mute);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
+.daydiv span{background:rgba(236,91,8,.10);color:var(--mute);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
 .mgrp{display:flex;flex-direction:column;position:relative;}
 .mgrp.has-reactions{padding-bottom:16px;}
 .mgrp.sent{align-items:flex-end;}
@@ -175,7 +175,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   white-space:nowrap;
 }
 .reaction:active{transform:scale(.94);}
-.reaction.user-reacted{border-color:var(--brand);background:rgba(124,106,255,.08);}
+.reaction.user-reacted{border-color:var(--brand);background:rgba(236,91,8,.08);}
 .reaction .count{font-size:11px;font-weight:600;color:var(--sub);}
 /* ── FULL EMOJI PICKER SHEET ── */
 .react-sheet-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.3);display:none;}
@@ -215,11 +215,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .rs-emoji:hover{background:var(--hov);transform:scale(1.2);}
 .bub img{max-width:260px;max-height:260px;border-radius:10px;display:block;cursor:zoom-in;margin-bottom:4px;}
 /* Scrollable photo strip */
-.photo-strip{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;max-width:min(320px,75vw);-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:rgba(124,106,255,.4) transparent;cursor:grab;}
+.photo-strip{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;max-width:min(320px,75vw);-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:rgba(236,91,8,.4) transparent;cursor:grab;}
 .photo-strip:active{cursor:grabbing;}
 .photo-strip::-webkit-scrollbar{height:3px;}
 .photo-strip::-webkit-scrollbar-track{background:transparent;}
-.photo-strip::-webkit-scrollbar-thumb{background:rgba(124,106,255,.35);border-radius:4px;}
+.photo-strip::-webkit-scrollbar-thumb{background:rgba(236,91,8,.35);border-radius:4px;}
 .photo-strip img{width:120px;height:120px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;scroll-snap-align:start;transition:opacity .15s,transform .15s;}
 .photo-strip img:hover{opacity:.88;transform:scale(1.02);}
 /* Read receipt circle — light orange=delivered, bright orange=seen */
@@ -239,7 +239,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .tdot{width:6px;height:6px;background:var(--mute);border-radius:50%;animation:tdot 1.2s infinite;}
 .tdot:nth-child(2){animation-delay:.2s;}.tdot:nth-child(3){animation-delay:.4s;}
 @keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
-.reply-bar{background:rgba(124,106,255,.08);border-top:1px solid rgba(124,106,255,.2);padding:8px 18px;display:none;align-items:center;gap:10px;}
+.reply-bar{background:rgba(236,91,8,.08);border-top:1px solid rgba(236,91,8,.20);padding:8px 18px;display:none;align-items:center;gap:10px;}
 .reply-bar.show{display:flex;}
 .reply-bar-content{flex:1;min-width:0;}
 .reply-bar-from{font-size:11px;font-weight:600;color:var(--brand);}
@@ -251,14 +251,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .emoji-categories{display:flex;padding:8px;border-bottom:1px solid var(--bdr);gap:4px;background:var(--sb2);overflow-x:auto;}
 .emoji-cat{padding:6px 10px;border:none;border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:18px;transition:background var(--trans);flex-shrink:0;}
 .emoji-cat:hover{background:var(--hov);}
-.emoji-cat.active{background:rgba(124,106,255,.15);color:var(--brand);}
+.emoji-cat.active{background:rgba(236,91,8,.15);color:var(--brand);}
 .emoji-section{display:flex;flex-wrap:wrap;gap:5px;width:100%;}
 .emoji-section.hidden{display:none;}
 .eo{font-size:21px;cursor:pointer;padding:3px;border-radius:6px;transition:background var(--trans);}
 .eo:hover{background:var(--hov);}
 .iarea{padding:16px 14px 24px;padding-bottom:max(24px,calc(16px + env(safe-area-inset-bottom)));background:var(--hdr);border-top:1px solid var(--bdr);display:none;align-items:flex-end;gap:8px;position:relative;transition:background .25s,border-color .25s;}
 .isb{width:42px;height:42px;border-radius:50%;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background var(--trans),color var(--trans);margin-bottom:2px;}
-.isb:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.isb:hover{background:rgba(236,91,8,.15);color:var(--brand);}
 #msgInput{flex:1;padding:13px 16px;background:var(--inp);border:1px solid var(--ibdr);border-radius:22px;color:var(--txt);font-size:15px;font-family:var(--font-b);outline:none;resize:none;line-height:1.4;max-height:110px;transition:border-color var(--trans),background .25s;}
 #msgInput:focus{border-color:var(--brand);}
 #msgInput::placeholder{color:var(--mute);}
@@ -418,7 +418,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* Undo snackbar */
 .notif-undo-bar{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
-  background:#1e1e2e;border:1px solid rgba(124,106,255,.4);
+  background:#1e1e2e;border:1px solid rgba(236,91,8,.4);
   color:#fff;border-radius:14px;padding:11px 18px;
   display:flex;align-items:center;gap:14px;
   font-size:13px;z-index:100000;
@@ -530,7 +530,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .img-preview-body canvas{max-width:100%;max-height:100%;border-radius:12px;}
 .img-preview-tools{padding:15px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);display:flex;gap:10px;justify-content:center;background:var(--sb2);flex-wrap:wrap;}
 .tool-btn{padding:10px 16px;border:none;border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:18px;transition:background var(--trans);}
-.tool-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.tool-btn:hover{background:rgba(236,91,8,.15);color:var(--brand);}
 .img-preview-footer{padding:20px;display:flex;gap:10px;justify-content:flex-end;}
 .cancel-btn{padding:10px 24px;border:1px solid var(--bdr);border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .send-btn{padding:10px 24px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
@@ -639,13 +639,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* Voice-only bg */
 #callVoiceBg{
   position:absolute;inset:0;z-index:0;display:none;
-  background:linear-gradient(160deg,#0f0c1a 0%,#1a1035 55%,#0d1f3c 100%);
+  background:linear-gradient(160deg,#120800 0%,#1a0a00 55%,#0d1f3c 100%);
 }
 #callVoiceBg::before,#callVoiceBg::after{
   content:'';position:absolute;border-radius:50%;
   filter:blur(72px);opacity:.4;pointer-events:none;
 }
-#callVoiceBg::before{width:360px;height:360px;background:radial-gradient(circle,#7c6aff,transparent);top:-80px;left:-60px;}
+#callVoiceBg::before{width:360px;height:360px;background:radial-gradient(circle,#ec5b08,transparent);top:-80px;left:-60px;}
 #callVoiceBg::after{width:300px;height:300px;background:radial-gradient(circle,#06b6d4,transparent);bottom:80px;right:-40px;}
 
 /* Top overlay — hidden by default, shown on tap */
@@ -684,12 +684,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .call-av-ring{
   width:120px;height:120px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  background:conic-gradient(var(--brand),#06b6d4,#a855f7,var(--brand));
+  background:conic-gradient(var(--brand),#06b6d4,#d44e07,var(--brand));
   animation:ringRotate 4s linear infinite;
 }
 .call-av-ring.pulse{animation:ringRotate 4s linear infinite,ringPulse 1.6s ease-in-out infinite;}
 @keyframes ringRotate{to{filter:hue-rotate(360deg);}}
-@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,106,255,.5);}50%{box-shadow:0 0 0 26px rgba(124,106,255,0);}}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(236,91,8,.5);}50%{box-shadow:0 0 0 26px rgba(236,91,8,0);}}
 .call-av-inner{
   width:106px;height:106px;border-radius:50%;
   background:linear-gradient(135deg,#2d2060,#1a3a5c);
@@ -720,15 +720,22 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   opacity:0;
   transition:opacity .3s ease;
 }
-/* Controls tray — always open, always tappable */
+/* Controls tray — hidden until user taps chevron */
 #callCtrlTray{
   display:flex;gap:16px;align-items:center;justify-content:center;
-  padding:12px 20px;
+  padding:0 20px;
   flex-wrap:wrap;
+  max-height:0;overflow:hidden;opacity:0;
+  pointer-events:none;
+  transition:max-height .32s cubic-bezier(.4,0,.2,1),opacity .25s ease,padding .28s ease;
+}
+#callCtrlTray.open{
+  max-height:160px;opacity:1;padding:12px 20px;
   pointer-events:all;
 }
-/* Hide old chevron toggle */
-#callDockToggle{ display:none!important; }
+/* Chevron rotates when tray is open */
+#callDockToggle{ margin-bottom:8px; }
+#callDockToggle.open #callDockChevrons{ transform:rotate(180deg); }
 
 /* Buttons */
 .ccb{
@@ -744,7 +751,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   outline:none;
 }
 .ccb:active{transform:scale(.87);}
-.ccb.active{background:rgba(124,106,255,.8);border-color:rgba(124,106,255,.9);box-shadow:0 0 24px rgba(124,106,255,.6);}
+.ccb.active{background:rgba(236,91,8,.8);border-color:rgba(236,91,8,.9);box-shadow:0 0 24px rgba(236,91,8,.6);}
 .ccb.end-btn{
   width:68px;height:68px;font-size:26px;
   background:linear-gradient(135deg,#ef4444,#c62828);
@@ -760,7 +767,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .incoming-screen{
   position:fixed;inset:0;z-index:980;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(160deg,#0a0a18 0%,#1a1035 100%);
+  background:linear-gradient(160deg,#0a0a18 0%,#1a0a00 100%);
   opacity:0;pointer-events:none;
   transition:opacity .3s ease;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -768,7 +775,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .incoming-screen.show{opacity:1;pointer-events:all;}
 .incoming-screen::before{
   content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 30%, rgba(124,106,255,.25) 0%, transparent 70%);
+  background:radial-gradient(ellipse at 50% 30%, rgba(236,91,8,.25) 0%, transparent 70%);
   pointer-events:none;
 }
 .inc-top{display:flex;flex-direction:column;align-items:center;gap:14px;position:relative;z-index:2;animation:callFadeUp .35s ease both;}
@@ -824,7 +831,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .crow:hover .crow-menu-btn{display:flex;}
 /* Conversation 3-line menu button (inside open chat header) */
 .conv3-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);letter-spacing:1px;}
-.conv3-btn:hover{background:rgba(124,106,255,.15);color:var(--brand);}
+.conv3-btn:hover{background:rgba(236,91,8,.15);color:var(--brand);}
 /* Shared floating dropdown menu */
 .crow-ctx{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:13px;padding:6px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:2000;display:none;animation:clpFadeIn .12s ease;}
 .crow-ctx.show{display:block;}
@@ -900,8 +907,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .wv-bars{display:flex;align-items:center;gap:2px;width:100%;height:28px;position:relative;z-index:1;}
 .wv-bar{flex:1;background:rgba(255,255,255,.35);border-radius:2px;min-height:3px;transition:background .15s;}
 .wv-progress{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.22);pointer-events:none;z-index:0;transition:width .1s linear;}
-.mgrp.recv .wv-bar{background:rgba(124,106,255,.3);}
-.mgrp.recv .wv-progress{background:rgba(124,106,255,.12);}
+.mgrp.recv .wv-bar{background:rgba(236,91,8,.30);}
+.mgrp.recv .wv-progress{background:rgba(236,91,8,.12);}
 .mgrp.recv .vm-dur{color:var(--mute);}
 /* Recording pulse */
 .rec-btn{position:relative;}
@@ -918,7 +925,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .fwd-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
 .fwd-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s;}
 .fwd-row:hover{background:var(--hov);}
-.fwd-row.selected{background:rgba(124,106,255,.12);border:1px solid rgba(124,106,255,.3);}
+.fwd-row.selected{background:rgba(236,91,8,.12);border:1px solid rgba(236,91,8,.30);}
 .fwd-row .av{flex-shrink:0;}
 .fwd-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--bdr);margin-left:auto;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;}
 .fwd-row.selected .fwd-chk{background:var(--brand);border-color:var(--brand);color:#fff;}
@@ -1045,7 +1052,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 .sp-ring.unviewed{
   background:linear-gradient(var(--card),var(--card)) padding-box,
-    linear-gradient(135deg,#f97316,#a855f7,#3b82f6) border-box;
+    linear-gradient(135deg,#f97316,#d44e07,#3b82f6) border-box;
 }
 .sp-ring.viewed{border:2.5px solid var(--bdr);}
 .sp-info .sp-name{font-size:13px;font-weight:600;color:var(--txt);}
@@ -1068,7 +1075,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   transition:background .15s,transform .1s;
   -webkit-tap-highlight-color:transparent;
 }
-.sc-type-btn:active{background:rgba(124,106,255,.35);transform:scale(.97);}
+.sc-type-btn:active{background:rgba(236,91,8,.35);transform:scale(.97);}
 .sc-filter-swatch{
   flex-shrink:0;width:60px;height:60px;border-radius:10px;
   display:flex;align-items:flex-end;justify-content:center;
@@ -1084,7 +1091,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   font-size:14px;font-weight:600;cursor:pointer;
   border:1.5px solid transparent;transition:border-color .15s,background .15s;
 }
-.sc-privacy-opt.selected{border-color:var(--brand);background:rgba(124,106,255,.18);}
+.sc-privacy-opt.selected{border-color:var(--brand);background:rgba(236,91,8,.18);}
 .sc-privacy-radio{
   width:18px;height:18px;border-radius:50%;
   border:2px solid rgba(255,255,255,.4);
@@ -1101,14 +1108,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #SC_contrastPanel input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
   background:var(--brand);border:2px solid #fff;cursor:pointer;
-  box-shadow:0 0 6px rgba(124,106,255,.6);
+  box-shadow:0 0 6px rgba(236,91,8,.6);
 }
 /* arrow SVG transition */
 #SC_arrowSvg{ transition:transform .25s cubic-bezier(.4,0,.2,1); display:block; }
 .sc-privacy-opt.selected .sc-privacy-radio{
   border-color:var(--brand);
   background:var(--brand);
-  box-shadow:0 0 0 3px rgba(124,106,255,.3);
+  box-shadow:0 0 0 3px rgba(236,91,8,.30);
 }
 /* Slider rows */
 .sc-slider{
@@ -1227,11 +1234,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .capsule-field textarea{resize:none;height:80px;}
 .capsule-send{width:100%;padding:13px;background:var(--brand);color:#fff;border:none;
   border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
-#capsuleMsgBubble{background:rgba(124,106,255,.12);border-left:3px solid var(--brand);
+#capsuleMsgBubble{background:rgba(236,91,8,.12);border-left:3px solid var(--brand);
   border-radius:0 8px 8px 0;padding:8px 12px;font-size:13px;color:var(--txt);
   margin-bottom:14px;white-space:pre-wrap;word-break:break-word;}
-.capsule-banner{background:linear-gradient(135deg,rgba(124,106,255,.12),rgba(168,85,247,.08));
-  border:1px solid rgba(124,106,255,.25);border-radius:10px;padding:8px 12px;
+.capsule-banner{background:linear-gradient(135deg,rgba(236,91,8,.12),rgba(168,85,247,.08));
+  border:1px solid rgba(236,91,8,.25);border-radius:10px;padding:8px 12px;
   font-size:12px;color:var(--brand);font-weight:600;margin-bottom:16px;
   display:flex;align-items:center;gap:7px;}
 
@@ -1239,8 +1246,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #fadingBanner{
   position:fixed;top:68px;left:50%;
   transform:translateX(-50%) translateY(calc(-100% - 24px));
-  background:linear-gradient(135deg,var(--card),rgba(124,106,255,.07));
-  border:1px solid rgba(124,106,255,.3);
+  background:linear-gradient(135deg,var(--card),rgba(236,91,8,.07));
+  border:1px solid rgba(236,91,8,.30);
   border-radius:16px;padding:12px 14px;
   z-index:3050;display:flex;align-items:center;gap:10px;
   max-width:380px;width:calc(100% - 28px);
@@ -1291,7 +1298,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cg-type-btn{flex:1;padding:10px;border-radius:11px;border:1.5px solid var(--bdr);
   background:var(--hov);color:var(--txt);font-size:13px;font-weight:600;
   cursor:pointer;text-align:center;transition:all .15s;}
-.cg-type-btn.selected{border-color:var(--brand);background:rgba(124,106,255,.1);color:var(--brand);}
+.cg-type-btn.selected{border-color:var(--brand);background:rgba(236,91,8,.10);color:var(--brand);}
 .cg-friends-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;}
 .cg-friend-row{display:flex;align-items:center;gap:12px;padding:9px 10px;
   border-radius:10px;cursor:pointer;transition:background .15s;}
@@ -1302,7 +1309,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cg-friend-name{font-size:14px;font-weight:600;color:var(--txt);}
 /* Group crow in list */
 .crow.is-group .av{font-size:13px;}
-.group-tag{font-size:9px;background:rgba(124,106,255,.18);color:var(--brand);
+.group-tag{font-size:9px;background:rgba(236,91,8,.18);color:var(--brand);
   border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700;vertical-align:middle;}
 .temp-tag{font-size:9px;background:rgba(245,158,11,.18);color:#f59e0b;
   border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700;vertical-align:middle;}
@@ -1323,7 +1330,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   display:flex;align-items:center;justify-content:center;font-size:15px;
   font-weight:700;color:#fff;flex-shrink:0;}
 .gi-member-name{font-size:14px;font-weight:600;color:var(--txt);flex:1;}
-.gi-role{font-size:11px;background:rgba(124,106,255,.15);color:var(--brand);
+.gi-role{font-size:11px;background:rgba(236,91,8,.15);color:var(--brand);
   border-radius:4px;padding:2px 7px;font-weight:700;}
 .gi-leave{width:100%;padding:12px;background:rgba(239,68,68,.1);color:#ef4444;
   border:1.5px solid rgba(239,68,68,.3);border-radius:12px;font-size:15px;
@@ -1333,17 +1340,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .gi-member-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-weight:700;font-size:15px;color:#fff;flex-shrink:0;}
 .gi-member-name{font-size:14px;font-weight:600;color:var(--txt);}
-.gi-role{background:rgba(124,106,255,.15);color:var(--brand);border-radius:20px;
+.gi-role{background:rgba(236,91,8,.15);color:var(--brand);border-radius:20px;
   padding:2px 9px;font-size:11px;font-weight:700;flex-shrink:0;}
 /* Time capsule message bubble indicator */
 .bub.capsule-msg::before{content:'⏳ ';font-size:11px;}
 
 /* Group button in sidebar/mobile header */
 .new-group-btn{display:flex;align-items:center;justify-content:center;
-  width:32px;height:32px;border-radius:50%;background:rgba(124,106,255,.12);
+  width:32px;height:32px;border-radius:50%;background:rgba(236,91,8,.12);
   border:none;color:var(--brand);font-size:18px;cursor:pointer;
   transition:background .15s;flex-shrink:0;}
-.new-group-btn:hover{background:rgba(124,106,255,.25);}
+.new-group-btn:hover{background:rgba(236,91,8,.25);}
 
 /* Capsule tabs */
 .ct-tab{flex:1;padding:9px 14px;border:none;border-radius:10px;background:var(--hov);color:var(--mute);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
@@ -1358,7 +1365,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cl-cancel:hover{background:rgba(239,68,68,.15);}
 
 /* Group creation: checked friend row highlight */
-.cg-friend-row.cg-checked{background:rgba(124,106,255,.1);border-color:rgba(124,106,255,.3);}
+.cg-friend-row.cg-checked{background:rgba(236,91,8,.10);border-color:rgba(236,91,8,.30);}
 .cg-friend-row.cg-checked .cg-friend-name{color:var(--brand);font-weight:600;}
 
 /* Group row: 👥 avatar should always show the icon clearly */
@@ -1371,8 +1378,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .mention-item:hover,.mention-item.active{background:var(--hov);}
 .mention-item .mav{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
 /* @mention chip in messages */
-.mention{color:var(--brand);font-weight:700;background:rgba(124,106,255,.12);border-radius:5px;padding:1px 5px;}
-.mention.me{background:rgba(124,106,255,.22);}
+.mention{color:var(--brand);font-weight:700;background:rgba(236,91,8,.12);border-radius:5px;padding:1px 5px;}
+.mention.me{background:rgba(236,91,8,.22);}
 
 /* ── Post-call summary card ── */
 #callSummary{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;}
@@ -1799,7 +1806,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <!-- Caption + send -->
   <div style="padding:8px 16px calc(env(safe-area-inset-bottom,0px)+16px);display:flex;flex-direction:column;gap:10px;flex-shrink:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);">
     <input id="multiPhotoCaption" type="text" placeholder="Add a caption…" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:10px 16px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
-    <button onclick="sendMultiPhotos()" style="background:linear-gradient(135deg,#7c6aff,#a855f7);border:none;color:#fff;border-radius:16px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">Send <span id="multiSendLabel"></span></button>
+    <button onclick="sendMultiPhotos()" style="background:linear-gradient(135deg,#ec5b08,#d44e07);border:none;color:#fff;border-radius:16px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">Send <span id="multiSendLabel"></span></button>
   </div>
 </div>
 
@@ -1859,7 +1866,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div class="profile-body">
     <div class="profile-avatar-large" id="profileAvWrap">
       <!-- Avatar: tap to view full image -->
-      <div class="av" id="profileAvLarge" style="width:130px;height:130px;font-size:52px;border-radius:65px;cursor:pointer;overflow:hidden;border:3px solid rgba(124,106,255,.4);box-shadow:0 4px 20px rgba(0,0,0,.3);" onclick="profileAvTap()">U</div>
+      <div class="av" id="profileAvLarge" style="width:130px;height:130px;font-size:52px;border-radius:65px;cursor:pointer;overflow:hidden;border:3px solid rgba(236,91,8,.4);box-shadow:0 4px 20px rgba(0,0,0,.3);" onclick="profileAvTap()">U</div>
       <!-- ✏️ edit button — only shown on own profile -->
       <div class="av-edit-dot" id="profileAvEditDot" style="display:none;" onclick="event.stopPropagation();toggleAvMenu()" title="Edit photo">⋮</div>
       <!-- 3-dot menu -->
@@ -1970,7 +1977,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <!-- Remote camera-off overlay -->
   <div id="remoteCamOff" style="
     position:absolute;inset:0;z-index:1;
-    background:linear-gradient(160deg,#0f0c1a 0%,#1a1035 55%,#0d1f3c 100%);
+    background:linear-gradient(160deg,#120800 0%,#1a0a00 55%,#0d1f3c 100%);
     display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;
     pointer-events:none;
   ">
@@ -1988,9 +1995,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div id="callBgPanel">
       <div class="bgopt active" id="bgNone" onclick="setCallBg('none')" title="No filter">🚫</div>
       <div class="bgopt" id="bgBlur" onclick="setCallBg('blur')" title="Blur">🔲</div>
-      <div class="bgopt" id="bgColor1" onclick="setCallBg('#1a1035')" style="background:#1a1035;"></div>
+      <div class="bgopt" id="bgColor1" onclick="setCallBg('#1a0a00')" style="background:#1a0a00;"></div>
       <div class="bgopt" id="bgColor2" onclick="setCallBg('#0d3d1f')" style="background:#0d3d1f;"></div>
-      <div class="bgopt" id="bgColor3" onclick="setCallBg('#1e1a38')" style="background:#1e1a38;"></div>
+      <div class="bgopt" id="bgColor3" onclick="setCallBg('#1f0e00')" style="background:#1f0e00;"></div>
       <div class="bgopt" id="bgColor4" onclick="setCallBg('#2d1b00')" style="background:#2d1b00;"></div>
     </div>
     <!-- Always-visible control tray -->
@@ -2024,7 +2031,23 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;display:none;" id="callBgBtnLbl">Bg</span>
       </div>
     </div>
-    <button id="callDockToggle" style="display:none;"></button>
+    <button id="callDockToggle" style="
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1.5px solid rgba(255,255,255,.25);
+  border-radius:28px;
+  padding:8px 32px 6px;
+  cursor:pointer;
+  margin-bottom:8px;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;justify-content:center;">
+  <div id="callDockChevrons" style="transition:transform .35s cubic-bezier(.4,0,.2,1);line-height:1;">
+    <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
+      <polyline points="2,13 14,2 26,13" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <polyline points="5,18 14,10 23,18" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+  </div>
+</button>
   </div>
 </div>
 
@@ -2137,7 +2160,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="ssec-t">Chats</div>
       <div class="srow" onclick="closeSettings();openArchivePage();" style="cursor:pointer;">
         <div class="sleft">
-          <div class="sic" style="background:rgba(124,106,255,.12);">🗄️</div>
+          <div class="sic" style="background:rgba(236,91,8,.12);">🗄️</div>
           <div><div class="slb">Archived Chats</div><div class="sdb">View and unarchive conversations</div></div>
         </div>
         <span style="color:var(--sub);font-size:14px;">›</span>
@@ -2151,7 +2174,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <span style="color:var(--sub);font-size:14px;">›</span>
       </div>
       <div class="srow" style="margin-top:8px;">
-        <div class="sleft"><div class="sic" style="background:rgba(124,106,255,.12);">🕵️</div><div><div class="slb">Incognito Mode</div><div class="sdb">Hide last seen &amp; story views</div></div></div>
+        <div class="sleft"><div class="sic" style="background:rgba(236,91,8,.12);">🕵️</div><div><div class="slb">Incognito Mode</div><div class="sdb">Hide last seen &amp; story views</div></div></div>
         <button class="tog" id="tIncognito" onclick="toggleIncognito()"></button>
       </div>
       <div class="srow" style="margin-top:8px;">
@@ -2184,7 +2207,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Chat Features</div>
       <div class="srow" onclick="openSS()" style="cursor:pointer;">
-        <div class="sleft"><div class="sic" style="background:rgba(124,106,255,.12);">🔍</div><div><div class="slb">Smart Search</div><div class="sdb">Search across all chats</div></div></div>
+        <div class="sleft"><div class="sic" style="background:rgba(236,91,8,.12);">🔍</div><div><div class="slb">Smart Search</div><div class="sdb">Search across all chats</div></div></div>
         <span style="color:var(--sub);font-size:14px;">›</span>
       </div>
     </div>
@@ -2203,7 +2226,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.1);">
     <button onclick="closeAvatarCrop()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
     <span style="color:#fff;font-size:16px;font-weight:700;flex:1;">Choose Profile Photo</span>
-    <button onclick="saveCroppedAvatar()" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;" id="cropSaveBtn">Save</button>
+    <button onclick="saveCroppedAvatar()" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;" id="cropSaveBtn">Save</button>
   </div>
   <div class="crop-stage" id="cropStage" style="position:relative;">
     <img id="cropImg" src="" alt="crop" style="position:absolute;transform-origin:top left;user-select:none;-webkit-user-drag:none;max-width:none;max-height:none;">
@@ -2393,10 +2416,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
           border-radius:24px;padding:10px 18px;color:#fff;font-size:14px;outline:none;
           -webkit-appearance:none;">
       <button onclick="sendStoryComment()" style="
-        background:var(--brand,#7c6aff);border:none;color:#fff;
+        background:var(--brand,#ec5b08);border:none;color:#fff;
         width:40px;height:40px;border-radius:50%;font-size:16px;
         cursor:pointer;display:flex;align-items:center;justify-content:center;
-        flex-shrink:0;box-shadow:0 2px 10px rgba(124,106,255,.5);">➤</button>
+        flex-shrink:0;box-shadow:0 2px 10px rgba(236,91,8,.5);">➤</button>
     </div>
   </div>
 </div>
@@ -2456,7 +2479,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
 
       <!-- Text story background + text -->
-      <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#7c6aff,#a855f7);"></div>
+      <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#ec5b08,#d44e07);"></div>
       <textarea id="SC_textBox" placeholder="Tap to type…" style="
         display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
         background:transparent;border:none;outline:none;
@@ -2552,7 +2575,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎬 Video</div>
         <!-- Play / Stop -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <button id="SC_vidPlayBtn" onclick="scEditorTogglePlay()" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+          <button id="SC_vidPlayBtn" onclick="scEditorTogglePlay()" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
           <div style="flex:1;">
             <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">Video Sound</div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -2615,7 +2638,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
 
       <!-- Selected song display -->
-      <div id="SC_songDisplay" style="display:none;padding:8px 12px;background:rgba(124,106,255,.2);border-radius:10px;margin-bottom:10px;align-items:center;gap:8px;">
+      <div id="SC_songDisplay" style="display:none;padding:8px 12px;background:rgba(236,91,8,.20);border-radius:10px;margin-bottom:10px;align-items:center;gap:8px;">
         <span style="font-size:16px;">🎵</span>
         <span id="SC_songName" style="color:#fff;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <button onclick="scClearSong()" style="background:transparent;border:none;color:#ef4444;font-size:16px;cursor:pointer;">✕</button>
@@ -2628,7 +2651,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         background:var(--brand);border:none;color:#fff;
         border-radius:24px;padding:12px 24px;font-size:15px;font-weight:700;
         cursor:pointer;display:flex;align-items:center;gap:6px;
-        box-shadow:0 4px 18px rgba(124,106,255,.5);">Next →</button>
+        box-shadow:0 4px 18px rgba(236,91,8,.5);">Next →</button>
     </div>
   </div>
 
@@ -2640,7 +2663,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
     <div style="margin:16px;border-radius:14px;overflow:hidden;max-height:200px;background:#111;display:flex;align-items:center;justify-content:center;">
       <img id="SC_shareThumb" style="max-width:100%;max-height:200px;object-fit:cover;display:none;">
-      <div id="SC_shareThumbText" style="display:none;padding:24px;color:#fff;font-size:16px;font-weight:600;text-align:center;background:linear-gradient(135deg,#7c6aff,#a855f7);width:100%;min-height:100px;align-items:center;justify-content:center;"></div>
+      <div id="SC_shareThumbText" style="display:none;padding:24px;color:#fff;font-size:16px;font-weight:600;text-align:center;background:linear-gradient(135deg,#ec5b08,#d44e07);width:100%;min-height:100px;align-items:center;justify-content:center;"></div>
     </div>
     <div style="padding:0 16px 12px;">
       <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Who can see this</div>
@@ -2692,14 +2715,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 
   <!-- PAGE 4: SONG PICKER (full-screen, Instagram-style) -->
-  <div id="SC_p4" style="display:none;height:100%;flex-direction:column;background:linear-gradient(180deg,#1a1035 0%,#0d0a1a 100%);">
+  <div id="SC_p4" style="display:none;height:100%;flex-direction:column;background:linear-gradient(180deg,#1a0a00 0%,#110700 100%);">
     <!-- Header -->
     <div style="display:flex;align-items:center;gap:12px;padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);">
       <button onclick="scCloseSongPage()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
       <span style="color:#fff;font-size:16px;font-weight:800;flex:1;">🎵 Add Music</span>
       <button onclick="scOpenMusicUpload()" style="
-        background:rgba(124,106,255,.25);border:1px solid rgba(124,106,255,.5);
-        color:#a78fff;border-radius:10px;padding:6px 13px;
+        background:rgba(236,91,8,.25);border:1px solid rgba(236,91,8,.5);
+        color:#f09060;border-radius:10px;padding:6px 13px;
         font-size:12px;font-weight:700;cursor:pointer;">+ Upload</button>
     </div>
     <!-- Search -->
@@ -2715,7 +2738,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
     </div>
     <!-- Currently selected banner -->
-    <div id="SC_currentSongBanner" style="display:none;margin:0 14px 8px;padding:10px 14px;background:rgba(124,106,255,.22);border:1px solid rgba(124,106,255,.4);border-radius:12px;align-items:center;gap:10px;">
+    <div id="SC_currentSongBanner" style="display:none;margin:0 14px 8px;padding:10px 14px;background:rgba(236,91,8,.22);border:1px solid rgba(236,91,8,.4);border-radius:12px;align-items:center;gap:10px;">
       <span style="font-size:18px;">🎵</span>
       <div style="flex:1;min-width:0;">
         <div id="SC_currentSongTitle" style="color:#fff;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
@@ -2743,7 +2766,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);">
       <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">‹</button>
       <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">✂️ Edit Video</span>
-      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">💾 Save Clip</button>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">💾 Save Clip</button>
     </div>
 
     <!-- Video preview -->
@@ -2764,19 +2787,19 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div style="padding:10px 14px 4px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
           <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
-          <span id="SC_trimDurLbl" style="font-size:11px;color:#a78fff;font-weight:700;">0.0s selected</span>
+          <span id="SC_trimDurLbl" style="font-size:11px;color:#f09060;font-weight:700;">0.0s selected</span>
           <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
         </div>
         <div id="SC_trimBar" style="position:relative;height:42px;background:rgba(255,255,255,.07);border-radius:10px;cursor:pointer;"
           onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
           <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
-          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.3);border:1px solid rgba(124,106,255,.8);border-radius:6px;z-index:2;pointer-events:none;"></div>
+          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.30);border:1px solid rgba(236,91,8,.8);border-radius:6px;z-index:2;pointer-events:none;"></div>
           <div id="SC_cutPoints"></div>
-          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:18px;background:#7c6aff;border-radius:6px 0 0 6px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
+          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:18px;background:#ec5b08;border-radius:6px 0 0 6px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
             onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
             <div style="width:3px;height:16px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
           </div>
-          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:18px;background:#7c6aff;border-radius:0 6px 6px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
+          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:18px;background:#ec5b08;border-radius:0 6px 6px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
             onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
             <div style="width:3px;height:16px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
           </div>
@@ -2787,18 +2810,18 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <!-- Music trim scrubber (shown only when song is added) -->
       <div id="SC_musicTrimWrap" style="display:none;padding:6px 14px 2px;border-top:1px solid rgba(255,255,255,.06);">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-          <span style="font-size:11px;color:#a78fff;font-weight:700;">🎵 Music clip</span>
+          <span style="font-size:11px;color:#f09060;font-weight:700;">🎵 Music clip</span>
           <span id="SC_musicTrimLbl" style="font-size:10px;color:rgba(255,255,255,.45);"></span>
         </div>
-        <div id="SC_musicTrimBar" style="position:relative;height:32px;background:rgba(124,106,255,.12);border-radius:8px;cursor:pointer;border:1px solid rgba(124,106,255,.3);"
+        <div id="SC_musicTrimBar" style="position:relative;height:32px;background:rgba(236,91,8,.12);border-radius:8px;cursor:pointer;border:1px solid rgba(236,91,8,.30);"
           ontouchstart="scMusicTrimTouch(event)" onmousedown="scMusicTrimClick(event)">
-          <div id="SC_musicPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#a78fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
-          <div id="SC_musicRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.25);border-radius:6px;z-index:2;pointer-events:none;"></div>
-          <div id="SC_musicTrimL" style="position:absolute;top:0;bottom:0;width:14px;background:#a78fff;border-radius:5px 0 0 5px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
+          <div id="SC_musicPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#f09060;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
+          <div id="SC_musicRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-radius:6px;z-index:2;pointer-events:none;"></div>
+          <div id="SC_musicTrimL" style="position:absolute;top:0;bottom:0;width:14px;background:#f09060;border-radius:5px 0 0 5px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
             onmousedown="scMusicDragStart(event,'L')" ontouchstart="scMusicDragStart(event,'L')">
             <div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
           </div>
-          <div id="SC_musicTrimR" style="position:absolute;top:0;bottom:0;width:14px;background:#a78fff;border-radius:0 5px 5px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
+          <div id="SC_musicTrimR" style="position:absolute;top:0;bottom:0;width:14px;background:#f09060;border-radius:0 5px 5px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
             onmousedown="scMusicDragStart(event,'R')" ontouchstart="scMusicDragStart(event,'R')">
             <div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
           </div>
@@ -2825,10 +2848,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:90px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Song</span>
             <button id="SC_trimSongBtn" onclick="scTrimOpenSong()" style="
-              background:rgba(124,106,255,.2);border:1px solid rgba(124,106,255,.4);
+              background:rgba(236,91,8,.20);border:1px solid rgba(236,91,8,.4);
               color:#fff;border-radius:10px;padding:7px 12px;font-size:11px;font-weight:700;
               cursor:pointer;white-space:nowrap;width:100%;">+ Add Song</button>
-            <span id="SC_trimSongName" style="font-size:9px;color:#a78fff;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:90px;display:none;"></span>
+            <span id="SC_trimSongName" style="font-size:9px;color:#f09060;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:90px;display:none;"></span>
           </div>
 
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
@@ -2868,7 +2891,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Pitch</span>
             <input type="range" id="SC_pitchSlider" min="-6" max="6" step="0.5" value="0"
               oninput="scUpdatePitch(this.value)">
-            <span id="SC_pitchVal" style="font-size:11px;color:#a78fff;font-weight:700;">0</span>
+            <span id="SC_pitchVal" style="font-size:11px;color:#f09060;font-weight:700;">0</span>
           </div>
 
         </div>
@@ -2904,7 +2927,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
   align-items:center;justify-content:center;">
   <div style="
-    background:linear-gradient(180deg,#1a1035,#0f0c1a);
+    background:linear-gradient(180deg,#1a0a00,#120800);
     border-radius:20px;padding:24px;width:calc(100% - 40px);max-width:400px;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;" onclick="event.stopPropagation()">
     <h3 style="color:#fff;margin:0 0 18px;font-size:18px;">🎵 Upload Song</h3>
@@ -2920,7 +2943,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
     <div style="display:flex;gap:10px;margin-top:20px;">
       <button onclick="scCloseMusicUpload()" style="flex:1;background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:12px;padding:12px;font-size:14px;cursor:pointer;">Cancel</button>
-      <button onclick="muSubmit()" id="muSubmitBtn" style="flex:2;background:linear-gradient(135deg,#7c6aff,#a855f7);border:none;color:#fff;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Upload Song</button>
+      <button onclick="muSubmit()" id="muSubmitBtn" style="flex:2;background:linear-gradient(135deg,#ec5b08,#d44e07);border:none;color:#fff;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Upload Song</button>
     </div>
   </div>
 </div>
@@ -3386,7 +3409,7 @@ function refreshMultiStrip(){
     return `<div style="position:relative;flex-shrink:0;" id="mpthumb-${i}">
       <img src="${url}" onclick="selectMultiPhoto(${i})" style="
         width:72px;height:72px;object-fit:cover;border-radius:10px;cursor:pointer;
-        border:2.5px solid ${i===_multiSelected?'var(--brand,#7c6aff)':'transparent'};
+        border:2.5px solid ${i===_multiSelected?'var(--brand,#ec5b08)':'transparent'};
         transition:border-color .15s;
       " id="mpthumb-img-${i}">
       <button onclick="removeMultiPhoto(${i})" style="
@@ -3407,7 +3430,7 @@ function selectMultiPhoto(i){
   // Update strip highlights
   _multiFiles.forEach((_,j)=>{
     const img=document.getElementById('mpthumb-img-'+j);
-    if(img) img.style.border=j===i?'2.5px solid var(--brand,#7c6aff)':'2.5px solid transparent';
+    if(img) img.style.border=j===i?'2.5px solid var(--brand,#ec5b08)':'2.5px solid transparent';
   });
 }
 function removeMultiPhoto(i){
@@ -3501,11 +3524,11 @@ function drawImageOnCanvas(){
     ctx.fillStyle='rgba(0,0,0,0.45)';
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.clearRect(r.x,r.y,r.w,r.h);
-    ctx.strokeStyle='#7c6aff';ctx.lineWidth=2;
+    ctx.strokeStyle='#ec5b08';ctx.lineWidth=2;
     ctx.strokeRect(r.x,r.y,r.w,r.h);
     const hs=8;
     [[r.x,r.y],[r.x+r.w,r.y],[r.x,r.y+r.h],[r.x+r.w,r.y+r.h]].forEach(([cx,cy])=>{
-      ctx.fillStyle='#7c6aff';ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs);
+      ctx.fillStyle='#ec5b08';ctx.fillRect(cx-hs/2,cy-hs/2,hs,hs);
     });
   }
   setTimeout(updateSizeLabel,100);
@@ -4072,7 +4095,10 @@ function callScreenTap(e){
   // Keep UI always visible — no toggle
 }
 function toggleCallDock(){
-  // No-op — tray is always open
+  const tray = document.getElementById('callCtrlTray');
+  const tog  = document.getElementById('callDockToggle');
+  const open = tray.classList.toggle('open');
+  if(tog) tog.classList.toggle('open', open);
 }
 
 // ── Status + timer helpers ──
@@ -5001,7 +5027,7 @@ async function doSearchMsgs(q){
   if(!currentChatId)return;
   try{const r=await fetch(`/api/messages/search/${currentChatId}?q=${encodeURIComponent(q)}`);const d=await r.json();const results=document.getElementById('searchResults');if(!d.success||!d.messages.length){results.innerHTML='<div class="lempty" style="padding:12px;">No results</div>';return;}results.innerHTML=d.messages.map(m=>`<div class="search-msg" onclick="scrollToMsg(${m.id})"><div class="search-msg-from">${esc(m.sender_username)}</div><div class="search-msg-content">${esc(m.content)}</div><div class="search-msg-time">${fmtTime(m.created_at)}</div></div>`).join('');}catch(e){}
 }
-function scrollToMsg(id){const el=document.querySelector(`[data-msg-id="${id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(124,106,255,.2)';setTimeout(()=>el.style.background='',2000);}}
+function scrollToMsg(id){const el=document.querySelector(`[data-msg-id="${id}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.background='rgba(236,91,8,.20)';setTimeout(()=>el.style.background='',2000);}}
 function toggleEmoji(){document.getElementById('epick').classList.toggle('open');}
 function closeEmoji(){document.getElementById('epick').classList.remove('open');}
 function ins(e){document.getElementById('msgInput').value+=e;document.getElementById('msgInput').focus();}
@@ -6209,7 +6235,7 @@ function _renderNotifPanel(){
     const frBtns = isFR ? `
       <div style="display:flex;gap:6px;margin-top:8px;">
         <button class="notif-fr-decline" style="flex:1;padding:7px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);font-size:12px;font-weight:700;cursor:pointer;">✕ Decline</button>
-        <button class="notif-fr-accept" style="flex:1;padding:7px;border-radius:9px;border:none;background:var(--brand,#7c6aff);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✓ Accept</button>
+        <button class="notif-fr-accept" style="flex:1;padding:7px;border-radius:9px;border:none;background:var(--brand,#ec5b08);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✓ Accept</button>
       </div>` : '';
     div.innerHTML=`
       <div class="notif-pitem-av">${(n.name||'?')[0].toUpperCase()}</div>
@@ -6588,7 +6614,7 @@ function showFriendRequestNotif(name, userId, requestId){
       <button onclick="event.stopPropagation();notifDeclineReq(${requestId},this.closest('.notif-bubble'))"
         style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">✕ Decline</button>
       <button onclick="event.stopPropagation();notifAcceptReq(${requestId},this.closest('.notif-bubble'))"
-        style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">✓ Accept</button>
+        style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">✓ Accept</button>
     </div>
   `;
   stack.appendChild(el);
@@ -7978,12 +8004,12 @@ function _scSongRow(t){
   const dur=t.duration>0?Math.floor(t.duration/60)+':'+String(t.duration%60).padStart(2,'0'):'';
   const cover=t.cover_url
     ?`<img src="${t.cover_url}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;">`
-    :`<div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#7c6aff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎵</div>`;
+    :`<div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#ec5b08,#d44e07);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎵</div>`;
   const isSelected=SC.audioUrl===t.audio_url;
   return `<div onclick="scPickSongTrack(${t.id})" style="
     display:flex;align-items:center;gap:12px;padding:10px 10px;border-radius:14px;cursor:pointer;
-    background:${isSelected?'rgba(124,106,255,.28)':'transparent'};
-    border:1px solid ${isSelected?'rgba(124,106,255,.6)':'transparent'};
+    background:${isSelected?'rgba(236,91,8,.28)':'transparent'};
+    border:1px solid ${isSelected?'rgba(236,91,8,.6)':'transparent'};
     transition:background .12s;" onmouseenter="if(!${isSelected})this.style.background='rgba(255,255,255,.07)'" onmouseleave="if(!${isSelected})this.style.background='transparent'">
     ${cover}
     <div style="flex:1;min-width:0;">
@@ -7994,7 +8020,7 @@ function _scSongRow(t){
       <button onclick="event.stopPropagation();scPreviewSong(${t.id},'${escHtml(t.title).replace(/'/g,"\\'")}','${escHtml(t.artist).replace(/'/g,"\\'")}','${t.audio_url}')" style="
         background:rgba(255,255,255,.1);border:none;color:#fff;
         width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;">▶</button>
-      ${isSelected?'<span style="color:#7c6aff;font-size:20px;font-weight:900;">✓</span>':''}
+      ${isSelected?'<span style="color:#ec5b08;font-size:20px;font-weight:900;">✓</span>':''}
     </div>
   </div>`;
 }
@@ -8190,7 +8216,7 @@ function _trimUpdate(total){
   if(dl){
     const ok=dur<=30;
     dl.textContent=fmt(dur)+' selected'+(ok?'':' ⚠️ over 30s');
-    dl.style.color=ok?'#a78fff':'#ef4444';
+    dl.style.color=ok?'#f09060':'#ef4444';
   }
   if(tl) tl.textContent=fmt(start)+' – '+fmt(end);
 }
@@ -9357,7 +9383,7 @@ let currentGroupId = null;
 let currentGroupChatId = null;
 let _cgSelectedIds = new Set();
 let _cgType = 'permanent';
-let _cgColor = '#7c6aff';
+let _cgColor = '#ec5b08';
 
 // ── Load all groups the user belongs to ──
 async function loadGroups() {
@@ -9860,7 +9886,7 @@ async function submitAddMember() {
 function openCreateGroup(startType) {
   _cgSelectedIds.clear();
   _cgType  = startType || 'permanent';
-  _cgColor = '#7c6aff';
+  _cgColor = '#ec5b08';
   // Reset fields
   document.getElementById('cgName').value = '';
   document.getElementById('cgDesc').value = '';
@@ -9872,7 +9898,7 @@ function openCreateGroup(startType) {
   document.getElementById('cgExpiryRow').style.display = _cgType === 'temporary' ? 'block' : 'none';
   // Reset color
   document.querySelectorAll('.cg-color').forEach(el => {
-    el.classList.toggle('selected', el.dataset.color === '#7c6aff');
+    el.classList.toggle('selected', el.dataset.color === '#ec5b08');
   });
   document.getElementById('cgSelectedCount').textContent = '0';
   // Populate friends list with search
@@ -10092,7 +10118,7 @@ setInterval(() => {
     width:100%;padding:14px;border-radius:14px;border:none;
     background:var(--brand);color:#fff;
     font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;
-    box-shadow:0 4px 14px rgba(124,106,255,.35);
+    box-shadow:0 4px 14px rgba(236,91,8,.35);
   ">✏️ Edit my message</button>
   <button onclick="moodSendAnyway()" style="
     width:100%;padding:13px;border-radius:14px;border:none;
@@ -10138,8 +10164,8 @@ setInterval(() => {
     <div class="cg-section">
       <div class="cg-label">Color</div>
       <div class="cg-color-row" id="cgColorRow">
-        <div class="cg-color selected" style="background:#7c6aff" data-color="#7c6aff" onclick="cgPickColor(this)"></div>
-        <div class="cg-color" style="background:#a855f7" data-color="#a855f7" onclick="cgPickColor(this)"></div>
+        <div class="cg-color selected" style="background:#ec5b08" data-color="#ec5b08" onclick="cgPickColor(this)"></div>
+        <div class="cg-color" style="background:#d44e07" data-color="#d44e07" onclick="cgPickColor(this)"></div>
         <div class="cg-color" style="background:#06b6d4" data-color="#06b6d4" onclick="cgPickColor(this)"></div>
         <div class="cg-color" style="background:#22c55e" data-color="#22c55e" onclick="cgPickColor(this)"></div>
         <div class="cg-color" style="background:#f59e0b" data-color="#f59e0b" onclick="cgPickColor(this)"></div>
