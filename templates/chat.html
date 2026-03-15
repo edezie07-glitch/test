@@ -410,6 +410,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .notif-pitem-act:hover{background:var(--hov);}
 .notif-pitem-act.del{color:#ef4444;}
 .np-empty{text-align:center;padding:48px 20px;color:var(--mute);font-size:14px;}
+/* Story emoji float animation */
+@keyframes storyEmojiFloat{
+  0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+  100%{opacity:0;transform:translateX(-50%) translateY(-80px) scale(1.5);}
+}
 /* Undo snackbar */
 .notif-undo-bar{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -1853,9 +1858,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <div class="profile-body">
     <div class="profile-avatar-large" id="profileAvWrap">
-      <div class="av" id="profileAvLarge" style="width:120px;height:120px;font-size:48px;border-radius:24px;cursor:pointer;overflow:hidden;" onclick="profileAvTap()">U</div>
-      <!-- ⋮ edit dot — only shown on own profile -->
-      <div class="av-edit-dot" id="profileAvEditDot" style="display:none;" onclick="event.stopPropagation();toggleAvMenu()">⋮</div>
+      <!-- Avatar: tap to view full image -->
+      <div class="av" id="profileAvLarge" style="width:130px;height:130px;font-size:52px;border-radius:65px;cursor:pointer;overflow:hidden;border:3px solid rgba(124,106,255,.4);box-shadow:0 4px 20px rgba(0,0,0,.3);" onclick="profileAvTap()">U</div>
+      <!-- ✏️ edit button — only shown on own profile -->
+      <div class="av-edit-dot" id="profileAvEditDot" style="display:none;" onclick="event.stopPropagation();toggleAvMenu()" title="Edit photo">⋮</div>
       <!-- 3-dot menu -->
       <div class="av-menu" id="profileAvMenu">
         <button class="av-menu-item" onclick="closeAvMenu();openAvatarCrop()">🖼️ Choose Photo</button>
@@ -1876,6 +1882,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button class="profile-action-btn" onclick="messageFromProfile()">💬 Message</button>
       <button class="profile-action-btn" onclick="startVoiceCall()">📞 Voice Call</button>
       <button class="profile-action-btn" onclick="startVideoCall()">📹 Video Call</button>
+      <button class="profile-action-btn" id="unfriendBtn" onclick="unfriendFromProfile()" style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);display:none;">👤 Unfriend</button>
       <div id="profileNowPlaying" class="now-playing-bar" style="display:none;margin-top:8px;">
         <div class="np-dot"></div>
         <span id="profileNPText" style="font-size:13px;color:var(--sub);"></span>
@@ -2082,7 +2089,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="ssec">
       <div class="ssec-t">My Profile</div>
       <div class="pcard">
-        <div class="av xl" id="sav">{{ user.username[0]|upper }}</div>
+        <div class="av xl" id="sav" onclick="openSettingsAvatarEdit()" 
+             style="cursor:pointer;position:relative;" title="Change profile picture">
+          {{ user.username[0]|upper }}
+          <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;
+            border-radius:50%;background:var(--brand);color:#fff;font-size:12px;
+            display:flex;align-items:center;justify-content:center;
+            border:2px solid var(--bg);font-weight:900;">⋮</div>
+        </div>
         <div class="pinfo">
           <div class="pname" id="snm">{{ user.username }}</div>
           <div class="pstat" id="sst">Available</div>
@@ -2191,22 +2205,24 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <span style="color:#fff;font-size:16px;font-weight:700;flex:1;">Choose Profile Photo</span>
     <button onclick="saveCroppedAvatar()" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;" id="cropSaveBtn">Save</button>
   </div>
-  <div class="crop-stage" id="cropStage">
-    <img id="cropImg" src="" alt="crop">
+  <div class="crop-stage" id="cropStage" style="position:relative;">
+    <img id="cropImg" src="" alt="crop" style="position:absolute;transform-origin:top left;user-select:none;-webkit-user-drag:none;max-width:none;max-height:none;">
     <div class="crop-circle-mask"></div>
   </div>
-  <div class="crop-toolbar">
-    <span style="font-size:12px;color:rgba(255,255,255,.5);">Pinch or scroll to zoom · drag to reposition</span>
-    <span class="crop-size-hint" id="cropSizeHint"></span>
-    <button onclick="document.getElementById('avatarFileInput').click()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;">📂 Change</button>
+  <div class="crop-toolbar" style="flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:10px;width:100%;">
+      <span style="font-size:12px;color:rgba(255,255,255,.45);flex:1;">Drag to move · Pinch or scroll to zoom</span>
+      <button onclick="document.getElementById('avatarFileInput').click()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">📂 Change</button>
+    </div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;" id="cropSizeHint"></div>
   </div>
 </div>
 <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="avatarFilePicked(this)">
 
 <!-- Full-size profile image viewer -->
-<div id="profileFullImg" onclick="closeProfileFullImg()">
-  <img id="profileFullImgEl" src="" alt="profile">
-  <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:12px;">Tap to close</div>
+<div id="profileFullImg" onclick="closeProfileFullImg()" style="cursor:pointer;">
+  <img id="profileFullImgEl" src="" alt="profile" style="border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);">
+  <div style="color:rgba(255,255,255,.4);font-size:12px;margin-top:14px;letter-spacing:.3px;">Tap anywhere to close</div>
 </div>
 
 <!-- Undo delete snackbar -->
@@ -2267,8 +2283,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 ">
   <!-- Progress bars -->
   <div id="storyProgress" style="
-    display:flex;gap:3px;padding:10px 12px 6px;
+    display:flex;gap:3px;padding:14px 12px 6px;
     position:absolute;top:0;left:0;right:0;z-index:2;
+    pointer-events:none;
   "></div>
 
   <!-- Header -->
@@ -2313,7 +2330,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     overflow:hidden;
   ">
     <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;">
-    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;" playsinline autoplay loop></video>
+    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;" playsinline preload="auto"></video>
     <p id="storyText" style="
       font-size:22px;font-weight:600;color:#fff;
       text-align:center;padding:40px 24px;
@@ -2345,12 +2362,43 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   ">🎵</div>
 
-  <!-- Bottom: viewers (owner only) -->
-  <div id="storyViewers" style="
+  <!-- Bottom: emoji reactions + comment + viewers -->
+  <div id="storyBottom" style="
     position:absolute;bottom:0;left:0;right:0;z-index:2;
-    padding:12px 16px 24px;
-    background:linear-gradient(transparent,rgba(0,0,0,.7));
-  "></div>
+    padding:8px 14px 24px;
+    background:linear-gradient(transparent,rgba(0,0,0,.75));
+  ">
+    <!-- Viewer count (owner only) -->
+    <div id="storyViewers" style="margin-bottom:8px;"></div>
+
+    <!-- Emoji reactions row -->
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
+        <button onclick="sendStoryReact('😂')" class="story-react-btn">😂</button>
+        <button onclick="sendStoryReact('😮')" class="story-react-btn">😮</button>
+        <button onclick="sendStoryReact('🔥')" class="story-react-btn">🔥</button>
+        <button onclick="sendStoryReact('👏')" class="story-react-btn">👏</button>
+        <button onclick="sendStoryReact('😍')" class="story-react-btn">😍</button>
+        <button onclick="sendStoryReact('💯')" class="story-react-btn">💯</button>
+        <button onclick="sendStoryReact('😢')" class="story-react-btn">😢</button>
+      </div>
+    </div>
+    <!-- Comment / message box -->
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="storyCommentInput" type="text" placeholder="Send a message…" maxlength="200"
+        onfocus="pauseStory()" onblur="resumeStory()"
+        onkeydown="if(event.key==='Enter'){sendStoryComment();event.preventDefault();}"
+        style="flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+          border-radius:24px;padding:10px 18px;color:#fff;font-size:14px;outline:none;
+          -webkit-appearance:none;">
+      <button onclick="sendStoryComment()" style="
+        background:var(--brand,#7c6aff);border:none;color:#fff;
+        width:40px;height:40px;border-radius:50%;font-size:16px;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        flex-shrink:0;box-shadow:0 2px 10px rgba(124,106,255,.5);">➤</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -2397,7 +2445,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div id="SC_rotWrap" style="display:contents;touch-action:none;">
         <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
       </div>
-      <video id="SC_vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline autoplay loop muted></video>
+      <video id="SC_vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline loop></video>
 
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
@@ -2483,36 +2531,48 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       padding:12px 16px 28px;
       transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
       backdrop-filter:blur(8px);">
+      <!-- Quick action buttons row -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
-        <!-- Adjust -->
-        <button onclick="scShowContrast()" style="
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
-          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button onclick="scShowContrast()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">🎨</span>Adjust
         </button>
-        <!-- Add Song — opens full-screen song page (PAGE 4) -->
-        <button id="SC_songBtn" onclick="scOpenSongPage()" style="
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
-          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button id="SC_songBtn" onclick="scOpenSongPage()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">🎵</span><span id="SC_songBtnLabel">Add Song</span>
         </button>
-        <!-- Add Text -->
-        <button id="SC_captionBtn" onclick="scAddCaption()" style="
-          background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
-          cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button id="SC_captionBtn" onclick="scAddCaption()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">✏️</span>Add Text
         </button>
-        <!-- Trim/Cut Video (only visible for video) -->
-        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="
-          display:none;
-          background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);
-          color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
-          cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
+        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="display:none;background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">✂️</span>Edit & Cut
         </button>
+      </div>
+
+      <!-- VIDEO CONTROLS — only shown when video is loaded -->
+      <div id="SC_videoControls" style="display:none;margin-bottom:14px;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 12px;">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎬 Video</div>
+        <!-- Play / Stop -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <button id="SC_vidPlayBtn" onclick="scEditorTogglePlay()" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">Video Sound</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;">🔇</span>
+              <input type="range" id="SC_vidVolSlider" min="0" max="100" value="100" class="sc-slider" style="flex:1;" oninput="scSetVidVol(this.value)">
+              <span style="font-size:12px;">🔊</span>
+              <span id="SC_vidVolVal" style="font-size:11px;color:rgba(255,255,255,.6);width:32px;text-align:right;font-weight:700;">100%</span>
+            </div>
+          </div>
+        </div>
+        <!-- Music volume (only shown when song selected) -->
+        <div id="SC_musicVolRow" style="display:none;">
+          <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">🎵 Music Volume</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;">🔇</span>
+            <input type="range" id="SC_musicVolSlider" min="0" max="100" value="80" class="sc-slider" style="flex:1;" oninput="scSetMusicVol(this.value)">
+            <span style="font-size:12px;">🔊</span>
+            <span id="SC_musicVolVal" style="font-size:11px;color:rgba(255,255,255,.6);width:32px;text-align:right;font-weight:700;">80%</span>
+          </div>
+        </div>
       </div>
 
       <!-- Adjust sliders -->
@@ -2701,17 +2761,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div style="background:#0d0f1a;padding-bottom:env(safe-area-inset-bottom,0);">
 
       <!-- Trim scrubber -->
-      <div style="padding:12px 16px 6px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <div style="padding:10px 14px 4px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
           <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
           <span id="SC_trimDurLbl" style="font-size:11px;color:#a78fff;font-weight:700;">0.0s selected</span>
           <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
         </div>
-        <div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.07);border-radius:10px;cursor:pointer;"
+        <div id="SC_trimBar" style="position:relative;height:42px;background:rgba(255,255,255,.07);border-radius:10px;cursor:pointer;"
           onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
           <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
           <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.3);border:1px solid rgba(124,106,255,.8);border-radius:6px;z-index:2;pointer-events:none;"></div>
-          <!-- Cut points container -->
           <div id="SC_cutPoints"></div>
           <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:18px;background:#7c6aff;border-radius:6px 0 0 6px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
             onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
@@ -2722,84 +2781,94 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
             <div style="width:3px;height:16px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
           </div>
         </div>
-        <div style="font-size:11px;color:rgba(255,255,255,.35);text-align:center;margin-top:4px;" id="SC_trimHint">Drag handles · tap ✂️ Cut to mark points</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;margin-top:3px;" id="SC_trimHint">Drag handles to trim · ✂️ Cut marks a point</div>
+      </div>
+
+      <!-- Music trim scrubber (shown only when song is added) -->
+      <div id="SC_musicTrimWrap" style="display:none;padding:6px 14px 2px;border-top:1px solid rgba(255,255,255,.06);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <span style="font-size:11px;color:#a78fff;font-weight:700;">🎵 Music clip</span>
+          <span id="SC_musicTrimLbl" style="font-size:10px;color:rgba(255,255,255,.45);"></span>
+        </div>
+        <div id="SC_musicTrimBar" style="position:relative;height:32px;background:rgba(124,106,255,.12);border-radius:8px;cursor:pointer;border:1px solid rgba(124,106,255,.3);"
+          ontouchstart="scMusicTrimTouch(event)" onmousedown="scMusicTrimClick(event)">
+          <div id="SC_musicPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#a78fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
+          <div id="SC_musicRegion" style="position:absolute;top:0;bottom:0;background:rgba(124,106,255,.25);border-radius:6px;z-index:2;pointer-events:none;"></div>
+          <div id="SC_musicTrimL" style="position:absolute;top:0;bottom:0;width:14px;background:#a78fff;border-radius:5px 0 0 5px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
+            onmousedown="scMusicDragStart(event,'L')" ontouchstart="scMusicDragStart(event,'L')">
+            <div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
+          </div>
+          <div id="SC_musicTrimR" style="position:absolute;top:0;bottom:0;width:14px;background:#a78fff;border-radius:0 5px 5px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
+            onmousedown="scMusicDragStart(event,'R')" ontouchstart="scMusicDragStart(event,'R')">
+            <div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Horizontally scrollable adjustments -->
-      <div style="overflow-x:auto;overflow-y:hidden;padding:8px 16px 14px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">
-        <div style="display:flex;gap:14px;min-width:max-content;align-items:flex-start;">
+      <div style="overflow-x:auto;overflow-y:hidden;padding:8px 14px 14px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">
+        <div style="display:flex;gap:10px;min-width:max-content;align-items:flex-end;">
 
-          <!-- Volume / Pitch Height -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
-            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🎵 Pitch</div>
-            <div style="display:flex;align-items:center;gap:6px;width:100%;">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">Low</span>
-              <input type="range" id="SC_pitchSlider" min="-6" max="6" step="0.5" value="0"
-                style="flex:1;accent-color:#7c6aff;height:4px;"
-                oninput="scUpdatePitch(this.value)">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">High</span>
-            </div>
-            <span id="SC_pitchVal" style="font-size:11px;color:#a78fff;font-weight:700;">0</span>
-          </div>
-
-          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
-
-          <!-- Volume -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
-            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🔊 Volume</div>
-            <div style="display:flex;align-items:center;gap:6px;width:100%;">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">0</span>
-              <input type="range" id="SC_volSlider" min="0" max="200" step="1" value="100"
-                style="flex:1;accent-color:#22c55e;height:4px;"
-                oninput="scUpdateVol(this.value)">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">2×</span>
-            </div>
+          <!-- Original Video Volume -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎬 Video Vol</span>
+            <input type="range" id="SC_volSlider" min="0" max="200" step="1" value="100"
+              oninput="scUpdateVol(this.value)">
             <span id="SC_volVal" style="font-size:11px;color:#22c55e;font-weight:700;">100%</span>
           </div>
 
-          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+          <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
+
+          <!-- Music Vol controlled in editor arrow panel -->
+
+          <!-- Add/Change Song button -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:90px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Song</span>
+            <button id="SC_trimSongBtn" onclick="scTrimOpenSong()" style="
+              background:rgba(124,106,255,.2);border:1px solid rgba(124,106,255,.4);
+              color:#fff;border-radius:10px;padding:7px 12px;font-size:11px;font-weight:700;
+              cursor:pointer;white-space:nowrap;width:100%;">+ Add Song</button>
+            <span id="SC_trimSongName" style="font-size:9px;color:#a78fff;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:90px;display:none;"></span>
+          </div>
+
+          <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
           <!-- Speed -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
-            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">⚡ Speed</div>
-            <div style="display:flex;align-items:center;gap:6px;width:100%;">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">0.5×</span>
-              <input type="range" id="SC_speedSlider" min="0.25" max="2" step="0.25" value="1"
-                style="flex:1;accent-color:#f59e0b;height:4px;"
-                oninput="scUpdateSpeed(this.value)">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">2×</span>
-            </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">⚡ Speed</span>
+            <input type="range" id="SC_speedSlider" min="0.25" max="2" step="0.25" value="1"
+              oninput="scUpdateSpeed(this.value)">
             <span id="SC_speedVal" style="font-size:11px;color:#f59e0b;font-weight:700;">1.0×</span>
           </div>
 
-          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+          <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
           <!-- Brightness -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
-            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">☀️ Brightness</div>
-            <div style="display:flex;align-items:center;gap:6px;width:100%;">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">−</span>
-              <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100"
-                style="flex:1;accent-color:#fbbf24;height:4px;"
-                oninput="scUpdateVidFilter()">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">+</span>
-            </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">☀️ Bright</span>
+            <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100"
+              oninput="scUpdateVidFilter()">
             <span id="SC_vidBrightnessVal" style="font-size:11px;color:#fbbf24;font-weight:700;">100</span>
           </div>
 
-          <div style="width:1px;background:rgba(255,255,255,.1);align-self:stretch;margin:0 2px;"></div>
+          <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
           <!-- Contrast -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:110px;">
-            <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">◑ Contrast</div>
-            <div style="display:flex;align-items:center;gap:6px;width:100%;">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">−</span>
-              <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100"
-                style="flex:1;accent-color:#38bdf8;height:4px;"
-                oninput="scUpdateVidFilter()">
-              <span style="font-size:10px;color:rgba(255,255,255,.4);">+</span>
-            </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">◑ Contrast</span>
+            <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100"
+              oninput="scUpdateVidFilter()">
             <span id="SC_vidContrastVal" style="font-size:11px;color:#38bdf8;font-weight:700;">100</span>
+          </div>
+
+          <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
+
+          <!-- Pitch -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Pitch</span>
+            <input type="range" id="SC_pitchSlider" min="-6" max="6" step="0.5" value="0"
+              oninput="scUpdatePitch(this.value)">
+            <span id="SC_pitchVal" style="font-size:11px;color:#a78fff;font-weight:700;">0</span>
           </div>
 
         </div>
@@ -2940,6 +3009,10 @@ function toggleSetting(key,btnId){
   savePrefs();
 }
 function openSettings(){document.getElementById('sov').classList.add('open');document.getElementById('sdraw').classList.add('open');}
+function openSettingsAvatarEdit(){
+  // Open the avatar crop editor directly from settings
+  document.getElementById('avatarFileInput').click();
+}
 function closeSettings(){document.getElementById('sov').classList.remove('open');document.getElementById('sdraw').classList.remove('open');}
 async function saveProfile(){
   const un=document.getElementById('eun').value.trim();
@@ -2951,6 +3024,14 @@ async function saveProfile(){
     const d=await r.json();
     if(d.success){
       document.getElementById('snm').textContent=un||ME_NAME;
+    // Sync avatar in settings if user has one
+    if(data.avatar_url){
+      const sav=document.getElementById('sav');
+      if(sav){
+        sav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar">
+          <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;" onclick="event.stopPropagation();openSettingsAvatarEdit()">⋮</div>`;
+      }
+    }
       toast('✅ Profile saved!','ok');
     }else toast(d.error||'Failed','err');
   }catch(e){toast('Failed','err');}
@@ -3049,12 +3130,12 @@ function connectSocket(){
   socket.on('story_deleted',(data)=>{
     loadStories();
   });
-  // Someone viewed YOUR story — update view count live
+  // Someone viewed your story — silently update viewer count in story panel only
   socket.on('story_viewed',(data)=>{
-    showInAppNotif(data.viewer_username, '👁️ viewed your story', null, data.viewer_id);
-    // If story viewer section is currently open, refresh it
+    // No notification/toast for views — only visible in the story's viewer section
     const viewersEl = document.getElementById('storyViewers');
-    if(viewersEl && viewersEl.innerHTML !== '') loadStoryViewers(data.story_id);
+    if(viewersEl && viewersEl.offsetParent !== null) loadStoryViewers(data.story_id);
+    // Do NOT call showInAppNotif here
   });
   // A friend updated their profile/avatar — refresh friend list so name/avatar is current
   socket.on('profile_updated',(data)=>{
@@ -3601,10 +3682,28 @@ function showFriendProfile(){
   // Show edit dot only on own profile
   const editDot=document.getElementById('profileAvEditDot');
   if(editDot) editDot.style.display = (friend.id===ME_ID)?'flex':'none';
+  const unfriendBtn=document.getElementById('unfriendBtn');
+  if(unfriendBtn) unfriendBtn.style.display=(friend.id!==ME_ID)?'flex':'none';
   document.getElementById('profileOverlay').classList.add('show');document.getElementById('profileModal').classList.add('show');
 }
 function closeProfileView(){document.getElementById('profileOverlay').classList.remove('show');document.getElementById('profileModal').classList.remove('show');}
 function messageFromProfile(){closeProfileView();document.getElementById('msgInput').focus();}
+async function unfriendFromProfile(){
+  if(!currentProfileData) return;
+  const name=currentProfileData.username;
+  if(!confirm('Remove '+name+' as a friend?')) return;
+  try{
+    const r=await fetch('/api/friends/remove',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({friend_id:currentProfileData.id})});
+    const d=await r.json();
+    if(d.success){
+      toast('Removed '+name+' from friends','ok');
+      closeProfileView();
+      await loadFriends();
+    } else toast(d.error||'Failed','err');
+  }catch(e){ toast('Network error','err'); }
+}
 // ═══════ WEBRTC CALLS ═══════
 // ══════════════════════════════════════════════════════════════════
 // CALL ENGINE v4 — high quality, reliable, smooth
@@ -4933,7 +5032,7 @@ async function doSearch(q){
     const d=await r.json();
     const html=!d.success||!d.results||!d.results.length
       ?'<div class="lempty" style="padding:12px;">No users found</div>'
-      :d.results.map(u=>`<div class="sr-row"><div class="sr-l"><div class="av sm">${u.username[0].toUpperCase()}</div><div><div class="sr-nm">${esc(u.username)}</div><div class="sr-st">${u.is_online?'🟢 Online':esc(u.status||'')}</div></div></div>${srBtn(u)}</div>`).join('');
+      :d.results.map(u=>`<div class="sr-row" onclick="srRowTap(${u.id},'${esc(u.username)}','${u.relationship||'none'}')" style="cursor:pointer;"><div class="sr-l"><div class="av sm">${u.username[0].toUpperCase()}</div><div><div class="sr-nm">${esc(u.username)}</div><div class="sr-st">${u.is_online?'🟢 Online':esc(u.status||'')}</div></div></div>${srBtn(u)}</div>`).join('');
     document.getElementById('srList').innerHTML=html;
     const mobileList=document.getElementById('srListClp');
     if(mobileList)mobileList.innerHTML=html;
@@ -4944,10 +5043,53 @@ async function doSearch(q){
   }
 }
 function srBtn(u){
-  if(u.relationship==='friend')return`<button class="pill p-msg" onclick="openChat(${u.id},'${esc(u.username)}')">Message</button>`;
+  if(u.relationship==='friend')return`<button class="pill p-msg" onclick="event.stopPropagation();openChat(${u.id},'${esc(u.username)}')">Message</button>`;
   if(u.relationship==='request_sent')return`<button class="pill p-pend" disabled>Pending</button>`;
-  if(u.relationship==='request_received')return`<button class="pill p-ok" onclick="quickAccept(${u.id})">Accept</button>`;
-  return`<button class="pill p-add" onclick="addFriend(${u.id})">Add Friend</button>`;
+  if(u.relationship==='request_received')return`<button class="pill p-ok" onclick="event.stopPropagation();quickAccept(${u.id})">Accept</button>`;
+  return`<button class="pill p-add" onclick="event.stopPropagation();srSendReq(${u.id},this)">Add Friend</button>`;
+}
+
+// Tap a search row → open notif panel if request sent/received
+function srRowTap(uid, username, rel){
+  if(rel==='friend'){ openChat(uid, username); return; }
+  if(rel==='request_received'){ quickAccept(uid); return; }
+  if(rel==='request_sent'){
+    // Show the notification panel so they can see the pending request
+    openNotifPanel(); return;
+  }
+  // Not yet friends — send request and open notif panel
+  srSendReqAndNotif(uid, username);
+}
+
+async function srSendReq(uid, btn){
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  try{
+    const r=await fetch('/api/friends/request',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to_user_id:uid})});
+    const d=await r.json();
+    if(d.success){
+      toast('Friend request sent! 🎉','ok');
+      if(btn){ btn.textContent='Pending'; btn.className='pill p-pend'; btn.disabled=true; }
+    } else {
+      toast(d.error,'err');
+      if(btn){ btn.disabled=false; btn.textContent='Add Friend'; }
+    }
+  }catch(e){ toast('Failed','err'); if(btn){ btn.disabled=false; } }
+}
+
+async function srSendReqAndNotif(uid, username){
+  try{
+    const r=await fetch('/api/friends/request',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to_user_id:uid})});
+    const d=await r.json();
+    if(d.success){
+      toast('Request sent to '+username+'! 🎉','ok');
+      // Open notification panel so user sees the sent request
+      openNotifPanel();
+    } else toast(d.error,'err');
+  }catch(e){ toast('Failed','err'); }
 }
 async function loadFriends(){
   try{
@@ -5139,12 +5281,38 @@ async function loadRequests(){
 function renderRequests(){
   const list=document.getElementById('rqList');if(!list)return;
   if(!pendingReqs.length){list.innerHTML='<div class="lempty" style="padding:12px;">No pending requests</div>';return;}
-  list.innerHTML=pendingReqs.map(r=>`<div class="req-row"><div class="req-usr"><div class="av sm">${r.username[0].toUpperCase()}</div><div><div class="req-nm">${esc(r.username)}</div><div class="req-wh">${r.time_ago||''}</div></div></div><div class="req-ac"><button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button><button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button></div></div>`).join('');
+  list.innerHTML=pendingReqs.map(r=>`
+    <div class="req-row" onclick="openNotifPanel()" style="cursor:pointer;" title="View in notifications">
+      <div class="req-usr">
+        <div class="av sm">${r.username[0].toUpperCase()}</div>
+        <div>
+          <div class="req-nm">${esc(r.username)}</div>
+          <div class="req-wh">${r.time_ago||''}</div>
+        </div>
+      </div>
+      <div class="req-ac" onclick="event.stopPropagation()">
+        <button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button>
+        <button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button>
+      </div>
+    </div>`).join('');
 }
 function renderRequestsMobile(){
   const list=document.getElementById('rqListClp');if(!list)return;
   if(!pendingReqs.length){list.innerHTML='<div class="lempty" style="padding:12px;">No pending requests</div>';return;}
-  list.innerHTML=pendingReqs.map(r=>`<div class="req-row"><div class="req-usr"><div class="av sm">${r.username[0].toUpperCase()}</div><div><div class="req-nm">${esc(r.username)}</div><div class="req-wh">${r.time_ago||''}</div></div></div><div class="req-ac"><button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button><button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button></div></div>`).join('');
+  list.innerHTML=pendingReqs.map(r=>`
+    <div class="req-row" onclick="openNotifPanel()" style="cursor:pointer;" title="View in notifications">
+      <div class="req-usr">
+        <div class="av sm">${r.username[0].toUpperCase()}</div>
+        <div>
+          <div class="req-nm">${esc(r.username)}</div>
+          <div class="req-wh">${r.time_ago||''}</div>
+        </div>
+      </div>
+      <div class="req-ac" onclick="event.stopPropagation()">
+        <button class="pill p-ok" onclick="acceptReq(${r.request_id})">Accept</button>
+        <button class="pill p-no" onclick="rejectReq(${r.request_id})">Decline</button>
+      </div>
+    </div>`).join('');
 }
 function toggleP(id){
   const p=document.getElementById(id);p.classList.toggle('open');
@@ -5923,11 +6091,12 @@ function showInAppNotif(name, text, chatId, userId){
     actions.classList.remove('show');
   });
 
-  // Tap bubble body → open chat
+  // Tap bubble body → open notification panel (which shows all notifs + navigate)
   el.addEventListener('click', ev=>{
     if(ev.target.closest('.notif-menu-btn')||ev.target.closest('.notif-actions')||ev.target.closest('.notif-name')) return;
     _dismissToast(el);
-    _notifNavigate(chatId);
+    openNotifPanel();
+    if(chatId) setTimeout(()=>{ _notifNavigate(chatId); }, 300);
   });
 
   stack.appendChild(el);
@@ -6036,12 +6205,19 @@ function _renderNotifPanel(){
     const div=document.createElement('div');
     div.className='notif-pitem'+(n.read?'':' unread');
     div.setAttribute('data-nid',n.id);
+    const isFR = n.type==='friend_request' && n.requestId;
+    const frBtns = isFR ? `
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="notif-fr-decline" style="flex:1;padding:7px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);font-size:12px;font-weight:700;cursor:pointer;">✕ Decline</button>
+        <button class="notif-fr-accept" style="flex:1;padding:7px;border-radius:9px;border:none;background:var(--brand,#7c6aff);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✓ Accept</button>
+      </div>` : '';
     div.innerHTML=`
       <div class="notif-pitem-av">${(n.name||'?')[0].toUpperCase()}</div>
-      <div class="notif-pitem-body">
+      <div class="notif-pitem-body" style="flex:1;min-width:0;">
         <span class="notif-pitem-name" data-uid="${n.userId||''}">${esc(n.name)}</span>
         <div class="notif-pitem-text">${esc(n.text)}</div>
         <div class="notif-pitem-time">${n.time||''}</div>
+        ${frBtns}
       </div>
       <button class="notif-pitem-menu" title="Options">⋮</button>
       <div class="notif-pitem-actions">
@@ -6049,6 +6225,21 @@ function _renderNotifPanel(){
         <button class="notif-pitem-act">← Back</button>
       </div>
     `;
+    // Accept/Decline for friend requests in panel
+    if(isFR){
+      div.querySelector('.notif-fr-accept').addEventListener('click',ev=>{
+        ev.stopPropagation();
+        notifAcceptReq(n.requestId, null);
+        _deleteNotifById(n.id);
+        div.remove();
+      });
+      div.querySelector('.notif-fr-decline').addEventListener('click',ev=>{
+        ev.stopPropagation();
+        notifDeclineReq(n.requestId, null);
+        _deleteNotifById(n.id);
+        div.remove();
+      });
+    }
     // Name → profile
     div.querySelector('.notif-pitem-name').addEventListener('click', ev=>{
       ev.stopPropagation();
@@ -6082,6 +6273,29 @@ function _renderNotifPanel(){
     });
     body.appendChild(div);
   });
+}
+
+async function panelAcceptReq(requestId, notifId){
+  try{
+    const r=await fetch('/api/friends/accept',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request_id:requestId})});
+    const d=await r.json();
+    if(d.success){
+      toast('✅ Friend accepted!','ok');
+      _deleteNotifById(notifId);
+      loadFriends(); loadRequests();
+    } else toast(d.error||'Failed','err');
+  }catch(e){ toast('Failed','err'); }
+}
+async function panelDeclineReq(requestId, notifId){
+  try{
+    await fetch('/api/friends/reject',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({request_id:requestId})});
+    _deleteNotifById(notifId);
+    loadRequests();
+  }catch(e){}
 }
 
 function openNotifPanel(){
@@ -6136,11 +6350,11 @@ let _cropState = { img:null, x:0, y:0, scale:1, dragging:false, pinching:false,
                    startX:0, startY:0, lastDist:0, naturalW:0, naturalH:0 };
 
 function profileAvTap(){
-  // If own profile → do nothing (edit dot handles it)
-  // If other's profile → show full image
   const av = document.getElementById('profileAvLarge');
   const src = av.querySelector('img')?.dataset.fullsrc || av.querySelector('img')?.src;
   if(src && !src.startsWith('data:')) openProfileFullImg(src);
+  // If no avatar uploaded yet and this is own profile, open crop
+  else if(currentProfileData && currentProfileData.id===ME_ID) openAvatarCrop();
 }
 
 function toggleAvMenu(){
@@ -6169,16 +6383,23 @@ function avatarFilePicked(input){
     _cropState.naturalW = img.naturalWidth;
     _cropState.naturalH = img.naturalHeight;
     const stage = document.getElementById('cropStage');
-    const stageW = stage.offsetWidth, stageH = stage.offsetHeight;
-    const circleD = Math.min(stageW, stageH) * 0.8;
-    // Fit image to fill the circle
-    const scale = Math.max(circleD/img.naturalWidth, circleD/img.naturalHeight);
-    _cropState.scale = scale;
-    _cropState.x = (stageW - img.naturalWidth*scale)/2;
-    _cropState.y = (stageH - img.naturalHeight*scale)/2;
-    _applyCropTransform();
-    const hint = document.getElementById('cropSizeHint');
-    if(hint) hint.textContent = img.naturalWidth+'×'+img.naturalHeight;
+    // Wait for stage to be visible and have dimensions
+    requestAnimationFrame(()=>{
+      const stageW = stage.offsetWidth  || window.innerWidth;
+      const stageH = stage.offsetHeight || (window.innerHeight - 180);
+      const circleD = Math.min(stageW, stageH) * 0.8;
+      // Scale so image fills the circle completely
+      const scale = Math.max(circleD / img.naturalWidth, circleD / img.naturalHeight) * 1.05;
+      _cropState.scale = scale;
+      // Center image over the circle
+      const scaledW = img.naturalWidth  * scale;
+      const scaledH = img.naturalHeight * scale;
+      _cropState.x = (stageW - scaledW) / 2;
+      _cropState.y = (stageH - scaledH) / 2;
+      _applyCropTransform();
+      const hint = document.getElementById('cropSizeHint');
+      if(hint) hint.textContent = img.naturalWidth+'×'+img.naturalHeight;
+    });
   };
   img.src = url;
   const ov = document.getElementById('avatarCropOverlay');
@@ -6196,15 +6417,19 @@ function closeAvatarCrop(){
 function _applyCropTransform(){
   const img = document.getElementById('cropImg');
   if(!img) return;
+  // Use transform for smooth GPU-accelerated movement
   img.style.width  = (_cropState.naturalW * _cropState.scale)+'px';
   img.style.height = (_cropState.naturalH * _cropState.scale)+'px';
-  img.style.left   = _cropState.x+'px';
-  img.style.top    = _cropState.y+'px';
+  img.style.left   = '0px';
+  img.style.top    = '0px';
+  img.style.transform = `translate(${_cropState.x}px, ${_cropState.y}px)`;
 }
 
 function _attachCropEvents(){
   const stage = document.getElementById('cropStage');
-  if(!stage || stage._cropEventsAttached) return;
+  // Always re-attach (remove flag so it re-registers on each crop open)
+  if(stage) stage._cropEventsAttached = false;
+  if(!stage) return;
   stage._cropEventsAttached = true;
   // Mouse drag
   stage.addEventListener('mousedown', e=>{
@@ -6291,8 +6516,12 @@ async function saveCroppedAvatar(){
       if(d.success){
         // Update profile sheet avatar immediately
         const av=document.getElementById('profileAvLarge');
-        av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onclick="openProfileFullImg('${d.avatar_url}')" data-fullsrc="${d.avatar_url}">`;
-        // Update all avatars in chat header and friend list
+        if(av) av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onclick="openProfileFullImg('${d.avatar_url}')" data-fullsrc="${d.avatar_url}">`;
+        // Update settings sidebar avatar
+        const sav=document.getElementById('sav');
+        if(sav) sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar">
+          <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
+        // Update all avatars across the app
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
@@ -6355,11 +6584,11 @@ function showFriendRequestNotif(name, userId, requestId){
       </div>
       <div class="notif-time">${notif.time}</div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
       <button onclick="event.stopPropagation();notifDeclineReq(${requestId},this.closest('.notif-bubble'))"
-        style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">✕ Decline</button>
+        style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">✕ Decline</button>
       <button onclick="event.stopPropagation();notifAcceptReq(${requestId},this.closest('.notif-bubble'))"
-        style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">✓ Accept</button>
+        style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">✓ Accept</button>
     </div>
   `;
   stack.appendChild(el);
@@ -6945,34 +7174,37 @@ function showStory(){
 
   if(story.media_url){
     if(story.media_type === 'video'){
-      // Clear old handlers to prevent stacking across stories
+      // Fully reset video element before loading new source
       vidEl.onloadedmetadata = null;
-      vidEl.ontimeupdate   = null;
-      vidEl.onended        = null;
-      vidEl.src = story.media_url;
+      vidEl.ontimeupdate     = null;
+      vidEl.onended          = null;
+      vidEl.oncanplaythrough = null;
+      vidEl.pause();
+      vidEl.removeAttribute('src');
+      vidEl.load();
+
       vidEl.style.display = 'block';
       const trimStart = story.trim_start || 0;
-      const trimEnd   = story.trim_end   || null; // null = use full duration
-      vidEl.onloadedmetadata = ()=>{
-        const total = vidEl.duration;
+      const trimEnd   = story.trim_end   || null;
+
+      vidEl.oncanplaythrough = ()=>{
+        vidEl.oncanplaythrough = null;
+        const total = vidEl.duration || 30;
         const end   = trimEnd != null ? Math.min(trimEnd, total) : Math.min(total, 30);
-        const clipMs = Math.ceil((end - trimStart) * 1000);
-        // Seek to trim start
+        const clipMs = Math.max(1000, Math.ceil((end - trimStart) * 1000));
         vidEl.currentTime = trimStart;
-        // Set story bar to exactly the clip length
-        if(clipMs > 0 && clipMs !== _storyRemaining){
+        if(clipMs !== _storyRemaining){
           _storyRemaining = clipMs;
           startStoryTimer();
         }
-        // Loop back to trimStart when clip end is reached
         vidEl.ontimeupdate = ()=>{
-          if(vidEl.currentTime >= end - 0.05){
-            if(!_storyPaused) nextStory();
-          }
+          if(!_storyPaused && vidEl.currentTime >= end - 0.1) nextStory();
         };
+        vidEl.play().catch(()=>{});
       };
       vidEl.onended = ()=>{ if(!_storyPaused) nextStory(); };
-      vidEl.play().catch(()=>{});
+      vidEl.src = story.media_url;
+      vidEl.load();
     } else {
       imgEl.src = story.media_url;
       imgEl.style.display = 'block';
@@ -7010,8 +7242,11 @@ function showStory(){
   // Progress bars
   const prog = document.getElementById('storyProgress');
   prog.innerHTML = currentStories.map((_,i) =>
-    `<div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.28);overflow:hidden;">
-      <div id="spb${i}" style="height:100%;background:#fff;width:${i<currentStoryIndex?'100':'0'}%;transition:none;"></div>
+    `<div style="flex:1;height:3px;border-radius:2px;overflow:hidden;
+        background:rgba(255,255,255,.28);box-shadow:0 1px 2px rgba(0,0,0,.3);">
+      <div id="spb${i}" style="height:3px;border-radius:2px;
+        background:rgba(255,255,255,.95);
+        width:${i<currentStoryIndex?'100':'0'}%;transition:none;"></div>
     </div>`
   ).join('');
 
@@ -7026,10 +7261,12 @@ function startStoryTimer(){
   _storyStartTime = Date.now();
   const bar = document.getElementById(`spb${currentStoryIndex}`);
   if(bar){
-    requestAnimationFrame(()=>{
-      bar.style.transition = `width ${_storyRemaining}ms linear`;
-      bar.style.width = '100%';
-    });
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    // Force reflow then animate
+    bar.getBoundingClientRect();
+    bar.style.transition = `width ${_storyRemaining}ms linear`;
+    bar.style.width = '100%';
   }
   _storyTimer = setTimeout(()=>nextStory(), _storyRemaining);
 }
@@ -7123,6 +7360,57 @@ function showViewersList(storyId){
   ov.classList.add('show');
   requestAnimationFrame(()=>sheet.classList.add('show'));
 }
+// ── Story reactions and comments ────────────────────────────
+function sendStoryReact(emoji){
+  const story = currentStories[currentStoryIndex];
+  if(!story) return;
+  // Hide buttons from own story
+  if(story.is_own){ toast('This is your story','info'); return; }
+  // Send as a DM to story owner
+  fetch('/api/messages/send',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      chat_id: [Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-'),
+      content: emoji + ' reacted to your story',
+      type: 'text'
+    })
+  }).catch(()=>{});
+  // Animate the emoji flying up
+  _storyEmojiPop(emoji);
+}
+
+function sendStoryComment(){
+  const story = currentStories[currentStoryIndex];
+  if(!story) return;
+  const inp = document.getElementById('storyCommentInput');
+  const txt = (inp.value||'').trim();
+  if(!txt) return;
+  if(story.is_own){ toast('This is your own story','info'); inp.value=''; return; }
+  inp.value='';
+  // Send as DM to story owner
+  fetch('/api/messages/send',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      chat_id: [Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-'),
+      content: '💬 "'+txt+'"',
+      type:'text'
+    })
+  }).catch(()=>{});
+  toast('Sent!','ok');
+}
+
+function _storyEmojiPop(emoji){
+  const el = document.createElement('div');
+  el.textContent = emoji;
+  el.style.cssText = `position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+    font-size:40px;z-index:5100;pointer-events:none;
+    animation:storyEmojiFloat 1s ease-out forwards;`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
 function prevStory(){
   clearTimeout(_storyTimer);
   if(currentStoryIndex > 0){ currentStoryIndex--; showStory(); }
@@ -7291,16 +7579,15 @@ function scGalleryPicked(input){
   SC.trimEnd   = null;
 
   if(isVideo){
-    // Read duration metadata using a separate object URL
-    // IMPORTANT: SC.mediaURL must NOT be revoked — the editor video element needs it
     const metaUrl = URL.createObjectURL(file);
     const tmp = document.createElement('video');
     tmp.preload = 'metadata';
     tmp.onloadedmetadata = ()=>{
-      URL.revokeObjectURL(metaUrl); // revoke only the temp URL, not SC.mediaURL
+      URL.revokeObjectURL(metaUrl);
       SC.videoDuration = tmp.duration;
-      SC.trimEnd = Math.min(tmp.duration, 30);
-      scLoadEditor();
+      SC.trimStart = 0;
+      SC.trimEnd   = Math.min(tmp.duration, 30);
+      scLoadEditor(); // go to editor with video as background
     };
     tmp.onerror = ()=>{ URL.revokeObjectURL(metaUrl); scLoadEditor(); };
     tmp.src = metaUrl;
@@ -7347,20 +7634,29 @@ function scLoadEditor(){
     setTimeout(()=>tx.focus(),300);
     _scHideVideoUI();
   } else if(SC.mediaType==='video'){
-    vid.oncanplay = null;
     vid.onloadeddata = null;
+    vid.onerror      = null;
     vid.pause();
-    vid.src = '';
-    setTimeout(()=>{
-      vid.src = SC.mediaURL;
-      vid.style.display = 'block';
+    vid.removeAttribute('src');
+    vid.load();
+    // Show placeholder immediately so canvas area is not empty
+    vid.style.display = 'block';
+    vid.style.background = '#000';
+    // Use double-RAF so browser has painted the page before loading video
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      vid.src    = SC.mediaURL;
+      vid.muted  = false;
+      vid.volume = 1.0;     // original full volume
+      SC.vidVolume = 1.0;
+      vid.load();
       vid.onloadeddata = ()=>{
         vid.onloadeddata = null;
         vid.play().catch(()=>{});
+        const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
       };
-      vid.load();
-    }, 30);
-    _scShowVideoUI(); // show cut/edit buttons immediately
+      vid.onerror = ()=>{ toast('Video could not load','err'); };
+    }));
+    _scShowVideoUI();
   } else {
     img.src = SC.mediaURL;
     img.style.display='block';
@@ -7376,27 +7672,75 @@ function _scShowVideoUI(){
   const durLabel    = $('SC_vidDuration');
   const trimBtnWrap = $('SC_trimBtnWrap');
   const trimToolBtn = $('SC_trimToolBtn');
+  const vidCtrls    = $('SC_videoControls');
 
-  // Always show cut/edit buttons whenever a video is loaded
+  // Always show cut/edit + video controls for video
   if(trimBtnWrap) trimBtnWrap.style.display = 'block';
   if(trimToolBtn){
-    trimToolBtn.style.display        = 'flex';
-    trimToolBtn.style.flexDirection  = 'column';
-    trimToolBtn.style.alignItems     = 'center';
+    trimToolBtn.style.display       = 'flex';
+    trimToolBtn.style.flexDirection = 'column';
+    trimToolBtn.style.alignItems    = 'center';
   }
+  if(vidCtrls) vidCtrls.style.display = 'block';
 
-  // Show duration badge only if we have it
+  // Reset play button to ▶ (video not yet playing when tools open)
+  const playBtn = $('SC_vidPlayBtn');
+  if(playBtn) playBtn.textContent = '▶';
+
+  // Sync volume slider — default 100%
+  const curVol = (SC.vidVolume !== undefined) ? SC.vidVolume : 1.0;
+  const vvs = $('SC_vidVolSlider');
+  const vvv = $('SC_vidVolVal');
+  if(vvs) vvs.value = Math.round(curVol * 100);
+  if(vvv) vvv.textContent = Math.round(curVol * 100) + '%';
+  // Apply to video element
+  const vid = $('SC_vid');
+  if(vid){
+    vid.muted  = curVol === 0;
+    vid.volume = Math.min(1, curVol);
+  }
+  // Show/reset music vol row
+  const musicRow = $('SC_musicVolRow');
+  if(musicRow) musicRow.style.display = SC.audioName ? 'block' : 'none';
+
+
+
+  // Duration badge
   if(SC.videoDuration != null && durLabel){
     const totalS = SC.videoDuration;
     const clipS  = SC.trimEnd != null ? SC.trimEnd - SC.trimStart : totalS;
     durLabel.textContent = totalS > 30
-      ? `✂️ ${clipS.toFixed(1)}s / ${totalS.toFixed(0)}s total`
+      ? '✂️ '+clipS.toFixed(1)+'s / '+totalS.toFixed(0)+'s total'
       : clipS.toFixed(1)+'s';
     durLabel.style.color   = '#fff';
     durLabel.style.display = 'block';
-  } else if(durLabel){
-    durLabel.style.display = 'none';
+  } else if(durLabel){ durLabel.style.display = 'none'; }
+}
+
+// Play/Stop the editor preview video
+function scEditorTogglePlay(){
+  const vid = $('SC_vid'), btn = $('SC_vidPlayBtn');
+  if(!vid) return;
+  if(vid.paused){ vid.play().catch(()=>{}); if(btn) btn.textContent='⏸'; }
+  else           { vid.pause();              if(btn) btn.textContent='▶'; }
+}
+
+// Video sound volume (slider 0–100 → stored as 0.0–1.0)
+function scSetVidVol(v){
+  const val = parseInt(v)/100;
+  const lbl = $('SC_vidVolVal'); if(lbl) lbl.textContent = v+'%';
+  const vid = $('SC_vid');
+  if(vid){
+    vid.muted  = (val === 0);
+    vid.volume = Math.min(1, val);
   }
+  SC.vidVolume = val;
+}
+
+// Music (story audio) volume — stored and applied when posting
+function scSetMusicVol(v){
+  const lbl = $('SC_musicVolVal'); if(lbl) lbl.textContent = v+'%';
+  SC.musicVolume = parseInt(v)/100;
 }
 function _scHideVideoUI(){
   const d=$('SC_vidDuration'), tw=$('SC_trimBtnWrap'), tb=$('SC_trimToolBtn');
@@ -7413,10 +7757,27 @@ function _scUpdateSongBtn(){
     if(lbl) lbl.textContent=SC.audioName.substring(0,14)+(SC.audioName.length>14?'…':'');
     if(sd){ $('SC_songName').textContent=SC.audioName; sd.style.display='flex'; }
     if(banner){ curTitle.textContent=SC.audioName; banner.style.display='flex'; }
+    // Show music volume row when song is added
+    const mr=$('SC_musicVolRow'); if(mr) mr.style.display='block';
+    // When music added, set video to 50% and music to 80% by default
+    const vid=$('SC_vid');
+    if(vid && vid.volume === 1.0){
+      vid.volume = 0.5;
+      const vvs=$('SC_vidVolSlider'); if(vvs) vvs.value=50;
+      const vvv=$('SC_vidVolVal');    if(vvv) vvv.textContent='50%';
+      SC.vidVolume = 0.5;
+    }
   } else {
     if(lbl) lbl.textContent='Add Song';
     if(sd) sd.style.display='none';
     if(banner) banner.style.display='none';
+    // Hide music vol row, restore video to 100%
+    const mr=$('SC_musicVolRow'); if(mr) mr.style.display='none';
+    const vid=$('SC_vid');
+    if(vid){ vid.volume=1.0; vid.muted=false; }
+    const vvs=$('SC_vidVolSlider'); if(vvs) vvs.value=100;
+    const vvv=$('SC_vidVolVal');    if(vvv) vvv.textContent='100%';
+    SC.vidVolume=1.0;
   }
 }
 
@@ -7470,6 +7831,19 @@ function scToggleTools(){
   tools.style.transform=SC.toolsOpen?'translateY(0)':'translateY(100%)';
   ov.style.display=SC.toolsOpen?'block':'none';
   if(svg) svg.style.transform=SC.toolsOpen?'rotate(180deg)':'rotate(0deg)';
+  // When tools open: restore video volume to current setting
+  if(SC.toolsOpen && SC.mediaType==='video'){
+    const vid=$('SC_vid');
+    if(vid){
+      const v = SC.vidVolume !== undefined ? SC.vidVolume : 1.0;
+      vid.volume = Math.min(1, v);
+      vid.muted  = (v === 0);
+      // Sync slider
+      const sl=$('SC_vidVolSlider'), lbl=$('SC_vidVolVal');
+      if(sl)  sl.value = Math.round(v*100);
+      if(lbl) lbl.textContent = Math.round(v*100)+'%';
+    }
+  }
 }
 function scCloseTools(){
   SC.toolsOpen=false;
@@ -7544,7 +7918,16 @@ function scUpdateCaption(v){
 function scClearSong(){
   SC.audioFile=null; SC.audioUrl=''; SC.audioName='';
   _scUpdateSongBtn();
-  // Refresh song page highlight if open
+  // Hide music vol row
+  const mr=$('SC_musicVolRow'); if(mr) mr.style.display='none';
+  // Restore video to 100% when song removed
+  if(SC.mediaType==='video'){
+    SC.vidVolume=1.0;
+    const vid=$('SC_vid');
+    if(vid){ vid.volume=1.0; vid.muted=false; }
+    const sl=$('SC_vidVolSlider'), lbl=$('SC_vidVolVal');
+    if(sl) sl.value=100; if(lbl) lbl.textContent='100%';
+  }
   if($('SC_p4').style.display==='flex') _scRenderSongList(_scLastSongQuery||'');
 }
 
@@ -7623,9 +8006,18 @@ function scPickSongTrack(trackId){
   SC.audioFile=null;
   SC.audioUrl=t.audio_url;
   SC.audioName=t.title+' – '+t.artist;
+  // Auto-set video to 0% when music is added (user can adjust)
+  if(SC.mediaType==='video'){
+    SC.vidVolume=0;
+    const vid=$('SC_vid');
+    if(vid){ vid.volume=0; vid.muted=true; }
+    const sl=$('SC_vidVolSlider'), lbl=$('SC_vidVolVal');
+    if(sl) sl.value=0; if(lbl) lbl.textContent='0%';
+    const mr=$('SC_musicVolRow'); if(mr) mr.style.display='block';
+  }
   _scUpdateSongBtn();
   _scRenderSongList(_scLastSongQuery);
-  toast('🎵 '+t.title+' added','ok');
+  toast('🎵 '+t.title+' added — video muted, adjust below','ok');
 }
 function scPreviewSong(id,title,artist,url){
   scStopSongPreview();
@@ -7719,28 +8111,38 @@ function scOpenTrimmer(){
   // Reset editor controls
   _cutPoints=[];
   _pitchVal=0;
-  ['SC_pitchSlider','SC_volSlider','SC_speedSlider','SC_vidBrightness','SC_vidContrast'].forEach(id=>{
-    const el=$(id); if(el){ el.value = id==='SC_volSlider'?100:id==='SC_speedSlider'?1:id.includes('Brightness')||id.includes('Contrast')?100:0; }
+  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
+  ['SC_pitchSlider','SC_speedSlider','SC_vidBrightness','SC_vidContrast'].forEach(id=>{
+    const el=$(id); if(el){ el.value=id==='SC_speedSlider'?1:100; }
   });
-  ['SC_pitchVal','SC_volVal','SC_speedVal','SC_vidBrightnessVal','SC_vidContrastVal'].forEach(id=>{
-    const el=$(id);
-    if(!el)return;
+  const vs=$('SC_volSlider'); if(vs) vs.value=100;
+  const ms=$('SC_musicVolSlider'); if(ms) ms.value=100;
+  const vv=$('SC_volVal'); if(vv) vv.textContent='100%';
+  const mv=$('SC_musicVolVal'); if(mv) mv.textContent='100%';
+  ['SC_pitchVal','SC_speedVal','SC_vidBrightnessVal','SC_vidContrastVal'].forEach(id=>{
+    const el=$(id); if(!el)return;
     if(id==='SC_pitchVal') el.textContent='0';
-    else if(id==='SC_volVal') el.textContent='100%';
     else if(id==='SC_speedVal') el.textContent='1.00×';
     else el.textContent='100';
   });
   const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
+  // Reset song UI
+  const sBtn=$('SC_trimSongBtn'); if(sBtn) sBtn.textContent='+ Add Song';
+  const sName=$('SC_trimSongName'); if(sName){ sName.textContent=''; sName.style.display='none'; }
+  const mw=$('SC_musicTrimWrap'); if(mw) mw.style.display='none';
+  // Reset song state from trimmer if it was set
+  if(SC._fromTrimmer) SC._fromTrimmer=false;
   scPage(5);
   const vid=$('SC_trimVid');
-  // Clear any previous source fully before assigning new one
+  vid.onloadedmetadata = null;
+  vid.onerror = null;
   vid.pause();
-  vid.removeAttribute('src');
+  // Fully detach old source
+  vid.src='';
   vid.load();
-  // Small delay so browser registers the cleared state
-  setTimeout(()=>{
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
     vid.src = SC.mediaURL;
-    vid.muted = false;   // allow volume slider to work
+    vid.muted = false;
     vid.volume = 1.0;
     vid.load();
     vid.onloadedmetadata = ()=>{
@@ -7768,7 +8170,7 @@ function scOpenTrimmer(){
       }, 50);
     };
     vid.onerror = ()=>{ toast('Could not load video for editing','err'); };
-  }, 40);
+  }));
 }
 function _trimUpdate(total){
   const start=SC.trimStart, end=SC.trimEnd;
@@ -7846,13 +8248,9 @@ function scTrimDragStart(e,side){
 function scTrimStop(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
-  if(vid){
-    vid.pause();
-    vid.onloadedmetadata=null;
-    vid.onerror=null;
-    vid.removeAttribute('src');
-    vid.load();
-  }
+  if(vid){ vid.pause(); vid.onloadedmetadata=null; vid.onerror=null; vid.oncanplaythrough=null; vid.removeAttribute('src'); vid.load(); }
+  // Stop music preview
+  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
 }
 
 // ── Pause/Play toggle ──────────────────────────────────
@@ -7910,11 +8308,129 @@ function scUpdateVol(v){
   const val=parseFloat(v)/100;
   const lbl=$('SC_volVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
   const vid=$('SC_trimVid');
-  if(vid){
-    vid.muted = (val === 0);
-    vid.volume = Math.min(1, val);
-  }
+  if(vid){ vid.muted=(val===0); vid.volume=Math.min(1,val); }
   SC.trimVolume=val;
+}
+
+// ── Music volume ────────────────────────────────────────
+function scUpdateMusicVol(v){
+  const val=parseFloat(v)/100;
+  const lbl=$('SC_musicVolVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
+  if(SC._trimMusicAudio){
+    SC._trimMusicAudio.muted=(val===0);
+    SC._trimMusicAudio.volume=Math.min(1,val);
+  }
+  SC.trimMusicVolume=val;
+}
+
+// ── Open song picker from trimmer ────────────────────────
+function scTrimOpenSong(){
+  // Save that we came from trimmer so we return here after picking
+  SC._fromTrimmer=true;
+  scPage(4); // song page
+  $('SC_songSearch').value='';
+  _scLoadSongs('');
+}
+
+// ── When a song is picked (override for trimmer context) ─
+const _origPickSongTrack = typeof scPickSongTrack==='function' ? scPickSongTrack : null;
+function scPickSongTrack(trackId){
+  const t=_scSongTracks.find(x=>x.id===trackId);
+  if(!t) return;
+  scStopSongPreview();
+  SC.audioFile=null;
+  SC.audioUrl=t.audio_url;
+  SC.audioName=t.title+' – '+t.artist;
+  _scUpdateSongBtn();
+  _scRenderSongList(_scLastSongQuery);
+  toast('🎵 '+t.title+' added','ok');
+
+  if(SC._fromTrimmer){
+    SC._fromTrimmer=false;
+    scPage(5); // return to trimmer
+    scTrimAttachMusic(t.audio_url, t.title+' – '+t.artist);
+  }
+}
+
+// ── Attach music to trimmer ──────────────────────────────
+function scTrimAttachMusic(url, name){
+  // Stop old preview
+  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
+
+  const sBtn=$('SC_trimSongBtn');
+  const sName=$('SC_trimSongName');
+  if(sBtn){ sBtn.textContent='🎵 Change'; }
+  if(sName){ sName.textContent=name; sName.style.display='block'; }
+
+  // Auto-drop video volume to 0 when music is added
+  const vidSlider=$('SC_volSlider');
+  if(vidSlider){ vidSlider.value=0; scUpdateVol(0); }
+
+  // Set music vol to 100%
+  const musSlider=$('SC_musicVolSlider');
+  if(musSlider){ musSlider.value=100; }
+
+  // Create music audio for preview
+  SC._trimMusicAudio=new Audio(url);
+  SC._trimMusicAudio.loop=true;
+  SC._trimMusicAudio.volume=1.0;
+  SC._trimMusicAudio.play().catch(()=>{});
+
+  // Show music trim bar
+  const mw=$('SC_musicTrimWrap');
+  if(mw) mw.style.display='block';
+
+  // Init music trim
+  SC.musicTrimStart=0;
+  SC.musicTrimEnd=null;
+  SC._trimMusicAudio.addEventListener('loadedmetadata',()=>{
+    const dur=SC._trimMusicAudio.duration;
+    SC.musicTrimEnd=Math.min(dur, SC.trimEnd-SC.trimStart||30);
+    _updateMusicTrimBar(dur);
+  },{once:true});
+}
+
+// ── Music trim bar ────────────────────────────────────────
+function _updateMusicTrimBar(total){
+  const start=SC.musicTrimStart||0;
+  const end=SC.musicTrimEnd||total;
+  const lPct=start/total*100;
+  const rPct=end/total*100;
+  const lh=$('SC_musicTrimL'), rh=$('SC_musicTrimR'), rg=$('SC_musicRegion');
+  if(lh) lh.style.left=lPct+'%';
+  if(rh) rh.style.right=(100-rPct)+'%';
+  if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
+  const lbl=$('SC_musicTrimLbl');
+  if(lbl) lbl.textContent=(end-start).toFixed(1)+'s selected';
+}
+function scMusicTrimClick(e){
+  if(e.target.id==='SC_musicTrimL'||e.target.id==='SC_musicTrimR') return;
+  const bar=$('SC_musicTrimBar'), rect=bar.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  if(SC._trimMusicAudio) SC._trimMusicAudio.currentTime=pct*(SC._trimMusicAudio.duration||30);
+}
+function scMusicTrimTouch(e){ scMusicTrimClick({clientX:e.touches[0].clientX,target:e.target}); }
+function scMusicDragStart(e,side){
+  e.preventDefault(); e.stopPropagation();
+  const onMove=ev=>{
+    const cx=ev.touches?ev.touches[0].clientX:ev.clientX;
+    const bar=$('SC_musicTrimBar'), rect=bar.getBoundingClientRect();
+    const total=SC._trimMusicAudio?SC._trimMusicAudio.duration:30;
+    const t=Math.max(0,Math.min(1,(cx-rect.left)/rect.width))*total;
+    if(side==='L') SC.musicTrimStart=Math.max(0,Math.min((SC.musicTrimEnd||total)-0.5,t));
+    else SC.musicTrimEnd=Math.min(total,Math.max((SC.musicTrimStart||0)+0.5,t));
+    _updateMusicTrimBar(total);
+  };
+  const onUp=()=>{
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('touchend',onUp);
+  };
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
 }
 
 // ── Speed ───────────────────────────────────────────────
@@ -8078,8 +8594,7 @@ async function scPost(){
     }
 
     try{
-      const sizeMB=(SC.mediaFile.size/(1024*1024)).toFixed(1);
-      btn.textContent=`Uploading… (${sizeMB} MB)`;
+      btn.textContent='Sharing story…';
       let uploadFile=SC.mediaFile;
       if(SC.mediaType==='image'&&(SC.rotation!==0||SC.filter!=='none')){
         uploadFile=await scBakeImage();
@@ -8120,8 +8635,13 @@ async function scPost(){
   }
 
   // Include trim points for video so backend/viewer can handle them
-  const trimData = SC.mediaType==='video' && SC.trimStart!=null
-    ? {trim_start: SC.trimStart, trim_end: SC.trimEnd}
+  const trimData = SC.mediaType==='video'
+    ? {
+        trim_start:   SC.trimStart || 0,
+        trim_end:     SC.trimEnd   || null,
+        vid_volume:   SC.vidVolume   !== undefined ? SC.vidVolume   : 1.0,
+        music_volume: SC.musicVolume !== undefined ? SC.musicVolume : 0.8,
+      }
     : {};
 
   try{
