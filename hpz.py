@@ -264,12 +264,77 @@ class ScheduledMessage(db.Model):
     created_at   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 # ============================================================
-# DATABASE INITIALIZATION
+# DATABASE INITIALIZATION — safe, never loses data
+# db.create_all() only creates MISSING tables, never drops.
+# _safe_migrate() adds any missing columns to existing tables.
+# This means you can deploy new features without wiping data.
 # ============================================================
+
+def _safe_migrate():
+    """Add any new columns that don't exist yet. Existing data is untouched."""
+    from sqlalchemy import text, inspect
+    inspector = inspect(db.engine)
+
+    # Helper: add a column only if it doesn't already exist
+    def add_col_if_missing(table, col_name, col_def):
+        try:
+            existing = [c['name'] for c in inspector.get_columns(table)]
+            if col_name not in existing:
+                db.session.execute(text(
+                    f'ALTER TABLE {table} ADD COLUMN {col_name} {col_def}'
+                ))
+                db.session.commit()
+                print(f'  ✅ Added column {table}.{col_name}')
+        except Exception as ex:
+            db.session.rollback()
+            print(f'  ⚠️  Could not add {table}.{col_name}: {ex}')
+
+    # ── users ──────────────────────────────────────────────
+    add_col_if_missing('users', 'avatar_url',           'VARCHAR(500)')
+    add_col_if_missing('users', 'bio',                  "VARCHAR(500) DEFAULT ''")
+    add_col_if_missing('users', 'status',               "VARCHAR(100) DEFAULT 'Available'")
+    add_col_if_missing('users', 'relationship_status',  "VARCHAR(50) DEFAULT 'Prefer not to say'")
+    add_col_if_missing('users', 'last_seen',            'TIMESTAMP')
+    add_col_if_missing('users', 'created_at',           'TIMESTAMP')
+
+    # ── messages ───────────────────────────────────────────
+    add_col_if_missing('messages', 'message_type',  "VARCHAR(20) DEFAULT 'text'")
+    add_col_if_missing('messages', 'reply_to_id',   'INTEGER')
+    add_col_if_missing('messages', 'is_edited',     'BOOLEAN DEFAULT FALSE')
+    add_col_if_missing('messages', 'caption',       'VARCHAR(500)')
+    add_col_if_missing('messages', 'is_deleted',    'BOOLEAN DEFAULT FALSE')
+    add_col_if_missing('messages', 'is_pinned',     'BOOLEAN DEFAULT FALSE')
+    add_col_if_missing('messages', 'edited_at',     'TIMESTAMP')
+
+    # ── stories ────────────────────────────────────────────
+    add_col_if_missing('stories', 'audio_url',   "VARCHAR(500) DEFAULT ''")
+    add_col_if_missing('stories', 'audio_name',  "VARCHAR(200) DEFAULT ''")
+    add_col_if_missing('stories', 'privacy',     "VARCHAR(20) DEFAULT 'friends'")
+    add_col_if_missing('stories', 'trim_start',  'FLOAT DEFAULT 0.0')
+    add_col_if_missing('stories', 'trim_end',    'FLOAT')
+
+    # ── groups ─────────────────────────────────────────────
+    add_col_if_missing('groups', 'description',  "VARCHAR(300) DEFAULT ''")
+    add_col_if_missing('groups', 'avatar_color', "VARCHAR(20) DEFAULT '#7c6aff'")
+    add_col_if_missing('groups', 'is_temporary', 'BOOLEAN DEFAULT FALSE')
+    add_col_if_missing('groups', 'expires_at',   'TIMESTAMP')
+
+    # ── music_library ──────────────────────────────────────
+    add_col_if_missing('music_library', 'cover_url',   "VARCHAR(500) DEFAULT ''")
+    add_col_if_missing('music_library', 'duration',    'INTEGER DEFAULT 0')
+    add_col_if_missing('music_library', 'genre',       "VARCHAR(80) DEFAULT ''")
+    add_col_if_missing('music_library', 'uploaded_by', 'INTEGER')
+
+    # ── scheduled_messages ─────────────────────────────────
+    add_col_if_missing('scheduled_messages', 'message_type', "VARCHAR(20) DEFAULT 'text'")
+    add_col_if_missing('scheduled_messages', 'delivered',    'BOOLEAN DEFAULT FALSE')
+
 with app.app_context():
     try:
-        db.create_all()
-        print("✅ Database tables created successfully")
+        db.create_all()   # creates any tables that are completely missing
+        print("✅ Database tables created/verified")
+        _safe_migrate()   # adds any missing columns to existing tables
+        print("✅ Database migration complete — no data lost")
     except Exception as e:
         print(f"❌ Database initialization error: {e}")
 
@@ -740,6 +805,35 @@ def accept_friend_request():
                 'username': sender_user.username
             }, room=acceptor_sid)
         return jsonify({'success': True, 'message': 'Friend request accepted'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/friends/remove', methods=['POST'])
+@login_required
+def remove_friend():
+    user_id = session['user_id']
+    data = request.get_json() or {}
+    friend_id = data.get('friend_id')
+    if not friend_id:
+        return jsonify({'success': False, 'error': 'friend_id required'}), 400
+    try:
+        # Delete friendship in either direction
+        Friendship.query.filter(
+            db.or_(
+                db.and_(Friendship.user1_id==user_id, Friendship.user2_id==friend_id),
+                db.and_(Friendship.user1_id==friend_id, Friendship.user2_id==user_id)
+            )
+        ).delete()
+        # Also clean up any friend requests between them
+        FriendRequest.query.filter(
+            db.or_(
+                db.and_(FriendRequest.from_user_id==user_id, FriendRequest.to_user_id==friend_id),
+                db.and_(FriendRequest.from_user_id==friend_id, FriendRequest.to_user_id==user_id)
+            )
+        ).delete()
+        db.session.commit()
+        return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
