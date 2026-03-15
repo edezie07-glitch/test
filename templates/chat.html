@@ -321,30 +321,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .notif-name:hover{text-decoration:underline;}
 .notif-text{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:2px;}
-/* 3-dot menu button */
-.notif-menu-btn{
-  width:28px;height:28px;border-radius:8px;border:none;
-  background:transparent;color:var(--mute);
-  font-size:16px;font-weight:900;line-height:1;
-  cursor:pointer;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;pointer-events:auto;letter-spacing:1px;
-  transition:background .15s;
-}
-.notif-menu-btn:hover{background:var(--hov);}
-/* Delete/back action row (shown on tap of ⋮) */
-.notif-actions{
-  display:none;position:absolute;right:8px;top:100%;margin-top:4px;
-  background:var(--card);border:1px solid var(--bdr);border-radius:10px;
-  box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:10;overflow:hidden;min-width:120px;
-}
-.notif-actions.show{display:block;}
-.notif-act-btn{
-  display:flex;align-items:center;gap:8px;
-  width:100%;padding:10px 14px;border:none;background:transparent;
-  color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;text-align:left;
-}
-.notif-act-btn:hover{background:var(--hov);}
-.notif-act-btn.del{color:#ef4444;}
+/* Toast has no ⋮ menu — clean and simple */
+.notif-menu-btn{ display:none; }
+.notif-actions{ display:none; }
+.notif-act-btn{ display:none; }
 /* Persistent notification panel */
 .notif-panel-ov{
   display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.4);
@@ -6034,9 +6014,9 @@ function nowNotifTime(){
   return (h%12||12)+':'+m+(h>=12?' PM':' AM');
 }
 
-// ── Main entry: show toast + save to persistent panel ──
+// ── Main entry: show toast (3s) + save permanently to panel ──
 function showInAppNotif(name, text, chatId, userId){
-  // 1. Save to persistent store
+  // 1. Save to persistent history — always, immediately
   const notif = {
     id: Date.now()+'_'+Math.random().toString(36).slice(2,6),
     name: name||'',
@@ -6053,25 +6033,25 @@ function showInAppNotif(name, text, chatId, userId){
   _updateNotifBadge();
   _renderNotifPanel();
 
-  // 2. Show toast bubble
+  // 2. Toast — simple, clean, 3 seconds, tap = open history panel
   const stack = document.getElementById('notifStack');
   if(!stack) return;
   const key = chatId || ('__'+name);
 
-  // Deduplicate: if same key already toasting, update text+time
+  // If same toast already showing, just bump the timer
   const existing = stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
   if(existing){
     existing.querySelector('.notif-text').textContent = text;
     existing.querySelector('.notif-time').textContent = notif.time;
     clearTimeout(_notifTimer[key]);
-    _notifTimer[key] = setTimeout(()=>_dismissToast(existing), 5000);
+    _notifTimer[key] = setTimeout(()=>_dismissToast(existing), 3000);
     return;
   }
 
   const el = document.createElement('div');
   el.className = 'notif-bubble';
   el.setAttribute('data-notif-key', key);
-  el.setAttribute('data-notif-id', notif.id);
+  el.style.cursor = 'pointer';
   el.innerHTML = `
     <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
     <div class="notif-body">
@@ -6079,50 +6059,20 @@ function showInAppNotif(name, text, chatId, userId){
       <div class="notif-text">${esc(text)}</div>
     </div>
     <div class="notif-time">${notif.time}</div>
-    <button class="notif-menu-btn" title="Options">⋮</button>
-    <div class="notif-actions">
-      <button class="notif-act-btn del">🗑️ Delete</button>
-      <button class="notif-act-btn">← Back</button>
-    </div>
   `;
 
-  // Name click → open profile
+  // Tap name → open profile
   el.querySelector('.notif-name').addEventListener('click', ev=>{
     ev.stopPropagation();
-    const uid = ev.currentTarget.dataset.uid;
-    if(uid) _openUserProfile(parseInt(uid), name);
-    else _openUserProfile(null, name);
+    const uid = parseInt(ev.currentTarget.dataset.uid)||null;
+    _openUserProfile(uid, name);
   });
 
-  // ⋮ menu
-  const menuBtn = el.querySelector('.notif-menu-btn');
-  const actions  = el.querySelector('.notif-actions');
-  menuBtn.addEventListener('click', ev=>{
-    ev.stopPropagation();
-    // Close all other open action menus
-    document.querySelectorAll('.notif-actions.show').forEach(a=>{
-      if(a!==actions) a.classList.remove('show');
-    });
-    actions.classList.toggle('show');
-  });
-  // Delete button
-  el.querySelector('.notif-act-btn.del').addEventListener('click', ev=>{
-    ev.stopPropagation();
-    _deleteNotifById(notif.id);
-    _dismissToast(el);
-  });
-  // Back button
-  el.querySelectorAll('.notif-act-btn')[1].addEventListener('click', ev=>{
-    ev.stopPropagation();
-    actions.classList.remove('show');
-  });
-
-  // Tap bubble body → open notification panel (which shows all notifs + navigate)
+  // Tap anywhere else → dismiss and open notification history
   el.addEventListener('click', ev=>{
-    if(ev.target.closest('.notif-menu-btn')||ev.target.closest('.notif-actions')||ev.target.closest('.notif-name')) return;
+    if(ev.target.closest('.notif-name')) return;
     _dismissToast(el);
     openNotifPanel();
-    if(chatId) setTimeout(()=>{ _notifNavigate(chatId); }, 300);
   });
 
   stack.appendChild(el);
@@ -6133,14 +6083,14 @@ function showInAppNotif(name, text, chatId, userId){
     try{
       const n=new Notification(name,{body:text,tag:'hpz-'+key,renotify:true,silent:!prefs.sound});
       n.onclick=()=>{window.focus();n.close();};
-      setTimeout(()=>n.close(),6000);
+      setTimeout(()=>n.close(),4000);
     }catch(e){}
   }
 
   if(prefs.sound) beep();
 
-  // Auto-dismiss toast after 5s (NOT removed from panel)
-  _notifTimer[key] = setTimeout(()=>_dismissToast(el), 5000);
+  // Auto-dismiss after exactly 3 seconds
+  _notifTimer[key] = setTimeout(()=>_dismissToast(el), 3000);
 }
 
 function _dismissToast(el){
@@ -6621,7 +6571,7 @@ function showFriendRequestNotif(name, userId, requestId){
   requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
   if(prefs.sound) beep();
   // Auto-dismiss after 12s (longer for action)
-  _notifTimer[key]=setTimeout(()=>_dismissToast(el),12000);
+  _notifTimer[key]=setTimeout(()=>_dismissToast(el),3000);
 }
 
 async function notifAcceptReq(requestId, bubble){
