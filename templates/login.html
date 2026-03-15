@@ -7,114 +7,163 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-:root{--brand:#7c6aff;--brand-dk:#6254e0;--font-h:'Syne',sans-serif;--font-b:'Manrope',sans-serif;}
+:root{
+  --brand:#ec5b08;
+  --brand-dk:#c94a06;
+  --font-h:'Syne',sans-serif;
+  --font-b:'Manrope',sans-serif;
+}
 html,body{height:100%;overflow:hidden;}
 body{
   font-family:var(--font-b);
-  background:#0f0f17;
+  background:#0f0d0b;
   display:flex;align-items:center;justify-content:center;
   min-height:100vh;
   position:relative;
 }
-/* animated gradient orbs */
+
+/* Animated warm glow orbs */
 body::before{
-  content:'';position:fixed;top:-30%;left:-20%;
-  width:600px;height:600px;
-  background:radial-gradient(circle,rgba(124,106,255,.18) 0%,transparent 70%);
-  animation:float1 8s ease-in-out infinite;pointer-events:none;
+  content:'';position:fixed;top:-25%;left:-15%;
+  width:640px;height:640px;
+  background:radial-gradient(circle,rgba(236,91,8,.16) 0%,transparent 70%);
+  animation:float1 9s ease-in-out infinite;
+  pointer-events:none;
 }
 body::after{
-  content:'';position:fixed;bottom:-20%;right:-15%;
-  width:500px;height:500px;
-  background:radial-gradient(circle,rgba(99,84,224,.14) 0%,transparent 70%);
-  animation:float2 10s ease-in-out infinite;pointer-events:none;
+  content:'';position:fixed;bottom:-20%;right:-10%;
+  width:520px;height:520px;
+  background:radial-gradient(circle,rgba(201,74,6,.12) 0%,transparent 70%);
+  animation:float2 11s ease-in-out infinite;
+  pointer-events:none;
 }
-@keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,-40px);}}
-@keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,30px);}}
+@keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(44px,-44px);}}
+@keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-32px,32px);}}
 
+/* Card */
 .card{
-  background:rgba(22,22,31,.85);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:24px;
-  padding:44px 40px 40px;
-  width:100%;max-width:400px;
-  backdrop-filter:blur(20px);
-  box-shadow:0 24px 80px rgba(0,0,0,.5);
+  background:rgba(20,15,10,.88);
+  border:1px solid rgba(236,91,8,.15);
+  border-radius:26px;
+  padding:46px 42px 42px;
+  width:100%;max-width:410px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  box-shadow:0 0 0 1px rgba(236,91,8,.06),0 28px 80px rgba(0,0,0,.6);
   position:relative;z-index:1;
-  animation:slideUp .45s cubic-bezier(.4,0,.2,1);
+  animation:slideUp .42s cubic-bezier(.4,0,.2,1);
 }
-@keyframes slideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
+}
 
-.logo-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:28px;}
+/* Logo */
+.logo-wrap{
+  display:flex;align-items:center;justify-content:center;
+  gap:13px;margin-bottom:30px;
+}
 .logo-img{
-  width:52px;height:52px;border-radius:14px;
+  width:54px;height:54px;border-radius:15px;
   object-fit:cover;
-  box-shadow:0 0 0 2px rgba(124,106,255,.3),0 8px 24px rgba(124,106,255,.25);
+  box-shadow:0 0 0 2px rgba(236,91,8,.35),0 8px 28px rgba(236,91,8,.3);
 }
 .logo-text{
-  font-family:var(--font-h);font-size:26px;font-weight:800;
+  font-family:var(--font-h);font-size:28px;font-weight:800;
   color:#fff;letter-spacing:-.5px;
 }
 
+/* Headings */
 h1{
-  font-family:var(--font-h);font-size:22px;font-weight:700;
-  color:#e8e8f4;text-align:center;margin-bottom:6px;
+  font-family:var(--font-h);font-size:23px;font-weight:700;
+  color:#f0ede8;text-align:center;margin-bottom:7px;
 }
-.sub{font-size:13.5px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:28px;}
+.sub{
+  font-size:13.5px;color:rgba(255,255,255,.38);
+  text-align:center;margin-bottom:30px;
+  line-height:1.5;
+}
 
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
-.field label{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;}
+/* Fields */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:15px;}
+.field label{
+  font-size:11px;font-weight:700;
+  color:rgba(255,255,255,.35);
+  text-transform:uppercase;letter-spacing:.08em;
+}
 .field input{
-  padding:11px 14px;
+  padding:12px 15px;
   background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:11px;
-  color:#e8e8f4;font-size:14px;font-family:var(--font-b);
-  transition:border-color .18s,background .18s;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:12px;
+  color:#f0ede8;font-size:14.5px;font-family:var(--font-b);
+  transition:border-color .18s,background .18s,box-shadow .18s;
   outline:none;
+  -webkit-appearance:none;
 }
-.field input:focus{border-color:var(--brand);background:rgba(124,106,255,.08);}
-.field input::placeholder{color:rgba(255,255,255,.2);}
+.field input:focus{
+  border-color:var(--brand);
+  background:rgba(236,91,8,.07);
+  box-shadow:0 0 0 3px rgba(236,91,8,.12);
+}
+.field input::placeholder{color:rgba(255,255,255,.18);}
 
+/* Button */
 .btn{
-  width:100%;padding:13px;margin-top:6px;
+  width:100%;padding:14px;margin-top:8px;
   background:var(--brand);color:#fff;
-  border:none;border-radius:12px;
-  font-size:14.5px;font-weight:700;font-family:var(--font-b);
-  cursor:pointer;
+  border:none;border-radius:13px;
+  font-size:15px;font-weight:700;font-family:var(--font-b);
+  cursor:pointer;letter-spacing:.2px;
   transition:background .18s,transform .12s,box-shadow .18s;
-  box-shadow:0 4px 20px rgba(124,106,255,.35);
+  box-shadow:0 4px 22px rgba(236,91,8,.45);
+  -webkit-tap-highlight-color:transparent;
 }
-.btn:hover{background:var(--brand-dk);box-shadow:0 6px 28px rgba(124,106,255,.45);}
+.btn:hover{background:var(--brand-dk);box-shadow:0 6px 30px rgba(236,91,8,.55);}
 .btn:active{transform:scale(.97);}
-.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
+/* Error */
 .err{
-  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  background:rgba(239,68,68,.1);
+  border:1px solid rgba(239,68,68,.22);
   color:#f87171;font-size:13px;
-  padding:9px 13px;border-radius:9px;
-  margin-bottom:12px;display:none;
+  padding:10px 14px;border-radius:10px;
+  margin-bottom:14px;display:none;
+  line-height:1.45;
 }
 .err.show{display:block;}
 
+/* Divider */
 .divider{
   display:flex;align-items:center;gap:10px;
-  color:rgba(255,255,255,.2);font-size:12px;
-  margin:18px 0;
+  color:rgba(255,255,255,.18);font-size:12px;
+  margin:20px 0;
 }
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08);}
+.divider::before,.divider::after{
+  content:'';flex:1;height:1px;
+  background:rgba(255,255,255,.07);
+}
 
-.link-row{text-align:center;font-size:13.5px;color:rgba(255,255,255,.4);}
-.link-row a{color:var(--brand);text-decoration:none;font-weight:600;}
+/* Link row */
+.link-row{
+  text-align:center;
+  font-size:13.5px;color:rgba(255,255,255,.38);
+}
+.link-row a{
+  color:var(--brand);text-decoration:none;font-weight:700;
+}
 .link-row a:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
+
 <div class="card">
   <div class="logo-wrap">
-    <img class="logo-img" src="/logo" alt="HPZ Logo" onerror="this.style.display='none'">
+    <img class="logo-img" src="/logo" alt="HPZ" onerror="this.style.display='none'">
     <span class="logo-text">HPZ</span>
   </div>
+
   <h1>Welcome back</h1>
   <p class="sub">Sign in to continue chatting</p>
 
@@ -122,38 +171,52 @@ h1{
 
   <div class="field">
     <label>Username</label>
-    <input type="text" id="identifier" placeholder="Enter your username" autocomplete="username">
+    <input type="text" id="identifier" placeholder="Enter your username"
+      autocomplete="username" autofocus>
   </div>
+
   <div class="field">
     <label>Password</label>
-    <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"
+    <input type="password" id="password" placeholder="Enter your password"
+      autocomplete="current-password"
       onkeydown="if(event.key==='Enter')doLogin()">
   </div>
 
   <button class="btn" id="loginBtn" onclick="doLogin()">Sign In</button>
 
   <div class="divider">or</div>
-  <div class="link-row">Don't have an account? <a href="/register">Create one</a></div>
+
+  <div class="link-row">
+    Don't have an account? <a href="/register">Create one</a>
+  </div>
 </div>
 
 <script>
 async function doLogin(){
-  const id=document.getElementById('identifier').value.trim();
-  const pw=document.getElementById('password').value;
-  const btn=document.getElementById('loginBtn');
-  const err=document.getElementById('err');
+  const id  = document.getElementById('identifier').value.trim();
+  const pw  = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('err');
   err.classList.remove('show');
-  if(!id||!pw){showErr('Please fill in all fields.');return;}
-  btn.disabled=true;btn.textContent='Signing in…';
+  if(!id || !pw){ showErr('Please fill in all fields.'); return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
   try{
-    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:id,password:pw})});
-    const d=await r.json();
-    if(d.success){window.location.href=d.redirect||'/chat';}
-    else{showErr(d.error||'Login failed.');}
-  }catch(e){showErr('Connection error. Try again.');}
-  btn.disabled=false;btn.textContent='Sign In';
+    const r = await fetch('/api/auth/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username: id, password: pw })
+    });
+    const d = await r.json();
+    if(d.success){ window.location.href = d.redirect || '/chat'; }
+    else{ showErr(d.error || 'Login failed. Check your username and password.'); }
+  }catch(e){ showErr('Connection error. Please try again.'); }
+  btn.disabled = false; btn.textContent = 'Sign In';
 }
-function showErr(msg){const e=document.getElementById('err');e.textContent=msg;e.classList.add('show');}
+function showErr(msg){
+  const e = document.getElementById('err');
+  e.textContent = msg;
+  e.classList.add('show');
+}
 </script>
 </body>
 </html>
