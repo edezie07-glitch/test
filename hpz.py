@@ -488,8 +488,8 @@ def serve_logo():
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
-    username = data.get('username', '').strip()
-    password = data.get('password', '').strip()
+    username = (data.get('username') or data.get('identifier') or '').strip()
+    password = (data.get('password') or '').strip()
     if not username or not password:
         return jsonify({'success': False, 'error': 'Username and password required'}), 400
     if len(username) < 3:
