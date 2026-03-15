@@ -812,6 +812,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 /* Conversation 3-line menu button (inside open chat header) */
 .conv3-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);letter-spacing:1px;}
 .conv3-btn:hover{background:rgba(236,91,8,.15);color:var(--brand);}
+/* Mute chat duration picker */
+.mute-sheet-ov{display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);}
+.mute-sheet-ov.show{display:block;}
+.mute-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(420px,100vw);
+  background:var(--card);border-radius:22px 22px 0 0;z-index:4001;padding:16px 16px 32px;}
+.mute-opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:12px;
+  cursor:pointer;color:var(--txt);font-size:14px;font-weight:600;
+  transition:background .15s;-webkit-tap-highlight-color:transparent;}
+.mute-opt:hover,.mute-opt:active{background:var(--hov);}
+.mute-opt .mute-ico{font-size:20px;width:28px;text-align:center;}
 /* Shared floating dropdown menu */
 .crow-ctx{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:13px;padding:6px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:2000;display:none;animation:clpFadeIn .12s ease;}
 .crow-ctx.show{display:block;}
@@ -2228,6 +2238,32 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div style="color:rgba(255,255,255,.4);font-size:12px;margin-top:14px;letter-spacing:.3px;">Tap anywhere to close</div>
 </div>
 
+<!-- Mute Chat Duration Sheet -->
+<div class="mute-sheet-ov" id="muteSheetOv" onclick="closeMuteSheet();" style="cursor:pointer;"></div>
+<div class="mute-sheet" id="muteSheet" style="transform:translateX(-50%) translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);" onclick="event.stopPropagation();">
+  <div style="width:36px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 16px;"></div>
+  <div style="font-size:15px;font-weight:800;color:var(--txt);margin-bottom:14px;padding:0 4px;">🔕 Mute notifications for…</div>
+  <div class="mute-opt" onclick="applyMuteChat(60)">
+    <span class="mute-ico">⏱️</span><span>1 hour</span>
+  </div>
+  <div class="mute-opt" onclick="applyMuteChat(480)">
+    <span class="mute-ico">🕗</span><span>8 hours</span>
+  </div>
+  <div class="mute-opt" onclick="applyMuteChat(1440)">
+    <span class="mute-ico">☀️</span><span>24 hours</span>
+  </div>
+  <div class="mute-opt" onclick="applyMuteChat(10080)">
+    <span class="mute-ico">📅</span><span>1 week</span>
+  </div>
+  <div class="mute-opt" onclick="applyMuteChat(-1)">
+    <span class="mute-ico">🔕</span><span>Until I turn it back on</span>
+  </div>
+  <div style="height:1px;background:var(--bdr);margin:10px 0;"></div>
+  <div class="mute-opt" onclick="applyMuteChat(0)" style="color:#ef4444;">
+    <span class="mute-ico">🔔</span><span>Unmute</span>
+  </div>
+</div>
+
 <!-- Undo delete snackbar -->
 <div class="notif-undo-bar" id="notifUndoBar">
   <span id="notifUndoText">Notification deleted</span>
@@ -2448,7 +2484,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div id="SC_rotWrap" style="display:contents;touch-action:none;">
         <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
       </div>
-      <video id="SC_vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline loop></video>
+      <video id="SC_vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline autoplay loop></video>
 
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
@@ -3027,12 +3063,18 @@ async function saveProfile(){
     const d=await r.json();
     if(d.success){
       document.getElementById('snm').textContent=un||ME_NAME;
-    // Sync avatar in settings if user has one
-    if(data.avatar_url){
-      const sav=document.getElementById('sav');
-      if(sav){
-        sav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar">
+    // Sync avatar in settings
+    const sav=document.getElementById('sav');
+    if(sav){
+      if(data.avatar_url){
+        sav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar" onerror="this.remove()">
           <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;" onclick="event.stopPropagation();openSettingsAvatarEdit()">⋮</div>`;
+        sav.style.fontSize='0';
+      } else {
+        // No avatar — show initial letter
+        const un = data.username || '{{ user.username }}';
+        sav.textContent = un[0].toUpperCase();
+        sav.style.fontSize = '';
       }
     }
       toast('✅ Profile saved!','ok');
@@ -3678,9 +3720,14 @@ function showFriendProfile(){
   document.getElementById('profileStatus').textContent=friend.is_online?'Online':friend.status;
   document.getElementById('profileBio').textContent=friend.bio||'No bio yet';
   document.getElementById('profileRelationship').textContent=friend.relationship_status||'Prefer not to say';
-  const av=document.getElementById('profileAvLarge');av.textContent=friend.username[0].toUpperCase();
+  const av=document.getElementById('profileAvLarge');
+  // Always reset to letter first, then overlay image if available
+  av.innerHTML = '';
+  av.style.fontSize = '52px';
+  av.textContent = friend.username[0].toUpperCase();
   if(friend.avatar_url){
-    av.innerHTML=`<img src="${friend.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onclick="openProfileFullImg('${friend.avatar_url}')" data-fullsrc="${friend.avatar_url}">`;
+    av.innerHTML = `<img src="${friend.avatar_url}?v=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${friend.avatar_url}')" data-fullsrc="${friend.avatar_url}" onerror="this.remove()">`;
+    av.style.fontSize = '0';  // hide letter when image present
   }
   // Show edit dot only on own profile
   const editDot=document.getElementById('profileAvEditDot');
@@ -4575,24 +4622,36 @@ function startGroupCall(type) {
   const others = members.filter(m => m.id !== ME_ID);
   if (!others.length) { toast('No other members to call', 'err'); return; }
 
-  // Build picker sheet
   const sheet = document.getElementById('gcallPickerSheet');
   const list  = document.getElementById('gcallPickerList');
-  document.getElementById('gcallPickerTitle').textContent =
-    (type === 'video' ? '📹 Video Call' : '📞 Voice Call') + ' — pick a member';
+  const title = document.getElementById('gcallPickerTitle');
+  const icon  = type === 'video' ? '📹' : '📞';
+  const label = type === 'video' ? 'Video Call' : 'Voice Call';
+  title.innerHTML = `<span>${icon} ${label}</span><span style="font-size:12px;color:var(--mute);font-weight:400;">Choose who to call</span>`;
+  title.style.display='flex';title.style.flexDirection='column';title.style.gap='2px';
+
   list.innerHTML = others.map(m => `
-    <div class="gi-member" style="cursor:pointer;border-radius:12px;padding:10px 12px;transition:background .15s;"
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:14px;
+      cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent;"
       onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background=''"
       onclick="closeGcallPicker();doCall({id:${m.id},username:'${esc(m.username)}'},'${type}')">
-      <div class="gi-member-av" style="background:var(--brand);">${m.username[0].toUpperCase()}</div>
-      <div style="flex:1;">
-        <div class="gi-member-name">${esc(m.username)}</div>
-        ${m.online ? '<div style="font-size:11px;color:#22c55e;">● Online</div>' : '<div style="font-size:11px;color:var(--mute);">Offline</div>'}
+      <div style="width:44px;height:44px;border-radius:13px;background:var(--brand);color:#fff;
+        font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;
+        flex-shrink:0;position:relative;">
+        ${m.username[0].toUpperCase()}
+        ${m.online ? '<div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#22c55e;border:2px solid var(--card);"></div>' : ''}
       </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:var(--txt);">${esc(m.username)}</div>
+        <div style="font-size:11px;color:${m.online ? '#22c55e' : 'var(--mute)'};">${m.online ? '● Online' : '○ Offline'}</div>
+      </div>
+      <div style="background:var(--brand);color:#fff;border-radius:10px;padding:8px 14px;
+        font-size:13px;font-weight:700;">${icon} Call</div>
     </div>
   `).join('');
-  sheet.style.transform = 'translateY(0)';
-  sheet.style.opacity   = '1';
+
+  sheet.style.transform   = 'translateY(0)';
+  sheet.style.opacity     = '1';
   sheet.style.pointerEvents = 'all';
   document.getElementById('gcallPickerOv').style.display = 'block';
 }
@@ -5186,6 +5245,7 @@ function buildCrowEl(f){
     <div class="cmeta">
       <div class="cnrow">
         <span class="cuname">${esc(f.username)}</span>
+        ${_isChatMuted(f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-'))?'<span style="font-size:12px;opacity:.55;margin-left:2px;">🔕</span>':''}
         ${f.last_message_time?`<span class="cts">${relTime(f.last_message_time)}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:4px;">
@@ -6016,7 +6076,11 @@ function nowNotifTime(){
 
 // ── Main entry: show toast (3s) + save permanently to panel ──
 function showInAppNotif(name, text, chatId, userId){
-  // 1. Save to persistent history — always, immediately
+  // 1. Check if this chat is muted — if so, save to history but skip the toast
+  const _muteKey = chatId || null;
+  const _isMutedNow = _muteKey && _isChatMuted(_muteKey);
+
+  // Always save to persistent history
   const notif = {
     id: Date.now()+'_'+Math.random().toString(36).slice(2,6),
     name: name||'',
@@ -6033,7 +6097,8 @@ function showInAppNotif(name, text, chatId, userId){
   _updateNotifBadge();
   _renderNotifPanel();
 
-  // 2. Toast — simple, clean, 3 seconds, tap = open history panel
+  // 2. Toast — skip entirely if chat is muted
+  if(_isMutedNow) return;
   const stack = document.getElementById('notifStack');
   if(!stack) return;
   const key = chatId || ('__'+name);
@@ -6319,6 +6384,69 @@ function _openUserProfile(userId, username){
 // Keep legacy alias
 function showNotification(title,body){ showInAppNotif(title,body,null,null); }
 
+// ══════════════════════════════════════════════════════
+// MUTE CHAT — per-chat notification muting
+// Stored as { chatId: expiryTimestamp } in localStorage
+// expiryTimestamp = -1 means muted forever
+// ══════════════════════════════════════════════════════
+let _mutedChats = JSON.parse(localStorage.getItem('hpz_muted') || '{}');
+
+function _saveMutedChats(){
+  localStorage.setItem('hpz_muted', JSON.stringify(_mutedChats));
+}
+
+function _isChatMuted(chatId){
+  if(!chatId) return false;
+  const expiry = _mutedChats[chatId];
+  if(expiry === undefined) return false;
+  if(expiry === -1) return true;  // muted forever
+  if(Date.now() < expiry) return true;
+  // Expired — clean up
+  delete _mutedChats[chatId];
+  _saveMutedChats();
+  return false;
+}
+
+function openMuteSheet(){
+  const ov = document.getElementById('muteSheetOv');
+  const sh = document.getElementById('muteSheet');
+  if(!ov||!sh) return;
+  ov.classList.add('show');
+  // Trigger reflow then slide up
+  sh.getBoundingClientRect();
+  sh.style.transform = 'translateX(-50%) translateY(0)';
+}
+
+function closeMuteSheet(){
+  const sh = document.getElementById('muteSheet');
+  const ov = document.getElementById('muteSheetOv');
+  if(sh) sh.style.transform = 'translateX(-50%) translateY(100%)';
+  setTimeout(()=>{ if(ov) ov.classList.remove('show'); }, 280);
+}
+
+function applyMuteChat(minutes){
+  const chatId = currentChatId || (currentGroupId ? 'group-'+currentGroupId : null);
+  if(!chatId){ closeMuteSheet(); return; }
+  if(minutes === 0){
+    // Unmute
+    delete _mutedChats[chatId];
+    toast('🔔 Notifications unmuted','ok');
+  } else if(minutes === -1){
+    _mutedChats[chatId] = -1;
+    toast('🔕 Muted until you turn it back on','ok');
+  } else {
+    _mutedChats[chatId] = Date.now() + minutes * 60 * 1000;
+    const label = minutes < 60 ? minutes+'m'
+      : minutes < 1440 ? (minutes/60)+'h'
+      : minutes < 10080 ? (minutes/1440)+'d'
+      : (minutes/10080)+'w';
+    toast('🔕 Muted for '+label,'ok');
+  }
+  _saveMutedChats();
+  closeMuteSheet();
+  renderFriends(); // refresh chat list to show/hide 🔕 icon
+}
+
 // ═══════════════════════════════════════════════════════════
 // PROFILE AVATAR — 3-dot menu, crop editor, full-image view
 // ═══════════════════════════════════════════════════════════
@@ -6492,7 +6620,11 @@ async function saveCroppedAvatar(){
       if(d.success){
         // Update profile sheet avatar immediately
         const av=document.getElementById('profileAvLarge');
-        if(av) av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" onclick="openProfileFullImg('${d.avatar_url}')" data-fullsrc="${d.avatar_url}">`;
+        if(av){
+          av.innerHTML='';
+          av.style.fontSize='0';
+          av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" data-fullsrc="${d.avatar_url}" onerror="this.remove();this.closest('.av').style.fontSize='52px'">`;
+        }
         // Update settings sidebar avatar
         const sav=document.getElementById('sav');
         if(sav) sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar">
@@ -6790,6 +6922,7 @@ function openConv3Menu(e){
       <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
       <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
       <div class="crow-ctx-item" onclick="crowCtxConvDo('schedule')">⏳ Schedule Message</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${_isChatMuted('group-'+currentGroupId)?'🔔 Unmute Group':'🔕 Mute Group'}</div>
       <div class="crow-ctx-sep"></div>
       <div class="crow-ctx-item" onclick="crowCtxConvDo('archive-group')">${isGA?'📤 Unarchive Group':'🗄️ Archive Group'}</div>
       <div class="crow-ctx-sep"></div>
@@ -6805,6 +6938,7 @@ function openConv3Menu(e){
   const f=friends.find(x=>x.id===currentFriendId);
   const isArchived=f&&archivedChats.has(currentFriendId);
   const isPinned=currentChatId&&pinnedChatIds.has(currentChatId);
+  const isMuted=currentChatId&&_isChatMuted(currentChatId);
   menu.innerHTML=`
     <div class="crow-ctx-item" onclick="crowCtxConvDo('profile')">👤 View Profile</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
@@ -6814,6 +6948,7 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('label')">🏷️ Contact Label</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('lock')">🔒 ${prefs.chatLocks[currentChatId]?'Unlock Chat':'Lock Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('notif-sound')">🔔 Notification Sound</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${isMuted?'🔔 Unmute Chat':'🔕 Mute Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('export')">📤 Export Chat</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
@@ -6830,6 +6965,7 @@ function openConv3Menu(e){
 }
 function crowCtxConvDo(action){
   closeCrowCtx();
+  if(action==='mute-chat'){ openMuteSheet(); return; }
   if(action==='profile'){showFriendProfile();}
   else if(action==='search'){toggleSearch();}
   else if(action==='pinned-msgs'){showPinned();}
@@ -7610,28 +7746,38 @@ function scLoadEditor(){
     setTimeout(()=>tx.focus(),300);
     _scHideVideoUI();
   } else if(SC.mediaType==='video'){
-    vid.onloadeddata = null;
-    vid.onerror      = null;
-    vid.pause();
-    vid.removeAttribute('src');
+    // Completely reset the video element
+    vid.onloadeddata    = null;
+    vid.oncanplaythrough= null;
+    vid.onerror         = null;
+    try{ vid.pause(); }catch(e){}
+    vid.src = '';
     vid.load();
-    // Show placeholder immediately so canvas area is not empty
-    vid.style.display = 'block';
+    // Show the element immediately — black background while video loads
+    vid.style.display    = 'block';
     vid.style.background = '#000';
-    // Use double-RAF so browser has painted the page before loading video
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    // Set volume state NOW before src is assigned
+    SC.vidVolume = 1.0;
+    // Use a 60ms delay — enough for the DOM to stabilise after scPage(1)
+    setTimeout(()=>{
       vid.src    = SC.mediaURL;
       vid.muted  = false;
-      vid.volume = 1.0;     // original full volume
-      SC.vidVolume = 1.0;
-      vid.load();
+      vid.volume = 1.0;    // FULL original sound always on first load
+      // canplaythrough fires when enough data to play — most reliable event
+      vid.oncanplaythrough = ()=>{
+        vid.oncanplaythrough = null;
+        vid.play().catch(()=>{});
+        const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
+      };
+      // Fallback: if canplaythrough never fires, play on loadeddata
       vid.onloadeddata = ()=>{
         vid.onloadeddata = null;
         vid.play().catch(()=>{});
         const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
       };
-      vid.onerror = ()=>{ toast('Video could not load','err'); };
-    }));
+      vid.onerror = ()=>{ toast('Video could not load — try a different format','err'); };
+      vid.load();
+    }, 60);
     _scShowVideoUI();
   } else {
     img.src = SC.mediaURL;
