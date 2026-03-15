@@ -711,44 +711,19 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #callDock{
   position:absolute;bottom:0;left:0;right:0;z-index:9;
   display:flex;flex-direction:column;align-items:center;
-  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px);
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px);
   opacity:0;
   transition:opacity .3s ease;
 }
-
-/* Controls tray — hidden by default, slides up on tap */
+/* Controls tray — always open, always tappable */
 #callCtrlTray{
-  display:flex;gap:20px;align-items:center;justify-content:center;
-  padding:0 28px;
-  max-height:0;opacity:0;overflow:hidden;
-  transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease,padding .3s ease;
-  pointer-events:none;
-}
-#callCtrlTray.open{
-  max-height:140px;opacity:1;padding:16px 28px 12px;
+  display:flex;gap:16px;align-items:center;justify-content:center;
+  padding:12px 20px;
+  flex-wrap:wrap;
   pointer-events:all;
 }
-
-/* Double-chevron toggle */
-#callDockToggle{
-  background:rgba(255,255,255,.15);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1.5px solid rgba(255,255,255,.25);
-  border-radius:28px;
-  padding:8px 28px 6px;
-  cursor:pointer;
-  transition:background .2s,transform .15s;
-  -webkit-tap-highlight-color:transparent;
-  display:flex;align-items:center;justify-content:center;
-  margin-top:0;
-}
-#callDockToggle:active{background:rgba(255,255,255,.25);transform:scale(.95);}
-#callDockChevrons{
-  display:flex;flex-direction:column;align-items:center;
-  transition:transform .35s cubic-bezier(.4,0,.2,1);
-  line-height:1;
-}
-#callDockToggle.open #callDockChevrons{transform:rotate(180deg);}
+/* Hide old chevron toggle */
+#callDockToggle{ display:none!important; }
 
 /* Buttons */
 .ccb{
@@ -2000,34 +1975,49 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
   <!-- Bottom dock -->
   <div id="callDock">
-    <div id="callCtrlTray">
-      <button class="ccb" id="muteBtn"    title="Mute">🎤</button>
-      <button class="ccb" id="flipBtn"    title="Flip" style="display:none;">🔄</button>
-      <button class="ccb end-btn" id="endBtn" title="End">📵</button>
-      <button class="ccb" id="speakerBtn" title="Speaker">🔊</button>
-      <button class="ccb" id="videoBtn"   title="Camera" style="display:none;">📹</button>
-      <button class="ccb rec-btn" id="callRecBtn" title="Record call" onclick="toggleCallRecording()">⏺</button>
-      <button class="ccb" id="callBgBtn" title="Background" onclick="toggleCallBgPanel()" style="display:none;">🖼</button>
-    </div>
     <!-- Recording consent banner -->
-  <div class="rec-consent" id="callRecConsent">⏺ Recording in progress — all parties notified</div>
-  <!-- Background blur panel -->
-  <div id="callBgPanel">
-    <div class="bgopt active" id="bgNone" onclick="setCallBg('none')" title="No filter">🚫</div>
-    <div class="bgopt" id="bgBlur" onclick="setCallBg('blur')" title="Blur">🔲</div>
-    <div class="bgopt" id="bgColor1" onclick="setCallBg('#1a1035')" style="background:#1a1035;"></div>
-    <div class="bgopt" id="bgColor2" onclick="setCallBg('#0d3d1f')" style="background:#0d3d1f;"></div>
-    <div class="bgopt" id="bgColor3" onclick="setCallBg('#1e1a38')" style="background:#1e1a38;"></div>
-    <div class="bgopt" id="bgColor4" onclick="setCallBg('#2d1b00')" style="background:#2d1b00;"></div>
-  </div>
-  <button id="callDockToggle">
-      <div id="callDockChevrons">
-        <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="2,13 14,2 26,13" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <polyline points="5,18 14,10 23,18" stroke="rgba(255,255,255,.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
+    <div class="rec-consent" id="callRecConsent">⏺ Recording in progress — all parties notified</div>
+    <!-- Background blur panel -->
+    <div id="callBgPanel">
+      <div class="bgopt active" id="bgNone" onclick="setCallBg('none')" title="No filter">🚫</div>
+      <div class="bgopt" id="bgBlur" onclick="setCallBg('blur')" title="Blur">🔲</div>
+      <div class="bgopt" id="bgColor1" onclick="setCallBg('#1a1035')" style="background:#1a1035;"></div>
+      <div class="bgopt" id="bgColor2" onclick="setCallBg('#0d3d1f')" style="background:#0d3d1f;"></div>
+      <div class="bgopt" id="bgColor3" onclick="setCallBg('#1e1a38')" style="background:#1e1a38;"></div>
+      <div class="bgopt" id="bgColor4" onclick="setCallBg('#2d1b00')" style="background:#2d1b00;"></div>
+    </div>
+    <!-- Always-visible control tray -->
+    <div id="callCtrlTray">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+        <button class="ccb" id="muteBtn" title="Mute">🎤</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;">Mute</span>
       </div>
-    </button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;" id="flipBtnWrap">
+        <button class="ccb" id="flipBtn" title="Flip Camera" style="display:none;">🔄</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;display:none;" id="flipBtnLbl">Flip</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+        <button class="ccb" id="videoBtn" title="Camera">📹</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;">Camera</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+        <button class="ccb end-btn" id="endBtn" title="End Call">📵</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;">End</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+        <button class="ccb" id="speakerBtn" title="Speaker">🔊</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;">Speaker</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+        <button class="ccb rec-btn" id="callRecBtn" title="Record">⏺</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;">Record</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;" id="callBgBtnWrap" style="display:none;">
+        <button class="ccb" id="callBgBtn" title="Background" style="display:none;">🖼</button>
+        <span style="font-size:9px;color:rgba(255,255,255,.55);font-weight:600;display:none;" id="callBgBtnLbl">Bg</span>
+      </div>
+    </div>
+    <button id="callDockToggle" style="display:none;"></button>
   </div>
 </div>
 
@@ -2412,9 +2402,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
 
-      <!-- ✂️ Trim button — only visible for videos that exceed 30s -->
+      <!-- ✂️ Edit & Cut button — visible for all videos -->
       <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
-        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Trim to 30s</button>
+        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Edit & Cut</button>
       </div>
 
       <!-- Text story background + text -->
@@ -2515,13 +2505,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
           cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">✏️</span>Add Text
         </button>
-        <!-- Trim Video (only visible for video) -->
-        <button id="SC_trimToolBtn" onclick="scOpenTrimmer()" style="
+        <!-- Trim/Cut Video (only visible for video) -->
+        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="
           display:none;
           background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);
           color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;
-          cursor:pointer;display:none;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">✂️</span>Trim Clip
+          cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✂️</span>Edit & Cut
         </button>
       </div>
 
@@ -2693,7 +2683,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);">
       <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">‹</button>
       <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">✂️ Edit Video</span>
-      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;">Use Clip</button>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#7c6aff);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">💾 Save Clip</button>
     </div>
 
     <!-- Video preview -->
@@ -3968,31 +3958,22 @@ function showCallUI(autoHide){
   if(topBar) topBar.classList.add('visible');
   if(dock)   dock.style.opacity = '1';
   clearTimeout(_callUITimer);
-  if(autoHide){
-    _callUITimer = setTimeout(hideCallUI, 4000);
-  }
+  // No auto-hide: buttons must always be accessible
 }
 function hideCallUI(){
-  _callUIVisible = false;
-  clearTimeout(_callUITimer);
-  const tray = document.getElementById('callCtrlTray');
-  if(tray && tray.classList.contains('open')) return; // keep visible while tray open
+  // Keep dock visible — buttons must always work
+  _callUIVisible = true;
   const topBar = document.getElementById('callTopBar');
   const dock   = document.getElementById('callDock');
-  if(topBar) topBar.classList.remove('visible');
-  if(dock)   dock.style.opacity = '0';
+  if(topBar) topBar.classList.add('visible');
+  if(dock)   dock.style.opacity = '1';
 }
 function callScreenTap(e){
   if(e.target.closest('.ccb') || e.target.closest('#callDockToggle') || e.target.closest('#localVideo')) return;
-  if(_callUIVisible) hideCallUI(); else showCallUI(true);
+  // Keep UI always visible — no toggle
 }
 function toggleCallDock(){
-  const tray = document.getElementById('callCtrlTray');
-  const tog  = document.getElementById('callDockToggle');
-  const open = tray.classList.toggle('open');
-  tog.classList.toggle('open', open);
-  if(open){ clearTimeout(_callUITimer); _callUIVisible=true; }
-  else showCallUI(true);
+  // No-op — tray is always open
 }
 
 // ── Status + timer helpers ──
@@ -4136,13 +4117,12 @@ function _syncFacingFromStream(stream) {
 // Show flip button only when device actually has a back camera
 function _updateFlipBtnVisibility() {
   const btn = document.getElementById('flipBtn');
+  const lbl = document.getElementById('flipBtnLbl');
   if (!btn) return;
-  // Only show on mobile devices with multiple cameras, and only during video
-  if (_isMobileDevice && cd.localStream && cd.localStream.getVideoTracks().length > 0 && !cd.videoOff) {
-    btn.style.display = 'flex';
-  } else {
-    btn.style.display = 'none';
-  }
+  const show = _isMobileDevice && cd.localStream &&
+               cd.localStream.getVideoTracks().length > 0 && !cd.videoOff;
+  btn.style.display = show ? 'flex' : 'none';
+  if (lbl) lbl.style.display = show ? 'block' : 'none';
 }
 
 async function flipCamera() {
@@ -4329,6 +4309,12 @@ function showCallModal(name, status, isVideo){
     if(vc) vc.style.display='none';
     if(vb) vb.style.display='none';
     const vBtn=document.getElementById('videoBtn'); if(vBtn) vBtn.style.display='flex';
+    const bgWrap=document.getElementById('callBgBtnWrap');
+    const bgBtn=document.getElementById('callBgBtn');
+    const bgLbl=document.getElementById('callBgBtnLbl');
+    if(bgWrap) bgWrap.style.display='flex';
+    if(bgBtn) bgBtn.style.display='flex';
+    if(bgLbl) bgLbl.style.display='block';
     _updateFlipBtnVisibility(); // only show flip on phones with back camera
   } else {
     if(rv) rv.style.display='none';
@@ -4348,11 +4334,9 @@ function showCallModal(name, status, isVideo){
     if(id==='speakerBtn') b.innerHTML='🔊';
   });
 
-  document.getElementById('callDock').style.opacity='0';
   document.getElementById('callModal').classList.add('show');
-  const _bgBtnEl=document.getElementById('callBgBtn');
-  if(_bgBtnEl) _bgBtnEl.style.display=(cd.type==='video'?'flex':'none');
-  showCallUI(true); // Show UI for 3s at call start
+  document.getElementById('callDock').style.opacity='1';
+  showCallUI(false); // Dock always visible
 }
 
 function hideCallModal(){
@@ -4361,7 +4345,7 @@ function hideCallModal(){
   const topBar=document.getElementById('callTopBar'); if(topBar) topBar.classList.remove('visible');
   const tray=document.getElementById('callCtrlTray');  if(tray)   tray.classList.remove('open');
   const tog=document.getElementById('callDockToggle'); if(tog)    tog.classList.remove('open');
-  const dock=document.getElementById('callDock');      if(dock)   dock.style.opacity='0';
+  const dock=document.getElementById('callDock');      if(dock)   dock.style.opacity='1';  // reset for next call
 }
 
 // ── PiP dragging ──
@@ -7363,12 +7347,10 @@ function scLoadEditor(){
     setTimeout(()=>tx.focus(),300);
     _scHideVideoUI();
   } else if(SC.mediaType==='video'){
-    // Clear any previous video cleanly
     vid.oncanplay = null;
     vid.onloadeddata = null;
     vid.pause();
     vid.src = '';
-    // Small delay ensures the browser registers the src change before we set the new one
     setTimeout(()=>{
       vid.src = SC.mediaURL;
       vid.style.display = 'block';
@@ -7378,7 +7360,7 @@ function scLoadEditor(){
       };
       vid.load();
     }, 30);
-    _scShowVideoUI();
+    _scShowVideoUI(); // show cut/edit buttons immediately
   } else {
     img.src = SC.mediaURL;
     img.style.display='block';
@@ -7391,29 +7373,29 @@ function scLoadEditor(){
 }
 
 function _scShowVideoUI(){
-  // Duration badge
-  const durLabel=$('SC_vidDuration');
-  const trimBtnWrap=$('SC_trimBtnWrap');
-  const trimToolBtn=$('SC_trimToolBtn');
-  if(SC.videoDuration != null){
+  const durLabel    = $('SC_vidDuration');
+  const trimBtnWrap = $('SC_trimBtnWrap');
+  const trimToolBtn = $('SC_trimToolBtn');
+
+  // Always show cut/edit buttons whenever a video is loaded
+  if(trimBtnWrap) trimBtnWrap.style.display = 'block';
+  if(trimToolBtn){
+    trimToolBtn.style.display        = 'flex';
+    trimToolBtn.style.flexDirection  = 'column';
+    trimToolBtn.style.alignItems     = 'center';
+  }
+
+  // Show duration badge only if we have it
+  if(SC.videoDuration != null && durLabel){
     const totalS = SC.videoDuration;
     const clipS  = SC.trimEnd != null ? SC.trimEnd - SC.trimStart : totalS;
-    const durStr = clipS.toFixed(1)+'s';
-    if(durLabel){
-      durLabel.textContent = totalS > 30
-        ? `✂️ ${durStr} / ${totalS.toFixed(0)}s total`
-        : durStr;
-      durLabel.style.color = '#fff';
-      durLabel.style.display='block';
-    }
-    // Show Trim button in both places only if video is longer than 30s
-    const needsTrim = totalS > 30;
-    if(trimBtnWrap)  trimBtnWrap.style.display  = needsTrim ? 'block' : 'none';
-    if(trimToolBtn)  trimToolBtn.style.display   = needsTrim ? 'flex' : 'none';
-  } else {
-    if(durLabel) durLabel.style.display='none';
-    if(trimBtnWrap) trimBtnWrap.style.display='none';
-    if(trimToolBtn) trimToolBtn.style.display='none';
+    durLabel.textContent = totalS > 30
+      ? `✂️ ${clipS.toFixed(1)}s / ${totalS.toFixed(0)}s total`
+      : clipS.toFixed(1)+'s';
+    durLabel.style.color   = '#fff';
+    durLabel.style.display = 'block';
+  } else if(durLabel){
+    durLabel.style.display = 'none';
   }
 }
 function _scHideVideoUI(){
@@ -7967,6 +7949,7 @@ function scCloseTrimmer(){
 }
 function scApplyTrim(){
   const vid=$('SC_trimVid');
+  if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
   const total=vid.duration||1;
   const dur=SC.trimEnd-SC.trimStart;
   if(dur>30){
@@ -7980,7 +7963,7 @@ function scApplyTrim(){
   // Store trim points — they'll be passed to the backend/post
   // Update the duration shown
   SC.videoDuration=total;
-  toast('✂️ Clip set: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
+  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
   scCloseTrimmer();
 }
 
