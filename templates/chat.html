@@ -2339,8 +2339,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     background-size:cover;background-position:center center;
     filter:blur(28px) brightness(.45) saturate(1.2);
     transform:scale(1.15);
-    opacity:0;transition:opacity .4s ease;
+    opacity:0;transition:opacity .35s ease;
     pointer-events:none;
+    will-change:opacity;
   "></div>
 
   <!-- Progress bars -->
@@ -2437,7 +2438,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       "></div>
     </div>
     <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;">
-    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="auto"></video>
+    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="none"></video>
     <p id="storyText" style="
       font-size:22px;font-weight:600;color:#fff;
       text-align:center;padding:40px 24px;
@@ -7324,20 +7325,27 @@ function closeStoriesPanel(){
   document.getElementById('storiesPopup').classList.remove('show');
   document.getElementById('storiesPopupOv').classList.remove('show');
 }
+let _storyOpening = false; // prevent double-open
 async function openStory(userId){
-  // Close stories panel first so modal appears on top cleanly
+  if(_storyOpening) return;
+  _storyOpening = true;
   closeStoriesPanel();
   try{
     const r=await fetch('/api/stories/friends');
     const d=await r.json();
-    if(!d.success) return;
+    if(!d.success){ _storyOpening=false; return; }
     const userStories=d.stories.find(s=>s.user_id===userId);
-    if(!userStories||!userStories.stories.length){ toast('No stories','info'); return; }
+    if(!userStories||!userStories.stories.length){
+      toast('No stories','info'); _storyOpening=false; return;
+    }
     currentStories=userStories.stories;
     currentStoryIndex=0;
     currentStoryUserId=userId;
     showStory();
-  }catch(e){ toast('Failed to load story','err'); }
+  }catch(e){
+    toast('Failed to load story','err');
+  }
+  _storyOpening=false;
 }
 // ── Story viewer state ──
 let _storyTimer = null;
@@ -7359,8 +7367,9 @@ function showStory(){
   _storyPaused = false;
   _storyRemaining = getStoryDuration(story);
 
-  // Show viewer
+  // Prepare viewer (keep hidden until content is set)
   const viewer = document.getElementById('storyViewer');
+  viewer.style.opacity = '0';
   viewer.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
@@ -7508,15 +7517,17 @@ function showStory(){
     textEl.style.display = 'block';
   }
 
-  // Play background audio if any
-  if(story.audio_url){
+  // Play background audio only if viewer is actually visible
+  if(story.audio_url && document.getElementById('storyViewer').style.display==='flex'){
     const audio = document.createElement('audio');
     audio.id = 'storyBgAudio';
     audio.src = story.audio_url;
     audio.loop = true;
+    audio.preload = 'auto';
     audio.style.display = 'none';
     document.body.appendChild(audio);
-    audio.play().catch(()=>{});
+    // Small delay so it doesn't fire before viewer is shown
+    setTimeout(()=>{ if(document.getElementById('storyViewer').style.display==='flex') audio.play().catch(()=>{}); }, 100);
     // Show music note
     document.getElementById('storyMusicNote').style.display = 'flex';
     document.getElementById('storyMusicNote').textContent = '🎵 ' + (story.audio_name||'');
@@ -7543,6 +7554,12 @@ function showStory(){
         width:${i<currentStoryIndex?'100':'0'}%;transition:none;"></div>
     </div>`
   ).join('');
+
+  // Fade viewer in smoothly now that content is ready
+  requestAnimationFrame(()=>{
+    viewer.style.transition = 'opacity .2s ease';
+    viewer.style.opacity = '1';
+  });
 
   startStoryTimer();
 
@@ -7719,17 +7736,57 @@ function nextStory(){
 function closeStoryViewer(){
   clearTimeout(_storyTimer);
   _storyPaused = false;
+
   // Exit fullscreen if active
   if(document.fullscreenElement || document.webkitFullscreenElement){
     (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
   }
-  // Stop audio
+
+  // Stop ALL audio
   const audio = document.getElementById('storyBgAudio');
-  if(audio){ audio.pause(); audio.remove(); }
+  if(audio){ audio.pause(); audio.src=''; audio.remove(); }
+
+  // Stop video fully
   const vid = document.getElementById('storyVideo');
-  if(vid){ vid.onloadedmetadata=null; vid.onended=null; vid.pause(); vid.src=''; }
-  document.getElementById('storyViewer').style.display = 'none';
+  if(vid){
+    vid.onloadedmetadata=null; vid.ontimeupdate=null;
+    vid.onended=null; vid.oncanplaythrough=null;
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.load(); // flush buffer
+    vid.style.display='none';
+  }
+
+  // Reset background layers
+  const bgProfile = document.getElementById('storyBgProfile');
+  if(bgProfile){ bgProfile.style.opacity='0'; bgProfile.style.backgroundImage='none'; bgProfile.style.background='none'; }
+
+  const bgLayer = document.getElementById('storyBgLayer');
+  if(bgLayer){ bgLayer.style.display='none'; }
+
+  const bgAvatar = document.getElementById('storyBgAvatar');
+  if(bgAvatar){ bgAvatar.src=''; bgAvatar.style.display='none'; }
+
+  const bgCircle = document.getElementById('storyBgCircle');
+  if(bgCircle){ bgCircle.style.display='none'; bgCircle.innerHTML=''; }
+
+  // Reset image
+  const img = document.getElementById('storyImage');
+  if(img){ img.src=''; img.style.display='none'; }
+
+  // Reset text
+  const txt = document.getElementById('storyText');
+  if(txt){ txt.textContent=''; txt.style.display='none'; }
+
+  // Hide viewer
+  const sv = document.getElementById('storyViewer');
+  sv.style.opacity = '0';
+  sv.style.transition = 'none';
+  sv.style.display = 'none';
   document.body.style.overflow = '';
+  currentStories = [];
+  currentStoryIndex = 0;
+
   loadStories();
 }
 
