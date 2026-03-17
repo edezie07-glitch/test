@@ -1024,11 +1024,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 .sp-add-row:active,.sp-story-row:active{background:var(--hov);}
 .sp-av{
-  width:42px;height:42px;border-radius:50%;
+  width:46px;height:46px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-size:16px;font-weight:700;color:#fff;
   background:var(--brand);flex-shrink:0;
-  position:relative;
+  position:relative;overflow:hidden;
+  background-size:cover;background-position:center;
 }
 .sp-av-add{
   background:var(--hov);
@@ -1042,7 +1043,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 .sp-ring.unviewed{
   background:linear-gradient(var(--card),var(--card)) padding-box,
-    linear-gradient(135deg,#f97316,#d44e07,#3b82f6) border-box;
+    linear-gradient(135deg,#ec5b08,#f59e0b) border-box;
+  border:2.5px solid transparent;
 }
 .sp-ring.viewed{border:2.5px solid var(--bdr);}
 .sp-info .sp-name{font-size:13px;font-weight:600;color:var(--txt);}
@@ -1132,6 +1134,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   font-size:12px;color:rgba(255,255,255,.55);
   width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;
 }
+/* Cut button press feedback */
+#SC_cutBtn:active{transform:scale(.93);box-shadow:0 2px 8px rgba(239,68,68,.4);}
+/* Pause/play button press feedback */
+#SC_trimPlayPause:active{transform:translateX(-50%) scale(.9);}
+/* Story ring pulse animation */
+@keyframes storyRingPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(236,91,8,.5);}
+  50%{box-shadow:0 0 0 6px rgba(236,91,8,0);}
+}
+.story-ring-unviewed{animation:storyRingPulse 2.5s ease-in-out infinite;}
+
 /* Inline range sliders inside the video editor (SC_p5) */
 #SC_p5 input[type=range]{
   -webkit-appearance:none;appearance:none;
@@ -2320,6 +2333,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   flex-direction:column;
   touch-action:none;
 ">
+  <!-- Profile picture background layer (blurred, behind content) -->
+  <div id="storyBgProfile" style="
+    position:absolute;inset:0;z-index:0;
+    background-size:cover;background-position:center center;
+    filter:blur(28px) brightness(.45) saturate(1.2);
+    transform:scale(1.15);
+    opacity:0;transition:opacity .4s ease;
+    pointer-events:none;
+  "></div>
+
   <!-- Progress bars -->
   <div id="storyProgress" style="
     display:flex;gap:3px;padding:14px 12px 6px;
@@ -2332,13 +2355,23 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     position:absolute;top:28px;left:0;right:0;z-index:2;
     display:flex;align-items:center;gap:10px;padding:0 14px;
   ">
-    <div id="storyUserAvatar" style="
-      width:38px;height:38px;border-radius:50%;
-      background:var(--brand);color:#fff;
-      font-size:16px;font-weight:700;
-      display:flex;align-items:center;justify-content:center;
-      flex-shrink:0;border:2px solid rgba(255,255,255,.4);
-    ">U</div>
+    <div id="storyAvRing" style="
+      width:48px;height:48px;border-radius:50%;
+      padding:2.5px;
+      background:linear-gradient(135deg,#ec5b08,#f59e0b);
+      flex-shrink:0;
+      box-shadow:0 0 0 2px rgba(236,91,8,.25),0 0 16px rgba(236,91,8,.5);
+    ">
+      <div id="storyUserAvatar" style="
+        width:100%;height:100%;border-radius:50%;
+        background:var(--brand);color:#fff;
+        font-size:17px;font-weight:700;
+        display:flex;align-items:center;justify-content:center;
+        overflow:hidden;
+        border:2.5px solid rgba(0,0,0,.35);
+        position:relative;
+      ">U</div>
+    </div>
     <div style="flex:1;">
       <div id="storyUsername" style="font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);">Username</div>
       <div id="storyTime" style="font-size:11px;color:rgba(255,255,255,.7);">2h ago</div>
@@ -2367,14 +2400,50 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     position:absolute;inset:0;
     display:flex;align-items:center;justify-content:center;
     overflow:hidden;
+    background:transparent;
+    z-index:1;
   ">
-    <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;">
-    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;" playsinline preload="auto"></video>
+    <!-- Profile avatar as blurred background (shown for image/text stories) -->
+    <div id="storyBgLayer" style="
+      position:absolute;inset:0;z-index:0;
+      display:none;
+      align-items:center;justify-content:center;
+      overflow:hidden;
+    ">
+      <!-- Blurred profile image fills background -->
+      <img id="storyBgAvatar" src="" alt="" style="
+        position:absolute;inset:-20px;
+        width:calc(100% + 40px);height:calc(100% + 40px);
+        object-fit:cover;
+        filter:blur(28px) brightness(.45) saturate(1.2);
+        transform:scale(1.05);
+      ">
+      <!-- Fallback gradient if no avatar -->
+      <div id="storyBgGradient" style="
+        position:absolute;inset:0;
+        background:radial-gradient(circle at 50% 30%,rgba(236,91,8,.35) 0%,rgba(0,0,0,.85) 70%);
+      "></div>
+      <!-- Profile circle in center (shown for text stories) -->
+      <div id="storyBgCircle" style="
+        position:relative;z-index:1;
+        width:90px;height:90px;border-radius:50%;
+        border:3px solid rgba(255,255,255,.5);
+        overflow:hidden;
+        display:none;
+        align-items:center;justify-content:center;
+        font-size:36px;font-weight:800;color:#fff;
+        background:var(--brand);
+        box-shadow:0 0 0 5px rgba(255,255,255,.15),0 8px 40px rgba(0,0,0,.5);
+      "></div>
+    </div>
+    <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;">
+    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="auto"></video>
     <p id="storyText" style="
       font-size:22px;font-weight:600;color:#fff;
       text-align:center;padding:40px 24px;
       text-shadow:0 2px 12px rgba(0,0,0,.8);
       line-height:1.5;display:none;
+      position:relative;z-index:1;
     "></p>
   </div>
 
@@ -2787,13 +2856,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
     <!-- Video preview -->
     <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;">
-      <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline></video>
+      <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline autoplay></video>
       <!-- Time display -->
       <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
       <!-- Pause/Play button overlay -->
       <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.4);color:#fff;width:48px;height:48px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">⏸</button>
-      <!-- Cut point marker button -->
-      <button onclick="scAddCutPoint()" style="position:absolute;bottom:12px;right:14px;background:rgba(239,68,68,.8);border:none;color:#fff;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">✂️ Cut</button>
+      <!-- Cut button — tap to mark current position as cut point -->
+      <button id="SC_cutBtn" onclick="scAddCutPoint()" style="
+        position:absolute;bottom:12px;right:14px;
+        background:#ef4444;border:none;color:#fff;
+        border-radius:14px;padding:10px 18px;
+        font-size:13px;font-weight:800;cursor:pointer;
+        display:flex;align-items:center;gap:6px;
+        box-shadow:0 4px 16px rgba(239,68,68,.5);
+        -webkit-tap-highlight-color:transparent;
+        transition:transform .1s,box-shadow .1s;">✂️ Cut here</button>
     </div>
 
     <!-- Bottom controls panel -->
@@ -2820,7 +2897,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
             <div style="width:3px;height:16px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
           </div>
         </div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;margin-top:3px;" id="SC_trimHint">Drag handles to trim · ✂️ Cut marks a point</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35);text-align:center;margin-top:4px;line-height:1.5;" id="SC_trimHint">
+  Drag 🟠 handles to select · Tap ✂️ to cut at playhead · Handles snap to segment
+</div>
       </div>
 
       <!-- Music trim scrubber (shown only when song is added) -->
@@ -7173,10 +7252,13 @@ function renderStoriesBar(stories){
         const ring = s.has_unviewed ? 'unviewed' : 'viewed';
         const timeStr = s.stories && s.stories[0] ? relTime(s.stories[0].created_at) : '';
         const count = s.stories ? s.stories.length : 0;
+        const spAvatarBg = s.avatar_url
+          ? `style="background-image:url('${s.avatar_url}');background-size:cover;background-position:center;"`
+          : '';
         return `<div class="sp-story-row" onclick="closeStoriesPanel();openStory(${s.user_id});">
-          <div class="sp-av">
+          <div class="sp-av" ${spAvatarBg}>
             <div class="sp-ring ${ring}"></div>
-            ${init}
+            ${s.avatar_url ? '' : init}
           </div>
           <div class="sp-info">
             <div class="sp-name">${esc(s.username)}</div>
@@ -7198,17 +7280,30 @@ function renderStoriesBar(stories){
   // ── Desktop sidebar: horizontal circle scroll ──
   const scroll = document.getElementById('storiesScroll');
   if(scroll){
-    let sbHtml = `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:56px;" onclick="openCreateStoryModal()">
-      <div style="width:44px;height:44px;border-radius:50%;background:var(--hov);border:2px dashed var(--brand);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--brand);margin:0 auto;">+</div>
-      <div style="font-size:9px;margin-top:3px;color:var(--mute);">Add</div>
+    let sbHtml = `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:62px;" onclick="openCreateStoryModal()">
+      <div style="width:50px;height:50px;border-radius:50%;padding:2px;background:rgba(236,91,8,.2);border:2px dashed var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto;box-sizing:border-box;">
+        <div style="width:100%;height:100%;border-radius:50%;background:var(--hov);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--brand);">+</div>
+      </div>
+      <div style="font-size:9px;margin-top:4px;color:var(--mute);">Add</div>
     </div>`;
     if(_lastStories.length > 0){
       sbHtml += _lastStories.map(s => {
         const bdr = s.has_unviewed ? 'var(--brand)' : 'var(--bdr)';
         const bw  = s.has_unviewed ? '2.5px' : '1.5px';
-        return `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:56px;" onclick="openStory(${s.user_id})">
-          <div style="width:44px;height:44px;border-radius:50%;background:var(--brand);border:${bw} solid ${bdr};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;margin:0 auto;">${s.username[0].toUpperCase()}</div>
-          <div style="font-size:9px;margin-top:3px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.username)}</div>
+        const avatarInner = s.avatar_url
+          ? `<img src="${s.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none'">`
+          : `<span style="font-size:16px;font-weight:700;color:#fff;">${s.username[0].toUpperCase()}</span>`;
+        const ringStyle = s.has_unviewed
+          ? 'padding:2.5px;background:linear-gradient(135deg,#ec5b08,#f59e0b);'
+          : 'padding:2px;background:rgba(255,255,255,.15);';
+        const ringClass = s.has_unviewed ? 'class="story-ring-unviewed"' : '';
+        return `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:66px;" onclick="openStory(${s.user_id})">
+          <div ${ringClass} style="width:56px;height:56px;border-radius:50%;${ringStyle}margin:0 auto;box-sizing:border-box;">
+            <div style="width:100%;height:100%;border-radius:50%;background:var(--brand);overflow:hidden;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg);">
+              ${avatarInner}
+            </div>
+          </div>
+          <div style="font-size:9px;margin-top:5px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:64px;font-weight:${s.has_unviewed ? '700' : '400'};">${esc(s.username)}</div>
         </div>`;
       }).join('');
     }
@@ -7272,17 +7367,104 @@ function showStory(){
   // Header
   document.getElementById('storyUsername').textContent = story.username;
   document.getElementById('storyTime').textContent = relTime(story.created_at);
-  document.getElementById('storyUserAvatar').textContent = story.username[0].toUpperCase();
+
+  // Find avatar from stories list
+  const _susr   = _lastStories.find(s => s.user_id === currentStoryUserId);
+  const _savatar = _susr ? _susr.avatar_url : null;
+
+  // Set header avatar circle
+  const storyAvEl = document.getElementById('storyUserAvatar');
+  storyAvEl.innerHTML = '';
+  storyAvEl.style.fontSize = '16px';
+  if(_savatar){
+    storyAvEl.innerHTML = `<img src="${_savatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove()">`;
+    storyAvEl.style.fontSize = '0';
+  } else {
+    storyAvEl.textContent = story.username[0].toUpperCase();
+    storyAvEl.style.fontSize = '16px';
+  }
+  // Orange circle border = unviewed stories, dim = all viewed
+  const avRing = document.getElementById('storyAvRing');
+  if(avRing){
+    const userStory = _lastStories.find(s => s.user_id === currentStoryUserId);
+    const allViewed = userStory && !userStory.has_unviewed;
+    avRing.style.background = allViewed
+      ? 'rgba(255,255,255,.3)'
+      : 'linear-gradient(135deg,#ec5b08,#f59e0b)';
+    avRing.style.boxShadow = allViewed
+      ? 'none'
+      : '0 0 0 2px rgba(236,91,8,.35),0 2px 12px rgba(236,91,8,.4)';
+  }
+
+  // Set background profile picture layer
+  const bgEl = document.getElementById('storyBgProfile');
+  if(bgEl){
+    if(_savatar){
+      bgEl.style.backgroundImage = `url('${_savatar}')`;
+      bgEl.style.opacity = '1';
+    } else {
+      // No avatar — use a gradient based on username initial as bg
+      const hue = (story.username.charCodeAt(0) * 7) % 360;
+      bgEl.style.backgroundImage = `none`;
+      bgEl.style.background = `radial-gradient(ellipse at center, hsl(${hue},60%,30%) 0%, #000 75%)`;
+      bgEl.style.opacity = '1';
+      bgEl.style.filter  = 'none';
+      bgEl.style.transform = 'none';
+    }
+  }
 
   // Stop any previous audio
   const prevAudio = document.getElementById('storyBgAudio');
   if(prevAudio){ prevAudio.pause(); prevAudio.remove(); }
+
+  // ── Profile background layer ──────────────────────────
+  const bgLayer    = document.getElementById('storyBgLayer');
+  const bgAvatar   = document.getElementById('storyBgAvatar');
+  const bgGradient = document.getElementById('storyBgGradient');
+  const bgCircle   = document.getElementById('storyBgCircle');
+  if(bgLayer){
+    bgLayer.style.display = 'flex';
+    if(bgAvatar && _savatar){
+      bgAvatar.src = _savatar;
+      bgAvatar.style.display = 'block';
+    } else if(bgAvatar){
+      bgAvatar.style.display = 'none';
+    }
+    if(bgGradient) bgGradient.style.display = 'block';
+    // Show circle avatar for text stories (no media)
+    if(bgCircle){
+      if(!story.media_url){
+        bgCircle.style.display = 'flex';
+        bgCircle.innerHTML = '';
+        if(_savatar){
+          bgCircle.innerHTML = `<img src="${_savatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.remove()">`;
+        } else {
+          bgCircle.textContent = story.username[0].toUpperCase();
+        }
+      } else {
+        bgCircle.style.display = 'none';
+      }
+    }
+  }
+  // ────────────────────────────────────────────────────────
 
   // Content
   const imgEl  = document.getElementById('storyImage');
   const vidEl  = document.getElementById('storyVideo');
   const textEl = document.getElementById('storyText');
   imgEl.style.display='none'; vidEl.style.display='none'; textEl.style.display='none';
+
+  // For text stories: make profile bg more prominent
+  const bgEl2 = document.getElementById('storyBgProfile');
+  if(bgEl2 && !story.media_url){
+    // Text story — larger, more visible avatar background
+    bgEl2.style.filter    = 'blur(18px) brightness(.35) saturate(1.4)';
+    bgEl2.style.opacity   = '1';
+  } else if(bgEl2 && story.media_url){
+    // Photo/video — very subtle blurred bg (media fills the screen)
+    bgEl2.style.filter    = 'blur(32px) brightness(.3) saturate(1.1)';
+    bgEl2.style.opacity   = '0.7';
+  }
 
   if(story.media_url){
     if(story.media_type === 'video'){
@@ -8230,7 +8412,7 @@ let _trimDrag=null, _trimVidRAF=null;
 function scOpenTrimmer(){
   if(!SC.mediaFile||SC.mediaType!=='video'){ toast('No video loaded','err'); return; }
   scCloseTools();
-  // Reset editor controls
+  // Reset all controls
   _cutPoints=[];
   _pitchVal=0;
   if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
@@ -8238,9 +8420,7 @@ function scOpenTrimmer(){
     const el=$(id); if(el){ el.value=id==='SC_speedSlider'?1:100; }
   });
   const vs=$('SC_volSlider'); if(vs) vs.value=100;
-  const ms=$('SC_musicVolSlider'); if(ms) ms.value=100;
   const vv=$('SC_volVal'); if(vv) vv.textContent='100%';
-  const mv=$('SC_musicVolVal'); if(mv) mv.textContent='100%';
   ['SC_pitchVal','SC_speedVal','SC_vidBrightnessVal','SC_vidContrastVal'].forEach(id=>{
     const el=$(id); if(!el)return;
     if(id==='SC_pitchVal') el.textContent='0';
@@ -8248,51 +8428,69 @@ function scOpenTrimmer(){
     else el.textContent='100';
   });
   const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-  // Reset song UI
   const sBtn=$('SC_trimSongBtn'); if(sBtn) sBtn.textContent='+ Add Song';
   const sName=$('SC_trimSongName'); if(sName){ sName.textContent=''; sName.style.display='none'; }
   const mw=$('SC_musicTrimWrap'); if(mw) mw.style.display='none';
-  // Reset song state from trimmer if it was set
-  if(SC._fromTrimmer) SC._fromTrimmer=false;
+
+  // Show trimmer page
   scPage(5);
+
   const vid=$('SC_trimVid');
-  vid.onloadedmetadata = null;
-  vid.onerror = null;
-  vid.pause();
-  // Fully detach old source
+  // Clean stop
+  clearInterval(_trimVidRAF); _trimVidRAF=null;
+  vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
+  try{ vid.pause(); }catch(e){}
   vid.src='';
   vid.load();
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    vid.src = SC.mediaURL;
-    vid.muted = false;
+
+  // 80ms settle — enough for scPage(5) to fully render the container
+  setTimeout(()=>{
+    vid.src    = SC.mediaURL;
+    vid.muted  = false;   // hear original sound immediately
     vid.volume = 1.0;
     vid.load();
-    vid.onloadedmetadata = ()=>{
+
+    vid.oncanplaythrough = ()=>{
+      vid.oncanplaythrough=null;
       const total = vid.duration;
-      if(SC.trimEnd === null) SC.trimEnd = Math.min(total, 30);
+      if(SC.trimEnd===null) SC.trimEnd = Math.min(total, 30);
       _trimUpdate(total);
-      vid.currentTime = SC.trimStart || 0;
+      _renderCutPoints(total);
+      vid.currentTime = SC.trimStart||0;
       vid.play().catch(()=>{});
       const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-      // Playhead updater
-      clearInterval(_trimVidRAF);
-      _trimVidRAF = setInterval(()=>{
-        if(!vid.paused){
-          if(vid.currentTime >= (SC.trimEnd||vid.duration)){
-            vid.currentTime = SC.trimStart||0;
-          }
-          const total2 = vid.duration;
-          const lPct = (SC.trimStart||0)/total2*100;
-          const rPct = (SC.trimEnd||total2)/total2*100;
-          const progress = (vid.currentTime-(SC.trimStart||0))/((SC.trimEnd||total2)-(SC.trimStart||0));
-          const innerPct = lPct + (rPct-lPct)*Math.max(0,Math.min(1,progress));
-          const ph=$('SC_trimPlayhead');
-          if(ph) ph.style.left = innerPct+'%';
-        }
-      }, 50);
+      _startPlayheadLoop(vid);
+    };
+    // fallback: loadedmetadata fires earlier on some browsers
+    vid.onloadedmetadata = ()=>{
+      const total = vid.duration;
+      if(SC.trimEnd===null) SC.trimEnd = Math.min(total, 30);
+      _trimUpdate(total);
     };
     vid.onerror = ()=>{ toast('Could not load video for editing','err'); };
-  }));
+  }, 80);
+}
+
+function _startPlayheadLoop(vid){
+  clearInterval(_trimVidRAF);
+  _trimVidRAF = setInterval(()=>{
+    if(vid.paused||!vid.duration) return;
+    const total = vid.duration;
+    const end   = SC.trimEnd||total;
+    const start = SC.trimStart||0;
+    // Loop within trim region
+    if(vid.currentTime >= end - 0.05){
+      vid.currentTime = start;
+    }
+    // Move playhead
+    const ph = $('SC_trimPlayhead');
+    if(ph){
+      const progress = Math.max(0,Math.min(1,(vid.currentTime-start)/(end-start)));
+      const lPct = start/total*100;
+      const rPct = end/total*100;
+      ph.style.left = (lPct+(rPct-lPct)*progress)+'%';
+    }
+  }, 40);
 }
 function _trimUpdate(total){
   const start=SC.trimStart, end=SC.trimEnd;
@@ -8317,51 +8515,76 @@ function _trimUpdate(total){
   if(tl) tl.textContent=fmt(start)+' – '+fmt(end);
 }
 function scTrimBarClick(e){
-  if(e.target.id==='SC_trimL'||e.target.id==='SC_trimR') return;
+  if(e.target.closest('#SC_trimL')||e.target.closest('#SC_trimR')) return;
   const bar=$('SC_trimBar');
   const rect=bar.getBoundingClientRect();
-  const pct=(e.clientX-rect.left)/rect.width;
+  const pct=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
   const vid=$('SC_trimVid');
+  if(!vid||!vid.duration) return;
   const t=pct*vid.duration;
-  vid.currentTime=Math.max(SC.trimStart,Math.min(SC.trimEnd,t));
+  // Seek within trim region, or anywhere in the full bar
+  vid.currentTime=Math.max(0,Math.min(vid.duration,t));
 }
 function scTrimBarTouch(e){
+  if(e.target.closest('#SC_trimL')||e.target.closest('#SC_trimR')) return;
+  e.preventDefault();
   scTrimBarClick({clientX:e.touches[0].clientX,target:e.target});
 }
 function scTrimDragStart(e,side){
   e.preventDefault(); e.stopPropagation();
   _trimDrag=side;
+  const vid=$('SC_trimVid');
+  // Pause while dragging so seek is smooth
+  const wasPlaying=!vid.paused;
+  vid.pause();
+
   const onMove=ev=>{
+    ev.preventDefault&&ev.preventDefault();
     const clientX=ev.touches?ev.touches[0].clientX:ev.clientX;
     const bar=$('SC_trimBar');
     const rect=bar.getBoundingClientRect();
-    const vid=$('SC_trimVid');
     const total=vid.duration||1;
-    let pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
+    const pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
     let t=pct*total;
     if(side==='L'){
       t=Math.max(0,Math.min(SC.trimEnd-0.5,t));
       SC.trimStart=t;
+      // Seek to show user the start frame instantly
+      vid.currentTime=t;
     } else {
       t=Math.min(total,Math.max(SC.trimStart+0.5,t));
       SC.trimEnd=t;
-      // Warn if > 30s selection
       const dur=SC.trimEnd-SC.trimStart;
       const hint=$('SC_trimHint');
-      if(hint) hint.style.color=dur>30?'#ef4444':'rgba(255,255,255,.45)';
+      if(hint) hint.style.color=dur>30?'#ef4444':'rgba(255,255,255,.3)';
+      // Seek to end frame so user sees what's included
+      vid.currentTime=t;
     }
     _trimUpdate(total);
+    // Update playhead position to match seek
+    const ph=$('SC_trimPlayhead');
+    if(ph){
+      const lPct=(SC.trimStart/total)*100;
+      const rPct=(SC.trimEnd/total)*100;
+      const progress=(vid.currentTime-SC.trimStart)/(SC.trimEnd-SC.trimStart);
+      ph.style.left=(lPct+(rPct-lPct)*Math.max(0,Math.min(1,progress)))+'%';
+    }
   };
+
   const onUp=()=>{
     _trimDrag=null;
     document.removeEventListener('mousemove',onMove);
     document.removeEventListener('mouseup',onUp);
     document.removeEventListener('touchmove',onMove);
     document.removeEventListener('touchend',onUp);
-    // Seek video to trim start
-    const vid=$('SC_trimVid');
+    // Resume playback from the new start point
     vid.currentTime=SC.trimStart;
+    if(wasPlaying){
+      vid.play().catch(()=>{});
+      const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
+    }
   };
+
   document.addEventListener('mousemove',onMove);
   document.addEventListener('mouseup',onUp);
   document.addEventListener('touchmove',onMove,{passive:false});
@@ -8370,17 +8593,26 @@ function scTrimDragStart(e,side){
 function scTrimStop(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
-  if(vid){ vid.pause(); vid.onloadedmetadata=null; vid.onerror=null; vid.oncanplaythrough=null; vid.removeAttribute('src'); vid.load(); }
-  // Stop music preview
+  if(vid){
+    vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
+    try{ vid.pause(); }catch(e){}
+    vid.removeAttribute('src'); vid.load();
+  }
   if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
 }
 
 // ── Pause/Play toggle ──────────────────────────────────
 function scTrimTogglePlay(){
   const vid=$('SC_trimVid'), btn=$('SC_trimPlayPause');
-  if(!vid) return;
-  if(vid.paused){ vid.play().catch(()=>{}); if(btn) btn.textContent='⏸'; }
-  else { vid.pause(); if(btn) btn.textContent='▶'; }
+  if(!vid||!vid.src) return;
+  if(vid.paused){
+    vid.play().catch(()=>{});
+    if(btn) btn.textContent='⏸';
+    _startPlayheadLoop(vid);  // restart loop
+  } else {
+    vid.pause();
+    if(btn) btn.textContent='▶';
+  }
 }
 
 // ── Cut points ─────────────────────────────────────────
@@ -8388,21 +8620,66 @@ let _cutPoints = [];
 function scAddCutPoint(){
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration) return;
+
+  // Pause at the cut point so user sees exactly what was cut
+  vid.pause();
+  const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='▶';
+
   const t = vid.currentTime;
-  // Don't add if within 0.2s of existing
-  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){ toast('Cut point already here','info'); return; }
-  _cutPoints.push(t);
+  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){ toast('Already cut here','info'); return; }
+
+  // Snap to nearest 0.1s for precision
+  const snapped = Math.round(t*10)/10;
+
+  // The cut splits the video at this point — set trim region to the segment
+  // containing the current playhead. By default, keep the FIRST segment (0 → cut).
+  // User can drag handles to choose which segment they want.
+  const prevCuts = [0, ..._cutPoints, vid.duration];
+  let segStart=0, segEnd=vid.duration;
+  for(let i=0;i<prevCuts.length-1;i++){
+    if(snapped > prevCuts[i] && snapped <= prevCuts[i+1]){
+      segStart=prevCuts[i]; segEnd=snapped;
+      break;
+    }
+  }
+
+  _cutPoints.push(snapped);
   _cutPoints.sort((a,b)=>a-b);
   _renderCutPoints(vid.duration);
-  toast('✂️ Cut at '+t.toFixed(1)+'s','ok');
+
+  // Update trim region to show the cut segment instantly
+  SC.trimStart = segStart;
+  SC.trimEnd   = Math.min(snapped, segStart + 30);
+  _trimUpdate(vid.duration);
+
+  // Seek to start of the cut segment so user sees it immediately
+  vid.currentTime = segStart;
+
+  // Flash the cut line red
+  const pct = (snapped/vid.duration)*100;
+  const cp=$('SC_cutPoints');
+  const flash = cp?cp.querySelector(`div[data-t="${snapped}"]`)||cp.lastElementChild:null;
+  if(flash){
+    flash.style.background='#fff';
+    flash.style.width='3px';
+    setTimeout(()=>{ flash.style.background='#ef4444'; flash.style.width='2px'; },300);
+  }
+
+  toast('✂️ Cut at '+snapped.toFixed(1)+'s — drag handles to choose segment','ok');
 }
+
 function _renderCutPoints(total){
   const cp=$('SC_cutPoints'); if(!cp) return;
   cp.innerHTML='';
   _cutPoints.forEach(t=>{
     const pct=(t/total)*100;
     const mk=document.createElement('div');
-    mk.style.cssText=`position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:4;pointer-events:none;left:${pct}%;`;
+    mk.dataset.t=t;
+    mk.style.cssText=`position:absolute;top:-4px;bottom:-4px;width:2px;background:#ef4444;z-index:4;pointer-events:none;left:${pct}%;transition:background .2s,width .2s;`;
+    // Small notch at top
+    const notch=document.createElement('div');
+    notch.style.cssText=`position:absolute;top:0;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#ef4444;`;
+    mk.appendChild(notch);
     cp.appendChild(mk);
   });
 }
@@ -8579,6 +8856,7 @@ function scUpdateVidFilter(){
   SC.trimFilter=`brightness(${b}%) contrast(${k}%)`;
 }
 function scCloseTrimmer(){
+  clearInterval(_trimVidRAF); _trimVidRAF=null;
   scTrimStop();
   _cutPoints=[];
   const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
@@ -8586,6 +8864,7 @@ function scCloseTrimmer(){
   _scShowVideoUI();
 }
 function scApplyTrim(){
+  clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
   const total=vid.duration||1;
