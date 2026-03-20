@@ -69,6 +69,7 @@ online_users = {}
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(36), unique=True, nullable=True, index=True)  # UUID for profile URLs
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(200), nullable=False)
     avatar_url = db.Column(db.String(500))
@@ -84,6 +85,7 @@ class User(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'uuid': self.uuid,
             'username': self.username,
             'avatar_url': self.avatar_url,
             'bio': self.bio,
@@ -269,6 +271,7 @@ def _safe_migrate():
             print(f'  ⚠️  Could not add {table}.{col_name}: {ex}')
 
     # ── users ──────────────────────────────────────────────
+    add_col_if_missing('users', 'uuid',                 'VARCHAR(36)')
     add_col_if_missing('users', 'avatar_url',           'VARCHAR(500)')
     add_col_if_missing('users', 'bio',                  "VARCHAR(500) DEFAULT ''")
     add_col_if_missing('users', 'status',               "VARCHAR(100) DEFAULT 'Available'")
@@ -314,6 +317,15 @@ with app.app_context():
         print("✅ Database tables created/verified")
         _safe_migrate()   # adds any missing columns to existing tables
         print("✅ Database migration complete — no data lost")
+
+        # ── Backfill UUIDs for existing users who don't have one ──
+        users_without_uuid = User.query.filter(User.uuid == None).all()
+        for u in users_without_uuid:
+            u.uuid = str(uuid.uuid4())
+        if users_without_uuid:
+            db.session.commit()
+            print(f"✅ Backfilled UUIDs for {len(users_without_uuid)} users")
+
     except Exception as e:
         print(f"❌ Database initialization error: {e}")
 
@@ -472,6 +484,17 @@ def chat():
     resp = make_response(render_template('chat.html', user=user, user_id=user.id))
     return _no_cache(resp)
 
+# ── UUID-based user profile route ──
+@app.route('/user/<user_uuid>')
+@login_required
+def user_profile(user_uuid):
+    target = User.query.filter_by(uuid=user_uuid).first()
+    if not target:
+        return redirect('/chat')
+    current_user = User.query.get(session['user_id'])
+    resp = make_response(render_template('chat.html', user=current_user, user_id=current_user.id, profile_uuid=user_uuid))
+    return _no_cache(resp)
+
 @app.route('/logo')
 def serve_logo():
     templates_dir = os.path.join(BASE_DIR, 'templates')
@@ -499,7 +522,7 @@ def register():
     if User.query.filter_by(username=username).first():
         return jsonify({'success': False, 'error': 'Username already taken'}), 409
     try:
-        user = User(username=username)
+        user = User(username=username, uuid=str(uuid.uuid4()))
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -568,6 +591,36 @@ def search_users():
                 relationship = 'request_received'
         results.append({**u.to_dict(), 'relationship': relationship, 'is_online': is_user_online(u.id)})
     return jsonify({'success': True, 'results': results})
+
+# ── Lookup user by UUID (for profile pages) ──
+@app.route('/api/users/by-uuid/<user_uuid>')
+@login_required
+def get_user_by_uuid(user_uuid):
+    target = User.query.filter_by(uuid=user_uuid).first()
+    if not target:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    user_id = session['user_id']
+    relationship = 'none'
+    if target.id == user_id:
+        relationship = 'self'
+    elif are_friends(user_id, target.id):
+        relationship = 'friend'
+    else:
+        req_sent = FriendRequest.query.filter_by(from_user_id=user_id, to_user_id=target.id, status='pending').first()
+        req_received = FriendRequest.query.filter_by(from_user_id=target.id, to_user_id=user_id, status='pending').first()
+        if req_sent:
+            relationship = 'request_sent'
+        elif req_received:
+            relationship = 'request_received'
+    return jsonify({
+        'success': True,
+        'user': {
+            **target.to_dict(),
+            'relationship': relationship,
+            'is_online': is_user_online(target.id),
+            'profile_url': f'/user/{target.uuid}'
+        }
+    })
 
 @app.route('/api/profile', methods=['GET'])
 @login_required
@@ -2433,7 +2486,8 @@ def admin_dashboard():
     for u in recent_users:
         badge = '<span style="color:#22c55e;">●</span>' if u.id in online_users else '<span style="color:#444;">●</span>'
         joined = u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '—'
-        rows += f'<tr><td>{u.id}</td><td>{u.username}</td><td>{badge}</td><td>{joined}</td></tr>'
+        uuid_display = f'<a href="/user/{u.uuid}" style="color:#7c6aff;font-size:11px;font-family:monospace;">{u.uuid[:8]}…</a>' if u.uuid else '—'
+        rows += f'<tr><td>{u.id}</td><td>{u.username}</td><td>{badge}</td><td>{joined}</td><td>{uuid_display}</td></tr>'
 
     html = f'''<!DOCTYPE html>
 <html><head>
@@ -2484,7 +2538,7 @@ a.btn{{display:inline-flex;align-items:center;gap:6px;background:#7c6aff;color:#
 <div class="box">
   <h3>👥 Most Recent Signups</h3>
   <table>
-    <thead><tr><th>ID</th><th>Username</th><th>Online</th><th>Joined</th></tr></thead>
+    <thead><tr><th>ID</th><th>Username</th><th>Online</th><th>Joined</th><th>Profile UUID</th></tr></thead>
     <tbody>{rows}</tbody>
   </table>
 </div>
