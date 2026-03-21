@@ -2849,120 +2849,111 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <!-- PAGE 5: VIDEO TRIMMER -->
   <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#000;position:relative;">
     <!-- Header -->
-    <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);">
-      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">‹</button>
-      <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">✂️ Edit Video</span>
-      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">💾 Save Clip</button>
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0;">
+      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#8249;</button>
+      <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">&#9986;&#65039; Edit Video</span>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;">&#128190; Save Clip</button>
     </div>
     <!-- Video preview -->
-    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;">
-      <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline autoplay></video>
-      <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap;z-index:10;pointer-events:none;backdrop-filter:blur(4px);" id="SC_trimTimeLabel">0.0s – 30.0s</div>
-      <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);border:2px solid rgba(255,255,255,.45);color:#fff;width:50px;height:50px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);z-index:10;transition:transform .1s;">⏸</button>
-      <button id="SC_cutBtn" onclick="scAddCutPoint()" style="position:absolute;bottom:14px;right:14px;background:#ef4444;border:none;color:#fff;border-radius:14px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 4px 16px rgba(239,68,68,.5);-webkit-tap-highlight-color:transparent;transition:transform .1s,box-shadow .1s;z-index:10;">✂️ Cut here</button>
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;overflow:hidden;">
+      <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline></video>
+      <!-- Time badge -->
+      <div id="SC_trimTimeLabel" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.72);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap;z-index:10;pointer-events:none;backdrop-filter:blur(6px);">0.0s &#8211; 0.0s</div>
+      <!-- Centre Play/Pause button -->
+      <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.55);border:2.5px solid rgba(255,255,255,.55);color:#fff;width:56px;height:56px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);z-index:10;-webkit-tap-highlight-color:transparent;transition:opacity .15s;">&#9208;</button>
+      <!-- Cut button -->
+      <button id="SC_cutBtn" onclick="scAddCutPoint()" style="position:absolute;bottom:12px;right:12px;background:#ef4444;border:none;color:#fff;border-radius:14px;padding:9px 16px;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;box-shadow:0 4px 16px rgba(239,68,68,.5);-webkit-tap-highlight-color:transparent;z-index:10;transition:transform .1s;">&#9986;&#65039; Cut here</button>
     </div>
-    <!-- BOTTOM CONTROLS -->
-    <div style="background:#0d0f1a;padding-bottom:env(safe-area-inset-bottom,0);">
-      <!-- Segment chip strip (shown after first cut) -->
-      <div id="SC_segmentStrip" style="display:none;gap:6px;padding:10px 14px 4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);">
-        <span style="font-size:10px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;white-space:nowrap;">Segments:</span>
+    <!-- Bottom controls -->
+    <div style="background:#0d0f1a;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);">
+      <!-- Segment chips (appear after first cut) -->
+      <div id="SC_segmentStrip" style="display:none;gap:4px;padding:8px 14px 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;align-items:center;border-bottom:1px solid rgba(255,255,255,.07);">
+        <span style="font-size:10px;color:rgba(255,255,255,.3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;white-space:nowrap;">Segments:</span>
       </div>
       <!-- Trim scrubber -->
       <div style="padding:10px 14px 4px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
           <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
-          <span id="SC_trimDurLbl" style="font-size:11px;color:#f09060;font-weight:700;">0.0s selected</span>
-          <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
+          <span id="SC_trimDurLbl"   style="font-size:11px;color:#f09060;font-weight:700;">0.0s selected</span>
+          <span id="SC_trimEndLbl"   style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
         </div>
-        <div id="SC_trimBar" style="position:relative;height:56px;background:rgba(255,255,255,.07);border-radius:14px;cursor:pointer;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.4);"
+        <div id="SC_trimBar" style="position:relative;height:52px;background:rgba(255,255,255,.08);border-radius:12px;cursor:pointer;overflow:hidden;"
           onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
-          <!-- Dark discard overlays: shows what gets CUT OUT -->
-          <div id="SC_trimDiscardL" style="position:absolute;top:0;bottom:0;left:0;width:0%;background:rgba(0,0,0,.62);z-index:1;pointer-events:none;border-radius:14px 0 0 14px;transition:width .05s;"></div>
-          <div id="SC_trimDiscardR" style="position:absolute;top:0;bottom:0;right:0;width:0%;background:rgba(0,0,0,.62);z-index:1;pointer-events:none;border-radius:0 14px 14px 0;transition:width .05s;"></div>
-          <!-- Selected region highlight -->
-          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.18);border-top:2px solid rgba(236,91,8,.75);border-bottom:2px solid rgba(236,91,8,.75);z-index:2;pointer-events:none;left:0%;right:0%;"></div>
+          <!-- Discard overlays (dark = will be cut) -->
+          <div id="SC_trimDiscardL" style="position:absolute;top:0;bottom:0;left:0;width:0%;background:rgba(0,0,0,.6);z-index:1;pointer-events:none;border-radius:12px 0 0 12px;"></div>
+          <div id="SC_trimDiscardR" style="position:absolute;top:0;bottom:0;right:0;width:0%;background:rgba(0,0,0,.6);z-index:1;pointer-events:none;border-radius:0 12px 12px 0;"></div>
+          <!-- Keep region -->
+          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.2);border-top:2px solid rgba(236,91,8,.8);border-bottom:2px solid rgba(236,91,8,.8);z-index:2;pointer-events:none;left:0%;right:0%;"></div>
           <!-- Cut markers -->
           <div id="SC_cutPoints" style="position:absolute;inset:0;z-index:3;pointer-events:none;"></div>
           <!-- Playhead -->
-          <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:6;pointer-events:none;left:0%;box-shadow:0 0 6px rgba(255,255,255,.7);"></div>
+          <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;border-radius:2px;z-index:6;pointer-events:none;left:0%;box-shadow:0 0 5px rgba(255,255,255,.8);"></div>
           <!-- Left handle -->
-          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:24px;background:linear-gradient(180deg,#ff7a35,#ec5b08);border-radius:12px 0 0 12px;cursor:ew-resize;z-index:7;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;box-shadow:2px 0 10px rgba(236,91,8,.55);"
+          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:linear-gradient(180deg,#ff7a35,#ec5b08);border-radius:10px 0 0 10px;cursor:ew-resize;z-index:7;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;box-shadow:2px 0 8px rgba(236,91,8,.5);"
             onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
-            <div style="display:flex;flex-direction:column;gap:3px;">
-              <div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-              <div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-              <div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;"><div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div><div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div><div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div>
           </div>
           <!-- Right handle -->
-          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:24px;background:linear-gradient(180deg,#ff7a35,#ec5b08);border-radius:0 12px 12px 0;cursor:ew-resize;z-index:7;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;box-shadow:-2px 0 10px rgba(236,91,8,.55);"
+          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:linear-gradient(180deg,#ff7a35,#ec5b08);border-radius:0 10px 10px 0;cursor:ew-resize;z-index:7;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;box-shadow:-2px 0 8px rgba(236,91,8,.5);"
             onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
-            <div style="display:flex;flex-direction:column;gap:3px;">
-              <div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-              <div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-              <div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;"><div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div><div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div><div style="width:2px;height:6px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div>
           </div>
         </div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;margin-top:5px;line-height:1.5;" id="SC_trimHint">
-  Drag 🟠 handles to select · Tap ✂️ to cut at playhead · Tap segment chips to switch
+        <div id="SC_trimHint" style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;margin-top:4px;line-height:1.5;">
+  Drag &#x1F7E0; handles &#183; Tap &#9986;&#65039; to cut &#183; Tap segment chips to switch
 </div>
       </div>
-      <!-- Music trim scrubber (shown only when song is added) -->
+      <!-- Music trim scrubber -->
       <div id="SC_musicTrimWrap" style="display:none;padding:6px 14px 2px;border-top:1px solid rgba(255,255,255,.06);">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-          <span style="font-size:11px;color:#f09060;font-weight:700;">🎵 Music clip</span>
+          <span style="font-size:11px;color:#f09060;font-weight:700;">&#127925; Music clip</span>
           <span id="SC_musicTrimLbl" style="font-size:10px;color:rgba(255,255,255,.45);"></span>
         </div>
-        <div id="SC_musicTrimBar" style="position:relative;height:32px;background:rgba(236,91,8,.12);border-radius:8px;cursor:pointer;border:1px solid rgba(236,91,8,.30);"
+        <div id="SC_musicTrimBar" style="position:relative;height:30px;background:rgba(236,91,8,.12);border-radius:8px;cursor:pointer;border:1px solid rgba(236,91,8,.3);"
           ontouchstart="scMusicTrimTouch(event)" onmousedown="scMusicTrimClick(event)">
           <div id="SC_musicPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#f09060;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
-          <div id="SC_musicRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-radius:6px;z-index:2;pointer-events:none;"></div>
+          <div id="SC_musicRegion"   style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-radius:6px;z-index:2;pointer-events:none;"></div>
           <div id="SC_musicTrimL" style="position:absolute;top:0;bottom:0;width:14px;background:#f09060;border-radius:5px 0 0 5px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
-            onmousedown="scMusicDragStart(event,'L')" ontouchstart="scMusicDragStart(event,'L')">
-            <div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
-          </div>
+            onmousedown="scMusicDragStart(event,'L')" ontouchstart="scMusicDragStart(event,'L')"><div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div></div>
           <div id="SC_musicTrimR" style="position:absolute;top:0;bottom:0;width:14px;background:#f09060;border-radius:0 5px 5px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
-            onmousedown="scMusicDragStart(event,'R')" ontouchstart="scMusicDragStart(event,'R')">
-            <div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div>
-          </div>
+            onmousedown="scMusicDragStart(event,'R')" ontouchstart="scMusicDragStart(event,'R')"><div style="width:2px;height:12px;background:rgba(255,255,255,.8);border-radius:2px;"></div></div>
         </div>
       </div>
-      <!-- Horizontally scrollable adjustments -->
-      <div style="overflow-x:auto;overflow-y:hidden;padding:8px 14px 14px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">
+      <!-- Scrollable adjustments -->
+      <div style="overflow-x:auto;overflow-y:hidden;padding:8px 14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
         <div style="display:flex;gap:10px;min-width:max-content;align-items:flex-end;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
-            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎬 Video Vol</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">&#127916; Video Vol</span>
             <input type="range" id="SC_volSlider" min="0" max="200" step="1" value="100" oninput="scUpdateVol(this.value)">
             <span id="SC_volVal" style="font-size:11px;color:#22c55e;font-weight:700;">100%</span>
           </div>
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:90px;">
-            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Song</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:90px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">&#127925; Song</span>
             <button id="SC_trimSongBtn" onclick="scTrimOpenSong()" style="background:rgba(236,91,8,.20);border:1px solid rgba(236,91,8,.4);color:#fff;border-radius:10px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;width:100%;">+ Add Song</button>
             <span id="SC_trimSongName" style="font-size:9px;color:#f09060;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:90px;display:none;"></span>
           </div>
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
-            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">⚡ Speed</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">&#9889; Speed</span>
             <input type="range" id="SC_speedSlider" min="0.25" max="2" step="0.25" value="1" oninput="scUpdateSpeed(this.value)">
-            <span id="SC_speedVal" style="font-size:11px;color:#f59e0b;font-weight:700;">1.0×</span>
+            <span id="SC_speedVal" style="font-size:11px;color:#f59e0b;font-weight:700;">1.0&#215;</span>
           </div>
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
-            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">☀️ Bright</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">&#9728;&#65039; Bright</span>
             <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()">
             <span id="SC_vidBrightnessVal" style="font-size:11px;color:#fbbf24;font-weight:700;">100</span>
           </div>
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
-            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">◑ Contrast</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">&#9681; Contrast</span>
             <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()">
             <span id="SC_vidContrastVal" style="font-size:11px;color:#38bdf8;font-weight:700;">100</span>
           </div>
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
-            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Pitch</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:100px;">
+            <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">&#127925; Pitch</span>
             <input type="range" id="SC_pitchSlider" min="-6" max="6" step="0.5" value="0" oninput="scUpdatePitch(this.value)">
             <span id="SC_pitchVal" style="font-size:11px;color:#f09060;font-weight:700;">0</span>
           </div>
@@ -2970,7 +2961,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
     </div>
   </div>
-
   <!-- DELETE MENU -->
   <div id="SC_delMenu" style="
     display:none;position:absolute;inset:0;z-index:30;
@@ -8440,188 +8430,192 @@ function scAudioPicked(input){
 function scPickSong(){ $('SC_audioInput').click(); }
 
 // ─── Video Trimmer (Page 5) ──────────────────────────────
-// RENOVATED: cuts split into segments, handles snap to boundaries,
-// dark overlays show discarded regions, chips let you pick segment to keep.
-let _trimDrag=null, _trimVidRAF=null;
-let _cutPoints = [];
-let _selectedSegIdx = 0;
+// Renovated: smooth drag, centre play/pause, segment chips after cut,
+// discard overlays show what gets removed, music fully stops on exit.
 
+let _trimDrag=null, _trimVidRAF=null, _trimPaused=false;
+let _cutPoints=[], _selectedSegIdx=0;
+
+// ── segment helpers ───────────────────────────────────────
 function _getSegments(total){
-  const pts=[0,..._cutPoints,total];
-  const segs=[];
-  for(let i=0;i<pts.length-1;i++) segs.push({start:pts[i],end:pts[i+1]});
-  return segs;
+  const pts=[0,..._cutPoints,total], s=[];
+  for(let i=0;i<pts.length-1;i++) s.push({start:pts[i],end:pts[i+1]});
+  return s;
 }
-
 function _renderSegmentStrip(total){
-  const strip=document.getElementById('SC_segmentStrip');
-  if(!strip) return;
-  const segs=_getSegments(total);
-  const label=strip.querySelector('span');
-  strip.innerHTML='';
-  if(label) strip.appendChild(label);
+  const strip=$('SC_segmentStrip'); if(!strip) return;
+  const segs=_getSegments(total), lbl=strip.querySelector('span');
+  strip.innerHTML=''; if(lbl) strip.appendChild(lbl);
   if(segs.length<=1){ strip.style.display='none'; return; }
   strip.style.display='flex';
   segs.forEach((seg,i)=>{
-    const dur=(seg.end-seg.start).toFixed(1);
-    const isSel=i===_selectedSegIdx;
+    const dur=(seg.end-seg.start).toFixed(1), isSel=i===_selectedSegIdx;
     const btn=document.createElement('button');
-    btn.style.cssText='flex-shrink:0;padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;border:1.5px solid '+(isSel?'#ec5b08':'rgba(255,255,255,.2)')+';background:'+(isSel?'rgba(236,91,8,.3)':'rgba(255,255,255,.06)')+';color:'+(isSel?'#fff':'rgba(255,255,255,.5)')+';';
+    btn.style.cssText='flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;'
+      +'cursor:pointer;white-space:nowrap;transition:all .15s;margin-left:4px;'
+      +'border:1.5px solid '+(isSel?'#ec5b08':'rgba(255,255,255,.18)')+';'
+      +'background:'+(isSel?'rgba(236,91,8,.3)':'rgba(255,255,255,.06)')+';'
+      +'color:'+(isSel?'#fff':'rgba(255,255,255,.5)')+';';
     btn.textContent=(isSel?'✓ ':'')+'Seg '+(i+1)+' · '+dur+'s';
     btn.onclick=()=>_selectSegment(i,total);
     strip.appendChild(btn);
   });
 }
-
 function _selectSegment(idx,total){
-  const segs=_getSegments(total);
-  if(idx<0||idx>=segs.length) return;
-  _selectedSegIdx=idx;
-  SC.trimStart=segs[idx].start;
-  SC.trimEnd=segs[idx].end;
-  const vid=document.getElementById('SC_trimVid');
-  if(vid) vid.currentTime=SC.trimStart;
-  _trimUpdate(total);
-  _renderSegmentStrip(total);
-  _renderCutPoints(total);
+  const segs=_getSegments(total); if(idx<0||idx>=segs.length) return;
+  _selectedSegIdx=idx; SC.trimStart=segs[idx].start; SC.trimEnd=segs[idx].end;
+  const vid=$('SC_trimVid'); if(vid) vid.currentTime=SC.trimStart;
+  _trimUpdate(total); _renderSegmentStrip(total); _renderCutPoints(total);
 }
 
+// ── sync play/pause button icon ───────────────────────────
+function _syncPPBtn(){
+  const vid=$('SC_trimVid'), btn=$('SC_trimPlayPause'); if(!btn) return;
+  const paused=!vid||vid.paused;
+  btn.textContent=paused?'▶':'⏸';
+  btn.style.opacity=paused?'1':'0.72';
+}
+
+// ── open trimmer ──────────────────────────────────────────
 function scOpenTrimmer(){
   if(!SC.mediaFile||SC.mediaType!=='video'){ toast('No video loaded','err'); return; }
   scCloseTools();
-  _cutPoints=[];
-  _selectedSegIdx=0;
-  _pitchVal=0;
+  _cutPoints=[]; _selectedSegIdx=0; _trimPaused=false; _pitchVal=0;
+  // Stop any existing trim music
   if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
+  // Reset all sliders
   ['SC_pitchSlider','SC_speedSlider','SC_vidBrightness','SC_vidContrast'].forEach(id=>{
-    const el=document.getElementById(id); if(el){ el.value=id==='SC_speedSlider'?1:100; }
+    const el=$(id); if(el) el.value=id==='SC_speedSlider'?1:100;
   });
-  const vs=document.getElementById('SC_volSlider'); if(vs) vs.value=100;
-  const vv=document.getElementById('SC_volVal'); if(vv) vv.textContent='100%';
+  const vs=$('SC_volSlider'); if(vs) vs.value=100;
+  const vv=$('SC_volVal');    if(vv) vv.textContent='100%';
   ['SC_pitchVal','SC_speedVal','SC_vidBrightnessVal','SC_vidContrastVal'].forEach(id=>{
-    const el=document.getElementById(id); if(!el)return;
-    if(id==='SC_pitchVal') el.textContent='0';
-    else if(id==='SC_speedVal') el.textContent='1.00×';
-    else el.textContent='100';
+    const el=$(id); if(!el) return;
+    el.textContent=id==='SC_pitchVal'?'0':id==='SC_speedVal'?'1.00×':'100';
   });
-  const ppBtn=document.getElementById('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-  const sBtn=document.getElementById('SC_trimSongBtn'); if(sBtn) sBtn.textContent='+ Add Song';
-  const sName=document.getElementById('SC_trimSongName'); if(sName){ sName.textContent=''; sName.style.display='none'; }
-  const mw=document.getElementById('SC_musicTrimWrap'); if(mw) mw.style.display='none';
-  const strip=document.getElementById('SC_segmentStrip'); if(strip) strip.style.display='none';
-  const dl=document.getElementById('SC_trimDiscardL'); if(dl) dl.style.width='0%';
-  const dr=document.getElementById('SC_trimDiscardR'); if(dr) dr.style.width='0%';
+  const sBtn=$('SC_trimSongBtn'); if(sBtn) sBtn.textContent='+ Add Song';
+  const sName=$('SC_trimSongName'); if(sName){ sName.textContent=''; sName.style.display='none'; }
+  const mw=$('SC_musicTrimWrap');    if(mw)   mw.style.display='none';
+  const strip=$('SC_segmentStrip'); if(strip) strip.style.display='none';
+  const dl=$('SC_trimDiscardL');    if(dl)    dl.style.width='0%';
+  const dr=$('SC_trimDiscardR');    if(dr)    dr.style.width='0%';
   scPage(5);
-  const vid=document.getElementById('SC_trimVid');
+  const vid=$('SC_trimVid');
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
   try{ vid.pause(); }catch(e){}
-  vid.src=''; vid.load();
+  vid.removeAttribute('src'); vid.load();
   setTimeout(()=>{
-    vid.src=SC.mediaURL; vid.muted=false; vid.volume=1.0; vid.load();
-    vid.oncanplaythrough=()=>{
-      vid.oncanplaythrough=null;
-      const total=vid.duration;
-      if(SC.trimEnd===null) SC.trimEnd=Math.min(total,30);
-      _trimUpdate(total); _renderCutPoints(total); _renderSegmentStrip(total);
-      vid.currentTime=SC.trimStart||0;
-      vid.play().catch(()=>{});
-      const ppBtn=document.getElementById('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-      _startPlayheadLoop(vid);
-    };
+    vid.src=SC.mediaURL; vid.muted=false; vid.volume=1.0; vid.playbackRate=1; vid.load();
     vid.onloadedmetadata=()=>{
       const total=vid.duration;
-      if(SC.trimEnd===null) SC.trimEnd=Math.min(total,30);
-      _trimUpdate(total);
+      if(!SC.trimEnd||SC.trimEnd>total) SC.trimEnd=Math.min(total,30);
+      if(SC.trimStart>=SC.trimEnd)      SC.trimStart=0;
+      _trimUpdate(total); _renderCutPoints(total); _renderSegmentStrip(total);
     };
-    vid.onerror=()=>{ toast('Could not load video for editing','err'); };
+    vid.oncanplaythrough=()=>{
+      vid.oncanplaythrough=null;
+      vid.currentTime=SC.trimStart||0;
+      vid.play()
+        .then(()=>{ _trimPaused=false; _syncPPBtn(); _startPlayheadLoop(vid); })
+        .catch(()=>{ _syncPPBtn(); });
+    };
+    vid.onerror=()=>toast('Could not load video for editing','err');
   },80);
 }
 
+// ── playhead loop ─────────────────────────────────────────
 function _startPlayheadLoop(vid){
   clearInterval(_trimVidRAF);
   _trimVidRAF=setInterval(()=>{
-    if(vid.paused||!vid.duration) return;
+    if(!vid.duration) return;
     const total=vid.duration, end=SC.trimEnd||total, start=SC.trimStart||0;
-    if(vid.currentTime>=end-0.05){ vid.currentTime=start; }
-    const ph=document.getElementById('SC_trimPlayhead');
+    // Loop within trim region
+    if(!vid.paused && vid.currentTime>=end-0.05) vid.currentTime=start;
+    // Move video playhead
+    const ph=$('SC_trimPlayhead');
     if(ph){
-      const progress=Math.max(0,Math.min(1,(vid.currentTime-start)/(end-start)));
-      ph.style.left=((start/total*100)+((end/total*100)-(start/total*100))*progress)+'%';
+      const prog=Math.max(0,Math.min(1,(vid.currentTime-start)/(end-start)));
+      ph.style.left=((start/total*100)+((end/total*100)-(start/total*100))*prog)+'%';
+    }
+    // Move music playhead
+    if(SC._trimMusicAudio&&SC._trimMusicAudio.duration){
+      const mp=$('SC_musicPlayhead');
+      if(mp){
+        const ms=SC.musicTrimStart||0, me=SC.musicTrimEnd||SC._trimMusicAudio.duration;
+        const p=Math.max(0,Math.min(1,(SC._trimMusicAudio.currentTime-ms)/(me-ms)));
+        mp.style.left=((ms/SC._trimMusicAudio.duration*100)+((me/SC._trimMusicAudio.duration*100)-(ms/SC._trimMusicAudio.duration*100))*p)+'%';
+      }
     }
   },40);
 }
 
+// ── update bar/labels/overlays ────────────────────────────
 function _trimUpdate(total){
   const start=SC.trimStart||0, end=SC.trimEnd||total, dur=end-start;
   const lPct=start/total*100, rPct=end/total*100;
-  const lh=document.getElementById('SC_trimL'); if(lh) lh.style.left=lPct+'%';
-  const rh=document.getElementById('SC_trimR'); if(rh) rh.style.right=(100-rPct)+'%';
-  const rg=document.getElementById('SC_trimRegion');
-  if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
-  const dl=document.getElementById('SC_trimDiscardL'); if(dl) dl.style.width=lPct+'%';
-  const dr=document.getElementById('SC_trimDiscardR'); if(dr) dr.style.width=(100-rPct)+'%';
+  const lh=$('SC_trimL'); if(lh) lh.style.left=lPct+'%';
+  const rh=$('SC_trimR'); if(rh) rh.style.right=(100-rPct)+'%';
+  const rg=$('SC_trimRegion'); if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
+  // Discard overlays — dark = gets cut out
+  const dl=$('SC_trimDiscardL'); if(dl) dl.style.width=lPct+'%';
+  const dr=$('SC_trimDiscardR'); if(dr) dr.style.width=(100-rPct)+'%';
   const fmt=s=>s.toFixed(1)+'s';
-  const sl=document.getElementById('SC_trimStartLbl'); if(sl) sl.textContent=fmt(start);
-  const el=document.getElementById('SC_trimEndLbl'); if(el) el.textContent=fmt(end);
-  const durl=document.getElementById('SC_trimDurLbl');
+  const sl=$('SC_trimStartLbl'); if(sl) sl.textContent=fmt(start);
+  const el=$('SC_trimEndLbl');   if(el) el.textContent=fmt(end);
+  const durl=$('SC_trimDurLbl');
   if(durl){ const ok=dur<=30; durl.textContent=fmt(dur)+' selected'+(ok?'':' ⚠️ over 30s'); durl.style.color=ok?'#f09060':'#ef4444'; }
-  const tl=document.getElementById('SC_trimTimeLabel'); if(tl) tl.textContent=fmt(start)+' – '+fmt(end);
+  const tl=$('SC_trimTimeLabel'); if(tl) tl.textContent=fmt(start)+' – '+fmt(end);
 }
 
+// ── bar click (seek) ─────────────────────────────────────
 function scTrimBarClick(e){
   if(e.target.closest&&(e.target.closest('#SC_trimL')||e.target.closest('#SC_trimR'))) return;
-  const bar=document.getElementById('SC_trimBar'), rect=bar.getBoundingClientRect();
+  const bar=$('SC_trimBar'), rect=bar.getBoundingClientRect();
   const pct=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
-  const vid=document.getElementById('SC_trimVid');
-  if(!vid||!vid.duration) return;
-  vid.currentTime=Math.max(0,Math.min(vid.duration,pct*vid.duration));
+  const vid=$('SC_trimVid'); if(!vid||!vid.duration) return;
+  vid.currentTime=pct*vid.duration;
 }
-
 function scTrimBarTouch(e){
   if(e.target.closest&&(e.target.closest('#SC_trimL')||e.target.closest('#SC_trimR'))) return;
   e.preventDefault();
   scTrimBarClick({clientX:e.touches[0].clientX,target:e.target});
 }
 
+// ── handle drag ───────────────────────────────────────────
 function scTrimDragStart(e,side){
   e.preventDefault(); e.stopPropagation();
   _trimDrag=side;
-  const vid=document.getElementById('SC_trimVid'), wasPlaying=!vid.paused;
-  vid.pause();
+  const vid=$('SC_trimVid'), wasPlaying=!vid.paused;
+  vid.pause(); _trimPaused=true; _syncPPBtn();
   const onMove=ev=>{
     ev.preventDefault&&ev.preventDefault();
     const clientX=ev.touches?ev.touches[0].clientX:ev.clientX;
-    const bar=document.getElementById('SC_trimBar'), rect=bar.getBoundingClientRect();
+    const bar=$('SC_trimBar'), rect=bar.getBoundingClientRect();
     const total=vid.duration||1;
-    const pct=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));
-    let t=pct*total, SNAP=0.4;
+    let t=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width))*total;
+    const SNAP=0.35; // seconds — snap within this distance of a cut point
     if(side==='L'){
-      const snapPts=[0,..._cutPoints];
-      let best=null,bestD=SNAP;
-      snapPts.forEach(p=>{ const d=Math.abs(t-p); if(d<bestD){bestD=d;best=p;} });
+      const pts=[0,..._cutPoints];
+      let best=null, bestD=SNAP;
+      pts.forEach(p=>{ const d=Math.abs(t-p); if(d<bestD){bestD=d;best=p;} });
       if(best!==null) t=best;
-      t=Math.max(0,Math.min(SC.trimEnd-0.5,t));
-      SC.trimStart=t;
-      const idx=_getSegments(total).findIndex(s=>Math.abs(s.start-SC.trimStart)<0.08);
+      t=Math.max(0,Math.min(SC.trimEnd-0.3,t));
+      SC.trimStart=t; vid.currentTime=t;
+      const idx=_getSegments(total).findIndex(s=>Math.abs(s.start-t)<0.08);
       if(idx>=0) _selectedSegIdx=idx;
-      vid.currentTime=t;
     } else {
-      const snapPts=[..._cutPoints,total];
-      let best=null,bestD=SNAP;
-      snapPts.forEach(p=>{ const d=Math.abs(t-p); if(d<bestD){bestD=d;best=p;} });
+      const pts=[..._cutPoints,total];
+      let best=null, bestD=SNAP;
+      pts.forEach(p=>{ const d=Math.abs(t-p); if(d<bestD){bestD=d;best=p;} });
       if(best!==null) t=best;
-      t=Math.min(total,Math.max(SC.trimStart+0.5,t));
-      SC.trimEnd=t;
-      const idx=_getSegments(total).findIndex(s=>Math.abs(s.end-SC.trimEnd)<0.08);
+      t=Math.min(total,Math.max(SC.trimStart+0.3,t));
+      SC.trimEnd=t; vid.currentTime=t;
+      const idx=_getSegments(total).findIndex(s=>Math.abs(s.end-t)<0.08);
       if(idx>=0) _selectedSegIdx=idx;
-      const dur=SC.trimEnd-SC.trimStart;
-      const hint=document.getElementById('SC_trimHint');
-      if(hint) hint.style.color=dur>30?'#ef4444':'rgba(255,255,255,.3)';
-      vid.currentTime=t;
     }
     _trimUpdate(total); _renderSegmentStrip(total);
-    const ph=document.getElementById('SC_trimPlayhead');
+    const ph=$('SC_trimPlayhead');
     if(ph){
       const lPct=(SC.trimStart/total)*100, rPct=(SC.trimEnd/total)*100;
       const prog=(vid.currentTime-SC.trimStart)/(SC.trimEnd-SC.trimStart);
@@ -8630,95 +8624,210 @@ function scTrimDragStart(e,side){
   };
   const onUp=()=>{
     _trimDrag=null;
-    document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);
-    document.removeEventListener('touchmove',onMove); document.removeEventListener('touchend',onUp);
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('touchend',onUp);
     vid.currentTime=SC.trimStart;
-    if(wasPlaying){ vid.play().catch(()=>{}); const ppBtn=document.getElementById('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸'; }
+    if(wasPlaying){
+      _trimPaused=false;
+      vid.play().then(()=>{ _syncPPBtn(); _startPlayheadLoop(vid); }).catch(()=>{});
+      if(SC._trimMusicAudio) SC._trimMusicAudio.play().catch(()=>{});
+    }
   };
-  document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
-  document.addEventListener('touchmove',onMove,{passive:false}); document.addEventListener('touchend',onUp);
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
 }
 
+// ── stop all media cleanly ────────────────────────────────
 function scTrimStop(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
-  const vid=document.getElementById('SC_trimVid');
-  if(vid){ vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null; try{vid.pause();}catch(e){} vid.removeAttribute('src'); vid.load(); }
-  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
+  const vid=$('SC_trimVid');
+  if(vid){
+    vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
+    try{ vid.pause(); }catch(e){}
+    vid.removeAttribute('src'); vid.load();
+  }
+  // Stop music completely — crucial fix for "music keeps playing after exit"
+  if(SC._trimMusicAudio){
+    try{ SC._trimMusicAudio.pause(); SC._trimMusicAudio.src=''; }catch(e){}
+    SC._trimMusicAudio=null;
+  }
 }
 
+// ── play / pause ──────────────────────────────────────────
 function scTrimTogglePlay(){
-  const vid=document.getElementById('SC_trimVid'), btn=document.getElementById('SC_trimPlayPause');
-  if(!vid||!vid.src) return;
-  if(vid.paused){ vid.play().catch(()=>{}); if(btn) btn.textContent='⏸'; _startPlayheadLoop(vid); }
-  else{ vid.pause(); if(btn) btn.textContent='▶'; }
+  const vid=$('SC_trimVid'); if(!vid) return;
+  if(vid.paused){
+    vid.play()
+      .then(()=>{
+        _trimPaused=false; _syncPPBtn(); _startPlayheadLoop(vid);
+        if(SC._trimMusicAudio) SC._trimMusicAudio.play().catch(()=>{});
+      }).catch(()=>{});
+  } else {
+    vid.pause(); _trimPaused=true; _syncPPBtn();
+    if(SC._trimMusicAudio) SC._trimMusicAudio.pause();
+  }
 }
 
+// ── cut at playhead ───────────────────────────────────────
 function scAddCutPoint(){
-  const vid=document.getElementById('SC_trimVid');
-  if(!vid||!vid.duration) return;
-  vid.pause();
-  const ppBtn=document.getElementById('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='▶';
+  const vid=$('SC_trimVid'); if(!vid||!vid.duration) return;
   const t=vid.currentTime, total=vid.duration;
-  if(t<=SC.trimStart+0.2||t>=SC.trimEnd-0.2){ toast('Cut must be inside the selected region','info'); return; }
-  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){ toast('Already cut here','info'); return; }
+  if(t<=SC.trimStart+0.15||t>=SC.trimEnd-0.15){
+    toast('Cut must be inside the selected region','info'); return;
+  }
+  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){
+    toast('Already cut here','info'); return;
+  }
+  vid.pause(); _trimPaused=true; _syncPPBtn();
   const snapped=Math.round(t*10)/10;
   _cutPoints.push(snapped); _cutPoints.sort((a,b)=>a-b);
+  // Auto-select the left segment of the cut
   const segs=_getSegments(total);
-  const leftIdx=segs.findIndex(s=>snapped>s.start&&snapped<=s.end&&Math.abs(s.start-SC.trimStart)<0.1);
-  if(leftIdx>=0){ _selectedSegIdx=leftIdx; SC.trimStart=segs[leftIdx].start; SC.trimEnd=segs[leftIdx].end; }
+  const li=segs.findIndex(s=>snapped>s.start&&snapped<=s.end&&Math.abs(s.start-SC.trimStart)<0.12);
+  if(li>=0){ _selectedSegIdx=li; SC.trimStart=segs[li].start; SC.trimEnd=segs[li].end; }
   _renderCutPoints(total); _renderSegmentStrip(total); _trimUpdate(total);
   vid.currentTime=SC.trimStart;
+  // Flash marker
   setTimeout(()=>{
-    const cp=document.getElementById('SC_cutPoints'); if(!cp) return;
-    const marker=cp.querySelector('[data-t="'+snapped+'"]');
-    if(marker){ marker.style.background='#fff'; marker.style.boxShadow='0 0 10px #fff'; setTimeout(()=>{ marker.style.background='#ef4444'; marker.style.boxShadow='0 0 6px rgba(239,68,68,.7)'; },280); }
+    const cp=$('SC_cutPoints'); if(!cp) return;
+    const mk=cp.querySelector('[data-t="'+snapped+'"]');
+    if(mk){ mk.style.background='#fff'; mk.style.boxShadow='0 0 10px #fff';
+      setTimeout(()=>{ mk.style.background='#ef4444'; mk.style.boxShadow='0 0 6px rgba(239,68,68,.7)'; },280); }
   },20);
   toast('✂️ Cut at '+snapped.toFixed(1)+'s · '+(SC.trimEnd-SC.trimStart).toFixed(1)+'s segment · tap chips to switch','ok');
 }
 
 function _renderCutPoints(total){
-  const cp=document.getElementById('SC_cutPoints'); if(!cp) return;
+  const cp=$('SC_cutPoints'); if(!cp) return;
   cp.innerHTML='';
   _cutPoints.forEach(t=>{
     const pct=(t/total)*100;
     const mk=document.createElement('div');
     mk.dataset.t=t;
-    mk.style.cssText='position:absolute;top:0;bottom:0;width:2px;background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.7);z-index:4;pointer-events:none;left:'+pct+'%;transition:background .2s,box-shadow .2s;';
+    mk.style.cssText='position:absolute;top:0;bottom:0;width:2px;background:#ef4444;'
+      +'box-shadow:0 0 6px rgba(239,68,68,.7);z-index:4;pointer-events:none;'
+      +'left:'+pct+'%;transition:background .2s,box-shadow .2s;';
     const notch=document.createElement('div');
     notch.textContent='✂';
-    notch.style.cssText='position:absolute;top:-1px;left:50%;transform:translateX(-50%);font-size:11px;line-height:1;color:#ef4444;filter:drop-shadow(0 1px 3px rgba(0,0,0,.9));';
+    notch.style.cssText='position:absolute;top:-1px;left:50%;transform:translateX(-50%);'
+      +'font-size:11px;color:#ef4444;filter:drop-shadow(0 1px 3px rgba(0,0,0,.9));';
     mk.appendChild(notch);
     const lbl=document.createElement('div');
     lbl.textContent=t.toFixed(1)+'s';
-    lbl.style.cssText='position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:8px;color:rgba(255,255,255,.7);font-weight:700;white-space:nowrap;background:rgba(0,0,0,.6);padding:1px 3px;border-radius:3px;';
+    lbl.style.cssText='position:absolute;bottom:1px;left:50%;transform:translateX(-50%);'
+      +'font-size:8px;color:rgba(255,255,255,.7);font-weight:700;white-space:nowrap;'
+      +'background:rgba(0,0,0,.6);padding:1px 3px;border-radius:3px;';
     mk.appendChild(lbl); cp.appendChild(mk);
   });
 }
 
-function scCloseTrimmer(){
-  clearInterval(_trimVidRAF); _trimVidRAF=null;
-  scTrimStop(); _cutPoints=[]; _selectedSegIdx=0;
-  const ppBtn=document.getElementById('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-  const strip=document.getElementById('SC_segmentStrip'); if(strip) strip.style.display='none';
-  const dl=document.getElementById('SC_trimDiscardL'); if(dl) dl.style.width='0%';
-  const dr=document.getElementById('SC_trimDiscardR'); if(dr) dr.style.width='0%';
-  scPage(1); _scShowVideoUI();
+// ── Pitch ─────────────────────────────────────────────────
+let _pitchVal = 0;
+function scUpdatePitch(v){
+  _pitchVal = parseFloat(v);
+  const lbl=$('SC_pitchVal'); if(lbl) lbl.textContent=(_pitchVal>=0?'+':'')+_pitchVal;
+  const vid=$('SC_trimVid');
+  if(vid){
+    const baseRate=parseFloat($('SC_speedSlider')?.value||1);
+    vid.playbackRate=Math.max(0.1,Math.min(4,baseRate*Math.pow(2,_pitchVal/12)));
+  }
 }
 
-function scApplyTrim(){
-  clearInterval(_trimVidRAF); _trimVidRAF=null;
-  const vid=document.getElementById('SC_trimVid');
-  if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
-  const total=vid.duration||1, dur=SC.trimEnd-SC.trimStart;
-  if(dur>30){ toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err'); return; }
-  if(dur<0.5){ toast('Selection too short (min 0.5s)','err'); return; }
-  SC.videoDuration=total;
-  const segs=_getSegments(total);
-  toast(segs.length>1
-    ?'💾 Saved segment '+(_selectedSegIdx+1)+' of '+segs.length+': '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s'
-    :'💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
-  scCloseTrimmer();
+// ── Volume ────────────────────────────────────────────────
+function scUpdateVol(v){
+  const val=parseFloat(v)/100;
+  const lbl=$('SC_volVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
+  const vid=$('SC_trimVid'); if(vid){ vid.muted=(val===0); vid.volume=Math.min(1,val); }
+  SC.trimVolume=val;
 }
+
+// ── Music volume ──────────────────────────────────────────
+function scUpdateMusicVol(v){
+  const val=parseFloat(v)/100;
+  const lbl=$('SC_musicVolVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
+  if(SC._trimMusicAudio){ SC._trimMusicAudio.muted=(val===0); SC._trimMusicAudio.volume=Math.min(1,val); }
+  SC.trimMusicVolume=val;
+}
+
+// ── Open song from trimmer ────────────────────────────────
+function scTrimOpenSong(){
+  SC._fromTrimmer=true;
+  scPage(4);
+  $('SC_songSearch').value='';
+  _scLoadSongs('');
+}
+
+// ── Song picked (context-aware: trimmer vs editor) ────────
+const _origPickSongTrack = typeof scPickSongTrack==='function' ? scPickSongTrack : null;
+function scPickSongTrack(trackId){
+  const t=_scSongTracks.find(x=>x.id===trackId); if(!t) return;
+  scStopSongPreview();
+  SC.audioFile=null; SC.audioUrl=t.audio_url; SC.audioName=t.title+' – '+t.artist;
+  _scUpdateSongBtn(); _scRenderSongList(_scLastSongQuery);
+  toast('🎵 '+t.title+' added','ok');
+  if(SC._fromTrimmer){ SC._fromTrimmer=false; scPage(5); scTrimAttachMusic(t.audio_url,t.title+' – '+t.artist); }
+}
+
+// ── Attach music in trimmer ───────────────────────────────
+function scTrimAttachMusic(url,name){
+  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
+  const sBtn=$('SC_trimSongBtn'); if(sBtn) sBtn.textContent='🎵 Change';
+  const sName=$('SC_trimSongName'); if(sName){ sName.textContent=name; sName.style.display='block'; }
+  const vidSlider=$('SC_volSlider'); if(vidSlider){ vidSlider.value=0; scUpdateVol(0); }
+  const musSlider=$('SC_musicVolSlider'); if(musSlider) musSlider.value=100;
+  SC._trimMusicAudio=new Audio(url);
+  SC._trimMusicAudio.loop=true; SC._trimMusicAudio.volume=1.0;
+  SC._trimMusicAudio.play().catch(()=>{});
+  const mw=$('SC_musicTrimWrap'); if(mw) mw.style.display='block';
+  SC.musicTrimStart=0; SC.musicTrimEnd=null;
+  SC._trimMusicAudio.addEventListener('loadedmetadata',()=>{
+    const dur=SC._trimMusicAudio.duration;
+    SC.musicTrimEnd=Math.min(dur,SC.trimEnd-SC.trimStart||30);
+    _updateMusicTrimBar(dur);
+  },{once:true});
+}
+
+// ── Music trim bar ────────────────────────────────────────
+function _updateMusicTrimBar(total){
+  const start=SC.musicTrimStart||0, end=SC.musicTrimEnd||total;
+  const lPct=start/total*100, rPct=end/total*100;
+  const lh=$('SC_musicTrimL'), rh=$('SC_musicTrimR'), rg=$('SC_musicRegion');
+  if(lh) lh.style.left=lPct+'%';
+  if(rh) rh.style.right=(100-rPct)+'%';
+  if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
+  const lbl=$('SC_musicTrimLbl'); if(lbl) lbl.textContent=(end-start).toFixed(1)+'s selected';
+}
+function scMusicTrimClick(e){
+  if(e.target.id==='SC_musicTrimL'||e.target.id==='SC_musicTrimR') return;
+  const bar=$('SC_musicTrimBar'), rect=bar.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  if(SC._trimMusicAudio) SC._trimMusicAudio.currentTime=pct*(SC._trimMusicAudio.duration||30);
+}
+function scMusicTrimTouch(e){ scMusicTrimClick({clientX:e.touches[0].clientX,target:e.target}); }
+function scMusicDragStart(e,side){
+  e.preventDefault(); e.stopPropagation();
+  const onMove=ev=>{
+    const cx=ev.touches?ev.touches[0].clientX:ev.clientX;
+    const bar=$('SC_musicTrimBar'), rect=bar.getBoundingClientRect();
+    const total=SC._trimMusicAudio?SC._trimMusicAudio.duration:30;
+    const t=Math.max(0,Math.min(1,(cx-rect.left)/rect.width))*total;
+    if(side==='L') SC.musicTrimStart=Math.max(0,Math.min((SC.musicTrimEnd||total)-0.5,t));
+    else           SC.musicTrimEnd=Math.min(total,Math.max((SC.musicTrimStart||0)+0.5,t));
+    _updateMusicTrimBar(total);
+  };
+  const onUp=()=>{
+    document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchmove',onMove); document.removeEventListener('touchend',onUp);
+  };
+  document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false}); document.addEventListener('touchend',onUp);
+}
+
+// ── Speed ───────────────────────────────────────────────
 
 // ── Speed ───────────────────────────────────────────────
 function scUpdateSpeed(v){
