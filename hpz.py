@@ -22,7 +22,7 @@ app.config['SECRET_KEY'] = _SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max — supports 30-second story videos
 app.config['PERMANENT_SESSION_LIFETIME'] = 60 * 60 * 24 * 30  # 30 days
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 app.config['SESSION_COOKIE_NAME'] = 'hpz_session'
 app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('RENDER'))
 app.config['SESSION_COOKIE_PATH'] = '/'
@@ -464,7 +464,11 @@ def index():
         if user:
             return _no_cache(redirect('/chat'))
         session.clear()
-    return _no_cache(make_response(render_template('login.html')))
+    # Always clear session before login page — prevents another user's session leaking
+    session.clear()
+    resp = make_response(render_template('login.html'))
+    resp.delete_cookie('hpz_session', path='/')
+    return _no_cache(resp)
 
 @app.route('/register')
 def register_page():
@@ -473,7 +477,11 @@ def register_page():
         if user:
             return _no_cache(redirect('/chat'))
         session.clear()
-    return _no_cache(make_response(render_template('register.html')))
+    # Always clear session before register page — prevents another user's session leaking
+    session.clear()
+    resp = make_response(render_template('register.html'))
+    resp.delete_cookie('hpz_session', path='/')
+    return _no_cache(resp)
 
 @app.route('/chat')
 @login_required
