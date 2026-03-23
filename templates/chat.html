@@ -3129,6 +3129,7 @@ function switchEmojiCat(cat){
 }
 const ME_ID = {{ user_id }};
 const ME_NAME = '{{ user.username }}';
+const THREAD_ID = '{{ thread_id|default("") }}';
 let socket=null,currentChatId=null,currentFriendId=null,friends=[],pendingReqs=[],searchTimer=null,typingTimer=null;
 let prefs={theme:'dark',sound:true,dndEnabled:false,dndStart:'22:00',dndEnd:'08:00',incognito:false,readReceipts:true,notifSounds:{},contactLabels:{},chatLocks:{},birthday:'',nowPlaying:'',statusText:''};
 let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
@@ -3139,7 +3140,52 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   loadRequests();
   setTimeout(requestNotifPermission,2000);
   // ctx menu replaced by msg sheet
+  // Auto-open chat from URL (shareable /t/<chat_id> links)
+  const _tid = THREAD_ID || (location.pathname.startsWith('/t/') ? location.pathname.slice(3) : '');
+  if (_tid) setTimeout(() => _autoOpenThread(_tid), 600);
 })();
+
+// Handle browser back/forward for shareable chat URLs
+window.addEventListener('popstate', function(e) {
+  if (location.pathname === '/chat' || location.pathname === '/') {
+    // Back to chat list — close active chat on mobile
+    if (window.innerWidth <= 720) {
+      const main = document.getElementById('mainChat');
+      if (main) { main.style.display = 'none'; main.classList.remove('chat-open'); }
+      const listPage = document.getElementById('chatListPage');
+      if (listPage) listPage.style.display = '';
+    }
+    currentChatId = null; currentFriendId = null; currentGroupId = null; currentGroupChatId = null;
+  } else if (location.pathname.startsWith('/t/')) {
+    _autoOpenThread(location.pathname.slice(3));
+  }
+});
+
+function _autoOpenThread(chatId) {
+  if (!chatId) return;
+  if (chatId.startsWith('group-')) {
+    const gid = parseInt(chatId.replace('group-',''), 10);
+    const g = (groups || []).find(x => x.id === gid);
+    if (g) { openGroupChat(g); return; }
+    // Groups may not be loaded yet — wait a bit more
+    setTimeout(() => {
+      const g2 = (groups || []).find(x => x.id === gid);
+      if (g2) openGroupChat(g2);
+    }, 1000);
+  } else {
+    const parts = chatId.split('-');
+    const otherId = parts.find(p => parseInt(p) !== ME_ID);
+    if (!otherId) return;
+    const fid = parseInt(otherId, 10);
+    const f = friends.find(x => x.id === fid);
+    if (f) { openChat(f.id, f.username, chatId); return; }
+    // Friends may not be loaded yet — wait a bit more
+    setTimeout(() => {
+      const f2 = friends.find(x => x.id === fid);
+      if (f2) openChat(f2.id, f2.username, chatId);
+    }, 1000);
+  }
+}
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
   applyTheme();
@@ -5564,6 +5610,7 @@ function _openChatUnlockedReal(fid,fname,chatId){
   if(!chatId)chatId=fid<ME_ID?`${fid}-${ME_ID}`:`${ME_ID}-${fid}`;
   currentChatId=chatId;currentFriendId=fid;
   currentGroupId=null;currentGroupChatId=null;  // clear group state
+  history.pushState({chatId:chatId},'','/t/'+chatId);
   const chav=document.getElementById('chav');
   chav.textContent=fname[0].toUpperCase();
   chav.style.background='';  // use CSS default
@@ -10025,6 +10072,7 @@ function openGroupChat(g) {
   currentGroupId     = g.id;
   currentChatId      = g.chat_id;
   currentFriendId    = null;  // clear 1-on-1 state
+  history.pushState({chatId:g.chat_id},'','/t/'+g.chat_id);
 
   // ── Header ──
   const chav = document.getElementById('chav');
