@@ -494,6 +494,16 @@ def chat():
     return _no_cache(resp)
 
 # ── UUID-based user profile route ──
+# -- Thread / shareable chat URL: /t/1-2 (DM) or /t/group-5 (group) --
+@app.route('/t/<chat_id>')
+@login_required
+def thread(chat_id):
+    user = User.query.get(session['user_id'])
+    if not user:
+        return redirect('/')
+    resp = make_response(render_template('chat.html', user=user, user_id=user.id, thread_id=chat_id))
+    return _no_cache(resp)
+
 @app.route('/user/<user_uuid>')
 @login_required
 def user_profile(user_uuid):
