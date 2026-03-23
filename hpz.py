@@ -244,6 +244,43 @@ class ScheduledMessage(db.Model):
     delivered    = db.Column(db.Boolean, default=False)
     created_at   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+# ── Story Reactions (emoji reacts on stories, visible to owner) ──
+class StoryReaction(db.Model):
+    __tablename__ = 'story_reactions'
+    id         = db.Column(db.Integer, primary_key=True)
+    story_id   = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False, index=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    emoji      = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('story_id', 'user_id'),)
+
+# ── Chat Settings (disappearing messages, per-chat config) ──
+class ChatSetting(db.Model):
+    __tablename__ = 'chat_settings'
+    id               = db.Column(db.Integer, primary_key=True)
+    user_id          = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    chat_id          = db.Column(db.String(100), nullable=False)
+    disappear_after  = db.Column(db.Integer, default=0)  # 0=off, seconds (e.g. 86400=24h)
+    __table_args__ = (db.UniqueConstraint('user_id', 'chat_id'),)
+
+# ── Story Highlights ──
+class StoryHighlight(db.Model):
+    __tablename__ = 'story_highlights'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    name       = db.Column(db.String(100), nullable=False)
+    cover_url  = db.Column(db.String(500), default='')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class StoryHighlightItem(db.Model):
+    __tablename__ = 'story_highlight_items'
+    id           = db.Column(db.Integer, primary_key=True)
+    highlight_id = db.Column(db.Integer, db.ForeignKey('story_highlights.id'), nullable=False, index=True)
+    media_url    = db.Column(db.String(500), default='')
+    media_type   = db.Column(db.String(20), default='text')
+    content      = db.Column(db.String(500), default='')
+    added_at     = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
 # ============================================================
 # DATABASE INITIALIZATION — safe, never loses data
 # db.create_all() only creates MISSING tables, never drops.
@@ -310,6 +347,10 @@ def _safe_migrate():
     # ── scheduled_messages ─────────────────────────────────
     add_col_if_missing('scheduled_messages', 'message_type', "VARCHAR(20) DEFAULT 'text'")
     add_col_if_missing('scheduled_messages', 'delivered',    'BOOLEAN DEFAULT FALSE')
+
+    # ── story_reactions / chat_settings / highlights (new tables) ──
+    # These are created by db.create_all() — no column migration needed
+    pass  # placeholder so _safe_migrate always completes
 
 with app.app_context():
     try:
@@ -2588,6 +2629,164 @@ new Chart(document.getElementById('chart'),{{
 </body></html>'''
     return html
 
+
+# ============================================================
+# STORY REACTIONS — visible to story owner
+# ============================================================
+
+@app.route('/api/stories/<int:story_id>/react', methods=['POST'])
+@login_required
+def react_to_story(story_id):
+    user_id = int(session['user_id'])
+    story = Story.query.get(story_id)
+    if not story:
+        return jsonify({'success': False, 'error': 'Story not found'}), 404
+    if story.user_id == user_id:
+        return jsonify({'success': False, 'error': 'Cannot react to own story'}), 400
+    data  = request.get_json() or {}
+    emoji = data.get('emoji', '❤️')[:10]
+    try:
+        existing = StoryReaction.query.filter_by(story_id=story_id, user_id=user_id).first()
+        if existing:
+            existing.emoji = emoji
+        else:
+            db.session.add(StoryReaction(story_id=story_id, user_id=user_id, emoji=emoji))
+        db.session.commit()
+        # Notify story owner in real-time
+        reactor = User.query.get(user_id)
+        owner_sid = get_sid(story.user_id)
+        if owner_sid and reactor:
+            socketio.emit('story_reaction', {
+                'story_id': story_id,
+                'emoji': emoji,
+                'from_user': reactor.username
+            }, room=owner_sid)
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/stories/<int:story_id>/reactions')
+@login_required
+def get_story_reactions(story_id):
+    user_id = int(session['user_id'])
+    story = Story.query.get(story_id)
+    if not story or story.user_id != user_id:
+        return jsonify({'success': False, 'error': 'Not your story'}), 403
+    reactions = StoryReaction.query.filter_by(story_id=story_id).all()
+    result = []
+    for r in reactions:
+        u = User.query.get(r.user_id)
+        if u:
+            result.append({'user_id': u.id, 'username': u.username, 'emoji': r.emoji, 'reacted_at': r.created_at.isoformat()})
+    # Tally emoji counts
+    tally = {}
+    for r in result:
+        tally[r['emoji']] = tally.get(r['emoji'], 0) + 1
+    return jsonify({'success': True, 'reactions': result, 'tally': tally})
+
+# ============================================================
+# CHAT SETTINGS — disappearing messages toggle
+# ============================================================
+
+@app.route('/api/chats/<path:chat_id>/settings', methods=['GET'])
+@login_required
+def get_chat_settings(chat_id):
+    user_id = int(session['user_id'])
+    setting = ChatSetting.query.filter_by(user_id=user_id, chat_id=chat_id).first()
+    return jsonify({'success': True, 'disappear_after': setting.disappear_after if setting else 0})
+
+@app.route('/api/chats/<path:chat_id>/settings', methods=['PUT'])
+@login_required
+def update_chat_settings(chat_id):
+    user_id = int(session['user_id'])
+    data = request.get_json() or {}
+    disappear_after = int(data.get('disappear_after', 0))
+    try:
+        setting = ChatSetting.query.filter_by(user_id=user_id, chat_id=chat_id).first()
+        if setting:
+            setting.disappear_after = disappear_after
+        else:
+            db.session.add(ChatSetting(user_id=user_id, chat_id=chat_id, disappear_after=disappear_after))
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============================================================
+# STORY HIGHLIGHTS
+# ============================================================
+
+@app.route('/api/highlights', methods=['GET'])
+@login_required
+def get_highlights():
+    user_id = int(session['user_id'])
+    hl = StoryHighlight.query.filter_by(user_id=user_id).order_by(StoryHighlight.created_at).all()
+    result = []
+    for h in hl:
+        items = StoryHighlightItem.query.filter_by(highlight_id=h.id).order_by(StoryHighlightItem.added_at).all()
+        result.append({
+            'id': h.id, 'name': h.name, 'cover_url': h.cover_url,
+            'items': [{'media_url': i.media_url, 'media_type': i.media_type, 'content': i.content} for i in items],
+            'count': len(items)
+        })
+    return jsonify({'success': True, 'highlights': result})
+
+@app.route('/api/highlights', methods=['POST'])
+@login_required
+def create_highlight():
+    user_id = int(session['user_id'])
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()[:100]
+    if not name:
+        return jsonify({'success': False, 'error': 'Name required'}), 400
+    try:
+        h = StoryHighlight(user_id=user_id, name=name)
+        db.session.add(h)
+        db.session.commit()
+        return jsonify({'success': True, 'id': h.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/highlights/<int:hid>/add', methods=['POST'])
+@login_required
+def add_to_highlight(hid):
+    user_id = int(session['user_id'])
+    h = StoryHighlight.query.get(hid)
+    if not h or h.user_id != user_id:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    data = request.get_json() or {}
+    media_url  = data.get('media_url', '')
+    media_type = data.get('media_type', 'text')
+    content    = data.get('content', '')
+    try:
+        item = StoryHighlightItem(highlight_id=hid, media_url=media_url, media_type=media_type, content=content)
+        db.session.add(item)
+        if not h.cover_url and media_url:
+            h.cover_url = media_url
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/highlights/<int:hid>', methods=['DELETE'])
+@login_required
+def delete_highlight(hid):
+    user_id = int(session['user_id'])
+    h = StoryHighlight.query.get(hid)
+    if not h or h.user_id != user_id:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    try:
+        StoryHighlightItem.query.filter_by(highlight_id=hid).delete()
+        db.session.delete(h)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
