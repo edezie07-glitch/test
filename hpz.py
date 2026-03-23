@@ -464,7 +464,8 @@ def index():
         if user:
             return _no_cache(redirect('/chat'))
         session.clear()
-    # Always clear session before login page — prevents another user's session leaking
+    # Always clear any leftover session before login page
+    # Prevents a logged-in user's cookie appearing on another device/browser
     session.clear()
     resp = make_response(render_template('login.html'))
     resp.delete_cookie('hpz_session', path='/')
@@ -477,7 +478,7 @@ def register_page():
         if user:
             return _no_cache(redirect('/chat'))
         session.clear()
-    # Always clear session before register page — prevents another user's session leaking
+    # Always clear before register page too
     session.clear()
     resp = make_response(render_template('register.html'))
     resp.delete_cookie('hpz_session', path='/')
