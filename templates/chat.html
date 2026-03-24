@@ -3950,37 +3950,7 @@
     { urls: 'turn:a.relay.metered.ca:443',     username:'openrelayproject', credential:'openrelayproject' },
     { urls: 'turns:a.relay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
   ];
-  function stopAllVideos(){
-  document.querySelectorAll("video").forEach(v => {
-    v.pause();
-    v.currentTime = 0;
-    v.src = v.src; // reset
-  });
-}
-
-// when closing story viewer
-function closeStoryViewer(){
-  stopAllVideos();
-}
-
-// when switching tab
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden){
-    stopAllVideos();
-  }
-});
-    function applyTrim(video, start, end){
-  if(!video) return;
-
-  video.currentTime = start || 0;
-
-  video.ontimeupdate = () => {
-    if(end && video.currentTime >= end){
-      video.pause();
-    }
-  };
-}
-    applyTrim(videoElement, story.trim_start, story.trim_end);
+  
   // ── Call state ──
   let cd = {};
   function resetCd(){
