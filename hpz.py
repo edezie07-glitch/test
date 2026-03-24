@@ -9,7 +9,6 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_
-
 # ============================================================
 # APP CONFIGURATION
 # ============================================================
@@ -64,48 +63,6 @@ socketio = SocketIO(
 )
 # Online users tracking: {user_id: {'sid': socket_id, 'last_seen': datetime}}
 online_users = {}
-
-# ============================================================
-# NEW ROUTES AND SOCKET.IO EVENTS
-# ============================================================
-
-# NEW: Generate a unique ID for a new chat thread
-@app.route('/create_chat', methods=['POST'])
-def create_chat():
-    thread_id = str(uuid.uuid4())
-    return jsonify({'thread_id': thread_id})
-
-# NEW: Display a specific chat thread
-@app.route('/messages/e2ee/t/<thread_id>')
-def view_chat(thread_id):
-    return render_template('chat.html', thread_id=thread_id)
-
-# NEW: Display a specific story
-@app.route('/story/<story_id>')
-def view_story(story_id):
-    return render_template('chat.html', story_id=story_id)
-
-# NEW: Display a specific call
-@app.route('/call/<call_id>')
-def view_call(call_id):
-    return render_template('chat.html', call_id=call_id)
-
-# NEW: Real-time story reactions
-@socketio.on('react_to_story')
-def handle_reaction(data):
-    story_id = data['story_id']
-    user_id = data['user_id']
-    reaction = data['reaction']
-    emit('story_reaction', {'story_id': story_id, 'user_id': user_id, 'reaction': reaction}, broadcast=True)
-
-# NEW: Real-time message delivery
-@socketio.on('send_message')
-def handle_message(data):
-    thread_id = data['thread_id']
-    user_id = data['user_id']
-    message = data['message']
-    emit('new_message', {'thread_id': thread_id, 'user_id': user_id, 'message': message}, broadcast=True)
-
 # ============================================================
 # DATABASE MODELS
 # ============================================================
@@ -1850,6 +1807,7 @@ def delete_group(gid):
         db.session.rollback()
         return jsonify({'success':False,'error':str(e)}),500
 
+
 @app.route('/api/groups/<int:gid>/remove_member', methods=['POST'])
 @login_required
 def remove_member(gid):
@@ -2519,7 +2477,8 @@ function filterTracks(q) {{
   if (fc) fc.textContent = q ? '(' + visible + ' results)' : '';
 }}
 </script>
-</body></html>"""
+</body>
+</html>"""
 
 
 # ADMIN DASHBOARD — /admin?pw=YOUR_PASSWORD
@@ -2669,6 +2628,7 @@ new Chart(document.getElementById('chart'),{{
 </script>
 </body></html>'''
     return html
+
 
 # ============================================================
 # STORY REACTIONS — visible to story owner
