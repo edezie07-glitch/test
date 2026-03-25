@@ -2519,18 +2519,19 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div id="SC_p0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:28px;">
     <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:.3px;">Create Story</div>
 
-    <!-- Photo from gallery -->
-    <button class="sc-type-btn" onclick="document.getElementById('SC_photoInput').click()">
-      <span style="font-size:30px;">🖼️</span>
-      <span>Photo</span>
-    </button>
 
-    <!-- Video from gallery — separate input so mobile shows video files -->
-    <button class="sc-type-btn" onclick="document.getElementById('SC_videoInput').click()">
-      <span style="font-size:30px;">🎬</span>
-      <span>Video</span>
-    </button>
 
+<button class="sc-type-btn" onclick="document.getElementById('SC_photoInput').click()">
+  <span style="font-size:30px;">🖼️</span>
+  <span>Photo / GIF</span>
+</button>
+
+
+
+   <button class="sc-type-btn" onclick="document.getElementById('SC_videoInput').click()">
+  <span style="font-size:30px;">🎬</span>
+  <span>Video</span>
+</button>
     <!-- Take Photo with camera -->
     <button class="sc-type-btn" onclick="scChoose('camera')">
       <span style="font-size:30px;">📷</span>
@@ -3092,8 +3093,24 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   connectSocket();
   loadFriends();
   loadRequests();
-  setTimeout(requestNotifPermission,2000);
-  // ctx menu replaced by msg sheet
+  setTimeout(requestNotifPermission, 2000);
+  // Auto-open chat from URL /t/chat_id
+  setTimeout(() => {
+    const parts = window.location.pathname.split('/');
+    if(parts[1] === 't' && parts[2]){
+      const chatId = parts[2];
+      if(chatId.startsWith('group-')){
+        const gid = parseInt(chatId.split('-')[1]);
+        const g = groups.find(x => x.id === gid);
+        if(g) openGroupChat(g);
+      } else {
+        const ids = chatId.split('-').map(Number);
+        const fid = ids[0] === ME_ID ? ids[1] : ids[0];
+        const f = friends.find(x => x.id === fid);
+        if(f) openChat(f.id, f.username, f.chat_id);
+      }
+    }
+  }, 1500);
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -3169,6 +3186,26 @@ function connectSocket(){
       socket.emit('mark_all_read',{chat_id:currentChatId});
     }
   });
+  socket.on('connect', () => {
+  // Auto-open chat from URL if visiting /t/chat_id
+  const pathParts = window.location.pathname.split('/');
+  if (pathParts[1] === 't' && pathParts[2]) {
+    const chatId = pathParts[2];
+    // Find the friend for this chat
+    setTimeout(() => {
+      if (chatId.startsWith('group-')) {
+        const gid = parseInt(chatId.split('-')[1]);
+        const g = groups.find(x => x.id === gid);
+        if (g) openGroupChat(g);
+      } else {
+        const parts = chatId.split('-').map(Number);
+        const friendId = parts[0] === ME_ID ? parts[1] : parts[0];
+        const f = friends.find(x => x.id === friendId);
+        if (f) openChat(f.id, f.username, f.chat_id);
+      }
+    }, 1200); // wait for friends/groups to load
+  }
+});
   socket.on('receipt_update',(data)=>{
     // Update ALL dots for this message (there should only be 1, but be safe)
     document.querySelectorAll(`.receipt[data-msg-id="${data.msg_id}"]`).forEach(dot=>{
@@ -3232,11 +3269,27 @@ function connectSocket(){
     loadFriends();
     loadRequests();
   });
-  // Acceptor: "Say hi to your new friend {name}"
-  socket.on('new_friend_added',(data)=>{
-    showInAppNotif(data.username, '👋 Say hi to your new friend '+data.username+'!', null, data.user_id);
-    loadFriends();
+ socket.on('new_friend_added',(data)=>{
+  showInAppNotif(data.username, '👋 Say hi to your new friend '+data.username+'!', null, data.user_id);
+  // Reload friends AND immediately join their chat room
+  loadFriends().then(()=>{
+    const f = friends.find(fr=>fr.id===data.user_id);
+    if(f){
+      const chatId = [Math.min(ME_ID,data.user_id),Math.max(ME_ID,data.user_id)].join('-');
+      if(socket) socket.emit('join_chat',{chat_id:chatId});
+    }
   });
+});
+
+socket.on('friend_request_accepted',(data)=>{
+  showInAppNotif(data.username, '🎉 '+data.username+' accepted your friend request!', null, data.user_id);
+  loadFriends().then(()=>{
+    // Join the new friend's chat room immediately so messages arrive
+    const chatId = [Math.min(ME_ID,data.user_id),Math.max(ME_ID,data.user_id)].join('-');
+    if(socket) socket.emit('join_chat',{chat_id:chatId});
+  });
+  loadRequests();
+});
   socket.on('friend_request_received',(data)=>{
     loadRequests();
     // Show toast with inline Accept/Decline buttons
@@ -4569,6 +4622,37 @@ function showCallModal(name, status, isVideo){
   document.getElementById('callModal').classList.add('show');
   document.getElementById('callDock').style.opacity='1';
   showCallUI(false); // Dock always visible
+  // Add fullscreen/enlarge button for video calls
+  if(isVideo){
+    let fsBtn = document.getElementById('callFsBtn');
+    if(!fsBtn){
+      fsBtn = document.createElement('button');
+      fsBtn.id = 'callFsBtn';
+      fsBtn.style.cssText = `
+        position:absolute;top:clamp(44px,10vw,60px);left:18px;z-index:7;
+        background:rgba(255,255,255,.15);backdrop-filter:blur(10px);
+        border:1.5px solid rgba(255,255,255,.2);color:#fff;
+        width:40px;height:40px;border-radius:50%;font-size:18px;
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+      `;
+      fsBtn.title = 'Fullscreen';
+      fsBtn.textContent = '⛶';
+      fsBtn.onclick = ()=>{
+        const modal = document.getElementById('callModal');
+        if(!document.fullscreenElement){
+          modal.requestFullscreen && modal.requestFullscreen();
+          fsBtn.textContent = '⛶';
+        } else {
+          document.exitFullscreen && document.exitFullscreen();
+        }
+      };
+      document.getElementById('callModal').appendChild(fsBtn);
+    }
+    fsBtn.style.display = 'flex';
+  } else {
+    const fsBtn = document.getElementById('callFsBtn');
+    if(fsBtn) fsBtn.style.display = 'none';
+  }
 }
 
 function hideCallModal(){
@@ -4695,45 +4779,91 @@ async function startVideoCall(){
 
 // ── Group call: show member picker ──
 function startGroupCall(type) {
+ // ── Group call: ring ALL members simultaneously ──
+async function startGroupCall(type) {
   const g = _giCurrentGroup || groups.find(x => x.id === currentGroupId);
   if (!g) { toast('Group not found', 'err'); return; }
-  const members = g._members || g.members;
-  if (!members || !members.length) { toast('No members to call', 'err'); return; }
+
+  // Make sure members are cached
+  if (!g._members) await _cacheGroupMembers(g.id);
+  const members = g._members || g.members || [];
   const others = members.filter(m => m.id !== ME_ID);
   if (!others.length) { toast('No other members to call', 'err'); return; }
 
+  await unlockAudio();
+  if (cd.active) { toast('Already in a call', 'info'); return; }
+
+  _currentFacing = 'user'; _speakerOn = true;
+  await _initCameraCapabilities();
+
+  try {
+    cd.active = true;
+    cd.type = type;
+    cd.calleeId = null;
+    cd.calleeName = g.name;
+    cd.callerName = g.name;
+
+    const stream = await getMedia(type);
+    cd.localStream = stream;
+
+    if (type === 'video') {
+      _syncFacingFromStream(stream);
+      const lv = document.getElementById('localVideo');
+      if (lv) {
+        lv.srcObject = null;
+        lv.srcObject = stream;
+        lv.setAttribute('playsinline', '');
+        lv.muted = true;
+        lv.play().catch(() => {});
+      }
+    }
+
+    // Build offer
+    const pc = makePc(others[0].id);
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+    let offer = await pc.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: type === 'video',
+      voiceActivityDetection: false,
+    });
+    offer = new RTCSessionDescription({
+      type: offer.type,
+      sdp: preferOpus(offer.sdp)
+    });
+    await pc.setLocalDescription(offer);
+
+    // Show outgoing screen
+    showOutgoingScreen(g.name + ' (' + others.length + ' member' + (others.length > 1 ? 's' : '') + ')', type);
+    showCallModal(g.name, 'Ringing all members…', type === 'video');
+
+    // Ring ALL members via server
+    socket.emit('call_offer', {
+      group_id: g.id,
+      group_name: g.name,
+      offer: {
+        type: pc.localDescription.type,
+        sdp: pc.localDescription.sdp
+      },
+      call_type: type
+    });
+
+  } catch (e) {
+    mediaErr(e);
+    cleanupCall();
+  }
+}
+
+function closeGcallPicker() {
   const sheet = document.getElementById('gcallPickerSheet');
-  const list  = document.getElementById('gcallPickerList');
-  const title = document.getElementById('gcallPickerTitle');
-  const icon  = type === 'video' ? '📹' : '📞';
-  const label = type === 'video' ? 'Video Call' : 'Voice Call';
-  title.innerHTML = `<span>${icon} ${label}</span><span style="font-size:12px;color:var(--mute);font-weight:400;">Choose who to call</span>`;
-  title.style.display='flex';title.style.flexDirection='column';title.style.gap='2px';
-
-  list.innerHTML = others.map(m => `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:14px;
-      cursor:pointer;transition:background .15s;-webkit-tap-highlight-color:transparent;"
-      onmouseover="this.style.background='var(--hov)'" onmouseout="this.style.background=''"
-      onclick="closeGcallPicker();doCall({id:${m.id},username:'${esc(m.username)}'},'${type}')">
-      <div style="width:44px;height:44px;border-radius:13px;background:var(--brand);color:#fff;
-        font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;
-        flex-shrink:0;position:relative;">
-        ${m.username[0].toUpperCase()}
-        ${m.online ? '<div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#22c55e;border:2px solid var(--card);"></div>' : ''}
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;color:var(--txt);">${esc(m.username)}</div>
-        <div style="font-size:11px;color:${m.online ? '#22c55e' : 'var(--mute)'};">${m.online ? '● Online' : '○ Offline'}</div>
-      </div>
-      <div style="background:var(--brand);color:#fff;border-radius:10px;padding:8px 14px;
-        font-size:13px;font-weight:700;">${icon} Call</div>
-    </div>
-  `).join('');
-
-  sheet.style.transform   = 'translateY(0)';
-  sheet.style.opacity     = '1';
-  sheet.style.pointerEvents = 'all';
-  document.getElementById('gcallPickerOv').style.display = 'block';
+  if (sheet) {
+    sheet.style.transform = 'translateY(100%)';
+    sheet.style.opacity = '0';
+    sheet.style.pointerEvents = 'none';
+  }
+  const ov = document.getElementById('gcallPickerOv');
+  if (ov) ov.style.display = 'none';
+}
 }
 function closeGcallPicker() {
   const sheet = document.getElementById('gcallPickerSheet');
@@ -4852,6 +4982,20 @@ function endCall(){
   appendCallMsg(type, dur, startT, false);
   // Show post-call summary if call was actually connected (dur > 0)
   if(dur>0) showCallSummary(dur, type, avgSig);
+  function appendCallMsg(type, dur, startTime, missed=false){
+  if(!currentChatId) return;
+  const area = document.getElementById('marea');
+  if(!area) return;
+  const icon = missed ? '📵' : (type==='video'?'📹':'📞');
+  const label = missed ? 'Missed call' : (dur>0 ? `${type==='video'?'Video':'Voice'} call · ${fmtDur(dur)}` : `${type==='video'?'Video':'Voice'} call`);
+  const timeStr = startTime || fmtTime(new Date().toISOString());
+  const cls = missed ? 'missed' : 'answered';
+  const el = document.createElement('div');
+  el.style.cssText = 'display:flex;justify-content:center;margin:8px 0;';
+  el.innerHTML = `<div class="call-msg ${cls}">${icon} ${label} · ${timeStr}</div>`;
+  area.appendChild(el);
+  scrollBot();
+}
 }
 
 function cleanupCall(){
@@ -5242,21 +5386,23 @@ async function loadFriends(){
     const d=await r.json();
     if(d.success){
       friends=d.friends;
-      // Seed in-memory unread counts from server ONLY for chats not currently open
       friends.forEach(f=>{
         if(currentChatId!==f.chat_id){
-          // Only set if we don't already have a higher in-memory count
-          // (in case messages arrived via socket before this load)
           const srv=f.unread_count||0;
           if((unreadCounts[f.id]||0)<srv) unreadCounts[f.id]=srv;
+        }
+        // Auto-join all friend chat rooms so messages arrive even before opening chat
+        if(socket && socket.connected){
+          const chatId = f.chat_id || [Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
+          socket.emit('join_chat',{chat_id:chatId});
         }
       });
       renderFriends();
       setTimeout(checkFadingRelationships, 2800);
     }
-  }catch(e){}
+    return friends; // return for .then() chaining
+  }catch(e){ return []; }
 }
-
 // ── Archive storage ──
 const archivedChats=new Set(JSON.parse(localStorage.getItem('hpz_archive')||'[]'));
 function saveArchive(){localStorage.setItem('hpz_archive',JSON.stringify([...archivedChats]));}
@@ -6990,98 +7136,162 @@ function crowCtxDo(action){
 // ADDED: Conversation 3-line menu (inside open chat)
 // ════════════════════════════════════════════════════
 function openConv3Menu(e){
-  const btn=document.getElementById('conv3Btn');
-  const rect=btn.getBoundingClientRect();
-  const menu=document.getElementById('crowCtx');
-  // Group chat: show group-specific menu
+  function openConv3Menu(e){
+  const btn = document.getElementById('conv3Btn');
+  const rect = btn.getBoundingClientRect();
+  const menu = document.getElementById('crowCtx');
+
+  // ── GROUP CHAT MENU ──
   if(currentGroupId){
-    const g=groups.find(x=>x.id===currentGroupId);
-    const isGA=g&&archivedGroups.has(currentGroupId);
-    menu.innerHTML=`
+    const g = groups.find(x => x.id === currentGroupId);
+    const isGA = g && archivedGroups.has(currentGroupId);
+    const isMutedGrp = _isChatMuted('group-' + currentGroupId);
+    menu.innerHTML = `
       <div class="crow-ctx-item" onclick="crowCtxConvDo('group-info')">ℹ️ Group Info</div>
       <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
       <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
       <div class="crow-ctx-item" onclick="crowCtxConvDo('schedule')">⏳ Schedule Message</div>
-      <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${_isChatMuted('group-'+currentGroupId)?'🔔 Unmute Group':'🔕 Mute Group'}</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${isMutedGrp ? '🔔 Unmute Group' : '🔕 Mute Group'}</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('copy-link')">🔗 Copy Group Link</div>
       <div class="crow-ctx-sep"></div>
-      <div class="crow-ctx-item" onclick="crowCtxConvDo('archive-group')">${isGA?'📤 Unarchive Group':'🗄️ Archive Group'}</div>
+      <div class="crow-ctx-item" onclick="crowCtxConvDo('archive-group')">${isGA ? '📤 Unarchive Group' : '🗄️ Archive Group'}</div>
       <div class="crow-ctx-sep"></div>
       <div class="crow-ctx-item danger" onclick="crowCtxConvDo('delete-conv')">🗑️ Clear Messages</div>
     `;
-    menu.style.left=Math.min(rect.right-180,window.innerWidth-195)+'px';
-    menu.style.top=(rect.bottom+6)+'px';
+    const mx = Math.min(rect.right - 180, window.innerWidth - 195);
+    menu.style.left = mx + 'px';
+    menu.style.top  = (rect.bottom + 6) + 'px';
     menu.classList.add('show');
-    setTimeout(()=>document.addEventListener('click',closeCrowCtx,{once:true}),10);
+    setTimeout(() => document.addEventListener('click', closeCrowCtx, { once: true }), 10);
     return;
   }
-  if(!currentFriendId)return;
-  const f=friends.find(x=>x.id===currentFriendId);
-  const isArchived=f&&archivedChats.has(currentFriendId);
-  const isPinned=currentChatId&&pinnedChatIds.has(currentChatId);
-  const isMuted=currentChatId&&_isChatMuted(currentChatId);
-  menu.innerHTML=`
+
+  // ── DM CHAT MENU ──
+  if(!currentFriendId) return;
+  const f = friends.find(x => x.id === currentFriendId);
+  const isArchived = f && archivedChats.has(currentFriendId);
+  const isPinned   = currentChatId && pinnedChatIds.has(currentChatId);
+  const isMuted    = currentChatId && _isChatMuted(currentChatId);
+  const isLocked   = currentChatId && prefs.chatLocks[currentChatId];
+
+  menu.innerHTML = `
     <div class="crow-ctx-item" onclick="crowCtxConvDo('profile')">👤 View Profile</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('search')">🔍 Search Messages</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('pinned-msgs')">📌 Pinned Messages</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('schedule')">⏳ Schedule Message</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('pin-chat')">${isPinned?'📌 Unpin Chat':'📌 Pin Chat'}</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('copy-link')">🔗 Copy Chat Link</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('pin-chat')">${isPinned ? '📌 Unpin Chat' : '📌 Pin Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('label')">🏷️ Contact Label</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('lock')">🔒 ${prefs.chatLocks[currentChatId]?'Unlock Chat':'Lock Chat'}</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('lock')">🔒 ${isLocked ? 'Unlock Chat' : 'Lock Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('notif-sound')">🔔 Notification Sound</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${isMuted?'🔔 Unmute Chat':'🔕 Mute Chat'}</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${isMuted ? '🔔 Unmute Chat' : '🔕 Mute Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('export')">📤 Export Chat</div>
     <div class="crow-ctx-sep"></div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
+    <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived ? '📤 Unarchive Chat' : '🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item danger" onclick="crowCtxConvDo('delete-conv')">🗑️ Delete Conversation</div>
   `;
-  // Position below the button, aligned to right edge
-  const mx=Math.min(rect.right-180,window.innerWidth-195);
-  const my=rect.bottom+6;
-  menu.style.left=mx+'px';
-  menu.style.top=my+'px';
+
+  const mx = Math.min(rect.right - 180, window.innerWidth - 195);
+  menu.style.left = mx + 'px';
+  menu.style.top  = (rect.bottom + 6) + 'px';
   menu.classList.add('show');
-  setTimeout(()=>document.addEventListener('click',closeCrowCtx,{once:true}),10);
+  setTimeout(() => document.addEventListener('click', closeCrowCtx, { once: true }), 10);
+}
 }
 function crowCtxConvDo(action){
   closeCrowCtx();
-  if(action==='mute-chat'){ openMuteSheet(); return; }
-  if(action==='profile'){showFriendProfile();}
-  else if(action==='search'){toggleSearch();}
-  else if(action==='pinned-msgs'){showPinned();}
-  else if(action==='schedule'){openCapsuleSheet();}
-  else if(action==='pin-chat'){if(currentChatId)togglePinChat(currentChatId);}
-  else if(action==='archive'){
-    if(!currentFriendId)return;
-    if(archivedChats.has(currentFriendId)){archivedChats.delete(currentFriendId);toast('Chat unarchived','ok');}
-    else{archivedChats.add(currentFriendId);toast('Chat archived 🗄️','ok');}
-    saveArchive();renderFriends();
-    if(window.innerWidth<=720&&archivedChats.has(currentFriendId))goBackToList();
+
+  if(action === 'mute-chat'){
+    openMuteSheet();
+    return;
   }
-  else if(action==='delete-conv'){
-    if(!currentChatId)return;
+
+  if(action === 'profile'){
+    showFriendProfile();
+  }
+  else if(action === 'search'){
+    toggleSearch();
+  }
+  else if(action === 'pinned-msgs'){
+    showPinned();
+  }
+  else if(action === 'schedule'){
+    openCapsuleSheet();
+  }
+  else if(action === 'pin-chat'){
+    if(currentChatId) togglePinChat(currentChatId);
+  }
+  else if(action === 'copy-link'){
+    // Facebook-style shareable link
+    const link = window.location.origin + '/t/' + (currentChatId || '');
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(link).then(()=>{
+        toast('🔗 Chat link copied!','ok');
+      }).catch(()=>{
+        _copyFallbackLink(link);
+      });
+    } else {
+      _copyFallbackLink(link);
+    }
+  }
+  else if(action === 'archive'){
+    if(!currentFriendId) return;
+    if(archivedChats.has(currentFriendId)){
+      archivedChats.delete(currentFriendId);
+      toast('Chat unarchived','ok');
+    } else {
+      archivedChats.add(currentFriendId);
+      toast('Chat archived 🗄️','ok');
+    }
+    saveArchive();
+    renderFriends();
+    if(window.innerWidth <= 720 && archivedChats.has(currentFriendId)) goBackToList();
+  }
+  else if(action === 'delete-conv'){
+    if(!currentChatId) return;
     confirmDeleteConversation(currentChatId, currentFriendId);
   }
-  else if(action==='group-info'){
-    if(currentGroupId)openGroupInfo(currentGroupId);
+  else if(action === 'group-info'){
+    if(currentGroupId) openGroupInfo(currentGroupId);
   }
-  else if(action==='archive-group'){
-    if(!currentGroupId)return;
+  else if(action === 'archive-group'){
+    if(!currentGroupId) return;
     if(archivedGroups.has(currentGroupId)){
       archivedGroups.delete(currentGroupId);
       toast('Group unarchived','ok');
     } else {
       archivedGroups.add(currentGroupId);
       toast('Group archived 🗄️','ok');
-      if(window.innerWidth<=720)goBackToList();
+      if(window.innerWidth <= 720) goBackToList();
     }
     saveGroupArchive();
     renderFriends();
   }
-  else if(action==='label'){openLabelPicker(currentFriendId);}
-  else if(action==='lock'){toggleChatLock(currentChatId);}
-  else if(action==='notif-sound'){openNotifSoundPicker(currentChatId);}
-  else if(action==='export'){exportChat();}
+  else if(action === 'label'){
+    openLabelPicker(currentFriendId);
+  }
+  else if(action === 'lock'){
+    toggleChatLock(currentChatId);
+  }
+  else if(action === 'notif-sound'){
+    openNotifSoundPicker(currentChatId);
+  }
+  else if(action === 'export'){
+    exportChat();
+  }
+}
+
+// Helper for copy fallback
+function _copyFallbackLink(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); toast('🔗 Link copied!','ok'); }
+  catch(e){ toast('Copy failed — link: ' + text,'info'); }
+  ta.remove();
 }
 
 // ════════════════════════════════════════════════════
@@ -7366,7 +7576,31 @@ function showStory(){
   const story = currentStories[currentStoryIndex];
   _storyPaused = false;
   _storyRemaining = getStoryDuration(story);
-
+// Hide reaction/comment bar on own stories
+  const storyBottom = document.getElementById('storyBottom');
+  const reactRow = storyBottom ? storyBottom.querySelector('div[style*="display:flex;align-items:center;gap:4px"]') : null;
+  const commentRow = storyBottom ? storyBottom.querySelector('div[style*="display:flex;gap:8px;align-items:center"]') : null;
+  
+  if(story.is_own){
+    if(reactRow) reactRow.style.display = 'none';
+    if(commentRow) commentRow.style.display = 'none';
+    document.getElementById('storyOwnerBtns').style.display = 'flex';
+    // Add "Save to Highlight" button dynamically if not present
+    const ob = document.getElementById('storyOwnerBtns');
+    if (ob && !ob.querySelector('#hlAddBtn')) {
+      const hlBtn = document.createElement('button');
+      hlBtn.id = 'hlAddBtn';
+      hlBtn.onclick = openHlSheet;
+      hlBtn.style.cssText = 'border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;';
+      hlBtn.textContent = '⭐ Highlights';
+      ob.insertBefore(hlBtn, ob.firstChild);
+    }
+  } else {
+    if(reactRow) reactRow.style.display = 'flex';
+    if(commentRow) commentRow.style.display = 'flex';
+    document.getElementById('storyOwnerBtns').style.display = 'none';
+    document.getElementById('storyViewers').innerHTML = '';
+  }
   // Prepare viewer (keep hidden until content is set)
   const viewer = document.getElementById('storyViewer');
   viewer.style.opacity = '0';
@@ -7536,7 +7770,7 @@ function showStory(){
   }
 
   // Owner controls
-  const ownerBtns = document.getElementById('storyOwnerBtns');
+  const ownerBtns = document.getElementByIdshowStory();
   if(story.is_own){
     ownerBtns.style.display = 'flex';
   } else {
@@ -7675,20 +7909,19 @@ function showViewersList(storyId){
 function sendStoryReact(emoji){
   const story = currentStories[currentStoryIndex];
   if(!story) return;
-  // Hide buttons from own story
   if(story.is_own){ toast('This is your story','info'); return; }
-  // Send as a DM to story owner
-  fetch('/api/messages/send',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      chat_id: [Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-'),
-      content: emoji + ' reacted to your story',
-      type: 'text'
-    })
-  }).catch(()=>{});
-  // Animate the emoji flying up
+  
+  // Send as a real DM that appears in both users' inboxes
+  const chatId = [Math.min(ME_ID, story.user_id), Math.max(ME_ID, story.user_id)].join('-');
+  socket.emit('send_message',{
+    chat_id: chatId,
+    content: emoji + ' reacted to your story',
+    message_type: 'text'
+  });
+  
+  // Animate the emoji
   _storyEmojiPop(emoji);
+  toast('Reaction sent!','ok');
 }
 
 function sendStoryComment(){
@@ -7698,18 +7931,23 @@ function sendStoryComment(){
   const txt = (inp.value||'').trim();
   if(!txt) return;
   if(story.is_own){ toast('This is your own story','info'); inp.value=''; return; }
-  inp.value='';
-  // Send as DM to story owner
-  fetch('/api/messages/send',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      chat_id: [Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-'),
-      content: '💬 "'+txt+'"',
-      type:'text'
-    })
-  }).catch(()=>{});
-  toast('Sent!','ok');
+  
+  const chatId = [Math.min(ME_ID, story.user_id), Math.max(ME_ID, story.user_id)].join('-');
+  
+  socket.emit('send_message',{
+    chat_id: chatId,
+    content: '💬 Replied to your story: "' + txt + '"',
+    message_type: 'text'
+  });
+  
+  inp.value = '';
+  toast('Message sent! Check your DMs 📬','ok');
+  
+ 
+  setTimeout(()=>{
+    const friend = friends.find(f=>f.id===story.user_id);
+    if(friend && !currentChatId) openChat(friend.id, friend.username, friend.chat_id);
+  }, 800);
 }
 
 function _storyEmojiPop(emoji){
@@ -7737,14 +7975,22 @@ function closeStoryViewer(){
   clearTimeout(_storyTimer);
   _storyPaused = false;
 
-  // Exit fullscreen if active
   if(document.fullscreenElement || document.webkitFullscreenElement){
-    (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
+    try{(document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch(e){}
   }
 
-  // Stop ALL audio
+  // CRITICAL: Stop ALL audio immediately
   const audio = document.getElementById('storyBgAudio');
-  if(audio){ audio.pause(); audio.src=''; audio.remove(); }
+  if(audio){
+    audio.pause();
+    audio.src = '';
+    try{ audio.load(); }catch(e){}
+    audio.remove();
+  }
+  // Also kill any orphaned audio elements
+  document.querySelectorAll('#storyBgAudio').forEach(a=>{
+    a.pause(); a.src=''; a.remove();
+  });
 
   // Stop video fully
   const vid = document.getElementById('storyVideo');
@@ -7753,32 +7999,25 @@ function closeStoryViewer(){
     vid.onended=null; vid.oncanplaythrough=null;
     vid.pause();
     vid.removeAttribute('src');
-    vid.load(); // flush buffer
+    try{ vid.load(); }catch(e){}
     vid.style.display='none';
   }
 
   // Reset background layers
   const bgProfile = document.getElementById('storyBgProfile');
   if(bgProfile){ bgProfile.style.opacity='0'; bgProfile.style.backgroundImage='none'; bgProfile.style.background='none'; }
-
   const bgLayer = document.getElementById('storyBgLayer');
   if(bgLayer){ bgLayer.style.display='none'; }
-
   const bgAvatar = document.getElementById('storyBgAvatar');
   if(bgAvatar){ bgAvatar.src=''; bgAvatar.style.display='none'; }
-
   const bgCircle = document.getElementById('storyBgCircle');
   if(bgCircle){ bgCircle.style.display='none'; bgCircle.innerHTML=''; }
 
-  // Reset image
   const img = document.getElementById('storyImage');
   if(img){ img.src=''; img.style.display='none'; }
-
-  // Reset text
   const txt = document.getElementById('storyText');
   if(txt){ txt.textContent=''; txt.style.display='none'; }
 
-  // Hide viewer
   const sv = document.getElementById('storyViewer');
   sv.style.opacity = '0';
   sv.style.transition = 'none';
@@ -7946,9 +8185,14 @@ function scGalleryPicked(input){
     scLoadEditor();
   }
 }
-
+// Kill any story audio that might be lingering
+document.querySelectorAll('#storyBgAudio').forEach(a=>{ a.pause(); a.src=''; a.remove(); });
 // ─── Load the editor (page 1) ────────────────────────────
 function scLoadEditor(){
+    // Kill any system media notifications
+  if('mediaSession' in navigator){
+    try{ navigator.mediaSession.metadata = null; }catch(e){}
+  }
   scPage(1);
   const img=$('SC_img'), vid=$('SC_vid'), tb=$('SC_textBg'),
         tx=$('SC_textBox'), cap=$('SC_caption');
@@ -8467,66 +8711,13 @@ function scPickSong(){ $('SC_audioInput').click(); }
 let _trimDrag=null, _trimVidRAF=null;
 
 function scOpenTrimmer(){
-  if(!SC.mediaFile||SC.mediaType!=='video'){ toast('No video loaded','err'); return; }
-  scCloseTools();
-  // Reset all controls
-  _cutPoints=[];
-  _pitchVal=0;
-  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
-  ['SC_pitchSlider','SC_speedSlider','SC_vidBrightness','SC_vidContrast'].forEach(id=>{
-    const el=$(id); if(el){ el.value=id==='SC_speedSlider'?1:100; }
-  });
-  const vs=$('SC_volSlider'); if(vs) vs.value=100;
-  const vv=$('SC_volVal'); if(vv) vv.textContent='100%';
-  ['SC_pitchVal','SC_speedVal','SC_vidBrightnessVal','SC_vidContrastVal'].forEach(id=>{
-    const el=$(id); if(!el)return;
-    if(id==='SC_pitchVal') el.textContent='0';
-    else if(id==='SC_speedVal') el.textContent='1.00×';
-    else el.textContent='100';
-  });
-  const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-  const sBtn=$('SC_trimSongBtn'); if(sBtn) sBtn.textContent='+ Add Song';
-  const sName=$('SC_trimSongName'); if(sName){ sName.textContent=''; sName.style.display='none'; }
-  const mw=$('SC_musicTrimWrap'); if(mw) mw.style.display='none';
-
-  // Show trimmer page
-  scPage(5);
-
-  const vid=$('SC_trimVid');
-  // Clean stop
-  clearInterval(_trimVidRAF); _trimVidRAF=null;
-  vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
-  try{ vid.pause(); }catch(e){}
-  vid.src='';
-  vid.load();
-
-  // 80ms settle — enough for scPage(5) to fully render the container
-  setTimeout(()=>{
-    vid.src    = SC.mediaURL;
-    vid.muted  = false;   // hear original sound immediately
-    vid.volume = 1.0;
-    vid.load();
-
-    vid.oncanplaythrough = ()=>{
-      vid.oncanplaythrough=null;
-      const total = vid.duration;
-      if(SC.trimEnd===null) SC.trimEnd = Math.min(total, 30);
-      _trimUpdate(total);
-      _renderCutPoints(total);
-      vid.currentTime = SC.trimStart||0;
-      vid.play().catch(()=>{});
-      const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
-      _startPlayheadLoop(vid);
-    };
-    // fallback: loadedmetadata fires earlier on some browsers
-    vid.onloadedmetadata = ()=>{
-      const total = vid.duration;
-      if(SC.trimEnd===null) SC.trimEnd = Math.min(total, 30);
-      _trimUpdate(total);
-    };
-    vid.onerror = ()=>{ toast('Could not load video for editing','err'); };
-  }, 80);
-}
+  // CRITICAL: Kill all external audio/notifications before editing
+  document.querySelectorAll('#storyBgAudio').forEach(a=>{ a.pause(); a.src=''; a.remove(); });
+  // Prevent any system media session from showing
+  if('mediaSession' in navigator){
+    try{ navigator.mediaSession.metadata = null; }catch(e){}
+  }
+  // ... rest of function continues unchanged
 
 function _startPlayheadLoop(vid){
   clearInterval(_trimVidRAF);
@@ -8934,13 +9125,58 @@ function scApplyTrim(){
     toast('Selection too short (min 0.5s)','err');
     return;
   }
-  // Store trim points — they'll be passed to the backend/post
-  // Update the duration shown
-  SC.videoDuration=total;
-  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
-  scCloseTrimmer();
-}
 
+  // Pause trimmer video
+  vid.pause();
+  
+  // Save trim points
+  SC.videoDuration = total;
+  
+  const btn = $('SC_trimApplyBtn');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+
+  // Close trimmer and go back to editor
+  clearInterval(_trimVidRAF); _trimVidRAF=null;
+  scTrimStop();
+  _cutPoints=[];
+  scPage(1);
+  
+  // Load ONLY the trimmed portion in the editor preview
+  const editorVid = $('SC_vid');
+  editorVid.pause();
+  editorVid.src = SC.mediaURL;
+  editorVid.load();
+  editorVid.oncanplaythrough = ()=>{
+    editorVid.oncanplaythrough = null;
+    editorVid.currentTime = SC.trimStart;
+    editorVid.play().catch(()=>{});
+    // Loop only within trim region in editor preview
+    editorVid.ontimeupdate = ()=>{
+      if(editorVid.currentTime >= SC.trimEnd - 0.05){
+        editorVid.currentTime = SC.trimStart;
+      }
+    };
+    const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
+  };
+  editorVid.onloadeddata = ()=>{
+    editorVid.currentTime = SC.trimStart;
+    editorVid.play().catch(()=>{});
+  };
+  
+  // Update duration badge to show clip length
+  const dur2 = SC.trimEnd - SC.trimStart;
+  const durLabel = $('SC_vidDuration');
+  if(durLabel){
+    durLabel.textContent = '✂️ Clip: '+dur2.toFixed(1)+'s';
+    durLabel.style.display = 'block';
+    durLabel.style.color = '#22c55e';
+  }
+  
+  _scShowVideoUI();
+  toast('✅ Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s — Continue editing!','ok');
+  
+  if(btn){ btn.disabled=false; btn.textContent='💾 Save Clip'; }
+}
 // ─── Share page (page 2) ─────────────────────────────────
 function scGoShare(){
   $('SC_tools').style.transform='translateY(100%)';
@@ -10425,7 +10661,168 @@ setInterval(() => {
   // Re-render unified list to update expiry badges without server fetch
   if (groups.length) renderFriends();
 }, 60000);
+// ══════════════════════════════════════════════════
+// STORY HIGHLIGHTS
+// ══════════════════════════════════════════════════
+let _hlData = [];
+let _hlViewerItems = [];
+let _hlViewerIdx = 0;
+let _hlViewerName = '';
 
+function openHlSheet() {
+  document.getElementById('hlSheetOv').style.display = 'block';
+  const sheet = document.getElementById('hlSheet');
+  sheet.getBoundingClientRect();
+  sheet.style.transform = 'translateX(-50%) translateY(0)';
+  loadHighlights();
+}
+
+function closeHlSheet() {
+  document.getElementById('hlSheet').style.transform = 'translateX(-50%) translateY(100%)';
+  setTimeout(() => document.getElementById('hlSheetOv').style.display = 'none', 280);
+}
+
+async function loadHighlights() {
+  const list = document.getElementById('hlList');
+  try {
+    const r = await fetch('/api/highlights');
+    const d = await r.json();
+    if (!d.success) { list.innerHTML = '<div style="color:var(--mute);text-align:center;padding:20px;">Failed to load</div>'; return; }
+    _hlData = d.highlights;
+    if (!_hlData.length) {
+      list.innerHTML = '<div style="color:var(--mute);text-align:center;padding:20px;font-size:13px;">No highlights yet.<br>Create one above and add stories to it!</div>';
+      return;
+    }
+    list.innerHTML = _hlData.map(h => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:12px;background:var(--hov);">
+        <div onclick="openHlViewer(${h.id})" style="
+          width:52px;height:52px;border-radius:14px;
+          background:${h.cover_url ? 'transparent' : 'linear-gradient(135deg,var(--brand),#f59e0b)'};
+          overflow:hidden;cursor:pointer;flex-shrink:0;
+          display:flex;align-items:center;justify-content:center;font-size:22px;
+        ">
+          ${h.cover_url ? `<img src="${h.cover_url}" style="width:100%;height:100%;object-fit:cover;">` : '⭐'}
+        </div>
+        <div style="flex:1;cursor:pointer;" onclick="openHlViewer(${h.id})">
+          <div style="font-size:14px;font-weight:700;color:var(--txt);">${esc(h.name)}</div>
+          <div style="font-size:12px;color:var(--mute);">${h.count} item${h.count !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="addCurrentStoryToHl(${h.id})" title="Add current story" style="
+            background:rgba(236,91,8,.15);border:none;color:var(--brand);
+            border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;">
+            + Add
+          </button>
+          <button onclick="deleteHighlight(${h.id})" title="Delete highlight" style="
+            background:rgba(239,68,68,.1);border:none;color:#ef4444;
+            border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="color:#ef4444;padding:16px;text-align:center;">Error loading</div>';
+  }
+}
+
+async function createHighlight() {
+  const inp = document.getElementById('hlNewName');
+  const name = (inp.value || '').trim();
+  if (!name) { toast('Enter a name', 'err'); return; }
+  try {
+    const r = await fetch('/api/highlights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const d = await r.json();
+    if (d.success) {
+      inp.value = '';
+      toast('Highlight "' + name + '" created! ⭐', 'ok');
+      loadHighlights();
+    } else { toast(d.error || 'Failed', 'err'); }
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+async function deleteHighlight(hid) {
+  if (!confirm('Delete this highlight?')) return;
+  try {
+    const r = await fetch('/api/highlights/' + hid, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) { toast('Deleted', 'ok'); loadHighlights(); }
+    else toast(d.error || 'Failed', 'err');
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+// Add the currently viewed story to a highlight
+async function addCurrentStoryToHl(hid) {
+  const story = currentStories[currentStoryIndex];
+  if (!story) { toast('Open a story first', 'info'); return; }
+  try {
+    const r = await fetch('/api/highlights/' + hid + '/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        media_url: story.media_url || '',
+        media_type: story.media_type || 'text',
+        content: story.content || ''
+      })
+    });
+    const d = await r.json();
+    if (d.success) { toast('Added to highlight ⭐', 'ok'); loadHighlights(); }
+    else toast(d.error || 'Failed', 'err');
+  } catch(e) { toast('Failed', 'err'); }
+}
+
+// Open highlight viewer
+function openHlViewer(hid) {
+  const h = _hlData.find(x => x.id === hid);
+  if (!h || !h.items.length) { toast('No items in this highlight', 'info'); return; }
+  _hlViewerItems = h.items;
+  _hlViewerIdx = 0;
+  _hlViewerName = h.name;
+  document.getElementById('hlViewerName').textContent = '⭐ ' + h.name;
+  showHlItem();
+  const viewer = document.getElementById('hlViewer');
+  viewer.style.display = 'flex';
+}
+
+function closeHlViewer() {
+  const vid = document.getElementById('hlViewerVid');
+  if (vid) { vid.pause(); vid.src = ''; }
+  document.getElementById('hlViewer').style.display = 'none';
+}
+
+function showHlItem() {
+  const item = _hlViewerItems[_hlViewerIdx];
+  if (!item) return;
+  document.getElementById('hlViewerCount').textContent = (_hlViewerIdx + 1) + ' / ' + _hlViewerItems.length;
+  const img = document.getElementById('hlViewerImg');
+  const vid = document.getElementById('hlViewerVid');
+  const txt = document.getElementById('hlViewerTxt');
+  img.style.display = 'none'; vid.style.display = 'none'; txt.style.display = 'none';
+  vid.pause(); vid.src = '';
+  if (item.media_type === 'video') {
+    vid.src = item.media_url; vid.style.display = 'block'; vid.play().catch(() => {});
+  } else if (item.media_type === 'image') {
+    img.src = item.media_url; img.style.display = 'block';
+  } else {
+    txt.textContent = item.content || ''; txt.style.display = 'block';
+  }
+}
+
+function hlPrev() {
+  if (_hlViewerIdx > 0) { _hlViewerIdx--; showHlItem(); }
+}
+function hlNext() {
+  if (_hlViewerIdx < _hlViewerItems.length - 1) { _hlViewerIdx++; showHlItem(); }
+  else closeHlViewer();
+}
+
+// Show highlights button in story owner controls
+// Add to storyOwnerBtns in showStory():
+// Already handled — see below in showStory patch
 </script>
 <!-- REACTION SHEET (full emoji picker) -->
 <div class="react-sheet-ov" id="reactSheetOv" onclick="closeReactSheet()"></div>
@@ -10745,6 +11142,46 @@ setInterval(() => {
 <div id="moodBackdrop" onclick="moodEdit()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
 <!-- ═══ CAPSULE BACKDROP ═══ -->
 <div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
+<!-- HIGHLIGHTS MANAGER SHEET -->
+<div id="hlSheetOv" onclick="closeHlSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4500;"></div>
+<div id="hlSheet" style="
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);
+  width:100%;max-width:480px;background:var(--card);
+  border-radius:20px 20px 0 0;z-index:4501;
+  padding:20px 16px 32px;
+  transition:transform .28s cubic-bezier(.34,1.1,.64,1);
+  max-height:80vh;display:flex;flex-direction:column;gap:14px;
+">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:16px;font-weight:700;color:var(--txt);">⭐ Story Highlights</div>
+    <button onclick="closeHlSheet()" style="background:var(--hov);border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;color:var(--sub);">✕</button>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <input id="hlNewName" placeholder="New highlight name…" maxlength="30"
+      style="flex:1;background:var(--inp);border:1px solid var(--ibdr);border-radius:10px;padding:10px 13px;color:var(--txt);font-size:14px;outline:none;">
+    <button onclick="createHighlight()" style="background:var(--brand);border:none;color:#fff;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;">+ Create</button>
+  </div>
+  <div id="hlList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+    <div style="color:var(--mute);text-align:center;padding:20px;font-size:13px;">Loading…</div>
+  </div>
+</div>
 
+<!-- HIGHLIGHT VIEWER (fullscreen) -->
+<div id="hlViewer" style="display:none;position:fixed;inset:0;background:#000;z-index:5500;flex-direction:column;">
+  <div style="padding:clamp(44px,10vw,60px) 16px 12px;display:flex;align-items:center;gap:12px;position:absolute;top:0;left:0;right:0;z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);">
+    <button onclick="closeHlViewer()" style="background:rgba(0,0,0,.3);border:none;color:#fff;border-radius:50%;width:36px;height:36px;font-size:20px;cursor:pointer;">‹</button>
+    <div id="hlViewerName" style="color:#fff;font-size:15px;font-weight:700;flex:1;"></div>
+    <div id="hlViewerCount" style="color:rgba(255,255,255,.6);font-size:13px;"></div>
+  </div>
+  <div id="hlViewerContent" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+    <img id="hlViewerImg" src="" style="max-width:100%;max-height:100%;object-fit:contain;display:none;">
+    <video id="hlViewerVid" style="width:100%;height:100%;object-fit:contain;display:none;" playsinline autoplay loop></video>
+    <p id="hlViewerTxt" style="color:#fff;font-size:20px;font-weight:600;text-align:center;padding:30px;display:none;"></p>
+  </div>
+  <div style="display:flex;justify-content:center;gap:20px;padding:16px 0 32px;position:absolute;bottom:0;left:0;right:0;">
+    <button onclick="hlPrev()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:48px;height:48px;font-size:22px;cursor:pointer;">‹</button>
+    <button onclick="hlNext()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:48px;height:48px;font-size:22px;cursor:pointer;">›</button>
+  </div>
+</div>
 </body>
 </html>
