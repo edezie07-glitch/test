@@ -2805,10 +2805,36 @@ def get_sid(user_id):
 
 @socketio.on('call_offer')
 def handle_call_offer(data):
-    """Caller sends SDP offer to receiver."""
     if 'user_id' not in session:
         return
-    caller_id = session['user_id']  # always int from session
+    caller_id = session['user_id']
+    caller = User.query.get(caller_id)
+    if not caller:
+        return
+
+    # Check if this is a group call
+    group_id = data.get('group_id')
+    if group_id:
+        # Ring ALL members of the group simultaneously
+        members = GroupMember.query.filter_by(group_id=group_id).all()
+        for m in members:
+            if m.user_id == caller_id:
+                continue
+            sid = get_sid(m.user_id)
+            if sid:
+                socketio.emit('incoming_call', {
+                    'caller_id': caller_id,
+                    'caller_name': caller.username,
+                    'caller_avatar': caller.avatar_url or '',
+                    'offer': data.get('offer'),
+                    'call_type': data.get('call_type', 'voice'),
+                    'group_id': group_id,
+                    'group_name': data.get('group_name', ''),
+                    'is_group_call': True
+                }, room=sid)
+        return
+
+    # Regular 1-on-1 call
     try:
         callee_id = int(data.get('callee_id', 0))
     except (ValueError, TypeError):
@@ -2817,10 +2843,6 @@ def handle_call_offer(data):
 
     if not callee_id:
         emit('call_error', {'message': 'Invalid user'})
-        return
-
-    caller = User.query.get(caller_id)
-    if not caller:
         return
 
     if not are_friends(caller_id, callee_id):
@@ -2834,10 +2856,9 @@ def handle_call_offer(data):
             'caller_name': caller.username,
             'caller_avatar': caller.avatar_url or '',
             'offer': data.get('offer'),
-            'call_type': data.get('call_type', 'voice')
+            'call_type': data.get('call_type', 'voice'),
+            'is_group_call': False
         }, room=sid)
-    # Do NOT emit call_error when offline — caller just keeps ringing
-
 @socketio.on('call_answer')
 def handle_call_answer(data):
     """Receiver accepts or rejects the call."""
@@ -2914,9 +2935,22 @@ def handle_call_end(data):
         else:
             socketio.emit('call_ended', {'by_user_id': user_id}, room=sid)
 
-# ============================================================
-# READ RECEIPTS
-# ============================================================
+@app.route('/api/highlights/user/<int:uid>')
+@login_required
+def get_user_highlights(uid):
+    """Get highlights for any user (public-facing)"""
+    hl = StoryHighlight.query.filter_by(user_id=uid).order_by(StoryHighlight.created_at).all()
+    result = []
+    for h in hl:
+        items = StoryHighlightItem.query.filter_by(highlight_id=h.id).order_by(StoryHighlightItem.added_at).all()
+        result.append({
+            'id': h.id,
+            'name': h.name,
+            'cover_url': h.cover_url,
+            'items': [{'media_url': i.media_url, 'media_type': i.media_type, 'content': i.content} for i in items],
+            'count': len(items)
+        })
+    return jsonify({'success': True, 'highlights': result})
 
 @socketio.on('mark_read')
 def handle_mark_read(data):
