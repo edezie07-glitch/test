@@ -2438,7 +2438,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       "></div>
     </div>
     <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;">
-    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="none"></video>
+    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="auto"></video>
     <p id="storyText" style="
       font-size:22px;font-weight:600;color:#fff;
       text-align:center;padding:40px 24px;
@@ -2559,10 +2559,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
 
-      <!-- ✂️ Edit & Cut button — visible for all videos -->
-      <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
-        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Edit & Cut</button>
-      </div>
+      <div id="SC_trimBtnWrap" style="display:none;"></div>
 
       <!-- Text story background + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#ec5b08,#d44e07);"></div>
@@ -3146,13 +3143,13 @@ async function saveProfile(){
     // Sync avatar in settings
     const sav=document.getElementById('sav');
     if(sav){
-      if(data.avatar_url){
+      if(d.avatar_url){
         sav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar" onerror="this.remove()">
           <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;" onclick="event.stopPropagation();openSettingsAvatarEdit()">⋮</div>`;
         sav.style.fontSize='0';
       } else {
         // No avatar — show initial letter
-        const un = data.username || '{{ user.username }}';
+        const un = d.username || '{{ user.username }}';
         sav.textContent = un[0].toUpperCase();
         sav.style.fontSize = '';
       }
@@ -3193,7 +3190,8 @@ function connectSocket(){
       // Always notify for messages from others — new friends, existing friends, groups
       if(msg.sender_id!==ME_ID){
         if(!isDNDActive()){
-          showInAppNotif(msg.sender_username, preview, msg.chat_id, msg.sender_id);
+          // Messages: toast only — no history (history = friend requests, mentions, etc.)
+          showMsgToast(msg.sender_username, preview, msg.chat_id, msg.sender_id);
           if(prefs.sound) playChatNotifSound(msg.chat_id);
         }
       }
@@ -3264,7 +3262,17 @@ function connectSocket(){
   });
   // A friend updated their profile/avatar — refresh friend list so name/avatar is current
   socket.on('profile_updated',(data)=>{
-    loadFriends();
+    // Update friend avatar immediately in memory, no full server reload needed
+    if(data&&data.user_id&&data.avatar_url){
+      friends.forEach(f=>{ if(f.id===data.user_id) f.avatar_url=data.avatar_url; });
+      if(currentFriendId===data.user_id){
+        const chav=document.getElementById('chav');
+        if(chav) chav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`;
+      }
+      renderFriends();
+    } else {
+      loadFriends();
+    }
   });
   socket.on('friend_status_updated',(data)=>{
     // Update status display in friend list — re-render will pick it up from profileCache
@@ -5289,7 +5297,9 @@ function buildCrowEl(f){
   el.innerHTML=`
     <div class="av" style="position:relative;">
       ${isOnline?'<div class="online-dot"></div>':''}
-      ${f.username[0].toUpperCase()}
+      ${f.avatar_url
+        ? `<img src="${f.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.remove()">`
+        : f.username[0].toUpperCase()}
     </div>
     <div class="cmeta">
       <div class="cnrow">
@@ -5458,10 +5468,17 @@ function _openChatUnlockedReal(fid,fname,chatId){
   currentChatId=chatId;currentFriendId=fid;
   currentGroupId=null;currentGroupChatId=null;  // clear group state
   const chav=document.getElementById('chav');
-  chav.textContent=fname[0].toUpperCase();
-  chav.style.background='';  // use CSS default
-  chav.style.fontSize='';
-  chav.onclick=showFriendProfile;  // restore friend profile click
+  const _f4chat=friends.find(x=>x.id===fid);
+  if(_f4chat&&_f4chat.avatar_url){
+    chav.innerHTML=`<img src="${_f4chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.innerHTML='${fname[0].toUpperCase()}'">`;
+    chav.style.fontSize='0';
+  } else {
+    chav.innerHTML='';
+    chav.textContent=fname[0].toUpperCase();
+    chav.style.fontSize='';
+  }
+  chav.style.background='';
+  chav.onclick=showFriendProfile;
   document.getElementById('chnm').textContent=fname;
   const isOnline=onlineUsers.has(fid);
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
@@ -6124,6 +6141,46 @@ function nowNotifTime(){
 }
 
 // ── Main entry: show toast (3s) + save permanently to panel ──
+// ── showMsgToast: shows top bubble ONLY — no history save (for incoming messages) ──
+function showMsgToast(name, text, chatId, userId){
+  if(_isChatMuted(chatId)) return;
+  const stack=document.getElementById('notifStack');
+  if(!stack) return;
+  const key=chatId||('__msg_'+name);
+  const existing=stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
+  if(existing){
+    existing.querySelector('.notif-text').textContent=text;
+    clearTimeout(_notifTimer[key]);
+    _notifTimer[key]=setTimeout(()=>_dismissToast(existing),3000);
+    return;
+  }
+  const el=document.createElement('div');
+  el.className='notif-bubble';
+  el.setAttribute('data-notif-key',key);
+  el.style.cursor='pointer';
+  el.innerHTML=`
+    <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
+    <div class="notif-body">
+      <div class="notif-name" data-uid="${userId||''}" data-cid="${chatId||''}">${esc(name)}</div>
+      <div class="notif-text">${esc(text)}</div>
+    </div>
+    <div class="notif-time">${nowNotifTime()}</div>
+  `;
+  el.querySelector('.notif-name').addEventListener('click',ev=>{
+    ev.stopPropagation();
+    _openUserProfile(parseInt(ev.currentTarget.dataset.uid)||null,name);
+  });
+  el.addEventListener('click',ev=>{
+    if(ev.target.closest('.notif-name')) return;
+    _dismissToast(el);
+    _notifNavigate(chatId);
+  });
+  stack.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  if(prefs.sound) beep();
+  _notifTimer[key]=setTimeout(()=>_dismissToast(el),3000);
+}
+
 function showInAppNotif(name, text, chatId, userId){
   // 1. Check if this chat is muted — if so, save to history but skip the toast
   const _muteKey = chatId || null;
@@ -6682,6 +6739,13 @@ async function saveCroppedAvatar(){
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
+        // Tell all friends to refresh your avatar immediately
+        if(typeof socket!=='undefined'&&socket&&socket.connected){
+          socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        }
+        // Also refresh our own friend entries in the list
+        friends.forEach(f=>{ if(f.id===ME_ID) f.avatar_url=d.avatar_url; });
+        if(typeof renderFriends==='function') renderFriends();
       } else toast(d.error||'Upload failed','err');
       if(btn){ btn.disabled=false; btn.textContent='Save'; }
     },'image/jpeg',0.92);
@@ -7472,7 +7536,10 @@ function showStory(){
         vidEl.ontimeupdate = ()=>{
           if(!_storyPaused && vidEl.currentTime >= end - 0.1) nextStory();
         };
-        vidEl.play().catch(()=>{});
+        // Restore sound — viewer always plays with audio
+        vidEl.muted = false;
+        vidEl.volume = 1.0;
+        vidEl.play().catch(()=>{ vidEl.muted=true; vidEl.play().catch(()=>{}); });
       };
       vidEl.onended = ()=>{ if(!_storyPaused) nextStory(); };
       vidEl.src = story.media_url;
