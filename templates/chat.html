@@ -2438,7 +2438,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       "></div>
     </div>
     <img id="storyImage" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;">
-    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="none"></video>
+    <video id="storyVideo" style="width:100%;height:100%;object-fit:contain;display:none;position:relative;z-index:1;" playsinline preload="auto"></video>
     <p id="storyText" style="
       font-size:22px;font-weight:600;color:#fff;
       text-align:center;padding:40px 24px;
@@ -2559,10 +2559,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
 
-      <!-- ✂️ Edit & Cut button — visible for all videos -->
-      <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
-        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Edit & Cut</button>
-      </div>
+      <div id="SC_trimBtnWrap" style="display:none;"></div>
 
       <!-- Text story background + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#ec5b08,#d44e07);"></div>
@@ -3146,13 +3143,13 @@ async function saveProfile(){
     // Sync avatar in settings
     const sav=document.getElementById('sav');
     if(sav){
-      if(data.avatar_url){
+      if(d.avatar_url){
         sav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar" onerror="this.remove()">
           <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;" onclick="event.stopPropagation();openSettingsAvatarEdit()">⋮</div>`;
         sav.style.fontSize='0';
       } else {
         // No avatar — show initial letter
-        const un = data.username || '{{ user.username }}';
+        const un = d.username || '{{ user.username }}';
         sav.textContent = un[0].toUpperCase();
         sav.style.fontSize = '';
       }
@@ -3193,7 +3190,8 @@ function connectSocket(){
       // Always notify for messages from others — new friends, existing friends, groups
       if(msg.sender_id!==ME_ID){
         if(!isDNDActive()){
-          showInAppNotif(msg.sender_username, preview, msg.chat_id, msg.sender_id);
+          // Messages: toast only — no history (history = friend requests, mentions, etc.)
+          showMsgToast(msg.sender_username, preview, msg.chat_id, msg.sender_id);
           if(prefs.sound) playChatNotifSound(msg.chat_id);
         }
       }
@@ -3264,7 +3262,17 @@ function connectSocket(){
   });
   // A friend updated their profile/avatar — refresh friend list so name/avatar is current
   socket.on('profile_updated',(data)=>{
-    loadFriends();
+    // Update friend avatar immediately in memory, no full server reload needed
+    if(data&&data.user_id&&data.avatar_url){
+      friends.forEach(f=>{ if(f.id===data.user_id) f.avatar_url=data.avatar_url; });
+      if(currentFriendId===data.user_id){
+        const chav=document.getElementById('chav');
+        if(chav) chav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`;
+      }
+      renderFriends();
+    } else {
+      loadFriends();
+    }
   });
   socket.on('friend_status_updated',(data)=>{
     // Update status display in friend list — re-render will pick it up from profileCache
@@ -5289,7 +5297,9 @@ function buildCrowEl(f){
   el.innerHTML=`
     <div class="av" style="position:relative;">
       ${isOnline?'<div class="online-dot"></div>':''}
-      ${f.username[0].toUpperCase()}
+      ${f.avatar_url
+        ? `<img src="${f.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.remove()">`
+        : f.username[0].toUpperCase()}
     </div>
     <div class="cmeta">
       <div class="cnrow">
@@ -5458,10 +5468,17 @@ function _openChatUnlockedReal(fid,fname,chatId){
   currentChatId=chatId;currentFriendId=fid;
   currentGroupId=null;currentGroupChatId=null;  // clear group state
   const chav=document.getElementById('chav');
-  chav.textContent=fname[0].toUpperCase();
-  chav.style.background='';  // use CSS default
-  chav.style.fontSize='';
-  chav.onclick=showFriendProfile;  // restore friend profile click
+  const _f4chat=friends.find(x=>x.id===fid);
+  if(_f4chat&&_f4chat.avatar_url){
+    chav.innerHTML=`<img src="${_f4chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.innerHTML='${fname[0].toUpperCase()}'">`;
+    chav.style.fontSize='0';
+  } else {
+    chav.innerHTML='';
+    chav.textContent=fname[0].toUpperCase();
+    chav.style.fontSize='';
+  }
+  chav.style.background='';
+  chav.onclick=showFriendProfile;
   document.getElementById('chnm').textContent=fname;
   const isOnline=onlineUsers.has(fid);
   document.getElementById('chsub').textContent=isOnline?'Online':'Friend';
@@ -6124,6 +6141,46 @@ function nowNotifTime(){
 }
 
 // ── Main entry: show toast (3s) + save permanently to panel ──
+// ── showMsgToast: shows top bubble ONLY — no history save (for incoming messages) ──
+function showMsgToast(name, text, chatId, userId){
+  if(_isChatMuted(chatId)) return;
+  const stack=document.getElementById('notifStack');
+  if(!stack) return;
+  const key=chatId||('__msg_'+name);
+  const existing=stack.querySelector(`[data-notif-key="${CSS.escape(key)}"]`);
+  if(existing){
+    existing.querySelector('.notif-text').textContent=text;
+    clearTimeout(_notifTimer[key]);
+    _notifTimer[key]=setTimeout(()=>_dismissToast(existing),3000);
+    return;
+  }
+  const el=document.createElement('div');
+  el.className='notif-bubble';
+  el.setAttribute('data-notif-key',key);
+  el.style.cursor='pointer';
+  el.innerHTML=`
+    <div class="notif-av">${(name||'?')[0].toUpperCase()}</div>
+    <div class="notif-body">
+      <div class="notif-name" data-uid="${userId||''}" data-cid="${chatId||''}">${esc(name)}</div>
+      <div class="notif-text">${esc(text)}</div>
+    </div>
+    <div class="notif-time">${nowNotifTime()}</div>
+  `;
+  el.querySelector('.notif-name').addEventListener('click',ev=>{
+    ev.stopPropagation();
+    _openUserProfile(parseInt(ev.currentTarget.dataset.uid)||null,name);
+  });
+  el.addEventListener('click',ev=>{
+    if(ev.target.closest('.notif-name')) return;
+    _dismissToast(el);
+    _notifNavigate(chatId);
+  });
+  stack.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  if(prefs.sound) beep();
+  _notifTimer[key]=setTimeout(()=>_dismissToast(el),3000);
+}
+
 function showInAppNotif(name, text, chatId, userId){
   // 1. Check if this chat is muted — if so, save to history but skip the toast
   const _muteKey = chatId || null;
@@ -6682,6 +6739,13 @@ async function saveCroppedAvatar(){
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
+        // Tell all friends to refresh your avatar immediately
+        if(typeof socket!=='undefined'&&socket&&socket.connected){
+          socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        }
+        // Also refresh our own friend entries in the list
+        friends.forEach(f=>{ if(f.id===ME_ID) f.avatar_url=d.avatar_url; });
+        if(typeof renderFriends==='function') renderFriends();
       } else toast(d.error||'Upload failed','err');
       if(btn){ btn.disabled=false; btn.textContent='Save'; }
     },'image/jpeg',0.92);
@@ -7193,127 +7257,111 @@ async function loadFriendsToBlock(){
 }
 async function blockUser(userId){if(!confirm('Block this user? They won\'t be able to message you.'))return;try{const r=await fetch('/api/blocklist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User blocked','ok');closeAddBlock();loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
 async function unblockUser(userId){if(!confirm('Unblock this user?'))return;try{const r=await fetch('/api/blocklist/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:userId})});const d=await r.json();if(d.success){toast('✅ User unblocked','ok');loadBlocklist();loadFriends();}else toast(d.error||'Failed','err');}catch(e){toast('Failed','err');}}
-// ═══════════════════════════════════════════════════════════════════════
-// RENOVATED STORY + CALL CODE  —  drop-in replacement
-// ═══════════════════════════════════════════════════════════════════════
-//
-// STORY FIXES:
-//  1. Video in trimmer plays SILENTLY (muted) — no sound unless on editor page
-//  2. After "Save Clip" → instantly jumps back to editor (page 1) with a live
-//     looping preview of ONLY the trimmed segment, muted on editor, full sound
-//     only when the story actually plays in the viewer
-//  3. When closeStoryViewer() fires → video is fully stopped + src cleared +
-//     mediaSession cleared → no sound leaks, no phone notification
-//  4. Navigating back from trimmer without saving → no audio left playing
-//
-// CALL FIXES:
-//  5. A ⌄ "Minimize" button slides the call screen down to a thin bar at the
-//     bottom so the user can go back to chats / use the app normally
-//  6. The mini-bar shows: avatar + name + live timer + mute + end
-//  7. Tapping the mini-bar brings the full call back up
-//
-// ═══════════════════════════════════════════════════════════════════════
-
 // ═══════ STORIES ═══════
-let currentStories=[], currentStoryIndex=0, currentStoryUserId=null;
-
-async function loadStories(){
-  try{
-    const r=await fetch('/api/stories/friends');
-    const d=await r.json();
-    if(d.success) renderStoriesBar(d.stories);
-  }catch(e){ console.error('Failed to load stories',e); }
-}
-
+let currentStories=[],currentStoryIndex=0,currentStoryUserId=null;
+async function loadStories(){try{const r=await fetch('/api/stories/friends');const d=await r.json();if(d.success)renderStoriesBar(d.stories);}catch(e){console.error('Failed to load stories',e);}}
 // ── Stories popup system ──
-let _lastStories=[];
+let _lastStories = [];
 
 function renderStoriesBar(stories){
-  _lastStories=stories||[];
+  _lastStories = stories || [];
 
-  // Mobile panel vertical list
-  const list=document.getElementById('storiesPopupList');
+  // ── Mobile panel: vertical list ──
+  const list = document.getElementById('storiesPopupList');
   if(list){
-    let html='';
-    html+=`<div class="sp-add-row" onclick="closeStoriesPanel();openCreateStoryModal();">
+    let html = '';
+
+    // My story row at top
+    html += `<div class="sp-add-row" onclick="closeStoriesPanel();openCreateStoryModal();">
       <div class="sp-av sp-av-add">+</div>
-      <div class="sp-info"><div class="sp-name">Your Story</div><div class="sp-time">Tap to add</div></div>
+      <div class="sp-info">
+        <div class="sp-name">Your Story</div>
+        <div class="sp-time">Tap to add</div>
+      </div>
     </div>`;
-    if(_lastStories.length>0){
-      html+=_lastStories.map(s=>{
-        const init=s.username[0].toUpperCase();
-        const ring=s.has_unviewed?'unviewed':'viewed';
-        const timeStr=s.stories&&s.stories[0]?relTime(s.stories[0].created_at):'';
-        const count=s.stories?s.stories.length:0;
-        const spBg=s.avatar_url?`style="background-image:url('${s.avatar_url}');background-size:cover;background-position:center;"` :'';
+
+    if(_lastStories.length > 0){
+      html += _lastStories.map(s => {
+        const init = s.username[0].toUpperCase();
+        const ring = s.has_unviewed ? 'unviewed' : 'viewed';
+        const timeStr = s.stories && s.stories[0] ? relTime(s.stories[0].created_at) : '';
+        const count = s.stories ? s.stories.length : 0;
+        const spAvatarBg = s.avatar_url
+          ? `style="background-image:url('${s.avatar_url}');background-size:cover;background-position:center;"`
+          : '';
         return `<div class="sp-story-row" onclick="closeStoriesPanel();openStory(${s.user_id});">
-          <div class="sp-av" ${spBg}>
+          <div class="sp-av" ${spAvatarBg}>
             <div class="sp-ring ${ring}"></div>
-            ${s.avatar_url?'':init}
+            ${s.avatar_url ? '' : init}
           </div>
           <div class="sp-info">
             <div class="sp-name">${esc(s.username)}</div>
             <div class="sp-time">${count} stor${count===1?'y':'ies'} · ${timeStr}</div>
           </div>
-          ${s.has_unviewed?'<div style="width:10px;height:10px;border-radius:50%;background:var(--brand);flex-shrink:0;"></div>':''}
+          ${s.has_unviewed ? '<div style="width:10px;height:10px;border-radius:50%;background:var(--brand);flex-shrink:0;"></div>' : ''}
         </div>`;
       }).join('');
-    }else{
-      html+=`<div style="padding:24px 16px;text-align:center;color:var(--mute);font-size:13px;">
-        <div style="font-size:28px;margin-bottom:8px;">📖</div>No stories from friends yet</div>`;
+    } else {
+      html += `<div style="padding:24px 16px;text-align:center;color:var(--mute);font-size:13px;">
+        <div style="font-size:28px;margin-bottom:8px;">📖</div>
+        No stories from friends yet
+      </div>`;
     }
-    list.innerHTML=html;
+
+    list.innerHTML = html;
   }
 
-  // Desktop sidebar horizontal scroll
-  const scroll=document.getElementById('storiesScroll');
+  // ── Desktop sidebar: horizontal circle scroll ──
+  const scroll = document.getElementById('storiesScroll');
   if(scroll){
-    let sbHtml=`<div style="cursor:pointer;text-align:center;flex-shrink:0;width:62px;" onclick="openCreateStoryModal()">
+    let sbHtml = `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:62px;" onclick="openCreateStoryModal()">
       <div style="width:50px;height:50px;border-radius:50%;padding:2px;background:rgba(236,91,8,.2);border:2px dashed var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto;box-sizing:border-box;">
         <div style="width:100%;height:100%;border-radius:50%;background:var(--hov);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--brand);">+</div>
       </div>
       <div style="font-size:9px;margin-top:4px;color:var(--mute);">Add</div>
     </div>`;
-    if(_lastStories.length>0){
-      sbHtml+=_lastStories.map(s=>{
-        const avatarInner=s.avatar_url
-          ?`<img src="${s.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none'">`
-          :`<span style="font-size:16px;font-weight:700;color:#fff;">${s.username[0].toUpperCase()}</span>`;
-        const ringStyle=s.has_unviewed
-          ?'padding:2.5px;background:linear-gradient(135deg,#ec5b08,#f59e0b);'
-          :'padding:2px;background:rgba(255,255,255,.15);';
-        const ringClass=s.has_unviewed?'class="story-ring-unviewed"':'';
+    if(_lastStories.length > 0){
+      sbHtml += _lastStories.map(s => {
+        const bdr = s.has_unviewed ? 'var(--brand)' : 'var(--bdr)';
+        const bw  = s.has_unviewed ? '2.5px' : '1.5px';
+        const avatarInner = s.avatar_url
+          ? `<img src="${s.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none'">`
+          : `<span style="font-size:16px;font-weight:700;color:#fff;">${s.username[0].toUpperCase()}</span>`;
+        const ringStyle = s.has_unviewed
+          ? 'padding:2.5px;background:linear-gradient(135deg,#ec5b08,#f59e0b);'
+          : 'padding:2px;background:rgba(255,255,255,.15);';
+        const ringClass = s.has_unviewed ? 'class="story-ring-unviewed"' : '';
         return `<div style="cursor:pointer;text-align:center;flex-shrink:0;width:66px;" onclick="openStory(${s.user_id})">
           <div ${ringClass} style="width:56px;height:56px;border-radius:50%;${ringStyle}margin:0 auto;box-sizing:border-box;">
-            <div style="width:100%;height:100%;border-radius:50%;background:var(--brand);overflow:hidden;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg);">${avatarInner}</div>
+            <div style="width:100%;height:100%;border-radius:50%;background:var(--brand);overflow:hidden;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--bg);">
+              ${avatarInner}
+            </div>
           </div>
-          <div style="font-size:9px;margin-top:5px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:64px;font-weight:${s.has_unviewed?'700':'400'};">${esc(s.username)}</div>
+          <div style="font-size:9px;margin-top:5px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:64px;font-weight:${s.has_unviewed ? '700' : '400'};">${esc(s.username)}</div>
         </div>`;
       }).join('');
     }
-    scroll.innerHTML=sbHtml;
+    scroll.innerHTML = sbHtml;
   }
 
-  // Unviewed dot on arrow button
-  const hasUnviewed=_lastStories.some(s=>s.has_unviewed);
-  const dot=document.getElementById('storiesUnviewedDot');
-  if(dot) dot.style.display=hasUnviewed?'block':'none';
+  // ── Unviewed dot on arrow button ──
+  const hasUnviewed = _lastStories.some(s => s.has_unviewed);
+  const dot = document.getElementById('storiesUnviewedDot');
+  if(dot) dot.style.display = hasUnviewed ? 'block' : 'none';
 }
 
 function openStoriesPanel(){
   document.getElementById('storiesPopupOv').classList.add('show');
   requestAnimationFrame(()=>document.getElementById('storiesPopup').classList.add('show'));
 }
-
 function closeStoriesPanel(){
   document.getElementById('storiesPopup').classList.remove('show');
   document.getElementById('storiesPopupOv').classList.remove('show');
 }
-
-let _storyOpening=false;
+let _storyOpening = false; // prevent double-open
 async function openStory(userId){
   if(_storyOpening) return;
-  _storyOpening=true;
+  _storyOpening = true;
   closeStoriesPanel();
   try{
     const r=await fetch('/api/stories/friends');
@@ -7332,229 +7380,224 @@ async function openStory(userId){
   }
   _storyOpening=false;
 }
-
 // ── Story viewer state ──
-let _storyTimer=null;
-let _storyPaused=false;
-let _storyRemaining=0;
-let _storyStartTime=0;
-
-const STORY_DURATION_VIDEO=30000;
-const STORY_DURATION_MEDIA=15000;
-const STORY_DURATION_TEXT=15000;
-
+let _storyTimer = null;
+let _storyPaused = false;
+let _storyRemaining = 0;
+let _storyStartTime = 0;
+// Story duration: 30s for video, 15s for image/text
+const STORY_DURATION_VIDEO  = 30000; // 30 seconds
+const STORY_DURATION_MEDIA  = 15000; // 15 seconds for image
+const STORY_DURATION_TEXT   = 15000; // 15 seconds for text
 function getStoryDuration(story){
-  if(story&&story.media_type==='video') return STORY_DURATION_VIDEO;
+  if(story && story.media_type === 'video') return STORY_DURATION_VIDEO;
   return STORY_DURATION_MEDIA;
-}
-
-// ── Kill ALL story audio and clear mediaSession ──
-// Called on close, on navigate-away, on trimmer open
-function _killStoryAudio(){
-  // Kill named audio element
-  const a=document.getElementById('storyBgAudio');
-  if(a){ try{a.pause();a.currentTime=0;a.src='';a.load();}catch(e){} a.remove(); }
-
-  // Kill any stray audio elements
-  document.querySelectorAll('audio[data-story]').forEach(el=>{
-    try{el.pause();el.src='';el.load();}catch(e){} el.remove();
-  });
-
-  // Clear phone notification / lock screen
-  if('mediaSession' in navigator){
-    try{ navigator.mediaSession.metadata=null; }catch(e){}
-    try{ navigator.mediaSession.playbackState='none'; }catch(e){}
-  }
-}
-
-// ── Kill story VIDEO (stop + flush src) ──
-function _killStoryVideo(){
-  const vid=document.getElementById('storyVideo');
-  if(!vid) return;
-  vid.onloadedmetadata=null;
-  vid.ontimeupdate=null;
-  vid.onended=null;
-  vid.oncanplaythrough=null;
-  vid.onerror=null;
-  try{ vid.pause(); }catch(e){}
-  vid.removeAttribute('src');
-  try{ vid.load(); }catch(e){}
-  vid.style.display='none';
-  vid.muted=true; // safety — never leave unmuted
 }
 
 function showStory(){
   if(!currentStories.length) return;
-  const story=currentStories[currentStoryIndex];
-  _storyPaused=false;
-  _storyRemaining=getStoryDuration(story);
+  const story = currentStories[currentStoryIndex];
+  _storyPaused = false;
+  _storyRemaining = getStoryDuration(story);
 
-  const viewer=document.getElementById('storyViewer');
-  viewer.style.opacity='0';
-  viewer.style.display='flex';
-  document.body.style.overflow='hidden';
+  // Prepare viewer (keep hidden until content is set)
+  const viewer = document.getElementById('storyViewer');
+  viewer.style.opacity = '0';
+  viewer.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 
-  document.getElementById('storyUsername').textContent=story.username;
-  document.getElementById('storyTime').textContent=relTime(story.created_at);
+  // Header
+  document.getElementById('storyUsername').textContent = story.username;
+  document.getElementById('storyTime').textContent = relTime(story.created_at);
 
-  const _susr=_lastStories.find(s=>s.user_id===currentStoryUserId);
-  const _savatar=_susr?_susr.avatar_url:null;
+  // Find avatar from stories list
+  const _susr   = _lastStories.find(s => s.user_id === currentStoryUserId);
+  const _savatar = _susr ? _susr.avatar_url : null;
 
-  const storyAvEl=document.getElementById('storyUserAvatar');
-  storyAvEl.innerHTML='';
-  storyAvEl.style.fontSize='16px';
+  // Set header avatar circle
+  const storyAvEl = document.getElementById('storyUserAvatar');
+  storyAvEl.innerHTML = '';
+  storyAvEl.style.fontSize = '16px';
   if(_savatar){
-    storyAvEl.innerHTML=`<img src="${_savatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove()">`;
-    storyAvEl.style.fontSize='0';
+    storyAvEl.innerHTML = `<img src="${_savatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove()">`;
+    storyAvEl.style.fontSize = '0';
   } else {
-    storyAvEl.textContent=story.username[0].toUpperCase();
+    storyAvEl.textContent = story.username[0].toUpperCase();
+    storyAvEl.style.fontSize = '16px';
   }
-
-  const avRing=document.getElementById('storyAvRing');
+  // Orange circle border = unviewed stories, dim = all viewed
+  const avRing = document.getElementById('storyAvRing');
   if(avRing){
-    const userStory=_lastStories.find(s=>s.user_id===currentStoryUserId);
-    const allViewed=userStory&&!userStory.has_unviewed;
-    avRing.style.background=allViewed?'rgba(255,255,255,.3)':'linear-gradient(135deg,#ec5b08,#f59e0b)';
-    avRing.style.boxShadow=allViewed?'none':'0 0 0 2px rgba(236,91,8,.35),0 2px 12px rgba(236,91,8,.4)';
+    const userStory = _lastStories.find(s => s.user_id === currentStoryUserId);
+    const allViewed = userStory && !userStory.has_unviewed;
+    avRing.style.background = allViewed
+      ? 'rgba(255,255,255,.3)'
+      : 'linear-gradient(135deg,#ec5b08,#f59e0b)';
+    avRing.style.boxShadow = allViewed
+      ? 'none'
+      : '0 0 0 2px rgba(236,91,8,.35),0 2px 12px rgba(236,91,8,.4)';
   }
 
-  const bgEl=document.getElementById('storyBgProfile');
+  // Set background profile picture layer
+  const bgEl = document.getElementById('storyBgProfile');
   if(bgEl){
     if(_savatar){
-      bgEl.style.backgroundImage=`url('${_savatar}')`;
-      bgEl.style.opacity='1';
+      bgEl.style.backgroundImage = `url('${_savatar}')`;
+      bgEl.style.opacity = '1';
     } else {
-      const hue=(story.username.charCodeAt(0)*7)%360;
-      bgEl.style.backgroundImage='none';
-      bgEl.style.background=`radial-gradient(ellipse at center, hsl(${hue},60%,30%) 0%, #000 75%)`;
-      bgEl.style.opacity='1';
-      bgEl.style.filter='none';
-      bgEl.style.transform='none';
+      // No avatar — use a gradient based on username initial as bg
+      const hue = (story.username.charCodeAt(0) * 7) % 360;
+      bgEl.style.backgroundImage = `none`;
+      bgEl.style.background = `radial-gradient(ellipse at center, hsl(${hue},60%,30%) 0%, #000 75%)`;
+      bgEl.style.opacity = '1';
+      bgEl.style.filter  = 'none';
+      bgEl.style.transform = 'none';
     }
   }
 
-  // Kill previous audio before starting new one
-  _killStoryAudio();
+  // Stop any previous audio
+  const prevAudio = document.getElementById('storyBgAudio');
+  if(prevAudio){ prevAudio.pause(); prevAudio.remove(); }
 
-  const bgLayer=document.getElementById('storyBgLayer');
-  const bgAvatar=document.getElementById('storyBgAvatar');
-  const bgGradient=document.getElementById('storyBgGradient');
-  const bgCircle=document.getElementById('storyBgCircle');
+  // ── Profile background layer ──────────────────────────
+  const bgLayer    = document.getElementById('storyBgLayer');
+  const bgAvatar   = document.getElementById('storyBgAvatar');
+  const bgGradient = document.getElementById('storyBgGradient');
+  const bgCircle   = document.getElementById('storyBgCircle');
   if(bgLayer){
-    bgLayer.style.display='flex';
-    if(bgAvatar&&_savatar){ bgAvatar.src=_savatar; bgAvatar.style.display='block'; }
-    else if(bgAvatar){ bgAvatar.style.display='none'; }
-    if(bgGradient) bgGradient.style.display='block';
+    bgLayer.style.display = 'flex';
+    if(bgAvatar && _savatar){
+      bgAvatar.src = _savatar;
+      bgAvatar.style.display = 'block';
+    } else if(bgAvatar){
+      bgAvatar.style.display = 'none';
+    }
+    if(bgGradient) bgGradient.style.display = 'block';
+    // Show circle avatar for text stories (no media)
     if(bgCircle){
       if(!story.media_url){
-        bgCircle.style.display='flex';
-        bgCircle.innerHTML=_savatar
-          ?`<img src="${_savatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.remove()">`
-          :story.username[0].toUpperCase();
+        bgCircle.style.display = 'flex';
+        bgCircle.innerHTML = '';
+        if(_savatar){
+          bgCircle.innerHTML = `<img src="${_savatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.remove()">`;
+        } else {
+          bgCircle.textContent = story.username[0].toUpperCase();
+        }
       } else {
-        bgCircle.style.display='none';
+        bgCircle.style.display = 'none';
       }
     }
   }
+  // ────────────────────────────────────────────────────────
 
-  const imgEl=document.getElementById('storyImage');
-  const vidEl=document.getElementById('storyVideo');
-  const textEl=document.getElementById('storyText');
-  imgEl.style.display='none';
-  vidEl.style.display='none';
-  textEl.style.display='none';
+  // Content
+  const imgEl  = document.getElementById('storyImage');
+  const vidEl  = document.getElementById('storyVideo');
+  const textEl = document.getElementById('storyText');
+  imgEl.style.display='none'; vidEl.style.display='none'; textEl.style.display='none';
 
-  const bgEl2=document.getElementById('storyBgProfile');
-  if(bgEl2&&!story.media_url){
-    bgEl2.style.filter='blur(18px) brightness(.35) saturate(1.4)';
-    bgEl2.style.opacity='1';
-  } else if(bgEl2&&story.media_url){
-    bgEl2.style.filter='blur(32px) brightness(.3) saturate(1.1)';
-    bgEl2.style.opacity='0.7';
+  // For text stories: make profile bg more prominent
+  const bgEl2 = document.getElementById('storyBgProfile');
+  if(bgEl2 && !story.media_url){
+    // Text story — larger, more visible avatar background
+    bgEl2.style.filter    = 'blur(18px) brightness(.35) saturate(1.4)';
+    bgEl2.style.opacity   = '1';
+  } else if(bgEl2 && story.media_url){
+    // Photo/video — very subtle blurred bg (media fills the screen)
+    bgEl2.style.filter    = 'blur(32px) brightness(.3) saturate(1.1)';
+    bgEl2.style.opacity   = '0.7';
   }
 
   if(story.media_url){
-    if(story.media_type==='video'){
-      // Reset video fully before loading
-      vidEl.onloadedmetadata=null;
-      vidEl.ontimeupdate=null;
-      vidEl.onended=null;
-      vidEl.oncanplaythrough=null;
+    if(story.media_type === 'video'){
+      // Fully reset video element before loading new source
+      vidEl.onloadedmetadata = null;
+      vidEl.ontimeupdate     = null;
+      vidEl.onended          = null;
+      vidEl.oncanplaythrough = null;
       vidEl.pause();
       vidEl.removeAttribute('src');
       vidEl.load();
 
-      vidEl.style.display='block';
-      const trimStart=story.trim_start||0;
-      const trimEnd=story.trim_end||null;
+      vidEl.style.display = 'block';
+      const trimStart = story.trim_start || 0;
+      const trimEnd   = story.trim_end   || null;
 
-      // Make sure video is UNMUTED in viewer (sound should play)
-      vidEl.muted=false;
-      vidEl.volume=1.0;
-
-      vidEl.oncanplaythrough=()=>{
-        vidEl.oncanplaythrough=null;
-        const total=vidEl.duration||30;
-        const end=trimEnd!=null?Math.min(trimEnd,total):Math.min(total,30);
-        const clipMs=Math.max(1000,Math.ceil((end-trimStart)*1000));
-        vidEl.currentTime=trimStart;
-        vidEl.muted=false; // confirm unmuted
-        vidEl.ontimeupdate=()=>{ if(!_storyPaused&&vidEl.currentTime>=end-0.1) nextStory(); };
+      vidEl.oncanplaythrough = ()=>{
+        vidEl.oncanplaythrough = null;
+        const total = vidEl.duration || 30;
+        const end   = trimEnd != null ? Math.min(trimEnd, total) : Math.min(total, 30);
+        const clipMs = Math.max(1000, Math.ceil((end - trimStart) * 1000));
+        vidEl.currentTime = trimStart;
+        if(clipMs !== _storyRemaining){
+          _storyRemaining = clipMs;
+          startStoryTimer();
+        }
+        vidEl.ontimeupdate = ()=>{
+          if(!_storyPaused && vidEl.currentTime >= end - 0.1) nextStory();
+        };
+        // Restore sound — viewer always plays with audio
+        vidEl.muted = false;
+        vidEl.volume = 1.0;
         vidEl.play().catch(()=>{ vidEl.muted=true; vidEl.play().catch(()=>{}); });
-        _storyRemaining=clipMs;
-        startStoryTimer();
       };
-      vidEl.onended=()=>{ if(!_storyPaused) nextStory(); };
-      vidEl.onerror=()=>{ startStoryTimer(); };
-      vidEl.src=story.media_url;
+      vidEl.onended = ()=>{ if(!_storyPaused) nextStory(); };
+      vidEl.src = story.media_url;
       vidEl.load();
     } else {
-      imgEl.src=story.media_url;
-      imgEl.style.display='block';
+      imgEl.src = story.media_url;
+      imgEl.style.display = 'block';
     }
   } else {
-    textEl.textContent=story.content||'';
-    textEl.style.display='block';
+    textEl.textContent = story.content;
+    textEl.style.display = 'block';
   }
 
-  // Background audio — only play if viewer is still showing
-  if(story.audio_url&&document.getElementById('storyViewer').style.display==='flex'){
-    const audio=document.createElement('audio');
-    audio.id='storyBgAudio';
-    audio.setAttribute('data-story','1');
-    audio.src=story.audio_url;
-    audio.loop=true;
-    audio.preload='auto';
-    audio.style.display='none';
-    // NEVER set mediaSession metadata
+  // Play background audio only if viewer is actually visible
+  if(story.audio_url && document.getElementById('storyViewer').style.display==='flex'){
+    const audio = document.createElement('audio');
+    audio.id = 'storyBgAudio';
+    audio.src = story.audio_url;
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.style.display = 'none';
     document.body.appendChild(audio);
-    setTimeout(()=>{
-      if(document.getElementById('storyViewer').style.display==='flex'){
-        audio.play().catch(()=>{});
-      }
-    },100);
-    const mn=document.getElementById('storyMusicNote');
-    if(mn){ mn.style.display='flex'; mn.textContent='🎵 '+(story.audio_name||''); }
+    // Small delay so it doesn't fire before viewer is shown
+    setTimeout(()=>{ if(document.getElementById('storyViewer').style.display==='flex') audio.play().catch(()=>{}); }, 100);
+    // Show music note
+    document.getElementById('storyMusicNote').style.display = 'flex';
+    document.getElementById('storyMusicNote').textContent = '🎵 ' + (story.audio_name||'');
   } else {
-    const mn=document.getElementById('storyMusicNote');
-    if(mn) mn.style.display='none';
+    document.getElementById('storyMusicNote').style.display = 'none';
+  }
+
+  // Owner controls
+  const ownerBtns = document.getElementById('storyOwnerBtns');
+  if(story.is_own){
+    ownerBtns.style.display = 'flex';
+  } else {
+    ownerBtns.style.display = 'none';
+    document.getElementById('storyViewers').innerHTML = '';
   }
 
   // Progress bars
-  const prog=document.getElementById('storyProgress');
-  prog.innerHTML=currentStories.map((_,i)=>
-    `<div style="flex:1;height:3px;border-radius:2px;overflow:hidden;background:rgba(255,255,255,.28);box-shadow:0 1px 2px rgba(0,0,0,.3);">
-      <div id="spb${i}" style="height:3px;border-radius:2px;background:rgba(255,255,255,.95);width:${i<currentStoryIndex?'100':'0'}%;transition:none;"></div>
+  const prog = document.getElementById('storyProgress');
+  prog.innerHTML = currentStories.map((_,i) =>
+    `<div style="flex:1;height:3px;border-radius:2px;overflow:hidden;
+        background:rgba(255,255,255,.28);box-shadow:0 1px 2px rgba(0,0,0,.3);">
+      <div id="spb${i}" style="height:3px;border-radius:2px;
+        background:rgba(255,255,255,.95);
+        width:${i<currentStoryIndex?'100':'0'}%;transition:none;"></div>
     </div>`
   ).join('');
 
-  // Fade in
+  // Fade viewer in smoothly now that content is ready
   requestAnimationFrame(()=>{
-    viewer.style.transition='opacity .2s ease';
-    viewer.style.opacity='1';
+    viewer.style.transition = 'opacity .2s ease';
+    viewer.style.opacity = '1';
   });
 
-  if(story.media_type!=='video') startStoryTimer();
+  startStoryTimer();
 
   fetch(`/api/stories/${story.id}/view`,{method:'POST'});
   if(story.is_own) loadStoryViewers(story.id);
@@ -7562,94 +7605,101 @@ function showStory(){
 
 function startStoryTimer(){
   clearTimeout(_storyTimer);
-  _storyStartTime=Date.now();
-  const bar=document.getElementById(`spb${currentStoryIndex}`);
+  _storyStartTime = Date.now();
+  const bar = document.getElementById(`spb${currentStoryIndex}`);
   if(bar){
-    bar.style.transition='none';
-    bar.style.width='0%';
-    bar.getBoundingClientRect(); // force reflow
-    bar.style.transition=`width ${_storyRemaining}ms linear`;
-    bar.style.width='100%';
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    // Force reflow then animate
+    bar.getBoundingClientRect();
+    bar.style.transition = `width ${_storyRemaining}ms linear`;
+    bar.style.width = '100%';
   }
-  _storyTimer=setTimeout(()=>nextStory(),_storyRemaining);
+  _storyTimer = setTimeout(()=>nextStory(), _storyRemaining);
 }
 
 function pauseStory(){
   if(_storyPaused) return;
-  _storyPaused=true;
-  _storyRemaining=Math.max(0,_storyRemaining-(Date.now()-_storyStartTime));
+  _storyPaused = true;
+  _storyRemaining -= (Date.now() - _storyStartTime);
   clearTimeout(_storyTimer);
-  const bar=document.getElementById(`spb${currentStoryIndex}`);
+  // Freeze progress bar
+  const bar = document.getElementById(`spb${currentStoryIndex}`);
   if(bar){
-    const w=getComputedStyle(bar).width;
-    bar.style.transition='none';
-    bar.style.width=w;
+    const computed = getComputedStyle(bar).width;
+    bar.style.transition = 'none';
+    bar.style.width = computed;
   }
-  const vid=document.getElementById('storyVideo');
-  if(vid&&!vid.paused) vid.pause();
-  const audio=document.getElementById('storyBgAudio');
-  if(audio&&!audio.paused) audio.pause();
+  // Pause video/audio
+  const vid = document.getElementById('storyVideo');
+  if(vid && !vid.paused) vid.pause();
+  const audio = document.getElementById('storyBgAudio');
+  if(audio && !audio.paused) audio.pause();
 }
 
 function resumeStory(){
   if(!_storyPaused) return;
-  _storyPaused=false;
-  const vid=document.getElementById('storyVideo');
-  if(vid&&vid.src&&vid.paused) vid.play().catch(()=>{});
-  const audio=document.getElementById('storyBgAudio');
-  if(audio&&audio.paused) audio.play().catch(()=>{});
+  _storyPaused = false;
+  const vid = document.getElementById('storyVideo');
+  if(vid) vid.play().catch(()=>{});
+  const audio = document.getElementById('storyBgAudio');
+  if(audio) audio.play().catch(()=>{});
   startStoryTimer();
 }
 
-let _longPressTimer=null;
+// Long-press to go fullscreen (native browser fullscreen API)
+let _longPressTimer = null;
 function storyLongPressStart(){
   pauseStory();
-  _longPressTimer=setTimeout(()=>{
-    const viewer=document.getElementById('storyViewer');
+  _longPressTimer = setTimeout(()=>{
+    const viewer = document.getElementById('storyViewer');
     if(viewer.requestFullscreen) viewer.requestFullscreen();
     else if(viewer.webkitRequestFullscreen) viewer.webkitRequestFullscreen();
-  },600);
+  }, 600);
 }
 function storyLongPressEnd(){
   clearTimeout(_longPressTimer);
   resumeStory();
 }
-
 async function loadStoryViewers(storyId){
-  const el=document.getElementById('storyViewers');
+  const el = document.getElementById('storyViewers');
   if(!el) return;
   try{
-    const r=await fetch(`/api/stories/${storyId}/viewers`);
-    const d=await r.json();
-    if(!d.success||d.count===0){ el.innerHTML=''; return; }
-    const avatars=d.viewers.slice(0,6).map(v=>
+    const r = await fetch(`/api/stories/${storyId}/viewers`);
+    const d = await r.json();
+    if(!d.success){ el.innerHTML=''; return; }
+    if(d.count === 0){ el.innerHTML='<div style="font-size:12px;color:var(--mute);padding:6px 0;">No views yet</div>'; return; }
+    // Count badge + avatar row
+    const avatars = d.viewers.slice(0,6).map(v=>
       `<div title="${esc(v.username)}" style="width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--card);margin-right:-6px;">${v.username[0].toUpperCase()}</div>`
     ).join('');
-    const names=d.viewers.slice(0,3).map(v=>esc(v.username)).join(', ')+(d.count>3?` +${d.count-3} more`:'');
-    el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;" onclick="showViewersList(${storyId})">
+    const names = d.viewers.slice(0,3).map(v=>esc(v.username)).join(', ')
+                  + (d.count > 3 ? ` +${d.count-3} more` : '');
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;" onclick="showViewersList(${storyId})">
       <div style="display:flex;padding-left:6px;">${avatars}</div>
       <div style="margin-left:8px;">
         <div style="font-size:12px;font-weight:600;color:var(--txt);">👁️ ${d.count} ${d.count===1?'view':'views'}</div>
         <div style="font-size:11px;color:var(--mute);">${names}</div>
       </div>
     </div>`;
-    el._viewers=d.viewers;
+    el._viewers = d.viewers; // cache for modal
   }catch(e){}
 }
 
 function showViewersList(storyId){
-  const el=document.getElementById('storyViewers');
+  const el = document.getElementById('storyViewers');
   if(!el||!el._viewers) return;
-  const list=el._viewers.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;">
+  const list = el._viewers.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;">
     <div style="width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${v.username[0].toUpperCase()}</div>
     <div>
       <div style="font-size:13px;font-weight:600;color:var(--txt);">${esc(v.username)}</div>
       <div style="font-size:11px;color:var(--mute);">${relTime(v.viewed_at)}</div>
     </div>
   </div>`).join('');
-  const sheet=document.getElementById('delSheet');
-  const ov=document.getElementById('delSheetOv');
-  sheet.innerHTML=`<div style="padding:14px 16px 8px;font-size:14px;font-weight:700;color:var(--txt);display:flex;justify-content:space-between;align-items:center;">
+  // Reuse del-sheet pattern for a quick modal
+  const sheet = document.getElementById('delSheet');
+  const ov    = document.getElementById('delSheetOv');
+  sheet.innerHTML = `<div style="padding:14px 16px 8px;font-size:14px;font-weight:700;color:var(--txt);display:flex;justify-content:space-between;align-items:center;">
     👁️ Viewers (${el._viewers.length})
     <button onclick="hideDelSheet()" style="border:none;background:transparent;font-size:20px;color:var(--mute);cursor:pointer;">✕</button>
   </div>
@@ -7657,169 +7707,197 @@ function showViewersList(storyId){
   ov.classList.add('show');
   requestAnimationFrame(()=>sheet.classList.add('show'));
 }
-
-// ── Story reactions and comments ──
+// ── Story reactions and comments ────────────────────────────
 function sendStoryReact(emoji){
-  const story=currentStories[currentStoryIndex];
+  const story = currentStories[currentStoryIndex];
   if(!story) return;
+  // Hide buttons from own story
   if(story.is_own){ toast('This is your story','info'); return; }
-  const chatId=[Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-');
-  // Send as DM so it appears in both users' inboxes
-  if(socket&&socket.connected){
-    socket.emit('send_message',{chat_id:chatId,content:emoji+' reacted to your story',message_type:'text'});
-  } else {
-    fetch('/api/messages/send',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({chat_id:chatId,content:emoji+' reacted to your story',type:'text'})}).catch(()=>{});
-  }
+  // Send as a DM to story owner
+  fetch('/api/messages/send',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      chat_id: [Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-'),
+      content: emoji + ' reacted to your story',
+      type: 'text'
+    })
+  }).catch(()=>{});
+  // Animate the emoji flying up
   _storyEmojiPop(emoji);
-  toast('Sent! Check DMs 📬','ok');
 }
 
 function sendStoryComment(){
-  const story=currentStories[currentStoryIndex];
+  const story = currentStories[currentStoryIndex];
   if(!story) return;
-  const inp=document.getElementById('storyCommentInput');
-  const txt=(inp.value||'').trim();
+  const inp = document.getElementById('storyCommentInput');
+  const txt = (inp.value||'').trim();
   if(!txt) return;
   if(story.is_own){ toast('This is your own story','info'); inp.value=''; return; }
   inp.value='';
-  const chatId=[Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-');
-  if(socket&&socket.connected){
-    socket.emit('send_message',{chat_id:chatId,content:'💬 Replied to your story: "'+txt+'"',message_type:'text'});
-  } else {
-    fetch('/api/messages/send',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({chat_id:chatId,content:'💬 Replied to your story: "'+txt+'"',type:'text'})}).catch(()=>{});
-  }
-  toast('Sent! Check DMs 📬','ok');
+  // Send as DM to story owner
+  fetch('/api/messages/send',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      chat_id: [Math.min(ME_ID,story.user_id),Math.max(ME_ID,story.user_id)].join('-'),
+      content: '💬 "'+txt+'"',
+      type:'text'
+    })
+  }).catch(()=>{});
+  toast('Sent!','ok');
 }
 
 function _storyEmojiPop(emoji){
-  const el=document.createElement('div');
-  el.textContent=emoji;
-  el.style.cssText='position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:40px;z-index:5100;pointer-events:none;animation:storyEmojiFloat 1s ease-out forwards;';
+  const el = document.createElement('div');
+  el.textContent = emoji;
+  el.style.cssText = `position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+    font-size:40px;z-index:5100;pointer-events:none;
+    animation:storyEmojiFloat 1s ease-out forwards;`;
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),1000);
 }
 
 function prevStory(){
   clearTimeout(_storyTimer);
-  if(currentStoryIndex>0){ currentStoryIndex--; showStory(); }
-  else{ currentStoryIndex=0; showStory(); }
+  if(currentStoryIndex > 0){ currentStoryIndex--; showStory(); }
+  // if at first, just restart it
+  else { currentStoryIndex = 0; showStory(); }
 }
-
 function nextStory(){
   clearTimeout(_storyTimer);
-  if(currentStoryIndex<currentStories.length-1){ currentStoryIndex++; showStory(); }
-  else{ closeStoryViewer(); }
+  if(currentStoryIndex < currentStories.length - 1){ currentStoryIndex++; showStory(); }
+  else { closeStoryViewer(); }
 }
-
-// ── closeStoryViewer — fully kill all media, no sound leak, no phone notification ──
 function closeStoryViewer(){
   clearTimeout(_storyTimer);
-  _storyPaused=false;
+  _storyPaused = false;
 
   // Exit fullscreen if active
-  if(document.fullscreenElement||document.webkitFullscreenElement){
+  if(document.fullscreenElement || document.webkitFullscreenElement){
     (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
   }
 
-  // Kill ALL audio
-  _killStoryAudio();
+  // Stop ALL audio
+  const audio = document.getElementById('storyBgAudio');
+  if(audio){ audio.pause(); audio.src=''; audio.remove(); }
 
-  // Kill story video completely
-  _killStoryVideo();
-
-  // Reset all background layers
-  const bgProfile=document.getElementById('storyBgProfile');
-  if(bgProfile){
-    bgProfile.style.opacity='0';
-    bgProfile.style.backgroundImage='none';
-    bgProfile.style.background='none';
+  // Stop video fully
+  const vid = document.getElementById('storyVideo');
+  if(vid){
+    vid.onloadedmetadata=null; vid.ontimeupdate=null;
+    vid.onended=null; vid.oncanplaythrough=null;
+    vid.pause();
+    vid.removeAttribute('src');
+    vid.load(); // flush buffer
+    vid.style.display='none';
   }
-  const bgLayer=document.getElementById('storyBgLayer');
-  if(bgLayer) bgLayer.style.display='none';
-  const bgAvatar=document.getElementById('storyBgAvatar');
+
+  // Reset background layers
+  const bgProfile = document.getElementById('storyBgProfile');
+  if(bgProfile){ bgProfile.style.opacity='0'; bgProfile.style.backgroundImage='none'; bgProfile.style.background='none'; }
+
+  const bgLayer = document.getElementById('storyBgLayer');
+  if(bgLayer){ bgLayer.style.display='none'; }
+
+  const bgAvatar = document.getElementById('storyBgAvatar');
   if(bgAvatar){ bgAvatar.src=''; bgAvatar.style.display='none'; }
-  const bgCircle=document.getElementById('storyBgCircle');
+
+  const bgCircle = document.getElementById('storyBgCircle');
   if(bgCircle){ bgCircle.style.display='none'; bgCircle.innerHTML=''; }
 
-  // Reset image and text
-  const img=document.getElementById('storyImage');
+  // Reset image
+  const img = document.getElementById('storyImage');
   if(img){ img.src=''; img.style.display='none'; }
-  const txt=document.getElementById('storyText');
+
+  // Reset text
+  const txt = document.getElementById('storyText');
   if(txt){ txt.textContent=''; txt.style.display='none'; }
 
   // Hide viewer
-  const sv=document.getElementById('storyViewer');
-  sv.style.opacity='0';
-  sv.style.transition='none';
-  sv.style.display='none';
+  const sv = document.getElementById('storyViewer');
+  sv.style.opacity = '0';
+  sv.style.transition = 'none';
+  sv.style.display = 'none';
+  document.body.style.overflow = '';
+  currentStories = [];
+  currentStoryIndex = 0;
 
-  document.body.style.overflow='';
-  currentStories=[];
-  currentStoryIndex=0;
   loadStories();
 }
 
 // ── Delete own story ──
 async function deleteCurrentStory(){
-  const story=currentStories[currentStoryIndex];
-  if(!story||!story.is_own) return;
+  const story = currentStories[currentStoryIndex];
+  if(!story || !story.is_own) return;
   if(!confirm('Delete this story?')) return;
   try{
-    const r=await fetch(`/api/stories/${story.id}/delete`,{method:'DELETE'});
-    const d=await r.json();
-    if(d.success){ toast('Story deleted','ok'); closeStoryViewer(); }
-    else toast(d.error||'Failed to delete','err');
-  }catch(e){ toast('Error: '+e.message,'err'); }
+    const r = await fetch(`/api/stories/${story.id}/delete`,{method:'DELETE'});
+    const d = await r.json();
+    if(d.success){
+      toast('Story deleted','ok');
+      closeStoryViewer();
+    } else {
+      toast(d.error||'Failed to delete','err');
+    }
+  } catch(e){ toast('Error: '+e.message,'err'); }
 }
 
 // ── Edit story privacy ──
-let _privacyStoryId=null;
+let _privacyStoryId = null;
 function editStoryPrivacy(){
-  const story=currentStories[currentStoryIndex];
+  const story = currentStories[currentStoryIndex];
   if(!story||!story.is_own) return;
-  _privacyStoryId=story.id;
-  clearTimeout(_storyTimer);
+  _privacyStoryId = story.id;
+  clearTimeout(_storyTimer); // pause auto-advance while editing
   document.getElementById('privacySheetOv').classList.add('show');
   requestAnimationFrame(()=>document.getElementById('privacySheet').classList.add('show'));
 }
 function closePrivacySheet(){
   document.getElementById('privacySheet').classList.remove('show');
   document.getElementById('privacySheetOv').classList.remove('show');
-  if(_storyRemaining>0) startStoryTimer();
+  // resume story timer
+  // Resume from where we left off (respects video vs photo/text duration)
+  if(_storyRemaining > 0) startStoryTimer();
 }
 async function setStoryPrivacy(privacy){
   if(!_privacyStoryId) return;
   try{
-    const r=await fetch(`/api/stories/${_privacyStoryId}/privacy`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({privacy})
+    const r = await fetch(`/api/stories/${_privacyStoryId}/privacy`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({privacy})
     });
-    const d=await r.json();
-    if(d.success) toast(`Privacy set to ${privacy}`,'ok');
+    const d = await r.json();
+    if(d.success){ toast(`Privacy set to ${privacy}`,'ok'); }
     else toast(d.error||'Failed','err');
-  }catch(e){ toast('Error','err'); }
+  } catch(e){ toast('Error','err'); }
   closePrivacySheet();
 }
-
 // ══════════════════════════════════════════════
-// STORY CREATOR — multi-page fullscreen flow
+// STORY CREATOR — multi-page flow
 // ══════════════════════════════════════════════
-
-const SC={
-  type:null,mediaFile:null,mediaType:null,mediaURL:null,
-  audioFile:null,audioUrl:'',audioName:'',caption:'',
-  filter:'none',rotation:0,rotStartAngle:0,
-  camStream:null,toolsOpen:false,settingsOpen:false,
-  videoDuration:null,trimStart:0,trimEnd:null,
-  vidVolume:1.0,musicVolume:0.8,
-  trimVolume:1.0,trimMusicVolume:1.0,
-  trimSpeed:1.0,trimFilter:'',
-  musicTrimStart:0,musicTrimEnd:null,
-  _trimMusicAudio:null,_fromTrimmer:false,
+const SC = {
+  type: null,        // 'photo'|'camera'|'text'
+  mediaFile: null,   // File object (image or video)
+  mediaType: null,   // 'image'|'video'
+  mediaURL: null,    // object URL
+  audioFile: null,   // uploaded audio File (or null if library track)
+  audioUrl: '',      // library track URL or uploaded audio URL
+  audioName: '',     // display name for the track
+  caption: '',
+  filter: 'none',
+  rotation: 0,
+  rotStartAngle: 0,
+  camStream: null,
+  toolsOpen: false,
+  settingsOpen: false,
+  videoDuration: null,  // ms — actual duration of picked video
+  trimStart: 0,         // seconds
+  trimEnd: null,        // seconds (null = full length)
 };
 
+// Shortcut getElementById
 function $(id){ return document.getElementById(id); }
 
 // ─── Aliases ────────────────────────────────────────────
@@ -7834,30 +7912,15 @@ function scOpen(){
     filter:'none',rotation:0,rotStartAngle:0,
     toolsOpen:false,settingsOpen:false,
     videoDuration:null,trimStart:0,trimEnd:null,
-    vidVolume:1.0,musicVolume:0.8,
   });
   $('SC').style.display='flex';
   document.body.style.overflow='hidden';
   scPage(0);
 }
-
 function scClose(){
   scCloseCam();
   scStopSongPreview();
   scTrimStop();
-  // Kill SC video sound
-  const vid=$('SC_vid');
-  if(vid){ vid.pause(); vid.removeAttribute('src'); vid.load(); vid.style.display='none'; }
-  // Kill trimmer sound
-  const trimVid=$('SC_trimVid');
-  if(trimVid){ trimVid.pause(); trimVid.removeAttribute('src'); trimVid.load(); }
-  // Kill music
-  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
-  // Clear mediaSession
-  if('mediaSession' in navigator){
-    try{ navigator.mediaSession.metadata=null; }catch(e){}
-    try{ navigator.mediaSession.playbackState='none'; }catch(e){}
-  }
   $('SC').style.display='none';
   document.body.style.overflow='';
 }
@@ -7866,26 +7929,16 @@ function scClose(){
 function scPage(n){
   [0,1,2,3,4,5].forEach(i=>{
     const el=$('SC_p'+i);
-    if(el) el.style.display=(i===n)?'flex':'none';
+    if(el) el.style.display = i===n ? 'flex' : 'none';
   });
-  // When leaving trimmer page (5) → mute trimmer video
-  if(n!==5){
-    const tv=$('SC_trimVid');
-    if(tv){ try{tv.pause();}catch(e){} tv.muted=true; }
-  }
-  // When leaving editor page (1) → pause editor video
-  if(n!==1){
-    const ev=$('SC_vid');
-    if(ev){ try{ev.pause();}catch(e){} }
-  }
 }
 
 // ─── PAGE 0 → chooser actions ───────────────────────────
 function scChoose(type){
-  SC.type=type;
-  if(type==='photo'){
+  SC.type = type;
+  if(type === 'photo'){
     $('SC_galleryInput').click();
-  } else if(type==='camera'){
+  } else if(type === 'camera'){
     scOpenCam();
   } else {
     scSetupText();
@@ -7895,32 +7948,36 @@ function scChoose(type){
 
 // ─── Gallery picker ──────────────────────────────────────
 function scGalleryPicked(input){
-  const file=input.files[0]; if(!file) return;
-  const isVideo=file.type.startsWith('video/');
-  const maxBytes=isVideo?200*1024*1024:10*1024*1024;
-  if(file.size>maxBytes){
-    toast(isVideo?'Video too large (max 200 MB)':'Image too large (max 10 MB)','err');
+  const file = input.files[0]; if(!file) return;
+  const isVideo = file.type.startsWith('video/');
+
+  // File size guard
+  const maxBytes = isVideo ? 200*1024*1024 : 10*1024*1024;
+  if(file.size > maxBytes){
+    toast(isVideo ? 'Video too large (max 200 MB)' : 'Image too large (max 10 MB)', 'err');
     input.value=''; return;
   }
-  SC.mediaFile=file;
-  SC.mediaType=isVideo?'video':'image';
-  SC.mediaURL=URL.createObjectURL(file);
-  SC.type=isVideo?'video':'photo';
-  SC.trimStart=0;
-  SC.trimEnd=null;
+
+  SC.mediaFile = file;
+  SC.mediaType = isVideo ? 'video' : 'image';
+  SC.mediaURL  = URL.createObjectURL(file);
+  SC.type      = isVideo ? 'video' : 'photo';
+  SC.trimStart = 0;
+  SC.trimEnd   = null;
+
   if(isVideo){
-    const metaUrl=URL.createObjectURL(file);
-    const tmp=document.createElement('video');
-    tmp.preload='metadata';
-    tmp.onloadedmetadata=()=>{
+    const metaUrl = URL.createObjectURL(file);
+    const tmp = document.createElement('video');
+    tmp.preload = 'metadata';
+    tmp.onloadedmetadata = ()=>{
       URL.revokeObjectURL(metaUrl);
-      SC.videoDuration=tmp.duration;
-      SC.trimStart=0;
-      SC.trimEnd=Math.min(tmp.duration,30);
-      scLoadEditor();
+      SC.videoDuration = tmp.duration;
+      SC.trimStart = 0;
+      SC.trimEnd   = Math.min(tmp.duration, 30);
+      scLoadEditor(); // go to editor with video as background
     };
-    tmp.onerror=()=>{ URL.revokeObjectURL(metaUrl); scLoadEditor(); };
-    tmp.src=metaUrl;
+    tmp.onerror = ()=>{ URL.revokeObjectURL(metaUrl); scLoadEditor(); };
+    tmp.src = metaUrl;
   } else {
     scLoadEditor();
   }
@@ -7929,7 +7986,9 @@ function scGalleryPicked(input){
 // ─── Load the editor (page 1) ────────────────────────────
 function scLoadEditor(){
   scPage(1);
-  const img=$('SC_img'),vid=$('SC_vid'),tb=$('SC_textBg'),tx=$('SC_textBox'),cap=$('SC_caption');
+  const img=$('SC_img'), vid=$('SC_vid'), tb=$('SC_textBg'),
+        tx=$('SC_textBox'), cap=$('SC_caption');
+  // Reset all content elements
   img.style.display='none';
   vid.style.display='none';
   tb.style.display='none';
@@ -7942,104 +8001,150 @@ function scLoadEditor(){
   $('SC_tools').style.transform='translateY(100%)';
   $('SC_toolsOv').style.display='none';
   const asv=$('SC_arrowSvg'); if(asv) asv.style.transform='rotate(0deg)';
-  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{ const el=$(id); if(el)el.value=100; });
+  // Reset sliders
+  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{
+    const el=$(id); if(el)el.value=100;
+  });
   const sb=$('SC_slBlur'); if(sb)sb.value=0;
   const sw=$('SC_slWarm'); if(sw)sw.value=0;
-  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{ const el=$(id); if(el)el.textContent='100'; });
+  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{
+    const el=$(id); if(el)el.textContent='100';
+  });
   const sbv=$('SC_slBlurVal'); if(sbv)sbv.textContent='0.0';
   const swv=$('SC_slWarmVal'); if(swv)swv.textContent='0';
   SC.rotation=0; SC.rotStartAngle=0;
   img.style.filter='none'; img.style.transform='rotate(0deg)';
 
+  // Mount content
   if(SC.type==='text'){
     tb.style.display='block'; tx.style.display='block';
     setTimeout(()=>tx.focus(),300);
     _scHideVideoUI();
   } else if(SC.mediaType==='video'){
-    vid.onloadeddata=null; vid.oncanplaythrough=null; vid.onerror=null;
-    try{vid.pause();}catch(e){}
-    vid.src=''; vid.load();
-    vid.style.display='block';
-    vid.style.background='#000';
-    SC.vidVolume=1.0;
+    // Completely reset the video element
+    vid.onloadeddata    = null;
+    vid.oncanplaythrough= null;
+    vid.onerror         = null;
+    try{ vid.pause(); }catch(e){}
+    vid.src = '';
+    vid.load();
+    // Show the element immediately — black background while video loads
+    vid.style.display    = 'block';
+    vid.style.background = '#000';
+    // Set volume state NOW before src is assigned
+    SC.vidVolume = 1.0;
+    // Use a 60ms delay — enough for the DOM to stabilise after scPage(1)
     setTimeout(()=>{
-      vid.src=SC.mediaURL;
-      // Editor video is MUTED — sound only when story plays in viewer
-      vid.muted=true;
-      vid.volume=1.0;
-      vid.oncanplaythrough=()=>{
-        vid.oncanplaythrough=null;
+      vid.src    = SC.mediaURL;
+      vid.muted  = false;
+      vid.volume = 1.0;    // FULL original sound always on first load
+      // canplaythrough fires when enough data to play — most reliable event
+      vid.oncanplaythrough = ()=>{
+        vid.oncanplaythrough = null;
         vid.play().catch(()=>{});
         const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
       };
-      vid.onloadeddata=()=>{
-        vid.onloadeddata=null;
+      // Fallback: if canplaythrough never fires, play on loadeddata
+      vid.onloadeddata = ()=>{
+        vid.onloadeddata = null;
         vid.play().catch(()=>{});
         const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
       };
-      vid.onerror=()=>{ toast('Video could not load','err'); };
+      vid.onerror = ()=>{ toast('Video could not load — try a different format','err'); };
       vid.load();
-    },60);
+    }, 60);
     _scShowVideoUI();
   } else {
-    img.src=SC.mediaURL;
+    img.src = SC.mediaURL;
     img.style.display='block';
     img.style.filter='none'; SC.filter='none';
     _scHideVideoUI();
   }
+
+  // Reset song button label
   _scUpdateSongBtn();
 }
 
 function _scShowVideoUI(){
-  const durLabel=$('SC_vidDuration');
-  const trimBtnWrap=$('SC_trimBtnWrap');
-  const trimToolBtn=$('SC_trimToolBtn');
-  const vidCtrls=$('SC_videoControls');
-  if(trimBtnWrap) trimBtnWrap.style.display='block';
-  if(trimToolBtn){ trimToolBtn.style.display='flex'; trimToolBtn.style.flexDirection='column'; trimToolBtn.style.alignItems='center'; }
-  if(vidCtrls) vidCtrls.style.display='block';
-  const playBtn=$('SC_vidPlayBtn'); if(playBtn) playBtn.textContent='▶';
-  const curVol=(SC.vidVolume!==undefined)?SC.vidVolume:1.0;
-  const vvs=$('SC_vidVolSlider'); if(vvs) vvs.value=Math.round(curVol*100);
-  const vvv=$('SC_vidVolVal'); if(vvv) vvv.textContent=Math.round(curVol*100)+'%';
-  const vid=$('SC_vid');
-  if(vid){ vid.muted=true; } // always muted in editor
-  const musicRow=$('SC_musicVolRow'); if(musicRow) musicRow.style.display=SC.audioName?'block':'none';
-  if(SC.videoDuration!=null&&durLabel){
-    const totalS=SC.videoDuration;
-    const clipS=SC.trimEnd!=null?SC.trimEnd-SC.trimStart:totalS;
-    durLabel.textContent=totalS>30?'✂️ '+clipS.toFixed(1)+'s / '+totalS.toFixed(0)+'s total':clipS.toFixed(1)+'s';
-    durLabel.style.color='#fff';
-    durLabel.style.display='block';
-  } else if(durLabel){ durLabel.style.display='none'; }
+  const durLabel    = $('SC_vidDuration');
+  const trimBtnWrap = $('SC_trimBtnWrap');
+  const trimToolBtn = $('SC_trimToolBtn');
+  const vidCtrls    = $('SC_videoControls');
+
+  // Always show cut/edit + video controls for video
+  if(trimBtnWrap) trimBtnWrap.style.display = 'block';
+  if(trimToolBtn){
+    trimToolBtn.style.display       = 'flex';
+    trimToolBtn.style.flexDirection = 'column';
+    trimToolBtn.style.alignItems    = 'center';
+  }
+  if(vidCtrls) vidCtrls.style.display = 'block';
+
+  // Reset play button to ▶ (video not yet playing when tools open)
+  const playBtn = $('SC_vidPlayBtn');
+  if(playBtn) playBtn.textContent = '▶';
+
+  // Sync volume slider — default 100%
+  const curVol = (SC.vidVolume !== undefined) ? SC.vidVolume : 1.0;
+  const vvs = $('SC_vidVolSlider');
+  const vvv = $('SC_vidVolVal');
+  if(vvs) vvs.value = Math.round(curVol * 100);
+  if(vvv) vvv.textContent = Math.round(curVol * 100) + '%';
+  // Apply to video element
+  const vid = $('SC_vid');
+  if(vid){
+    vid.muted  = curVol === 0;
+    vid.volume = Math.min(1, curVol);
+  }
+  // Show/reset music vol row
+  const musicRow = $('SC_musicVolRow');
+  if(musicRow) musicRow.style.display = SC.audioName ? 'block' : 'none';
+
+
+
+  // Duration badge
+  if(SC.videoDuration != null && durLabel){
+    const totalS = SC.videoDuration;
+    const clipS  = SC.trimEnd != null ? SC.trimEnd - SC.trimStart : totalS;
+    durLabel.textContent = totalS > 30
+      ? '✂️ '+clipS.toFixed(1)+'s / '+totalS.toFixed(0)+'s total'
+      : clipS.toFixed(1)+'s';
+    durLabel.style.color   = '#fff';
+    durLabel.style.display = 'block';
+  } else if(durLabel){ durLabel.style.display = 'none'; }
 }
 
+// Play/Stop the editor preview video
 function scEditorTogglePlay(){
-  const vid=$('SC_vid'),btn=$('SC_vidPlayBtn');
+  const vid = $('SC_vid'), btn = $('SC_vidPlayBtn');
   if(!vid) return;
   if(vid.paused){ vid.play().catch(()=>{}); if(btn) btn.textContent='⏸'; }
-  else{ vid.pause(); if(btn) btn.textContent='▶'; }
+  else           { vid.pause();              if(btn) btn.textContent='▶'; }
 }
 
+// Video sound volume (slider 0–100 → stored as 0.0–1.0)
 function scSetVidVol(v){
-  // Note: editor video stays MUTED — this controls the vol for when story plays
-  SC.vidVolume=parseInt(v)/100;
-  const lbl=$('SC_vidVolVal'); if(lbl) lbl.textContent=v+'%';
-  // Do NOT unmute the editor video here
+  const val = parseInt(v)/100;
+  const lbl = $('SC_vidVolVal'); if(lbl) lbl.textContent = v+'%';
+  const vid = $('SC_vid');
+  if(vid){
+    vid.muted  = (val === 0);
+    vid.volume = Math.min(1, val);
+  }
+  SC.vidVolume = val;
 }
 
+// Music (story audio) volume — stored and applied when posting
 function scSetMusicVol(v){
-  const lbl=$('SC_musicVolVal'); if(lbl) lbl.textContent=v+'%';
-  SC.musicVolume=parseInt(v)/100;
+  const lbl = $('SC_musicVolVal'); if(lbl) lbl.textContent = v+'%';
+  SC.musicVolume = parseInt(v)/100;
 }
-
 function _scHideVideoUI(){
-  const d=$('SC_vidDuration'),tw=$('SC_trimBtnWrap'),tb=$('SC_trimToolBtn');
-  if(d) d.style.display='none';
+  const d=$('SC_vidDuration'), tw=$('SC_trimBtnWrap'), tb=$('SC_trimToolBtn');
+  if(d)  d.style.display='none';
   if(tw) tw.style.display='none';
   if(tb) tb.style.display='none';
 }
-
 function _scUpdateSongBtn(){
   const lbl=$('SC_songBtnLabel');
   const sd=$('SC_songDisplay');
@@ -8049,12 +8154,27 @@ function _scUpdateSongBtn(){
     if(lbl) lbl.textContent=SC.audioName.substring(0,14)+(SC.audioName.length>14?'…':'');
     if(sd){ $('SC_songName').textContent=SC.audioName; sd.style.display='flex'; }
     if(banner){ curTitle.textContent=SC.audioName; banner.style.display='flex'; }
+    // Show music volume row when song is added
     const mr=$('SC_musicVolRow'); if(mr) mr.style.display='block';
+    // When music added, set video to 50% and music to 80% by default
+    const vid=$('SC_vid');
+    if(vid && vid.volume === 1.0){
+      vid.volume = 0.5;
+      const vvs=$('SC_vidVolSlider'); if(vvs) vvs.value=50;
+      const vvv=$('SC_vidVolVal');    if(vvv) vvv.textContent='50%';
+      SC.vidVolume = 0.5;
+    }
   } else {
     if(lbl) lbl.textContent='Add Song';
     if(sd) sd.style.display='none';
     if(banner) banner.style.display='none';
+    // Hide music vol row, restore video to 100%
     const mr=$('SC_musicVolRow'); if(mr) mr.style.display='none';
+    const vid=$('SC_vid');
+    if(vid){ vid.volume=1.0; vid.muted=false; }
+    const vvs=$('SC_vidVolSlider'); if(vvs) vvs.value=100;
+    const vvv=$('SC_vidVolVal');    if(vvv) vvv.textContent='100%';
+    SC.vidVolume=1.0;
   }
 }
 
@@ -8067,7 +8187,10 @@ function scSetupText(){
 function scOpenCam(){
   scPage(3);
   navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
-    .then(stream=>{ SC.camStream=stream; $('SC_camVid').srcObject=stream; })
+    .then(stream=>{
+      SC.camStream=stream;
+      $('SC_camVid').srcObject=stream;
+    })
     .catch(()=>{ toast('Camera not available','err'); scPage(0); });
 }
 function scCloseCam(){
@@ -8075,7 +8198,7 @@ function scCloseCam(){
   const cv=$('SC_camVid'); if(cv) cv.srcObject=null;
 }
 function scSnap(){
-  const vid=$('SC_camVid'),canvas=$('SC_snapCanvas');
+  const vid=$('SC_camVid'), canvas=$('SC_snapCanvas');
   canvas.width=vid.videoWidth; canvas.height=vid.videoHeight;
   canvas.getContext('2d').drawImage(vid,0,0);
   scCloseCam();
@@ -8090,9 +8213,8 @@ function scSnap(){
 
 // ─── Navigation ─────────────────────────────────────────
 function scBackToChooser(){
+  // From editor → back to page 0 chooser
   scCloseCam();
-  const vid=$('SC_vid');
-  if(vid){ vid.pause(); vid.removeAttribute('src'); vid.load(); }
   SC.mediaFile=null; SC.mediaURL=null; SC.mediaType=null; SC.type=null;
   SC.trimStart=0; SC.trimEnd=null; SC.videoDuration=null;
   scPage(0);
@@ -8102,10 +8224,23 @@ function scBackToEditor(){ scPage(1); }
 // ─── Tools panel ────────────────────────────────────────
 function scToggleTools(){
   SC.toolsOpen=!SC.toolsOpen;
-  const tools=$('SC_tools'),ov=$('SC_toolsOv'),svg=$('SC_arrowSvg');
+  const tools=$('SC_tools'), ov=$('SC_toolsOv'), svg=$('SC_arrowSvg');
   tools.style.transform=SC.toolsOpen?'translateY(0)':'translateY(100%)';
   ov.style.display=SC.toolsOpen?'block':'none';
   if(svg) svg.style.transform=SC.toolsOpen?'rotate(180deg)':'rotate(0deg)';
+  // When tools open: restore video volume to current setting
+  if(SC.toolsOpen && SC.mediaType==='video'){
+    const vid=$('SC_vid');
+    if(vid){
+      const v = SC.vidVolume !== undefined ? SC.vidVolume : 1.0;
+      vid.volume = Math.min(1, v);
+      vid.muted  = (v === 0);
+      // Sync slider
+      const sl=$('SC_vidVolSlider'), lbl=$('SC_vidVolVal');
+      if(sl)  sl.value = Math.round(v*100);
+      if(lbl) lbl.textContent = Math.round(v*100)+'%';
+    }
+  }
 }
 function scCloseTools(){
   SC.toolsOpen=false;
@@ -8122,12 +8257,14 @@ function scToggleSettings(){
 function scSettingsPrivacy(){
   SC.settingsOpen=false;
   $('SC_settings').style.display='none';
-  toast('Privacy set on share page','info');
+  // open privacy sheet (used from story viewer too)
+  if(typeof openPrivacySheet==='function') openPrivacySheet();
+  else toast('Privacy set on share page','info');
 }
 
 // ─── Delete menu ────────────────────────────────────────
-function scShowDeleteMenu(){ $('SC_delMenu').style.display='flex'; }
-function scHideDeleteMenu(){ $('SC_delMenu').style.display='none'; }
+function scShowDeleteMenu(){ const m=$('SC_delMenu'); m.style.display='flex'; }
+function scHideDeleteMenu(){ const m=$('SC_delMenu'); m.style.display='none'; }
 
 // ─── Contrast / Adjust ──────────────────────────────────
 function scShowContrast(){
@@ -8152,14 +8289,14 @@ function scApplyAdjust(){
   const img=$('SC_img'); if(img) img.style.filter=f;
 }
 function scResetAdjust(){
-  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{ const el=$(id); if(el)el.value=100; });
-  const b=$('SC_slBlur'); if(b)b.value=0;
-  const w=$('SC_slWarm'); if(w)w.value=0;
-  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{ const el=$(id); if(el)el.textContent='100'; });
-  const bv=$('SC_slBlurVal'); if(bv)bv.textContent='0.0';
-  const wv=$('SC_slWarmVal'); if(wv)wv.textContent='0';
+  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{const el=$(id);if(el)el.value=100;});
+  const b=$('SC_slBlur');if(b)b.value=0;
+  const w=$('SC_slWarm');if(w)w.value=0;
+  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{const el=$(id);if(el)el.textContent='100';});
+  const bv=$('SC_slBlurVal');if(bv)bv.textContent='0.0';
+  const wv=$('SC_slWarmVal');if(wv)wv.textContent='0';
   SC.filter='none';
-  const img=$('SC_img'); if(img) img.style.filter='none';
+  const img=$('SC_img');if(img)img.style.filter='none';
 }
 
 // ─── Caption ────────────────────────────────────────────
@@ -8178,11 +8315,21 @@ function scUpdateCaption(v){
 function scClearSong(){
   SC.audioFile=null; SC.audioUrl=''; SC.audioName='';
   _scUpdateSongBtn();
+  // Hide music vol row
   const mr=$('SC_musicVolRow'); if(mr) mr.style.display='none';
+  // Restore video to 100% when song removed
+  if(SC.mediaType==='video'){
+    SC.vidVolume=1.0;
+    const vid=$('SC_vid');
+    if(vid){ vid.volume=1.0; vid.muted=false; }
+    const sl=$('SC_vidVolSlider'), lbl=$('SC_vidVolVal');
+    if(sl) sl.value=100; if(lbl) lbl.textContent='100%';
+  }
+  if($('SC_p4').style.display==='flex') _scRenderSongList(_scLastSongQuery||'');
 }
 
 // ─── Song page (Page 4) ──────────────────────────────────
-let _scSongSearchTimer=null,_scLastSongQuery='',_scSongTracks=[],_scSongPreviewAudio=null;
+let _scSongSearchTimer=null, _scLastSongQuery='', _scSongTracks=[], _scSongPreviewAudio=null;
 
 function scOpenSongPage(){
   scCloseTools();
@@ -8206,7 +8353,7 @@ async function _scLoadSongs(q){
     const r=await fetch('/api/music/search?q='+encodeURIComponent(q||'')+'&limit=60');
     const d=await r.json();
     if(!d.success||!d.tracks.length){
-      list.innerHTML=`<div style="text-align:center;color:rgba(255,255,255,.35);padding:40px;font-size:13px;">${q?'No results for "'+escHtml(q)+'"':'No songs yet — upload the first one ☝️'}</div>`;
+      list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.35);padding:40px;font-size:13px;">'+(q?'No results for "'+escHtml(q)+'"':'No songs yet — upload the first one ☝️')+'</div>';
       return;
     }
     _scSongTracks=d.tracks;
@@ -8219,7 +8366,8 @@ function _scRenderSongList(q){
   const list=$('SC_songList');
   if(!list||!_scSongTracks.length) return;
   list.innerHTML=_scSongTracks.map(t=>_scSongRow(t)).join('');
-  const banner=$('SC_currentSongBanner'),title=$('SC_currentSongTitle');
+  // Update currently-selected banner
+  const banner=$('SC_currentSongBanner'), title=$('SC_currentSongTitle');
   if(SC.audioName){ banner.style.display='flex'; title.textContent=SC.audioName; }
   else banner.style.display='none';
 }
@@ -8229,14 +8377,20 @@ function _scSongRow(t){
     ?`<img src="${t.cover_url}" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;">`
     :`<div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#ec5b08,#d44e07);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎵</div>`;
   const isSelected=SC.audioUrl===t.audio_url;
-  return `<div onclick="scPickSongTrack(${t.id})" style="display:flex;align-items:center;gap:12px;padding:10px 10px;border-radius:14px;cursor:pointer;background:${isSelected?'rgba(236,91,8,.28)':'transparent'};border:1px solid ${isSelected?'rgba(236,91,8,.6)':'transparent'};transition:background .12s;">
+  return `<div onclick="scPickSongTrack(${t.id})" style="
+    display:flex;align-items:center;gap:12px;padding:10px 10px;border-radius:14px;cursor:pointer;
+    background:${isSelected?'rgba(236,91,8,.28)':'transparent'};
+    border:1px solid ${isSelected?'rgba(236,91,8,.6)':'transparent'};
+    transition:background .12s;" onmouseenter="if(!${isSelected})this.style.background='rgba(255,255,255,.07)'" onmouseleave="if(!${isSelected})this.style.background='transparent'">
     ${cover}
     <div style="flex:1;min-width:0;">
       <div style="color:#fff;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(t.title)}</div>
       <div style="color:rgba(255,255,255,.45);font-size:12px;margin-top:2px;">${escHtml(t.artist)}${t.genre?' · '+escHtml(t.genre):''}${dur?' · '+dur:''}</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
-      <button onclick="event.stopPropagation();scPreviewSong(${t.id},'${escHtml(t.title).replace(/'/g,"\\'")}','${escHtml(t.artist).replace(/'/g,"\\'")}','${t.audio_url}')" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;">▶</button>
+      <button onclick="event.stopPropagation();scPreviewSong(${t.id},'${escHtml(t.title).replace(/'/g,"\\'")}','${escHtml(t.artist).replace(/'/g,"\\'")}','${t.audio_url}')" style="
+        background:rgba(255,255,255,.1);border:none;color:#fff;
+        width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;">▶</button>
       ${isSelected?'<span style="color:#ec5b08;font-size:20px;font-weight:900;">✓</span>':''}
     </div>
   </div>`;
@@ -8249,17 +8403,25 @@ function scPickSongTrack(trackId){
   SC.audioFile=null;
   SC.audioUrl=t.audio_url;
   SC.audioName=t.title+' – '+t.artist;
+  // Auto-set video to 0% when music is added (user can adjust)
+  if(SC.mediaType==='video'){
+    SC.vidVolume=0;
+    const vid=$('SC_vid');
+    if(vid){ vid.volume=0; vid.muted=true; }
+    const sl=$('SC_vidVolSlider'), lbl=$('SC_vidVolVal');
+    if(sl) sl.value=0; if(lbl) lbl.textContent='0%';
+    const mr=$('SC_musicVolRow'); if(mr) mr.style.display='block';
+  }
   _scUpdateSongBtn();
   _scRenderSongList(_scLastSongQuery);
-  toast('🎵 '+t.title+' added','ok');
-  if(SC._fromTrimmer){ SC._fromTrimmer=false; scPage(5); scTrimAttachMusic(t.audio_url,t.title+' – '+t.artist); }
+  toast('🎵 '+t.title+' added — video muted, adjust below','ok');
 }
 function scPreviewSong(id,title,artist,url){
   scStopSongPreview();
   _scSongPreviewAudio=new Audio(url);
   _scSongPreviewAudio.volume=0.8;
   _scSongPreviewAudio.play().catch(()=>{});
-  const bar=$('SC_songPreviewBar'),pt=$('SC_songPreviewTitle'),pa=$('SC_songPreviewArtist');
+  const bar=$('SC_songPreviewBar'), pt=$('SC_songPreviewTitle'), pa=$('SC_songPreviewArtist');
   if(bar) bar.style.display='flex';
   if(pt) pt.textContent=title;
   if(pa) pa.textContent=artist;
@@ -8268,6 +8430,7 @@ function scStopSongPreview(){
   if(_scSongPreviewAudio){ _scSongPreviewAudio.pause(); _scSongPreviewAudio=null; }
   const bar=$('SC_songPreviewBar'); if(bar) bar.style.display='none';
 }
+// Legacy aliases (old music picker functions still called elsewhere)
 function scOpenMusicPicker(){ scOpenSongPage(); }
 function scCloseMusicPicker(){ scCloseSongPage(); }
 function scMusicSearch(q){ scSongSearch(q); }
@@ -8279,6 +8442,7 @@ function musicTrackRow(t){ return _scSongRow(t); }
 
 // ─── Music Upload (from song page) ──────────────────────
 let _muAudioFile=null;
+let _musicSearchTimer=null, _musicAllTracks=[], _musicPreviewAudio=null;
 function scOpenMusicUpload(){
   const ov=$('musicUploadOverlay');
   if(ov){ ov.style.display='flex'; _muAudioFile=null; }
@@ -8317,9 +8481,11 @@ async function muSubmit(){
     if(d.success){
       toast('🎵 Song uploaded!','ok');
       scCloseMusicUpload();
+      // Auto-select the uploaded track
       SC.audioFile=null; SC.audioUrl=d.track.audio_url;
       SC.audioName=d.track.title+' – '+d.track.artist;
       _scUpdateSongBtn();
+      // Reload song list
       await _scLoadSongs(_scLastSongQuery||'');
     } else toast(d.error||'Upload failed','err');
   }catch(e){ toast('Upload failed','err'); }
@@ -8334,38 +8500,15 @@ function scAudioPicked(input){
 function scPickSong(){ $('SC_audioInput').click(); }
 
 // ─── Video Trimmer (Page 5) ──────────────────────────────
-// HOW TRIMMING WORKS:
-//  • SC.trimStart / SC.trimEnd are the handles (seconds)
-//  • Video in trimmer is always MUTED — user sees what they're cutting, no sound
-//  • "Save Clip" button (scApplyTrim):
-//    1. Saves trimStart/trimEnd to SC
-//    2. Instantly goes back to editor page (scPage(1))
-//    3. Reloads editor preview showing ONLY the trimmed segment, looping, MUTED
-//    4. Updates duration badge to show the trimmed length
-//  • The actual trim is enforced server-side at post time (trim_start/trim_end)
-//    and client-side in the story viewer (ontimeupdate)
-
-let _trimDrag=null,_trimVidRAF=null,_cutPoints=[];
+let _trimDrag=null, _trimVidRAF=null;
 
 function scOpenTrimmer(){
   if(!SC.mediaFile||SC.mediaType!=='video'){ toast('No video loaded','err'); return; }
   scCloseTools();
-
-  // Kill any SC editor sound first
-  const edVid=$('SC_vid');
-  if(edVid){ try{edVid.pause();}catch(e){} }
-
-  // Kill music
-  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
-
-  // Clear mediaSession
-  if('mediaSession' in navigator){
-    try{ navigator.mediaSession.metadata=null; }catch(e){}
-    try{ navigator.mediaSession.playbackState='none'; }catch(e){}
-  }
-
-  // Reset controls
+  // Reset all controls
   _cutPoints=[];
+  _pitchVal=0;
+  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
   ['SC_pitchSlider','SC_speedSlider','SC_vidBrightness','SC_vidContrast'].forEach(id=>{
     const el=$(id); if(el){ el.value=id==='SC_speedSlider'?1:100; }
   });
@@ -8382,69 +8525,78 @@ function scOpenTrimmer(){
   const sName=$('SC_trimSongName'); if(sName){ sName.textContent=''; sName.style.display='none'; }
   const mw=$('SC_musicTrimWrap'); if(mw) mw.style.display='none';
 
+  // Show trimmer page
   scPage(5);
 
   const vid=$('SC_trimVid');
+  // Clean stop
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
-  try{vid.pause();}catch(e){}
-  vid.src=''; vid.load();
+  try{ vid.pause(); }catch(e){}
+  vid.src='';
+  vid.load();
 
+  // 80ms settle — enough for scPage(5) to fully render the container
   setTimeout(()=>{
-    vid.src=SC.mediaURL;
-    // Trimmer video is ALWAYS muted — no sound in trimmer
-    vid.muted=true;
-    vid.volume=0;
+    vid.src    = SC.mediaURL;
+    vid.muted  = false;   // hear original sound immediately
+    vid.volume = 1.0;
     vid.load();
 
-    vid.oncanplaythrough=()=>{
+    vid.oncanplaythrough = ()=>{
       vid.oncanplaythrough=null;
-      const total=vid.duration;
-      if(SC.trimEnd===null) SC.trimEnd=Math.min(total,30);
+      const total = vid.duration;
+      if(SC.trimEnd===null) SC.trimEnd = Math.min(total, 30);
       _trimUpdate(total);
       _renderCutPoints(total);
-      vid.currentTime=SC.trimStart||0;
+      vid.currentTime = SC.trimStart||0;
       vid.play().catch(()=>{});
       const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
       _startPlayheadLoop(vid);
     };
-    vid.onloadedmetadata=()=>{
-      const total=vid.duration;
-      if(SC.trimEnd===null) SC.trimEnd=Math.min(total,30);
+    // fallback: loadedmetadata fires earlier on some browsers
+    vid.onloadedmetadata = ()=>{
+      const total = vid.duration;
+      if(SC.trimEnd===null) SC.trimEnd = Math.min(total, 30);
       _trimUpdate(total);
     };
-    vid.onerror=()=>{ toast('Could not load video for editing','err'); };
-  },80);
+    vid.onerror = ()=>{ toast('Could not load video for editing','err'); };
+  }, 80);
 }
 
 function _startPlayheadLoop(vid){
   clearInterval(_trimVidRAF);
-  _trimVidRAF=setInterval(()=>{
+  _trimVidRAF = setInterval(()=>{
     if(vid.paused||!vid.duration) return;
-    const total=vid.duration;
-    const end=SC.trimEnd||total;
-    const start=SC.trimStart||0;
-    if(vid.currentTime>=end-0.05){ vid.currentTime=start; }
-    const ph=$('SC_trimPlayhead');
-    if(ph){
-      const progress=Math.max(0,Math.min(1,(vid.currentTime-start)/(end-start)));
-      const lPct=start/total*100;
-      const rPct=end/total*100;
-      ph.style.left=(lPct+(rPct-lPct)*progress)+'%';
+    const total = vid.duration;
+    const end   = SC.trimEnd||total;
+    const start = SC.trimStart||0;
+    // Loop within trim region
+    if(vid.currentTime >= end - 0.05){
+      vid.currentTime = start;
     }
-  },40);
+    // Move playhead
+    const ph = $('SC_trimPlayhead');
+    if(ph){
+      const progress = Math.max(0,Math.min(1,(vid.currentTime-start)/(end-start)));
+      const lPct = start/total*100;
+      const rPct = end/total*100;
+      ph.style.left = (lPct+(rPct-lPct)*progress)+'%';
+    }
+  }, 40);
 }
-
 function _trimUpdate(total){
-  const start=SC.trimStart,end=SC.trimEnd;
+  const start=SC.trimStart, end=SC.trimEnd;
   const dur=end-start;
   const lPct=start/total*100;
   const rPct=end/total*100;
-  const lh=$('SC_trimL'),rh=$('SC_trimR'),rg=$('SC_trimRegion');
+  // Handles
+  const lh=$('SC_trimL'), rh=$('SC_trimR'), rg=$('SC_trimRegion');
   if(lh) lh.style.left=lPct+'%';
   if(rh) rh.style.right=(100-rPct)+'%';
   if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
-  const sl=$('SC_trimStartLbl'),el=$('SC_trimEndLbl'),dl=$('SC_trimDurLbl'),tl=$('SC_trimTimeLabel');
+  // Labels
+  const sl=$('SC_trimStartLbl'), el=$('SC_trimEndLbl'), dl=$('SC_trimDurLbl'), tl=$('SC_trimTimeLabel');
   const fmt=s=>s.toFixed(1)+'s';
   if(sl) sl.textContent=fmt(start);
   if(el) el.textContent=fmt(end);
@@ -8455,7 +8607,6 @@ function _trimUpdate(total){
   }
   if(tl) tl.textContent=fmt(start)+' – '+fmt(end);
 }
-
 function scTrimBarClick(e){
   if(e.target.closest('#SC_trimL')||e.target.closest('#SC_trimR')) return;
   const bar=$('SC_trimBar');
@@ -8463,7 +8614,9 @@ function scTrimBarClick(e){
   const pct=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration) return;
-  vid.currentTime=Math.max(0,Math.min(vid.duration,pct*vid.duration));
+  const t=pct*vid.duration;
+  // Seek within trim region, or anywhere in the full bar
+  vid.currentTime=Math.max(0,Math.min(vid.duration,t));
 }
 function scTrimBarTouch(e){
   if(e.target.closest('#SC_trimL')||e.target.closest('#SC_trimR')) return;
@@ -8474,8 +8627,10 @@ function scTrimDragStart(e,side){
   e.preventDefault(); e.stopPropagation();
   _trimDrag=side;
   const vid=$('SC_trimVid');
+  // Pause while dragging so seek is smooth
   const wasPlaying=!vid.paused;
   vid.pause();
+
   const onMove=ev=>{
     ev.preventDefault&&ev.preventDefault();
     const clientX=ev.touches?ev.touches[0].clientX:ev.clientX;
@@ -8487,6 +8642,7 @@ function scTrimDragStart(e,side){
     if(side==='L'){
       t=Math.max(0,Math.min(SC.trimEnd-0.5,t));
       SC.trimStart=t;
+      // Seek to show user the start frame instantly
       vid.currentTime=t;
     } else {
       t=Math.min(total,Math.max(SC.trimStart+0.5,t));
@@ -8494,9 +8650,11 @@ function scTrimDragStart(e,side){
       const dur=SC.trimEnd-SC.trimStart;
       const hint=$('SC_trimHint');
       if(hint) hint.style.color=dur>30?'#ef4444':'rgba(255,255,255,.3)';
+      // Seek to end frame so user sees what's included
       vid.currentTime=t;
     }
     _trimUpdate(total);
+    // Update playhead position to match seek
     const ph=$('SC_trimPlayhead');
     if(ph){
       const lPct=(SC.trimStart/total)*100;
@@ -8505,67 +8663,104 @@ function scTrimDragStart(e,side){
       ph.style.left=(lPct+(rPct-lPct)*Math.max(0,Math.min(1,progress)))+'%';
     }
   };
+
   const onUp=()=>{
     _trimDrag=null;
     document.removeEventListener('mousemove',onMove);
     document.removeEventListener('mouseup',onUp);
     document.removeEventListener('touchmove',onMove);
     document.removeEventListener('touchend',onUp);
+    // Resume playback from the new start point
     vid.currentTime=SC.trimStart;
-    if(wasPlaying){ vid.play().catch(()=>{}); const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸'; }
+    if(wasPlaying){
+      vid.play().catch(()=>{});
+      const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
+    }
   };
+
   document.addEventListener('mousemove',onMove);
   document.addEventListener('mouseup',onUp);
   document.addEventListener('touchmove',onMove,{passive:false});
   document.addEventListener('touchend',onUp);
 }
-
 function scTrimStop(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
   if(vid){
     vid.onloadedmetadata=null; vid.oncanplaythrough=null; vid.onerror=null;
-    try{vid.pause();}catch(e){}
+    try{ vid.pause(); }catch(e){}
     vid.removeAttribute('src'); vid.load();
   }
   if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
-  // Clear mediaSession
-  if('mediaSession' in navigator){
-    try{ navigator.mediaSession.metadata=null; }catch(e){}
-    try{ navigator.mediaSession.playbackState='none'; }catch(e){}
+}
+
+// ── Pause/Play toggle ──────────────────────────────────
+function scTrimTogglePlay(){
+  const vid=$('SC_trimVid'), btn=$('SC_trimPlayPause');
+  if(!vid||!vid.src) return;
+  if(vid.paused){
+    vid.play().catch(()=>{});
+    if(btn) btn.textContent='⏸';
+    _startPlayheadLoop(vid);  // restart loop
+  } else {
+    vid.pause();
+    if(btn) btn.textContent='▶';
   }
 }
 
-function scTrimTogglePlay(){
-  const vid=$('SC_trimVid'),btn=$('SC_trimPlayPause');
-  if(!vid||!vid.src) return;
-  if(vid.paused){ vid.play().catch(()=>{}); if(btn) btn.textContent='⏸'; _startPlayheadLoop(vid); }
-  else{ vid.pause(); if(btn) btn.textContent='▶'; }
-}
-
-// ── Cut points ──
-let _pitchVal=0;
+// ── Cut points ─────────────────────────────────────────
+let _cutPoints = [];
 function scAddCutPoint(){
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration) return;
+
+  // Pause at the cut point so user sees exactly what was cut
   vid.pause();
   const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='▶';
-  const t=vid.currentTime;
+
+  const t = vid.currentTime;
   if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){ toast('Already cut here','info'); return; }
-  const snapped=Math.round(t*10)/10;
-  const prevCuts=[0,..._cutPoints,vid.duration];
-  let segStart=0,segEnd=vid.duration;
+
+  // Snap to nearest 0.1s for precision
+  const snapped = Math.round(t*10)/10;
+
+  // The cut splits the video at this point — set trim region to the segment
+  // containing the current playhead. By default, keep the FIRST segment (0 → cut).
+  // User can drag handles to choose which segment they want.
+  const prevCuts = [0, ..._cutPoints, vid.duration];
+  let segStart=0, segEnd=vid.duration;
   for(let i=0;i<prevCuts.length-1;i++){
-    if(snapped>prevCuts[i]&&snapped<=prevCuts[i+1]){ segStart=prevCuts[i]; segEnd=snapped; break; }
+    if(snapped > prevCuts[i] && snapped <= prevCuts[i+1]){
+      segStart=prevCuts[i]; segEnd=snapped;
+      break;
+    }
   }
-  _cutPoints.push(snapped); _cutPoints.sort((a,b)=>a-b);
+
+  _cutPoints.push(snapped);
+  _cutPoints.sort((a,b)=>a-b);
   _renderCutPoints(vid.duration);
-  SC.trimStart=segStart;
-  SC.trimEnd=Math.min(snapped,segStart+30);
+
+  // Update trim region to show the cut segment instantly
+  SC.trimStart = segStart;
+  SC.trimEnd   = Math.min(snapped, segStart + 30);
   _trimUpdate(vid.duration);
-  vid.currentTime=segStart;
+
+  // Seek to start of the cut segment so user sees it immediately
+  vid.currentTime = segStart;
+
+  // Flash the cut line red
+  const pct = (snapped/vid.duration)*100;
+  const cp=$('SC_cutPoints');
+  const flash = cp?cp.querySelector(`div[data-t="${snapped}"]`)||cp.lastElementChild:null;
+  if(flash){
+    flash.style.background='#fff';
+    flash.style.width='3px';
+    setTimeout(()=>{ flash.style.background='#ef4444'; flash.style.width='2px'; },300);
+  }
+
   toast('✂️ Cut at '+snapped.toFixed(1)+'s — drag handles to choose segment','ok');
 }
+
 function _renderCutPoints(total){
   const cp=$('SC_cutPoints'); if(!cp) return;
   cp.innerHTML='';
@@ -8573,77 +8768,136 @@ function _renderCutPoints(total){
     const pct=(t/total)*100;
     const mk=document.createElement('div');
     mk.dataset.t=t;
-    mk.style.cssText=`position:absolute;top:-4px;bottom:-4px;width:2px;background:#ef4444;z-index:4;pointer-events:none;left:${pct}%;`;
+    mk.style.cssText=`position:absolute;top:-4px;bottom:-4px;width:2px;background:#ef4444;z-index:4;pointer-events:none;left:${pct}%;transition:background .2s,width .2s;`;
+    // Small notch at top
     const notch=document.createElement('div');
-    notch.style.cssText='position:absolute;top:0;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#ef4444;';
+    notch.style.cssText=`position:absolute;top:0;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#ef4444;`;
     mk.appendChild(notch);
     cp.appendChild(mk);
   });
 }
 
-// ── Pitch ──
+// ── Pitch (Web Audio API playback rate + detune) ────────
+let _pitchVal = 0;
 function scUpdatePitch(v){
-  _pitchVal=parseFloat(v);
-  const lbl=$('SC_pitchVal'); if(lbl) lbl.textContent=(_pitchVal>=0?'+':'')+_pitchVal;
+  _pitchVal = parseFloat(v);
+  const lbl=$('SC_pitchVal');
+  if(lbl) lbl.textContent = (_pitchVal>=0?'+':'')+_pitchVal;
+  // Pitch via playbackRate is an approximation; true pitch shift needs WebAudio
+  // We store the value and apply it as a detune hint on the video
   const vid=$('SC_trimVid');
   if(vid){
-    const baseRate=parseFloat($('SC_speedSlider')?.value||1);
-    const pitchFactor=Math.pow(2,_pitchVal/12);
-    vid.playbackRate=Math.max(0.1,Math.min(4,baseRate*pitchFactor));
+    // Adjust playbackRate slightly to simulate pitch (±0.15 per semitone)
+    const baseRate = parseFloat($('SC_speedSlider')?.value||1);
+    // Pitch shift: each semitone ≈ 5.95% rate change
+    const pitchFactor = Math.pow(2, _pitchVal/12);
+    vid.playbackRate = Math.max(0.1, Math.min(4, baseRate * pitchFactor));
   }
 }
 
-// ── Volume (trimmer) ──
+// ── Volume ──────────────────────────────────────────────
 function scUpdateVol(v){
   const val=parseFloat(v)/100;
   const lbl=$('SC_volVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
-  // Trimmer video stays muted regardless — this sets post volume
+  const vid=$('SC_trimVid');
+  if(vid){ vid.muted=(val===0); vid.volume=Math.min(1,val); }
   SC.trimVolume=val;
 }
+
+// ── Music volume ────────────────────────────────────────
 function scUpdateMusicVol(v){
   const val=parseFloat(v)/100;
   const lbl=$('SC_musicVolVal'); if(lbl) lbl.textContent=Math.round(v)+'%';
-  if(SC._trimMusicAudio){ SC._trimMusicAudio.muted=(val===0); SC._trimMusicAudio.volume=Math.min(1,val); }
+  if(SC._trimMusicAudio){
+    SC._trimMusicAudio.muted=(val===0);
+    SC._trimMusicAudio.volume=Math.min(1,val);
+  }
   SC.trimMusicVolume=val;
 }
+
+// ── Open song picker from trimmer ────────────────────────
 function scTrimOpenSong(){
+  // Save that we came from trimmer so we return here after picking
   SC._fromTrimmer=true;
-  scPage(4);
+  scPage(4); // song page
   $('SC_songSearch').value='';
   _scLoadSongs('');
 }
-function scTrimAttachMusic(url,name){
+
+// ── When a song is picked (override for trimmer context) ─
+const _origPickSongTrack = typeof scPickSongTrack==='function' ? scPickSongTrack : null;
+function scPickSongTrack(trackId){
+  const t=_scSongTracks.find(x=>x.id===trackId);
+  if(!t) return;
+  scStopSongPreview();
+  SC.audioFile=null;
+  SC.audioUrl=t.audio_url;
+  SC.audioName=t.title+' – '+t.artist;
+  _scUpdateSongBtn();
+  _scRenderSongList(_scLastSongQuery);
+  toast('🎵 '+t.title+' added','ok');
+
+  if(SC._fromTrimmer){
+    SC._fromTrimmer=false;
+    scPage(5); // return to trimmer
+    scTrimAttachMusic(t.audio_url, t.title+' – '+t.artist);
+  }
+}
+
+// ── Attach music to trimmer ──────────────────────────────
+function scTrimAttachMusic(url, name){
+  // Stop old preview
   if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
-  const sBtn=$('SC_trimSongBtn'),sName=$('SC_trimSongName');
-  if(sBtn) sBtn.textContent='🎵 Change';
+
+  const sBtn=$('SC_trimSongBtn');
+  const sName=$('SC_trimSongName');
+  if(sBtn){ sBtn.textContent='🎵 Change'; }
   if(sName){ sName.textContent=name; sName.style.display='block'; }
-  const vidSlider=$('SC_volSlider'); if(vidSlider){ vidSlider.value=0; scUpdateVol(0); }
-  const musSlider=$('SC_musicVolSlider'); if(musSlider){ musSlider.value=100; }
+
+  // Auto-drop video volume to 0 when music is added
+  const vidSlider=$('SC_volSlider');
+  if(vidSlider){ vidSlider.value=0; scUpdateVol(0); }
+
+  // Set music vol to 100%
+  const musSlider=$('SC_musicVolSlider');
+  if(musSlider){ musSlider.value=100; }
+
+  // Create music audio for preview
   SC._trimMusicAudio=new Audio(url);
   SC._trimMusicAudio.loop=true;
   SC._trimMusicAudio.volume=1.0;
   SC._trimMusicAudio.play().catch(()=>{});
-  const mw=$('SC_musicTrimWrap'); if(mw) mw.style.display='block';
+
+  // Show music trim bar
+  const mw=$('SC_musicTrimWrap');
+  if(mw) mw.style.display='block';
+
+  // Init music trim
   SC.musicTrimStart=0;
   SC.musicTrimEnd=null;
   SC._trimMusicAudio.addEventListener('loadedmetadata',()=>{
     const dur=SC._trimMusicAudio.duration;
-    SC.musicTrimEnd=Math.min(dur,SC.trimEnd-SC.trimStart||30);
+    SC.musicTrimEnd=Math.min(dur, SC.trimEnd-SC.trimStart||30);
     _updateMusicTrimBar(dur);
   },{once:true});
 }
+
+// ── Music trim bar ────────────────────────────────────────
 function _updateMusicTrimBar(total){
-  const start=SC.musicTrimStart||0,end=SC.musicTrimEnd||total;
-  const lPct=start/total*100,rPct=end/total*100;
-  const lh=$('SC_musicTrimL'),rh=$('SC_musicTrimR'),rg=$('SC_musicRegion');
+  const start=SC.musicTrimStart||0;
+  const end=SC.musicTrimEnd||total;
+  const lPct=start/total*100;
+  const rPct=end/total*100;
+  const lh=$('SC_musicTrimL'), rh=$('SC_musicTrimR'), rg=$('SC_musicRegion');
   if(lh) lh.style.left=lPct+'%';
   if(rh) rh.style.right=(100-rPct)+'%';
   if(rg){ rg.style.left=lPct+'%'; rg.style.right=(100-rPct)+'%'; }
-  const lbl=$('SC_musicTrimLbl'); if(lbl) lbl.textContent=(end-start).toFixed(1)+'s selected';
+  const lbl=$('SC_musicTrimLbl');
+  if(lbl) lbl.textContent=(end-start).toFixed(1)+'s selected';
 }
 function scMusicTrimClick(e){
   if(e.target.id==='SC_musicTrimL'||e.target.id==='SC_musicTrimR') return;
-  const bar=$('SC_musicTrimBar'),rect=bar.getBoundingClientRect();
+  const bar=$('SC_musicTrimBar'), rect=bar.getBoundingClientRect();
   const pct=(e.clientX-rect.left)/rect.width;
   if(SC._trimMusicAudio) SC._trimMusicAudio.currentTime=pct*(SC._trimMusicAudio.duration||30);
 }
@@ -8652,7 +8906,7 @@ function scMusicDragStart(e,side){
   e.preventDefault(); e.stopPropagation();
   const onMove=ev=>{
     const cx=ev.touches?ev.touches[0].clientX:ev.clientX;
-    const bar=$('SC_musicTrimBar'),rect=bar.getBoundingClientRect();
+    const bar=$('SC_musicTrimBar'), rect=bar.getBoundingClientRect();
     const total=SC._trimMusicAudio?SC._trimMusicAudio.duration:30;
     const t=Math.max(0,Math.min(1,(cx-rect.left)/rect.width))*total;
     if(side==='L') SC.musicTrimStart=Math.max(0,Math.min((SC.musicTrimEnd||total)-0.5,t));
@@ -8670,90 +8924,57 @@ function scMusicDragStart(e,side){
   document.addEventListener('touchmove',onMove,{passive:false});
   document.addEventListener('touchend',onUp);
 }
+
+// ── Speed ───────────────────────────────────────────────
 function scUpdateSpeed(v){
   const val=parseFloat(v);
   const lbl=$('SC_speedVal'); if(lbl) lbl.textContent=val.toFixed(2)+'×';
   const vid=$('SC_trimVid');
-  if(vid){ const pf=Math.pow(2,(_pitchVal||0)/12); vid.playbackRate=Math.max(0.1,Math.min(4,val*pf)); }
+  if(vid){
+    const pitchFactor=Math.pow(2,(_pitchVal||0)/12);
+    vid.playbackRate=Math.max(0.1,Math.min(4,val*pitchFactor));
+  }
   SC.trimSpeed=val;
 }
+
+// ── Video brightness/contrast filter ───────────────────
 function scUpdateVidFilter(){
   const b=parseInt($('SC_vidBrightness')?.value||100);
   const k=parseInt($('SC_vidContrast')?.value||100);
-  const bv=$('SC_vidBrightnessVal'),kv=$('SC_vidContrastVal');
+  const bv=$('SC_vidBrightnessVal'), kv=$('SC_vidContrastVal');
   if(bv) bv.textContent=b;
   if(kv) kv.textContent=k;
   const vid=$('SC_trimVid');
   if(vid) vid.style.filter=`brightness(${b}%) contrast(${k}%)`;
   SC.trimFilter=`brightness(${b}%) contrast(${k}%)`;
 }
-
-// ── Close trimmer → go back to editor ──
 function scCloseTrimmer(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   scTrimStop();
   _cutPoints=[];
+  const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='⏸';
   scPage(1);
   _scShowVideoUI();
 }
-
-// ── Save Clip → back to editor with trimmed preview ──
 function scApplyTrim(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
+  const total=vid.duration||1;
   const dur=SC.trimEnd-SC.trimStart;
-  if(dur>30){ toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err'); return; }
-  if(dur<0.5){ toast('Selection too short (min 0.5s)','err'); return; }
-
-  const btn=$('SC_trimApplyBtn');
-  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
-
-  // Stop trimmer video
-  try{vid.pause();}catch(e){}
-  if(SC._trimMusicAudio){ SC._trimMusicAudio.pause(); SC._trimMusicAudio=null; }
-
-  // Save the trim points
-  SC.videoDuration=vid.duration;
-
-  // Immediately go back to editor
-  scPage(1);
-  _scShowVideoUI();
-
-  // Reload editor preview — show ONLY trimmed segment, looping, MUTED
-  const edVid=$('SC_vid');
-  if(edVid&&SC.mediaURL){
-    edVid.oncanplaythrough=null;
-    edVid.ontimeupdate=null;
-    try{edVid.pause();}catch(e){}
-    edVid.src=SC.mediaURL;
-    edVid.muted=true; // editor is always muted
-    edVid.load();
-    edVid.oncanplaythrough=()=>{
-      edVid.oncanplaythrough=null;
-      edVid.currentTime=SC.trimStart;
-      edVid.play().catch(()=>{});
-      const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
-      // Loop only within the trimmed region
-      edVid.ontimeupdate=()=>{
-        if(SC.trimEnd&&edVid.currentTime>=SC.trimEnd-0.05){
-          edVid.currentTime=SC.trimStart;
-        }
-      };
-    };
+  if(dur>30){
+    toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');
+    return;
   }
-
-  // Update duration badge to show trimmed clip length
-  const db=$('SC_vidDuration');
-  if(db){
-    db.textContent='✂️ '+dur.toFixed(1)+'s clip saved';
-    db.style.display='block';
-    db.style.color='#22c55e';
+  if(dur<0.5){
+    toast('Selection too short (min 0.5s)','err');
+    return;
   }
-
-  toast('✅ Clip saved! '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
-
-  if(btn){ btn.disabled=false; btn.textContent='💾 Save Clip'; }
+  // Store trim points — they'll be passed to the backend/post
+  // Update the duration shown
+  SC.videoDuration=total;
+  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
+  scCloseTrimmer();
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
@@ -8761,6 +8982,8 @@ function scGoShare(){
   $('SC_tools').style.transform='translateY(100%)';
   $('SC_settings').style.display='none';
   SC.toolsOpen=false; SC.settingsOpen=false;
+
+  // Validate video clip length before proceeding
   if(SC.mediaType==='video'){
     const clipDur=(SC.trimEnd||0)-(SC.trimStart||0);
     if(clipDur>30){
@@ -8768,18 +8991,17 @@ function scGoShare(){
       return;
     }
   }
-  // Pause editor video when going to share page
-  const edVid=$('SC_vid');
-  if(edVid){ try{edVid.pause();}catch(e){} }
 
-  const si=$('SC_shareThumb'),st=$('SC_shareThumbText');
+  // Thumbnail preview
+  const si=$('SC_shareThumb'), st=$('SC_shareThumbText');
   si.style.display='none'; st.style.display='none';
-  if(SC.mediaURL&&SC.mediaType==='image'){
+  if(SC.mediaURL && SC.mediaType==='image'){
     si.src=SC.mediaURL; si.style.display='block';
   } else if(SC.type==='text'){
     const txt=($('SC_textBox').value||'').trim();
     st.textContent=txt||'Text Story'; st.style.display='flex';
   } else if(SC.mediaType==='video'){
+    // Show a video seek thumbnail
     const tmpV=document.createElement('video');
     tmpV.src=SC.mediaURL; tmpV.currentTime=SC.trimStart||0;
     tmpV.onloadeddata=()=>{
@@ -8789,12 +9011,14 @@ function scGoShare(){
       si.src=cv.toDataURL(); si.style.display='block';
     };
   }
+
+  // Privacy
   scUpdatePrivacyUI('friends');
   const cl=$('SC_customList');
-  cl.innerHTML=friends.filter(f=>!archivedChats.has(f.id)).map(f=>
-    `<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`
-  ).join('');
-  document.querySelectorAll('[name=scPrivacy]').forEach(r=>{ r.onchange=()=>scUpdatePrivacyUI(r.value); });
+  cl.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join('');
+  document.querySelectorAll('[name=scPrivacy]').forEach(r=>{
+    r.onchange=()=>scUpdatePrivacyUI(r.value);
+  });
   scPage(2);
 }
 function scUpdatePrivacyUI(val){
@@ -8803,17 +9027,22 @@ function scUpdatePrivacyUI(val){
     r.closest('label').classList.toggle('selected',r.value===val);
   });
   $('SC_customList').style.display=val==='custom'?'block':'none';
+  if(val==='custom'){
+    const cl=$('SC_customList');
+    if(cl.innerHTML.length<10)
+      cl.innerHTML=friends.map(f=>`<label style="display:flex;align-items:center;gap:8px;padding:6px;cursor:pointer;color:#fff;"><input type="checkbox" value="${f.id}" style="width:16px;height:16px;accent-color:var(--brand);"><span>${esc(f.username)}</span></label>`).join('');
+  }
 }
 
-// ─── Bake image ─────────────────────────────────────────
+// ─── Bake image (rotation + filter) ─────────────────────
 async function scBakeImage(){
   return new Promise(resolve=>{
     const img=new Image();
     img.onload=()=>{
       const rad=SC.rotation*Math.PI/180;
-      const cos=Math.abs(Math.cos(rad)),sin=Math.abs(Math.sin(rad));
-      const w=img.naturalWidth,h=img.naturalHeight;
-      const cw=Math.round(w*cos+h*sin),ch=Math.round(w*sin+h*cos);
+      const cos=Math.abs(Math.cos(rad)), sin=Math.abs(Math.sin(rad));
+      const w=img.naturalWidth, h=img.naturalHeight;
+      const cw=Math.round(w*cos+h*sin), ch=Math.round(w*sin+h*cos);
       const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
       const ctx=cv.getContext('2d');
       if(SC.filter&&SC.filter!=='none') ctx.filter=SC.filter;
@@ -8831,36 +9060,64 @@ async function scPost(){
   btn.disabled=true; btn.textContent='Posting…';
   const privacy=document.querySelector('[name=scPrivacy]:checked')?.value||'friends';
   const customUsers=privacy==='custom'
-    ?Array.from($('SC_customList').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value)):[];
+    ?Array.from($('SC_customList').querySelectorAll('input:checked')).map(cb=>parseInt(cb.value))
+    :[];
   if(privacy==='custom'&&!customUsers.length){
     toast('Select at least one friend','err');
     btn.disabled=false; btn.textContent='✨ Share Story'; return;
   }
-  let content='',mediaUrl='',mediaType='text';
+
+  let content='', mediaUrl='', mediaType='text';
   const textVal=($('SC_textBox').value||SC.caption||'').trim();
+
   if(SC.mediaFile){
+    // Validate clip length for video
     if(SC.mediaType==='video'){
       const clipDur=(SC.trimEnd||0)-(SC.trimStart||0);
-      if(clipDur>30){ toast('Clip is '+clipDur.toFixed(1)+'s — trim to max 30s first','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
-      if(SC.mediaFile.size>200*1024*1024){ toast('Video too large (max 200 MB)','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
-    } else if(SC.mediaFile.size>10*1024*1024){ toast('Image too large (max 10 MB)','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+      if(clipDur>30){
+        toast('Clip is '+clipDur.toFixed(1)+'s — trim to max 30s first','err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
+      if(SC.mediaFile.size>200*1024*1024){
+        toast('Video too large (max 200 MB)','err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
+    } else if(SC.mediaFile.size>10*1024*1024){
+      toast('Image too large (max 10 MB)','err');
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
+    }
+
     try{
       btn.textContent='Sharing story…';
       let uploadFile=SC.mediaFile;
-      if(SC.mediaType==='image'&&(SC.rotation!==0||SC.filter!=='none')){ uploadFile=await scBakeImage(); }
+      if(SC.mediaType==='image'&&(SC.rotation!==0||SC.filter!=='none')){
+        uploadFile=await scBakeImage();
+      }
       const fd=new FormData(); fd.append('media',uploadFile);
       const up=await fetch('/api/upload/media',{method:'POST',body:fd});
       const ud=await up.json();
-      if(!ud.success){ toast(ud.error||'Upload failed','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+      if(!ud.success){
+        toast('Upload failed: '+(ud.error||''),'err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
       mediaUrl=ud.url; mediaType=ud.media_type;
-    }catch(e){ toast('Upload error: '+(e.message||''),'err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+    }catch(e){
+      toast('Upload error: '+(e.message||''),'err');
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
+    }
   } else {
     content=($('SC_textBox').value||'').trim();
-    if(!content){ toast('Please type something','err'); btn.disabled=false; btn.textContent='✨ Share Story'; return; }
+    if(!content){
+      toast('Please type something','err');
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
+    }
     mediaType='text';
   }
+
   if(mediaUrl&&textVal) content=textVal;
-  let audioUrl=SC.audioUrl||'',audioName=SC.audioName||'';
+
+  // Audio
+  let audioUrl=SC.audioUrl||'', audioName=SC.audioName||'';
   if(SC.audioFile&&!SC.audioUrl){
     try{
       btn.textContent='Uploading audio…';
@@ -8870,17 +9127,27 @@ async function scPost(){
       if(aud.success){ audioUrl=aud.url; audioName=SC.audioName; }
     }catch(e){}
   }
-  const trimData=SC.mediaType==='video'?{
-    trim_start:SC.trimStart||0,
-    trim_end:SC.trimEnd||null,
-    vid_volume:SC.vidVolume!==undefined?SC.vidVolume:1.0,
-    music_volume:SC.musicVolume!==undefined?SC.musicVolume:0.8,
-  }:{};
+
+  // Include trim points for video so backend/viewer can handle them
+  const trimData = SC.mediaType==='video'
+    ? {
+        trim_start:   SC.trimStart || 0,
+        trim_end:     SC.trimEnd   || null,
+        vid_volume:   SC.vidVolume   !== undefined ? SC.vidVolume   : 1.0,
+        music_volume: SC.musicVolume !== undefined ? SC.musicVolume : 0.8,
+      }
+    : {};
+
   try{
     const r=await fetch('/api/stories/create',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({content,media_url:mediaUrl,media_type:mediaType,privacy,custom_users:customUsers,audio_url:audioUrl,audio_name:audioName,...trimData})
+      body:JSON.stringify({
+        content,media_url:mediaUrl,media_type:mediaType,
+        privacy,custom_users:customUsers,
+        audio_url:audioUrl,audio_name:audioName,
+        ...trimData
+      })
     });
     const d=await r.json();
     if(d.success){ toast('✅ Story shared!','ok'); scClose(); loadStories(); }
@@ -8889,6 +9156,7 @@ async function scPost(){
   btn.disabled=false; btn.textContent='✨ Share Story';
 }
 
+// ─── Single createStory alias ────────────────────────────
 function createStory(){ scPost(); }
 function toggleStoryType(){}
 function switchStoryTab(){}
@@ -8899,213 +9167,6 @@ function clearStoryAudio(){}
 function clearStoryMedia(){}
 function loadCustomFriendsList(){}
 setTimeout(loadStories,1000);
-
-
-// ══════════════════════════════════════════════════════════════════
-// CALL — RENOVATED WITH MINIMIZE (go back to chats during a call)
-// ══════════════════════════════════════════════════════════════════
-//
-// HOW MINIMIZE WORKS:
-//  • During an active call, a ⌄ button appears top-left of the call screen
-//  • Tapping it adds class .call-minimized to #callModal
-//  • CSS slides the modal down to show only a 64px mini-bar at the bottom
-//  • The mini-bar shows: avatar + name + live timer + mute toggle + end button
-//  • The rest of the app (chats, sidebar) is fully interactive behind it
-//  • Tapping the mini-bar restores the full call screen
-//  • Call audio/WebRTC continues uninterrupted during minimize
-
-// ── CSS for minimize — inject once ──
-(function _injectMinimizeCss(){
-  if(document.getElementById('_callMinCss')) return;
-  const style=document.createElement('style');
-  style.id='_callMinCss';
-  style.textContent=`
-/* ── Minimized call state ── */
-#callModal.call-minimized {
-  /* Slide down so only the mini-bar at bottom is visible */
-  transform: translateY(calc(100% - 64px));
-  border-radius: 20px 20px 0 0;
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-  overflow: hidden;
-}
-#callModal {
-  transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .3s ease;
-}
-/* Mini-bar: always at top of the modal, visible when minimized */
-#callMiniBar {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 64px;
-  background: linear-gradient(135deg, #1a0a00, #0d0f1a);
-  border-radius: 20px 20px 0 0;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 12px;
-  z-index: 20;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 -2px 20px rgba(0,0,0,.5);
-  border-top: 1px solid rgba(236,91,8,.3);
-}
-#callMiniBar .cmb-av {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--brand, #ec5b08); color: #fff;
-  font-size: 15px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  animation: cmb-pulse 1.8s ease-in-out infinite;
-}
-@keyframes cmb-pulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(236,91,8,.5); }
-  50%      { box-shadow: 0 0 0 8px rgba(236,91,8,0); }
-}
-#callMiniBar .cmb-info { flex: 1; min-width: 0; }
-#callMiniBar .cmb-name {
-  font-size: 14px; font-weight: 700; color: #fff;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-#callMiniBar .cmb-status {
-  font-size: 11px; color: rgba(255,255,255,.55);
-  margin-top: 1px;
-}
-#callMiniBar .cmb-timer {
-  font-size: 12px; color: rgba(255,255,255,.65);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .5px;
-}
-#callMiniBar .cmb-btns { display: flex; gap: 8px; flex-shrink: 0; }
-#callMiniBar .cmb-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: none; background: rgba(255,255,255,.15);
-  color: #fff; font-size: 16px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-#callMiniBar .cmb-btn.active { background: rgba(236,91,8,.7); }
-#callMiniBar .cmb-btn.end-btn {
-  background: linear-gradient(135deg,#ef4444,#c62828);
-  font-size: 18px;
-}
-/* Minimize button inside the call screen */
-#callMinimizeBtn {
-  position: absolute;
-  top: clamp(44px, 10vw, 60px);
-  left: 18px;
-  z-index: 15;
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,.3);
-  background: rgba(255,255,255,.15);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  color: #fff; font-size: 20px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-  transition: background .15s;
-  line-height: 1;
-}
-#callMinimizeBtn:active { background: rgba(255,255,255,.3); }
-`;
-  document.head.appendChild(style);
-})();
-
-// ── Inject mini-bar + minimize button into callModal ──
-(function _injectMiniBar(){
-  const modal=document.getElementById('callModal');
-  if(!modal||document.getElementById('callMiniBar')) return;
-
-  // Mini-bar (at top of modal, visible when minimized)
-  const bar=document.createElement('div');
-  bar.id='callMiniBar';
-  bar.innerHTML=`
-    <div class="cmb-av" id="cmbAv">?</div>
-    <div class="cmb-info">
-      <div class="cmb-name" id="cmbName">Calling…</div>
-      <div class="cmb-timer" id="cmbTimer">00:00</div>
-    </div>
-    <div class="cmb-btns">
-      <button class="cmb-btn" id="cmbMuteBtn" onclick="event.stopPropagation();_cmbToggleMute()" title="Mute">🎤</button>
-      <button class="cmb-btn end-btn" onclick="event.stopPropagation();endCall()" title="End">📵</button>
-    </div>
-  `;
-  bar.addEventListener('click', maximizeCall);
-  modal.insertBefore(bar, modal.firstChild);
-
-  // Minimize button
-  const minBtn=document.createElement('button');
-  minBtn.id='callMinimizeBtn';
-  minBtn.title='Go back to chat';
-  minBtn.innerHTML='⌄';
-  minBtn.addEventListener('click', minimizeCall);
-  modal.appendChild(minBtn);
-})();
-
-// ── Minimize / Maximize ──
-function minimizeCall(){
-  const modal=document.getElementById('callModal');
-  if(!modal||!modal.classList.contains('show')) return;
-  modal.classList.add('call-minimized');
-  // Let user interact with the rest of the app
-  document.body.style.overflow='';
-}
-
-function maximizeCall(){
-  const modal=document.getElementById('callModal');
-  if(!modal) return;
-  modal.classList.remove('call-minimized');
-}
-
-function _cmbToggleMute(){
-  toggleMute();
-  const btn=document.getElementById('cmbMuteBtn');
-  if(btn) btn.classList.toggle('active', cd.muted);
-  if(btn) btn.textContent=cd.muted?'🔇':'🎤';
-}
-
-// ── Patch showCallModal to populate mini-bar ──
-const _origShowCallModal=window.showCallModal;
-window.showCallModal=function(name,status,isVideo){
-  if(_origShowCallModal) _origShowCallModal.apply(this,arguments);
-  // Populate mini-bar
-  const cmbAv=document.getElementById('cmbAv');
-  const cmbName=document.getElementById('cmbName');
-  if(cmbAv) cmbAv.textContent=name?name[0].toUpperCase():'?';
-  if(cmbName) cmbName.textContent=name||'Calling…';
-  // Make sure modal is not minimized when showing
-  const modal=document.getElementById('callModal');
-  if(modal) modal.classList.remove('call-minimized');
-  // Show minimize button
-  const minBtn=document.getElementById('callMinimizeBtn');
-  if(minBtn) minBtn.style.display='flex';
-};
-
-// ── Patch cleanupCall to remove minimized class and reset mini-bar ──
-const _origCleanupCall=window.cleanupCall;
-window.cleanupCall=function(){
-  const modal=document.getElementById('callModal');
-  if(modal) modal.classList.remove('call-minimized');
-  const cmbTimer=document.getElementById('cmbTimer');
-  if(cmbTimer) cmbTimer.textContent='00:00';
-  const minBtn=document.getElementById('callMinimizeBtn');
-  if(minBtn) minBtn.style.display='none';
-  if(_origCleanupCall) _origCleanupCall.apply(this,arguments);
-};
-
-// ── Patch startCallTimer to also update mini-bar timer ──
-const _origStartCallTimer=window.startCallTimer;
-window.startCallTimer=function(){
-  if(_origStartCallTimer) _origStartCallTimer.apply(this,arguments);
-  // Wrap the timer interval to also update cmbTimer
-  const _patch=setInterval(()=>{
-    if(!cd||!cd.startTime){ clearInterval(_patch); return; }
-    const s=Math.floor((Date.now()-cd.startTime)/1000);
-    const t=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-    const cmbTimer=document.getElementById('cmbTimer');
-    if(cmbTimer) cmbTimer.textContent=t;
-    // If call ended, stop patch timer
-    if(!cd.active){ clearInterval(_patch); }
-  },1000);
-};
 
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — VOICE MESSAGES
