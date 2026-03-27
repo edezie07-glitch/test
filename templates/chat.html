@@ -2559,10 +2559,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
 
-      <!-- ✂️ Edit & Cut button — visible for all videos -->
-      <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
-        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Edit & Cut</button>
-      </div>
+      <div id="SC_trimBtnWrap" style="display:none;"></div>
 
       <!-- Text story background + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#ec5b08,#d44e07);"></div>
@@ -2651,8 +2648,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button id="SC_captionBtn" onclick="scAddCaption()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">✏️</span>Add Text
         </button>
-        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="display:none;background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">✂️</span>Edit & Cut
+        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="display:none;background:rgba(236,91,8,.18);border:1px solid rgba(236,91,8,.4);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✂️</span>Trim
         </button>
       </div>
 
@@ -3093,34 +3090,28 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   loadFriends();
   loadRequests();
   setTimeout(requestNotifPermission,2000);
-  // ctx menu replaced by msg sheet
 
-  // ── Auto-pause storyVideo when not visible on screen ──
+  // ── Stop video when tab/page goes hidden (phone locks, user switches app) ──
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden){
+      // Stop story viewer video
+      const sv=document.getElementById('storyVideo');
+      if(sv&&!sv.paused){ sv.pause(); }
+      // Stop story creator video
+      const ev=document.getElementById('SC_vid');
+      if(ev&&!ev.paused){ ev.pause(); const pb=document.getElementById('SC_vidPlayBtn'); if(pb)pb.textContent='▶'; }
+      // Stop trimmer video
+      const tv=document.getElementById('SC_trimVid');
+      if(tv&&!tv.paused){ tv.pause(); }
+    }
+  });
+
+  // ── Auto-pause story video when viewer closes ──
   const _stVid=document.getElementById('storyVideo');
   if(_stVid&&'IntersectionObserver' in window){
-    const _stObs=new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(!entry.isIntersecting&&!_stVid.paused){
-          _stVid.pause();
-        }
-      });
-    },{threshold:0.1});
-    _stObs.observe(_stVid);
-  }
-
-  // ── Auto-pause SC editor video when story creator is hidden ──
-  const _scVid=document.getElementById('SC_vid');
-  if(_scVid&&'IntersectionObserver' in window){
-    const _scObs=new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(!entry.isIntersecting&&!_scVid.paused){
-          _scVid.pause();
-          const pb=document.getElementById('SC_vidPlayBtn');
-          if(pb) pb.textContent='▶';
-        }
-      });
-    },{threshold:0.1});
-    _scObs.observe(_scVid);
+    new IntersectionObserver((entries)=>{
+      if(!entries[0].isIntersecting&&!_stVid.paused) _stVid.pause();
+    },{threshold:0.01}).observe(_stVid);
   }
 })();
 function loadPrefs(){
@@ -3267,16 +3258,8 @@ function connectSocket(){
   });
   socket.on('friend_request_received',(data)=>{
     loadRequests();
-    loadFriends();
-    // Show notification with inline Accept/Decline buttons
-    try{
-      showFriendRequestNotif(data.username, data.from_user_id, data.request_id);
-    }catch(e){
-      // Fallback toast if notification system fails
-      toast('👋 '+data.username+' sent you a friend request!','info');
-      showInAppNotif(data.username,'sent you a friend request 👋',null,data.from_user_id);
-    }
-    if(prefs.sound) beep();
+    // Show toast with inline Accept/Decline buttons
+    showFriendRequestNotif(data.username, data.from_user_id, data.request_id);
   });
   socket.on('new_story',(data)=>{
     // A friend just posted a story — reload the story bar instantly
@@ -3330,27 +3313,27 @@ function sendMsg(){
   if(!txt)return;
   if(!currentChatId){toast('Select a chat first','err');return;}
   if(editingMsgId){saveEdit();return;}
-  // Clear input immediately so it feels responsive
-  inp.value='';inp.style.height='auto';
-  closeEmoji();
-  checkMoodBeforeSend(txt, ()=>{
-    const data={chat_id:currentChatId,content:txt,message_type:'text'};
-    if(replyToMsg)data.reply_to_id=replyToMsg.id;
-    cancelReply();
-    // Try socket first, fallback to fetch if disconnected
-    if(socket&&socket.connected){
-      socket.emit('send_message',data);
-    } else {
-      // Fallback: send via HTTP
-      fetch('/api/messages/send',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chat_id:currentChatId,content:txt,message_type:'text',reply_to_id:replyToMsg?replyToMsg.id:null})
-      }).then(r=>r.json()).then(d=>{
-        if(d.success) appendMsg(d.message);
-        else toast('Failed to send','err');
-      }).catch(()=>toast('Failed to send','err'));
-    }
+  checkMoodBeforeSend(txt,()=>{
+    const replyId=replyToMsg?replyToMsg.id:null;
+    inp.value='';inp.style.height='auto';
+    closeEmoji();cancelReply();
+    // Always use fetch — most reliable with gevent
+    fetch('/api/messages/send',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body:JSON.stringify({chat_id:currentChatId,content:txt,message_type:'text',reply_to_id:replyId})
+    }).then(r=>r.json()).then(d=>{
+      if(!d.success) toast(d.error||'Failed to send','err');
+      // Message will arrive via socket new_message event
+    }).catch(()=>{
+      // Fallback: try socket if fetch fails
+      if(socket&&socket.connected){
+        socket.emit('send_message',{chat_id:currentChatId,content:txt,message_type:'text',reply_to_id:replyId});
+      } else {
+        toast('Not connected — check your internet','err');
+      }
+    });
   });
 }
 async function loadMsgs(chatId){
@@ -4799,6 +4782,13 @@ async function doCall(friend, type){
   await unlockAudio();
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
+
+  // Ensure socket is connected before calling
+  if(!socket||!socket.connected){
+    toast('Not connected — please wait a moment and try again','err');
+    cd.active=false;
+    return;
+  }
 
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id;
@@ -8943,19 +8933,25 @@ function scApplyTrim(){
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
   const total=vid.duration||1;
-  const dur=(SC.trimEnd||total)-SC.trimStart;
-  if(dur>30){ toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err'); return; }
-  if(dur<0.5){ toast('Selection too short (min 0.5s)','err'); return; }
+  const trimEnd=SC.trimEnd||total;
+  const dur=trimEnd-SC.trimStart;
+  if(dur>60){ toast('Clip is '+dur.toFixed(1)+'s — max 60s','err'); return; }
+  if(dur<0.5){ toast('Too short (min 0.5s)','err'); return; }
 
   // Save trim points
   SC.videoDuration=total;
+  SC.trimEnd=trimEnd;
 
-  // Stop trimmer video and go back to editor
+  // Stop trimmer
   try{vid.pause();}catch(e){}
   vid.muted=true;
-  scPage(1);
+  clearInterval(_trimVidRAF);
 
-  // Reload editor preview showing ONLY the trimmed segment, muted, looping
+  // Go back to editor instantly
+  scPage(1);
+  _scShowVideoUI();
+
+  // Reload editor preview — only shows trimmed segment, muted, looping
   const edVid=$('SC_vid');
   if(edVid&&SC.mediaURL){
     edVid.oncanplaythrough=null;
@@ -8969,25 +8965,25 @@ function scApplyTrim(){
       edVid.currentTime=SC.trimStart;
       edVid.play().catch(()=>{});
       const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
-      // Loop only within trimmed region
+      // Loop only the trimmed segment
       edVid.ontimeupdate=()=>{
-        if(SC.trimEnd&&edVid.currentTime>=SC.trimEnd-0.05){
+        if(edVid.currentTime>=trimEnd-0.05){
           edVid.currentTime=SC.trimStart;
         }
       };
     };
   }
 
-  // Update duration badge
+  // Update duration badge — green to show clip saved
   const db=$('SC_vidDuration');
   if(db){
-    db.textContent='✂️ '+dur.toFixed(1)+'s clip saved';
+    db.textContent='✂️ '+dur.toFixed(1)+'s clip';
     db.style.display='block';
     db.style.color='#22c55e';
+    db.style.background='rgba(34,197,94,.2)';
   }
 
-  _scShowVideoUI();
-  toast('✅ Clip saved: '+SC.trimStart.toFixed(1)+'s – '+(SC.trimEnd||total).toFixed(1)+'s','ok');
+  toast('✅ Clip saved! '+SC.trimStart.toFixed(1)+'s – '+trimEnd.toFixed(1)+'s','ok');
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
