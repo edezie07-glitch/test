@@ -2787,7 +2787,82 @@ def delete_highlight(hid):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
-
+# ── /api/messages/send — HTTP fallback for sending messages ──
+@app.route('/api/messages/send', methods=['POST'])
+@login_required
+def send_message_http():
+    user_id = session['user_id']
+    data = request.get_json() or {}
+    chat_id = data.get('chat_id','').strip()
+    content = data.get('content','').strip()
+    message_type = data.get('message_type','text')
+    reply_to_id = data.get('reply_to_id')
+    if not content or not chat_id:
+        return jsonify({'success':False,'error':'Missing content or chat_id'}),400
+    # Validate chat membership
+    if chat_id.startswith('group-'):
+        try:
+            gid=int(chat_id.split('-')[1])
+        except:
+            return jsonify({'success':False,'error':'Invalid chat'}),400
+        if not GroupMember.query.filter_by(group_id=gid,user_id=user_id).first():
+            return jsonify({'success':False,'error':'Not a member'}),403
+    else:
+        parts=chat_id.split('-')
+        if len(parts)!=2:
+            return jsonify({'success':False,'error':'Invalid chat'}),400
+        try:
+            u1,u2=int(parts[0]),int(parts[1])
+        except:
+            return jsonify({'success':False,'error':'Invalid chat'}),400
+        if user_id not in [u1,u2]:
+            return jsonify({'success':False,'error':'Unauthorized'}),403
+        other=u2 if user_id==u1 else u1
+        if is_blocked(user_id,other):
+            return jsonify({'success':False,'error':'Blocked'}),403
+    try:
+        msg=Message(chat_id=chat_id,sender_id=user_id,content=content,
+                    message_type=message_type,reply_to_id=reply_to_id)
+        db.session.add(msg)
+        db.session.commit()
+        sender=User.query.get(user_id)
+        msg_data=format_message(msg,user_id)
+        # Broadcast via socket to the room
+        socketio.emit('new_message',msg_data,room=chat_id)
+        return jsonify({'success':True,'message':msg_data})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
+        @app.route('/api/messages/send', methods=['POST'])
+@login_required
+def send_message_http():
+    user_id = session['user_id']
+    data = request.get_json() or {}
+    chat_id = data.get('chat_id','').strip()
+    content = data.get('content','').strip()
+    message_type = data.get('message_type','text')
+    reply_to_id = data.get('reply_to_id')
+    if not content or not chat_id:
+        return jsonify({'success':False,'error':'Missing fields'}),400
+    parts = chat_id.split('-')
+    if len(parts) != 2:
+        return jsonify({'success':False,'error':'Invalid chat'}),400
+    try:
+        u1,u2 = int(parts[0]),int(parts[1])
+    except:
+        return jsonify({'success':False,'error':'Invalid chat'}),400
+    if user_id not in [u1,u2]:
+        return jsonify({'success':False,'error':'Unauthorized'}),403
+    try:
+        msg = Message(chat_id=chat_id,sender_id=user_id,content=content,message_type=message_type,reply_to_id=reply_to_id)
+        db.session.add(msg)
+        db.session.commit()
+        msg_data = format_message(msg,user_id)
+        socketio.emit('new_message',msg_data,room=chat_id)
+        return jsonify({'success':True,'message':msg_data})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success':False,'error':str(e)}),500
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
