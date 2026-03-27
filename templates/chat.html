@@ -3164,11 +3164,6 @@ async function saveProfile(){
 function connectSocket(){
   socket=io({withCredentials:true,transports:['polling','websocket']});
   socket.on('connect',()=>{
-    // Join all friend chat rooms so messages arrive even when chat isn't open
-    friends.forEach(f=>{
-      const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
-      socket.emit('join_chat',{chat_id:cid});
-    });
     if(currentChatId){
       socket.emit('join_chat',{chat_id:currentChatId});
       socket.emit('mark_all_read',{chat_id:currentChatId});
@@ -3184,11 +3179,6 @@ function connectSocket(){
   });
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
-      // Only skip if we already have this exact message ID (avoid true duplicates)
-      const existing=document.querySelector(`[data-msg-id="${msg.id}"]`);
-      if(existing) return;
-      // Skip our own messages (already shown optimistically via tempId)
-      if(msg.sender_id===ME_ID) return;
       appendMsg(msg);
     }else{
       // Build notification preview
@@ -3303,52 +3293,15 @@ function sendMsg(){
   const txt=inp.value.trim();
   if(!txt)return;
   if(!currentChatId){toast('Select a chat first','err');return;}
+  if(!socket){toast('Not connected','err');return;}
   if(editingMsgId){saveEdit();return;}
-  const replyId=replyToMsg?replyToMsg.id:null;
-  const chatId=currentChatId;
-
-  // ── 0ms: show message instantly ──
-  inp.value='';inp.style.height='auto';
-  closeEmoji();cancelReply();
-  const tempId='tmp_'+Date.now();
-  appendMsg({
-    id:tempId,chat_id:chatId,sender_id:ME_ID,sender_username:ME_NAME,
-    content:txt,message_type:'text',is_edited:false,is_deleted:false,
-    is_pinned:false,created_at:new Date().toISOString(),
-    reactions:{},user_reactions:[],read_by:0,reply_to:null
-  },true);
-
-  // ── Dot: orange immediately ──
-  requestAnimationFrame(()=>{
-    const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt delivered';dot.title='Delivered ✓';}}
-  });
-
-  // ── DUAL SEND: socket delivers to receiver instantly + fetch saves to DB ──
-  if(socket&&socket.connected){
-    socket.emit('send_message',{chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId});
-  }
-  fetch('/api/messages/send',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId})
-  }).then(r=>r.json()).then(d=>{
-    if(d.success){
-      const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-      if(el){
-        el.setAttribute('data-msg-id',d.message.id);
-        const dot=el.querySelector('.receipt');
-        if(dot) dot.setAttribute('data-msg-id',d.message.id);
-      }
-    } else {
-      const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-      if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='Failed';}}
-      toast(d.error||'Failed','err');
-    }
-  }).catch(()=>{
-    const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='No connection';}}
+  // Mood check — only for plain text messages
+  checkMoodBeforeSend(txt, ()=>{
+    const data={chat_id:currentChatId,content:txt,message_type:'text'};
+    if(replyToMsg)data.reply_to_id=replyToMsg.id;
+    socket.emit('send_message',data);
+    inp.value='';inp.style.height='auto';
+    closeEmoji();cancelReply();
   });
 }
 async function loadMsgs(chatId){
@@ -3962,12 +3915,15 @@ async function getMedia(type){
     { video:videoHD,            audio:audioHD },
     { video:{facingMode:'user'}, audio:audioSD },
     { video:true,               audio:audioSD },
+    { video:true,               audio:true },     // mobile fallback
     { video:false,              audio:audioSD },  // last resort: audio only
+    { video:false,              audio:true },
   ] : [
     { video:false, audio:audioHD },
     { video:false, audio:audioSD },
     { video:false, audio:{ echoCancellation:true, noiseSuppression:true } },
     { video:false, audio:true },
+    { video:false, audio:{} },                    // bare minimum for mobile
   ];
 
   let lastErr;
@@ -4214,13 +4170,25 @@ async function flushPending(){
 // ── Media permission error messages ──
 function mediaErr(e){
   let msg = 'Could not start call';
-  if(e.message==='HTTPS_REQUIRED' || !window.isSecureContext) msg = 'Calls require HTTPS';
-  else if(e.message==='NO_MEDIA_DEVICES')  msg = 'Browser does not support calls';
-  else if(e.name==='NotAllowedError'  || e.name==='PermissionDeniedError') msg = 'Mic/camera permission denied — check browser settings';
-  else if(e.name==='NotFoundError')        msg = 'No microphone found';
-  else if(e.name==='NotReadableError')     msg = 'Mic/camera already in use by another app';
-  else msg += e.message ? ': '+e.message : '';
+  if(e.message==='HTTPS_REQUIRED' || !window.isSecureContext){
+    msg = 'Calls require HTTPS — you are on HTTP';
+  } else if(e.message==='NO_MEDIA_DEVICES'){
+    msg = 'Your browser does not support calls';
+  } else if(e.name==='NotAllowedError' || e.name==='PermissionDeniedError'){
+    msg = 'Allow mic/camera in your browser settings then try again';
+  } else if(e.name==='NotFoundError'){
+    msg = 'No microphone or camera found on this device';
+  } else if(e.name==='NotReadableError' || e.name==='TrackStartError'){
+    msg = 'Mic/camera is being used by another app — close it and try again';
+  } else if(e.name==='OverconstrainedError'){
+    msg = 'Camera not supported — try voice call instead';
+  } else if(e.name==='AbortError'){
+    msg = 'Call was interrupted — try again';
+  } else {
+    msg = 'Could not access mic/camera: '+( e.message||e.name||'unknown error');
+  }
   toast('📞 '+msg, 'err');
+  console.warn('[call error]', e.name, e.message);
 }
 
 // ── Call UI helpers ──
@@ -4731,13 +4699,25 @@ async function startVoiceCall(){
   if(currentGroupId){ startGroupCall('voice'); return; }
   if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
-  if(f) await doCall(f,'voice');
+  if(!f) return;
+  // ── Mobile fix: getMedia MUST be first thing called from tap ──
+  if(cd.active){ toast('Already in a call','info'); return; }
+  let stream;
+  try{ stream=await getMedia('voice'); }
+  catch(e){ mediaErr(e); return; }
+  doCall(f,'voice',stream);
 }
 async function startVideoCall(){
   if(currentGroupId){ startGroupCall('video'); return; }
   if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
-  if(f) await doCall(f,'video');
+  if(!f) return;
+  // ── Mobile fix: getMedia MUST be first thing called from tap ──
+  if(cd.active){ toast('Already in a call','info'); return; }
+  let stream;
+  try{ stream=await getMedia('video'); }
+  catch(e){ mediaErr(e); return; }
+  doCall(f,'video',stream);
 }
 
 // ── Group call: show member picker ──
@@ -4790,19 +4770,21 @@ function closeGcallPicker() {
   document.getElementById('gcallPickerOv').style.display = 'none';
 }
 
-async function doCall(friend, type){
-  // Discover camera capabilities before starting — sets _isMobileDevice
-  await _initCameraCapabilities();
+async function doCall(friend, type, preloadedStream){
+  // stream already acquired from tap event — safe on mobile
   if(cd.active){ toast('Already in a call','info'); return; }
   await unlockAudio();
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
+  // Run camera detection in background (non-blocking)
+  _initCameraCapabilities().catch(()=>{});
 
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id;
     cd.calleeName=friend.username; cd.callerName=friend.username;
 
-    const stream = await getMedia(type);
+    // Use preloaded stream (already acquired from tap) or get new one
+    const stream = preloadedStream || await getMedia(type);
     cd.localStream = stream;
     if(type==='video') _syncFacingFromStream(stream);  // sync flip state
 
@@ -4836,6 +4818,13 @@ async function doCall(friend, type){
 
 // ── acceptCall: receiver answers ──
 async function acceptCall(){
+  // ── Mobile fix: get media immediately from tap before any await ──
+  const _incoming=cd.incoming;
+  if(!_incoming){ cleanupCall(); return; }
+  let _preStream;
+  try{ _preStream=await getMedia(_incoming.call_type); }
+  catch(e){ mediaErr(e); rejectCall(); return; }
+
   await unlockAudio();
   hideIncomingCall();
   _currentFacing='user'; _speakerOn=true;
@@ -4848,7 +4837,7 @@ async function acceptCall(){
     cd.active=true; cd.type=d.call_type;
     cd.calleeId=d.caller_id;
 
-    const stream = await getMedia(d.call_type);
+    const stream = _preStream || await getMedia(d.call_type);
     cd.localStream = stream;
     if(d.call_type==='video') _syncFacingFromStream(stream);  // sync flip state
 
@@ -5258,13 +5247,6 @@ async function loadFriends(){
     const d=await r.json();
     if(d.success){
       friends=d.friends;
-      // Join all chat rooms so we receive messages even when chat isn't open
-      if(socket&&socket.connected){
-        friends.forEach(f=>{
-          const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
-          socket.emit('join_chat',{chat_id:cid});
-        });
-      }
       // Seed in-memory unread counts from server ONLY for chats not currently open
       friends.forEach(f=>{
         if(currentChatId!==f.chat_id){
