@@ -224,10 +224,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .photo-strip img:hover{opacity:.88;transform:scale(1.02);}
 /* Read receipt circle — light orange=delivered, bright orange=seen */
 .receipt{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:6px;vertical-align:middle;flex-shrink:0;transition:background .5s,box-shadow .5s;}
-.receipt.sending{background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.4);}
-.receipt.delivered{background:rgba(255,175,90,.6);border:2px solid rgba(255,150,60,.9);}
-.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 5px rgba(255,136,0,.6);}
-.receipt.failed{background:#ef4444;border:2px solid #dc2626;}
+.receipt.delivered{background:rgba(255,190,120,.35);border:2px solid rgba(255,160,80,.5);}
+.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 5px rgba(255,136,0,.55);}
 /* Row wrapper for time + receipt */
 .msg-foot{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;}
 .mts{font-size:11px;opacity:.65;white-space:nowrap;display:block;margin-top:4px;}
@@ -3166,6 +3164,11 @@ async function saveProfile(){
 function connectSocket(){
   socket=io({withCredentials:true,transports:['polling','websocket']});
   socket.on('connect',()=>{
+    // Join all friend chat rooms so messages arrive even when chat isn't open
+    friends.forEach(f=>{
+      const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
+      socket.emit('join_chat',{chat_id:cid});
+    });
     if(currentChatId){
       socket.emit('join_chat',{chat_id:currentChatId});
       socket.emit('mark_all_read',{chat_id:currentChatId});
@@ -3181,9 +3184,11 @@ function connectSocket(){
   });
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
-      if(msg.sender_id===ME_ID) return;
+      // Only skip if we already have this exact message ID (avoid true duplicates)
       const existing=document.querySelector(`[data-msg-id="${msg.id}"]`);
       if(existing) return;
+      // Skip our own messages (already shown optimistically via tempId)
+      if(msg.sender_id===ME_ID) return;
       appendMsg(msg);
     }else{
       // Build notification preview
@@ -3302,7 +3307,7 @@ function sendMsg(){
   const replyId=replyToMsg?replyToMsg.id:null;
   const chatId=currentChatId;
 
-  // ── 0ms: clear input + show message immediately ──
+  // ── 0ms: show message instantly ──
   inp.value='';inp.style.height='auto';
   closeEmoji();cancelReply();
   const tempId='tmp_'+Date.now();
@@ -3313,16 +3318,16 @@ function sendMsg(){
     reactions:{},user_reactions:[],read_by:0,reply_to:null
   },true);
 
-  // ── Assume delivered immediately — dot goes orange now ──
+  // ── Dot: orange immediately ──
   requestAnimationFrame(()=>{
     const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(el){
-      const dot=el.querySelector('.receipt');
-      if(dot){dot.className='receipt delivered';dot.title='Delivered ✓';}
-    }
+    if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt delivered';dot.title='Delivered ✓';}}
   });
 
-  // ── Fire and forget — send in background ──
+  // ── DUAL SEND: socket delivers to receiver instantly + fetch saves to DB ──
+  if(socket&&socket.connected){
+    socket.emit('send_message',{chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId});
+  }
   fetch('/api/messages/send',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -3330,7 +3335,6 @@ function sendMsg(){
     body:JSON.stringify({chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId})
   }).then(r=>r.json()).then(d=>{
     if(d.success){
-      // Update temp ID to real server ID silently
       const el=document.querySelector(`[data-msg-id="${tempId}"]`);
       if(el){
         el.setAttribute('data-msg-id',d.message.id);
@@ -3338,13 +3342,11 @@ function sendMsg(){
         if(dot) dot.setAttribute('data-msg-id',d.message.id);
       }
     } else {
-      // Only show error if server explicitly rejected it
       const el=document.querySelector(`[data-msg-id="${tempId}"]`);
       if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='Failed';}}
-      toast(d.error||'Failed to send','err');
+      toast(d.error||'Failed','err');
     }
   }).catch(()=>{
-    // Connection failed — mark red
     const el=document.querySelector(`[data-msg-id="${tempId}"]`);
     if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='No connection';}}
   });
@@ -3396,15 +3398,11 @@ function appendMsg(msg,scroll=true){
   }
   else if(!msg.is_deleted){body+=esc(msg.content).replace(/\n/g,'<br>');}
   else{body+='<em style="opacity:.5">[Message deleted]</em>';}
-  // Receipt dot — always shown for sent messages
-  let receiptState=null;
-  if(isSent&&!msg.is_deleted){
-    const isTemp=String(msg.id).startsWith('tmp_');
-    receiptState=isTemp?'sending':(msg.read_by>0?'seen':'delivered');
-  }
-  const receiptLabel=receiptState==='seen'?'Seen ✓✓':receiptState==='sending'?'Sending…':'Delivered ✓';
+  // Read receipt: 1 dot, sender-only, never on deleted msgs
+  // delivered = light orange hollow, seen = bright solid orange
+  const receiptState=isSent&&!msg.is_deleted?(msg.read_by>0?'seen':'delivered'):null;
   const receiptDot=receiptState
-    ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptLabel}"></span>`
+    ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptState==='seen'?'Seen ✓✓':'Delivered ✓'}"></span>`
     :'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
   // Reactions (max 2 emoji types shown, overlaid outside bubble)
@@ -5260,6 +5258,13 @@ async function loadFriends(){
     const d=await r.json();
     if(d.success){
       friends=d.friends;
+      // Join all chat rooms so we receive messages even when chat isn't open
+      if(socket&&socket.connected){
+        friends.forEach(f=>{
+          const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
+          socket.emit('join_chat',{chat_id:cid});
+        });
+      }
       // Seed in-memory unread counts from server ONLY for chats not currently open
       friends.forEach(f=>{
         if(currentChatId!==f.chat_id){
