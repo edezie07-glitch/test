@@ -2648,8 +2648,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button id="SC_captionBtn" onclick="scAddCaption()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">✏️</span>Add Text
         </button>
-        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="display:none;background:rgba(236,91,8,.18);border:1px solid rgba(236,91,8,.4);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
-          <span style="font-size:20px;">✂️</span>Trim
+        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="display:none;background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✂️</span>Edit & Cut
         </button>
       </div>
 
@@ -3090,29 +3090,17 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   loadFriends();
   loadRequests();
   setTimeout(requestNotifPermission,2000);
-
-  // ── Stop video when tab/page goes hidden (phone locks, user switches app) ──
+  // Stop all videos when user switches tab or locks phone
   document.addEventListener('visibilitychange',()=>{
     if(document.hidden){
-      // Stop story viewer video
-      const sv=document.getElementById('storyVideo');
-      if(sv&&!sv.paused){ sv.pause(); }
-      // Stop story creator video
-      const ev=document.getElementById('SC_vid');
-      if(ev&&!ev.paused){ ev.pause(); const pb=document.getElementById('SC_vidPlayBtn'); if(pb)pb.textContent='▶'; }
-      // Stop trimmer video
-      const tv=document.getElementById('SC_trimVid');
-      if(tv&&!tv.paused){ tv.pause(); }
+      ['storyVideo','SC_vid','SC_trimVid'].forEach(id=>{
+        const v=document.getElementById(id);
+        if(v&&!v.paused){ v.pause(); }
+      });
+      const pb=document.getElementById('SC_vidPlayBtn');
+      if(pb) pb.textContent='▶';
     }
   });
-
-  // ── Auto-pause story video when viewer closes ──
-  const _stVid=document.getElementById('storyVideo');
-  if(_stVid&&'IntersectionObserver' in window){
-    new IntersectionObserver((entries)=>{
-      if(!entries[0].isIntersecting&&!_stVid.paused) _stVid.pause();
-    },{threshold:0.01}).observe(_stVid);
-  }
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -3165,8 +3153,8 @@ async function saveProfile(){
     // Sync avatar in settings
     const sav=document.getElementById('sav');
     if(sav){
-      if(data.avatar_url){
-        sav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar" onerror="this.remove()">
+      if(d.avatar_url){
+        sav.innerHTML=`<img src="${d.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar" onerror="this.remove()">
           <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;" onclick="event.stopPropagation();openSettingsAvatarEdit()">⋮</div>`;
         sav.style.fontSize='0';
       } else {
@@ -3283,7 +3271,21 @@ function connectSocket(){
   });
   // A friend updated their profile/avatar — refresh friend list so name/avatar is current
   socket.on('profile_updated',(data)=>{
-    loadFriends();
+    if(data&&data.user_id&&data.avatar_url){
+      // Update in memory immediately — no full reload
+      friends.forEach(f=>{ if(f.id===data.user_id) f.avatar_url=data.avatar_url; });
+      // Update open chat header if chatting with this person
+      if(currentFriendId===data.user_id){
+        const chav=document.getElementById('chav');
+        if(chav){
+          chav.innerHTML=`<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`;
+          chav.style.fontSize='0';
+        }
+      }
+      renderFriends();
+    } else {
+      loadFriends();
+    }
   });
   socket.on('friend_status_updated',(data)=>{
     // Update status display in friend list — re-render will pick it up from profileCache
@@ -3313,11 +3315,12 @@ function sendMsg(){
   if(!txt)return;
   if(!currentChatId){toast('Select a chat first','err');return;}
   if(editingMsgId){saveEdit();return;}
+  const replyId=replyToMsg?replyToMsg.id:null;
+  // Clear input immediately — feels instant
+  inp.value='';inp.style.height='auto';
+  closeEmoji();cancelReply();
   checkMoodBeforeSend(txt,()=>{
-    const replyId=replyToMsg?replyToMsg.id:null;
-    inp.value='';inp.style.height='auto';
-    closeEmoji();cancelReply();
-    // Always use fetch — most reliable with gevent
+    // Use fetch — reliable with gevent, then socket broadcasts to room
     fetch('/api/messages/send',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -3325,13 +3328,12 @@ function sendMsg(){
       body:JSON.stringify({chat_id:currentChatId,content:txt,message_type:'text',reply_to_id:replyId})
     }).then(r=>r.json()).then(d=>{
       if(!d.success) toast(d.error||'Failed to send','err');
-      // Message will arrive via socket new_message event
     }).catch(()=>{
-      // Fallback: try socket if fetch fails
+      // last resort: socket
       if(socket&&socket.connected){
         socket.emit('send_message',{chat_id:currentChatId,content:txt,message_type:'text',reply_to_id:replyId});
       } else {
-        toast('Not connected — check your internet','err');
+        toast('Could not send — please reload the page','err');
       }
     });
   });
@@ -4783,13 +4785,6 @@ async function doCall(friend, type){
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
 
-  // Ensure socket is connected before calling
-  if(!socket||!socket.connected){
-    toast('Not connected — please wait a moment and try again','err');
-    cd.active=false;
-    return;
-  }
-
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id;
     cd.calleeName=friend.username; cd.callerName=friend.username;
@@ -5326,9 +5321,11 @@ function buildCrowEl(f){
   el.className=`crow${currentChatId===f.chat_id?' active':''}${isPin?' pinned-chat':''}`;
   el.setAttribute('data-fid',f.id);
   el.innerHTML=`
-    <div class="av" style="position:relative;">
+    <div class="av" style="position:relative;overflow:hidden;">
       ${isOnline?'<div class="online-dot"></div>':''}
-      ${f.username[0].toUpperCase()}
+      ${f.avatar_url
+        ? `<img src="${f.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;position:absolute;inset:0;" onerror="this.remove()">`
+        : f.username[0].toUpperCase()}
     </div>
     <div class="cmeta">
       <div class="cnrow">
@@ -6721,6 +6718,13 @@ async function saveCroppedAvatar(){
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
+        // Broadcast avatar to all friends immediately
+        if(typeof socket!=='undefined'&&socket&&socket.connected){
+          socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        }
+        // Update our own entry in friends list
+        friends.forEach(f=>{ if(f.id===ME_ID) f.avatar_url=d.avatar_url; });
+        if(typeof renderFriends==='function') renderFriends();
       } else toast(d.error||'Upload failed','err');
       if(btn){ btn.disabled=false; btn.textContent='Save'; }
     },'image/jpeg',0.92);
@@ -8448,7 +8452,7 @@ async function muSubmit(){
     fd.append('title',title);
     fd.append('artist',artist);
     fd.append('genre',genre);
-    const r=await fetch('/api/music/upload',{method:'POST',body:fd});
+    const r=await fetch('/api/music/upload',{method:'POST',credentials:'include',body:fd});
     const d=await r.json();
     if(d.success){
       toast('🎵 Song uploaded!','ok');
@@ -8937,21 +8941,14 @@ function scApplyTrim(){
   const dur=trimEnd-SC.trimStart;
   if(dur>60){ toast('Clip is '+dur.toFixed(1)+'s — max 60s','err'); return; }
   if(dur<0.5){ toast('Too short (min 0.5s)','err'); return; }
-
-  // Save trim points
   SC.videoDuration=total;
   SC.trimEnd=trimEnd;
-
-  // Stop trimmer
   try{vid.pause();}catch(e){}
   vid.muted=true;
-  clearInterval(_trimVidRAF);
-
-  // Go back to editor instantly
+  // Instantly go back to editor
   scPage(1);
   _scShowVideoUI();
-
-  // Reload editor preview — only shows trimmed segment, muted, looping
+  // Reload editor showing ONLY the trimmed segment, muted, looping
   const edVid=$('SC_vid');
   if(edVid&&SC.mediaURL){
     edVid.oncanplaythrough=null;
@@ -8965,25 +8962,20 @@ function scApplyTrim(){
       edVid.currentTime=SC.trimStart;
       edVid.play().catch(()=>{});
       const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
-      // Loop only the trimmed segment
       edVid.ontimeupdate=()=>{
-        if(edVid.currentTime>=trimEnd-0.05){
-          edVid.currentTime=SC.trimStart;
-        }
+        if(edVid.currentTime>=trimEnd-0.05) edVid.currentTime=SC.trimStart;
       };
     };
   }
-
-  // Update duration badge — green to show clip saved
+  // Green badge showing saved clip
   const db=$('SC_vidDuration');
   if(db){
     db.textContent='✂️ '+dur.toFixed(1)+'s clip';
     db.style.display='block';
     db.style.color='#22c55e';
-    db.style.background='rgba(34,197,94,.2)';
+    db.style.background='rgba(34,197,94,.15)';
   }
-
-  toast('✅ Clip saved! '+SC.trimStart.toFixed(1)+'s – '+trimEnd.toFixed(1)+'s','ok');
+  toast('✅ Clip saved: '+SC.trimStart.toFixed(1)+'s – '+trimEnd.toFixed(1)+'s','ok');
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
