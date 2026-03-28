@@ -2486,7 +2486,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div id="storyViewers" style="margin-bottom:8px;"></div>
 
     <!-- Emoji reactions row -->
-    <div style="display:flex;align-items:center;gap:3px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;flex-wrap:nowrap;">
+    <div style="display:flex;align-items:center;gap:3px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;">
       <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
       <button onclick="sendStoryReact('😂')" class="story-react-btn">😂</button>
       <button onclick="sendStoryReact('😮')" class="story-react-btn">😮</button>
@@ -3186,9 +3186,9 @@ function connectSocket(){
   });
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
-      if(msg.sender_id===ME_ID) return;
+      if(msg.sender_id===ME_ID)return;
       const existing=document.querySelector(`[data-msg-id="${msg.id}"]`);
-      if(existing) return;
+      if(existing)return;
       appendMsg(msg);
     }else{
       // Build notification preview
@@ -3276,12 +3276,9 @@ function connectSocket(){
   socket.on('profile_updated',(data)=>{
     if(data&&data.user_id&&data.avatar_url){
       friends.forEach(f=>{if(f.id===data.user_id)f.avatar_url=data.avatar_url;});
-      if(currentFriendId===data.user_id){
-        const chav=document.getElementById('chav');
-        if(chav){chav.style.fontSize='0';chav.innerHTML=`<img src="${data.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`;}
-      }
+      if(currentFriendId===data.user_id){const chav=document.getElementById('chav');if(chav){chav.style.fontSize='0';chav.innerHTML=`<img src="${data.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`;}}  
       renderFriends();
-    }else{loadFriends();}
+    }else loadFriends();
   });
   socket.on('friend_status_updated',(data)=>{
     // Update status display in friend list — re-render will pick it up from profileCache
@@ -3317,20 +3314,13 @@ function sendMsg(){
   closeEmoji();cancelReply();
   const tempId='tmp_'+Date.now();
   appendMsg({id:tempId,chat_id:chatId,sender_id:ME_ID,sender_username:ME_NAME,content:txt,message_type:'text',is_edited:false,is_deleted:false,is_pinned:false,created_at:new Date().toISOString(),reactions:{},user_reactions:[],read_by:0,reply_to:null},true);
-  if(socket&&socket.connected) socket.emit('send_message',{chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId});
+  if(socket&&socket.connected)socket.emit('send_message',{chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId});
   fetch('/api/messages/send',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId})
   }).then(r=>r.json()).then(d=>{
     const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(d.success){
-      if(el){el.setAttribute('data-msg-id',d.message.id);const dot=el.querySelector('.receipt');if(dot){dot.className='receipt delivered';dot.setAttribute('data-msg-id',d.message.id);dot.title='Delivered ✓';}}
-    }else{
-      if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='Failed';}}
-      toast(d.error||'Failed','err');
-    }
-  }).catch(()=>{
-    const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='No connection';}}
-  });
+    if(d.success){if(el){el.setAttribute('data-msg-id',d.message.id);const dot=el.querySelector('.receipt');if(dot){dot.className='receipt delivered';dot.setAttribute('data-msg-id',d.message.id);dot.title='Delivered ✓';}}}
+    else{if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='Failed';}}toast(d.error||'Failed','err');}
+  }).catch(()=>{const el=document.querySelector(`[data-msg-id="${tempId}"]`);if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='No connection';}}});
 }
 async function loadMsgs(chatId){
   const area=document.getElementById('marea');
@@ -4913,38 +4903,27 @@ function setupCallListeners(){
     const displayName=data.is_group_call?data.caller_name+' · '+data.group_name:data.caller_name;
     showIncomingCall(displayName,data.call_type);
     const typeEl=document.getElementById('incomingCallType');
-    if(typeEl&&data.is_group_call) typeEl.textContent='👥 Group '+(data.call_type==='video'?'Video':'Voice')+' call';
+    if(typeEl&&data.is_group_call)typeEl.textContent='👥 Group '+(data.call_type==='video'?'Video':'Voice')+' call';
   });
   socket.on('call_accepted',async data=>{
     hideOutgoingScreen();
     if(!cd.pc||!data.answer){cleanupCall();return;}
-    try{
-      await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-      await flushPending();
-      showCallUI(true);
-      setStatus('Connected');
-    }catch(e){console.error('[call_accepted]',e);toast('Call connection failed','err');cleanupCall();}
+    try{await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));await flushPending();showCallUI(true);setStatus('Connected');}
+    catch(e){console.error('[call_accepted]',e);toast('Call connection failed','err');cleanupCall();}
   });
-  socket.on('call_rejected',data=>{
-    hideOutgoingScreen();
-    toast('📵 '+(data.callee_name||'User')+' — '+(data.busy?'Busy':'Call declined'),'info');
-    cleanupCall();
-  });
+  socket.on('call_rejected',data=>{hideOutgoingScreen();toast('📵 '+(data.callee_name||'User')+' — '+(data.busy?'Busy':'Call declined'),'info');cleanupCall();});
   socket.on('call_ended',data=>{
     if(!cd.active)return;
     const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
     const avgSig=cd._sigSamples&&cd._sigSamples.length?Math.round(cd._sigSamples.reduce((a,b)=>a+b,0)/cd._sigSamples.length):null;
-    cleanupCall();
-    toast('📵 Call ended','info');
+    cleanupCall();toast('📵 Call ended','info');
     if(typeof appendCallMsg==='function')appendCallMsg(type,dur,startT,false);
     if(dur>0&&typeof showCallSummary==='function')showCallSummary(dur,type,avgSig);
   });
   socket.on('ice_candidate',async data=>{
     if(!data.candidate)return;
-    try{
-      if(cd.pc&&cd.pc.remoteDescription&&cd.pc.remoteDescription.type){await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}
-      else{cd.pending=cd.pending||[];cd.pending.push(data.candidate);}
-    }catch(e){console.warn('[ice]',e.message);}
+    try{if(cd.pc&&cd.pc.remoteDescription&&cd.pc.remoteDescription.type){await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}else{cd.pending=cd.pending||[];cd.pending.push(data.candidate);}}
+    catch(e){console.warn('[ice]',e.message);}
   });
   socket.on('missed_call_notify',data=>{
     if(typeof showInAppNotif==='function')showInAppNotif(data.caller_name,'📵 Missed call',null,data.caller_id);
@@ -4974,13 +4953,7 @@ async function showPinned(){
 // showReactPicker: see full implementation in batch1 section
 function reactTo(msgId,emoji){
   const msgEl=document.querySelector(`[data-msg-id="${msgId}"]`);
-  if(msgEl){
-    let rxWrap=msgEl.querySelector('.rx-wrap');
-    if(!rxWrap){rxWrap=document.createElement('div');rxWrap.className='rx-wrap';const bub=msgEl.querySelector('.bub');if(bub)bub.appendChild(rxWrap);}
-    let ex=rxWrap.querySelector(`[data-emoji="${CSS.escape(emoji)}"]`);
-    if(ex){const c=ex.querySelector('.rx-cnt');if(c)c.textContent=parseInt(c.textContent||0)+1;}
-    else{const s=document.createElement('span');s.className='reaction user-reacted';s.dataset.emoji=emoji;s.innerHTML=`${emoji}<span class="rx-cnt">1</span>`;s.onclick=()=>reactTo(msgId,emoji);rxWrap.appendChild(s);}
-  }
+  if(msgEl){let rxWrap=msgEl.querySelector('.rx-wrap');if(!rxWrap){rxWrap=document.createElement('div');rxWrap.className='rx-wrap';const bub=msgEl.querySelector('.bub');if(bub)bub.appendChild(rxWrap);}let ex=rxWrap.querySelector(`[data-emoji="${CSS.escape(emoji)}"]`);if(ex){const c=ex.querySelector('.rx-cnt');if(c)c.textContent=parseInt(c.textContent||0)+1;}else{const s=document.createElement('span');s.className='reaction user-reacted';s.dataset.emoji=emoji;s.innerHTML=`${emoji}<span class="rx-cnt">1</span>`;s.onclick=()=>reactTo(msgId,emoji);rxWrap.appendChild(s);}}
   fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({emoji})}).then(r=>r.json()).then(d=>{if(!d.success)toast(d.error||'Failed','err');}).catch(()=>{});
 }
 
@@ -6350,11 +6323,8 @@ function _renderNotifPanel(){
   if(!body) return;
   body.querySelectorAll('.notif-pitem').forEach(el=>el.remove());
   const allowed=_persistNotifs.filter(n=>n.type==='friend_request'||n.type==='friend_accepted'||n.type==='story'||n.type==='story_reaction'||n.type==='missed_call'||n.type==='group_invite'||!n.type);
-  if(!allowed.length){
-    if(empty) empty.style.display='block';
-    return;
-  }
-  if(empty) empty.style.display='none';
+  if(!allowed.length){if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
   allowed.forEach(n=>{
     const div=document.createElement('div');
     div.className='notif-pitem'+(n.read?'':' unread');
@@ -6727,17 +6697,11 @@ async function saveCroppedAvatar(){
     // Convert to blob and upload
     canvas.toBlob(async blob=>{
       if(!blob){toast('Image processing failed','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
-      const fd = new FormData();
-      fd.append('avatar', blob, 'avatar.jpg');
+      const fd=new FormData();
+      fd.append('avatar',blob,'avatar.jpg');
       let r,d;
-      try{
-        r = await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
-        d = await r.json();
-      }catch(fetchErr){
-        toast('Upload failed — check connection','err');
-        if(btn){btn.disabled=false;btn.textContent='Save';}
-        return;
-      }
+      try{r=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});d=await r.json();}
+      catch(fe){toast('Upload failed','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
       if(d.success){
         // Update profile sheet avatar immediately
         const av=document.getElementById('profileAvLarge');
@@ -6754,11 +6718,11 @@ async function saveCroppedAvatar(){
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
-        if(socket&&socket.connected) socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        if(socket&&socket.connected)socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
         friends.forEach(f=>{if(f.id===ME_ID)f.avatar_url=d.avatar_url;});
         renderFriends();
-      } else toast(d.error||'Upload failed','err');
-      if(btn){ btn.disabled=false; btn.textContent='Save'; }
+      }else toast(d.error||'Upload failed','err');
+      if(btn){btn.disabled=false;btn.textContent='Save';}
     },'image/jpeg',0.92);
   }catch(e){
     toast('Failed: '+e.message,'err');
@@ -8973,7 +8937,7 @@ function scApplyTrim(){
   const dur=end-start;
   if(dur<0.5){toast('Too short — min 0.5s','err');return;}
   if(dur>60){toast('Too long — max 60s','err');return;}
-  SC.trimStart=start; SC.trimEnd=end; SC.videoDuration=total;
+  SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   clearInterval(_trimVidRAF);
   scPage(1);
@@ -8982,7 +8946,7 @@ function scApplyTrim(){
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
     if(ev._trimLoop){ev.removeEventListener('timeupdate',ev._trimLoop);ev._trimLoop=null;}
-    ev.src=SC.mediaURL; ev.muted=true; ev.load();
+    ev.src=SC.mediaURL;ev.muted=true;ev.load();
     ev.oncanplay=function(){
       ev.oncanplay=null;
       ev.currentTime=start;
