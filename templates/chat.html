@@ -2480,18 +2480,20 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <!-- Viewer count (owner only) -->
     <div id="storyViewers" style="margin-bottom:8px;"></div>
 
-    <!-- Emoji reactions row -->
-    <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
-        <button onclick="sendStoryReact('😂')" class="story-react-btn">😂</button>
-        <button onclick="sendStoryReact('😮')" class="story-react-btn">😮</button>
-        <button onclick="sendStoryReact('🔥')" class="story-react-btn">🔥</button>
-        <button onclick="sendStoryReact('👏')" class="story-react-btn">👏</button>
-        <button onclick="sendStoryReact('😍')" class="story-react-btn">😍</button>
-        <button onclick="sendStoryReact('💯')" class="story-react-btn">💯</button>
-        <button onclick="sendStoryReact('😢')" class="story-react-btn">😢</button>
-      </div>
+        <!-- Emoji reactions row — scrollable, compact -->
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+      <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
+      <button onclick="sendStoryReact('😂')" class="story-react-btn">😂</button>
+      <button onclick="sendStoryReact('😮')" class="story-react-btn">😮</button>
+      <button onclick="sendStoryReact('🔥')" class="story-react-btn">🔥</button>
+      <button onclick="sendStoryReact('👏')" class="story-react-btn">👏</button>
+      <button onclick="sendStoryReact('😍')" class="story-react-btn">😍</button>
+      <button onclick="sendStoryReact('💯')" class="story-react-btn">💯</button>
+      <button onclick="sendStoryReact('😢')" class="story-react-btn">😢</button>
+      <button onclick="sendStoryReact('🙏')" class="story-react-btn">🙏</button>
+      <button onclick="sendStoryReact('💀')" class="story-react-btn">💀</button>
+      <button onclick="sendStoryReact('🥰')" class="story-react-btn">🥰</button>
+      <button onclick="sendStoryReact('😭')" class="story-react-btn">😭</button>
     </div>
     <!-- Comment / message box -->
     <div style="display:flex;gap:8px;align-items:center;">
@@ -2550,17 +2552,19 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div id="SC_p1" style="display:none;height:100%;flex-direction:column;position:relative;">
 
     <!-- Canvas / preview area -->
-    <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
+    <div id="SC_canvas" onclick="if(event.target===this||event.target.id==='SC_vid')scToggleTools()" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
       <div id="SC_rotWrap" style="display:contents;touch-action:none;">
         <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
       </div>
-      <video id="SC_vid" onclick="scToggleTools()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline autoplay loop></video>
+      <video id="SC_vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline autoplay loop></video>
 
       <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
 
       <!-- ✂️ Edit & Cut button — visible for all videos -->
-      <div id="SC_trimBtnWrap" style="display:none;"></div>
+      <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
+        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Edit & Cut</button>
+      </div>
 
       <!-- Text story background + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#ec5b08,#d44e07);"></div>
@@ -2582,11 +2586,6 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         pointer-events:none;
       "></div>
     </div>
-
-    <!-- Tap-outside overlay (when tools open) -->
-    <div id="SC_toolsOv" onclick="scCloseTools()" style="display:none;position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.18);"></div>
-    <!-- Tap-to-show overlay (when tools hidden, tap anywhere toggles tools up) -->
-    <div id="SC_tapShow" onclick="scToggleTools()" style="position:absolute;inset:0;z-index:9;background:transparent;cursor:pointer;"></div>
 
     <!-- TOP-LEFT: Back to chooser -->
     <div style="position:absolute;top:14px;left:12px;z-index:10;">
@@ -2617,7 +2616,63 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div onclick="scClose()" style="padding:11px 18px;color:#ef4444;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">✕ <span>Discard Story</span></div>
     </div>
 
-        <div style="display:none;"><button id="SC_arrowBtn"><svg id="SC_arrowSvg"></svg></button></div>
+    <!-- BOTTOM-CENTER: double-arrow toggle for edit tools -->
+    <div style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);z-index:10;">
+      <button id="SC_arrowBtn" onclick="scToggleTools()" style="
+        background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.18);color:#fff;
+        border-radius:20px;padding:6px 14px;cursor:pointer;
+        display:flex;flex-direction:column;align-items:center;gap:0;
+        backdrop-filter:blur(6px);transition:background .15s;
+        -webkit-tap-highlight-color:transparent;">
+        <svg id="SC_arrowSvg" width="22" height="20" viewBox="0 0 22 20" fill="none" style="transition:transform .25s cubic-bezier(.4,0,.2,1);display:block;">
+          <polyline points="2,14 11,5 20,14" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <polyline points="5,18 11,12 17,18" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Tap-outside overlay -->
+    <div id="SC_toolsOv" onclick="scCloseTools()" style="
+      display:none;position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.18);"></div>
+
+    <!-- Edit tools panel (slides up) -->
+    <div id="SC_tools" style="
+      position:absolute;bottom:0;left:0;right:0;z-index:11;
+      background:rgba(14,14,22,.92);border-top:1px solid rgba(255,255,255,.1);
+      padding:12px 16px 28px;
+      transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+      backdrop-filter:blur(8px);">
+      <!-- Quick action buttons row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+        <button onclick="scShowContrast()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">🎨</span>Adjust
+        </button>
+        <button id="SC_songBtn" onclick="scOpenSongPage()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">🎵</span><span id="SC_songBtnLabel">Add Song</span>
+        </button>
+        <button id="SC_captionBtn" onclick="scAddCaption()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✏️</span>Add Text
+        </button>
+        <button id="SC_trimToolBtn" onclick="scCloseTools();scOpenTrimmer();" style="display:none;background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.4);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:20px;">✂️</span>Edit & Cut
+        </button>
+      </div>
+
+      <!-- VIDEO CONTROLS — only shown when video is loaded -->
+      <div id="SC_videoControls" style="display:none;margin-bottom:14px;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 12px;">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎬 Video</div>
+        <!-- Play / Stop -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <button id="SC_vidPlayBtn" onclick="scEditorTogglePlay()" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">Video Sound</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;">🔇</span>
+              <input type="range" id="SC_vidVolSlider" min="0" max="100" value="100" class="sc-slider" style="flex:1;" oninput="scSetVidVol(this.value)">
+              <span style="font-size:12px;">🔊</span>
+              <span id="SC_vidVolVal" style="font-size:11px;color:rgba(255,255,255,.6);width:32px;text-align:right;font-weight:700;">100%</span>
+            </div>
+          </div>
         </div>
         <!-- Music volume (only shown when song selected) -->
         <div id="SC_musicVolRow" style="display:none;">
@@ -4865,33 +4920,7 @@ async function showPinned(){
   try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();if(d.success&&d.messages.length>0){const list=d.messages.map(m=>`• ${m.content.substring(0,60)}`).join('\n');alert(`Pinned Messages:\n\n${list}`);}else toast('No pinned messages','info');}catch(e){toast('Failed','err');}
 }
 // showReactPicker: see full implementation in batch1 section
-function reactTo(msgId,emoji){
-  // Optimistic UI — show reaction instantly on tap
-  const msgEl=document.querySelector(`[data-msg-id="${msgId}"]`);
-  if(msgEl){
-    let rxWrap=msgEl.querySelector('.rx-wrap');
-    if(!rxWrap){ rxWrap=document.createElement('div'); rxWrap.className='rx-wrap'; msgEl.querySelector('.bub').appendChild(rxWrap); }
-    let existing=rxWrap.querySelector(`[data-emoji="${CSS.escape(emoji)}"]`);
-    if(existing){
-      const cnt=existing.querySelector('.rx-cnt');
-      if(cnt) cnt.textContent=parseInt(cnt.textContent||1)+1;
-    } else {
-      const span=document.createElement('span');
-      span.className='reaction user-reacted';
-      span.dataset.emoji=emoji;
-      span.innerHTML=`${emoji}<span class="rx-cnt">1</span>`;
-      span.onclick=()=>reactTo(msgId,emoji);
-      rxWrap.appendChild(span);
-    }
-  }
-  // Fire and forget — save to server in background
-  fetch(`/api/messages/${msgId}/react`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body:JSON.stringify({emoji})
-  }).then(r=>r.json()).then(d=>{ if(!d.success) toast(d.error||'Failed','err'); }).catch(()=>{});
-}
+async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
 
 const SHEET_QUICK  = ['❤️','😂','😮','😢','👍','🎉'];
 const SHEET_ALL    = [
@@ -6635,12 +6664,13 @@ async function saveCroppedAvatar(){
 
     // Convert to blob and upload
     canvas.toBlob(async blob=>{
+      if(!blob){ toast('Failed to process image','err'); if(btn){btn.disabled=false;btn.textContent='Save';} return; }
       const fd = new FormData();
       fd.append('avatar', blob, 'avatar.jpg');
-      const r = await fetch('/api/profile/avatar',{method:'POST',body:fd});
+      try{
+      const r = await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
       const d = await r.json();
       if(d.success){
-        // Update profile sheet avatar immediately
         const av=document.getElementById('profileAvLarge');
         if(av){
           av.innerHTML='';
@@ -6657,6 +6687,7 @@ async function saveCroppedAvatar(){
         closeAvatarCrop();
       } else toast(d.error||'Upload failed','err');
       if(btn){ btn.disabled=false; btn.textContent='Save'; }
+      }catch(uploadErr){ toast('Upload failed: '+uploadErr.message,'err'); if(btn){btn.disabled=false;btn.textContent='Save';} }
     },'image/jpeg',0.92);
   }catch(e){
     toast('Failed: '+e.message,'err');
@@ -7977,8 +8008,8 @@ function _scShowVideoUI(){
   const trimToolBtn = $('SC_trimToolBtn');
   const vidCtrls    = $('SC_videoControls');
 
-  // Always show cut/edit + video controls for video
-  if(trimBtnWrap) trimBtnWrap.style.display = 'block';
+  // trimBtnWrap is intentionally hidden (Edit & Cut is inside arrow tools panel)
+  if(trimBtnWrap) trimBtnWrap.style.display = 'none';
   if(trimToolBtn){
     trimToolBtn.style.display       = 'flex';
     trimToolBtn.style.flexDirection = 'column';
@@ -8131,10 +8162,8 @@ function scBackToEditor(){ scPage(1); }
 function scToggleTools(){
   SC.toolsOpen=!SC.toolsOpen;
   const tools=$('SC_tools'), ov=$('SC_toolsOv'), svg=$('SC_arrowSvg');
-  const tapShow=$('SC_tapShow');
   tools.style.transform=SC.toolsOpen?'translateY(0)':'translateY(100%)';
   ov.style.display=SC.toolsOpen?'block':'none';
-  if(tapShow) tapShow.style.display=SC.toolsOpen?'none':'block';
   if(svg) svg.style.transform=SC.toolsOpen?'rotate(180deg)':'rotate(0deg)';
   // When tools open: restore video volume to current setting
   if(SC.toolsOpen && SC.mediaType==='video'){
@@ -8154,7 +8183,6 @@ function scCloseTools(){
   SC.toolsOpen=false;
   $('SC_tools').style.transform='translateY(100%)';
   $('SC_toolsOv').style.display='none';
-  const tapShow=$('SC_tapShow'); if(tapShow) tapShow.style.display='block';
   const svg=$('SC_arrowSvg'); if(svg) svg.style.transform='rotate(0deg)';
 }
 
@@ -8878,10 +8906,8 @@ function scApplyTrim(){
   SC.trimStart=start; SC.trimEnd=end; SC.videoDuration=total;
   try{ vid.pause(); }catch(e){}
   clearInterval(_trimVidRAF);
-  // Go back to editor instantly
   scPage(1);
   _scShowVideoUI();
-  // Load ONLY the trimmed segment in editor, looping muted
   const ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ ev.pause(); }catch(e){}
@@ -8896,10 +8922,9 @@ function scApplyTrim(){
       ev.addEventListener('timeupdate',ev._trimLoop);
     };
   }
-  // Green badge showing saved clip
   const db=$('SC_vidDuration');
   if(db){ db.textContent='✂️ '+dur.toFixed(1)+'s'; db.style.color='#22c55e'; db.style.display='block'; }
-  toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
+  toast('✅ Clip: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
