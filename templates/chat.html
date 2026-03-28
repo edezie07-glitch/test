@@ -15,7 +15,7 @@ html,body{height:100%;overflow:hidden;}
 body{overflow-x:hidden;}
 body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;color:var(--txt);transition:background .25s,color .25s;}
 ::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:transparent;}
-
+/* SIDEBAR */
 .sidebar{width:300px;min-width:300px;background:var(--sb);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:background .25s,border-color .25s;}
 .sh{padding:16px 14px 12px;background:var(--sb2);border-bottom:1px solid var(--bdr);}
 .sh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
@@ -30,7 +30,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .sinp-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--mute);font-size:13px;pointer-events:none;}
 .sinp{width:100%;padding:8px 12px 8px 32px;background:var(--inp);border:1px solid var(--ibdr);border-radius:10px;color:var(--txt);font-size:13px;font-family:var(--font-b);transition:border-color var(--trans),background .25s;}
 .sinp::placeholder{color:var(--mute);}.sinp:focus{outline:none;border-color:var(--brand);}
-
+/* Slide Panels */
 .spanel{background:var(--sb2);border-bottom:1px solid var(--bdr);max-height:0;overflow:hidden;transition:max-height .3s ease;}
 .spanel.open{max-height:250px;overflow-y:auto;}
 .ptitle{padding:10px 14px 5px;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--mute);text-transform:uppercase;}
@@ -44,7 +44,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .sr-l{display:flex;align-items:center;gap:8px;}
 .sr-nm{font-size:13px;font-weight:500;color:var(--txt);}
 .sr-st{font-size:11px;color:var(--mute);}
-
+/* Pills */
 .pill{padding:4px 11px;border:none;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:opacity var(--trans);}
 .pill:hover{opacity:.85;}
 .p-add{background:var(--brand);color:#fff;}
@@ -52,7 +52,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .p-pend{background:var(--hov);color:var(--mute);cursor:default;}
 .p-ok{background:#22c55e;color:#fff;}
 .p-no{background:var(--hov);color:var(--sub);}
-
+/* Chat List */
 .llabel{padding:10px 14px 3px;font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--mute);text-transform:uppercase;}
 .crow{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 5px;border-radius:11px;cursor:pointer;transition:background var(--trans);position:relative;}
 .crow:hover{background:var(--hov);}
@@ -65,7 +65,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cts{font-size:10.5px;color:var(--mute);}
 .cprev{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 .lempty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;gap:6px;text-align:center;color:var(--mute);font-size:13px;}
-
+/* Avatar */
 .av{width:38px;height:38px;border-radius:12px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;overflow:hidden;position:relative;}
 .av img{width:100%;height:100%;object-fit:cover;}
 .av.sm{width:32px;height:32px;border-radius:9px;font-size:12px;}
@@ -73,7 +73,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .av.xl{width:64px;height:64px;border-radius:18px;font-size:26px;}
 .av .online-dot{position:absolute;bottom:0;right:0;width:10px;height:10px;background:var(--online);border:2px solid var(--sb);border-radius:50%;}
 .av.lg .online-dot{width:12px;height:12px;}
-
+/* SETTINGS DRAWER */
 .sov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;opacity:0;pointer-events:none;transition:opacity .25s;}
 .sov.open{opacity:1;pointer-events:all;}
 .sdraw{position:fixed;top:0;right:0;height:100%;width:340px;background:var(--bg);border-left:1px solid var(--bdr);z-index:810;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1),background .25s;box-shadow:-8px 0 40px rgba(0,0,0,.3);}
@@ -115,7 +115,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .tog.on::after{transform:translateX(18px);background:#fff;}
 .dangbtn{width:100%;padding:11px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:15px;font-weight:600;font-family:var(--font-b);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background var(--trans);margin-top:2px;}
 .dangbtn:hover{background:rgba(239,68,68,.18);}
-
+/* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--chat);transition:background .25s;}
 .chdr{padding:13px 18px;min-height:62px;background:var(--hdr);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px;transition:background .25s,border-color .25s;}
 .chdr-info{flex:1;min-width:0;}
@@ -125,13 +125,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .chdr-actions{display:flex;gap:6px;}
 .chdr-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);}
 .chdr-btn:hover{background:rgba(236,91,8,.15);color:var(--brand);}
-
+/* Pinned Messages Banner */
 .pinned-banner{background:rgba(251,146,60,.08);border-bottom:1px solid rgba(251,146,60,.2);padding:8px 18px;display:none;cursor:pointer;transition:background var(--trans);}
 .pinned-banner:hover{background:rgba(251,146,60,.12);}
 .pinned-banner.show{display:flex;align-items:center;gap:8px;}
 .pinned-banner .pin-icon{color:var(--warn);font-size:14px;}
 .pinned-banner .pin-text{flex:1;font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-
+/* Message Area */
 .marea{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 18px 8px;display:flex;flex-direction:column;gap:3px;scrollbar-width:none;-ms-overflow-style:none;}
 .clist{flex:1;overflow-y:auto;padding:6px 0;scrollbar-width:none;-ms-overflow-style:none;}
 .clist::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;}
@@ -154,6 +154,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .reply-prev-from{font-weight:600;color:var(--brand);margin-bottom:2px;}
 .reply-prev-text{opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
+/* Reactions sit OUTSIDE the bubble, overlapping slightly so layout doesn't shift */
 .reactions{
   display:flex;gap:3px;flex-wrap:wrap;
   position:absolute;bottom:-14px;
@@ -176,7 +177,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .reaction:active{transform:scale(.94);}
 .reaction.user-reacted{border-color:var(--brand);background:rgba(236,91,8,.08);}
 .reaction .count{font-size:11px;font-weight:600;color:var(--sub);}
-
+/* ── FULL EMOJI PICKER SHEET ── */
 .react-sheet-ov{position:fixed;inset:0;z-index:700;background:rgba(0,0,0,.3);display:none;}
 .react-sheet-ov.show{display:block;}
 .react-sheet{
@@ -213,7 +214,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 .rs-emoji:hover{background:var(--hov);transform:scale(1.2);}
 .bub img{max-width:260px;max-height:260px;border-radius:10px;display:block;cursor:zoom-in;margin-bottom:4px;}
-
+/* Scrollable photo strip */
 .photo-strip{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;max-width:min(320px,75vw);-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:rgba(236,91,8,.4) transparent;cursor:grab;}
 .photo-strip:active{cursor:grabbing;}
 .photo-strip::-webkit-scrollbar{height:3px;}
@@ -221,14 +222,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .photo-strip::-webkit-scrollbar-thumb{background:rgba(236,91,8,.35);border-radius:4px;}
 .photo-strip img{width:120px;height:120px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;scroll-snap-align:start;transition:opacity .15s,transform .15s;}
 .photo-strip img:hover{opacity:.88;transform:scale(1.02);}
-
+/* Read receipt circle — light orange=delivered, bright orange=seen */
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .receipt{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:6px;vertical-align:middle;flex-shrink:0;transition:background .5s,box-shadow .5s;}
-.receipt.sending{background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.5);animation:rPulse .9s ease-in-out infinite;}
-.receipt.delivered{background:#ec5b08;border:2px solid #d44e06;}
-.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 6px rgba(255,136,0,.7);}
-.receipt.failed{background:#ef4444;border:2px solid #dc2626;}
-@keyframes rPulse{0%,100%{opacity:1;}50%{opacity:.25;}}
-
+.receipt.delivered{background:rgba(255,190,120,.35);border:2px solid rgba(255,160,80,.5);}
+.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 5px rgba(255,136,0,.55);}
+/* Row wrapper for time + receipt */
 .msg-foot{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;}
 .mts{font-size:11px;opacity:.65;white-space:nowrap;display:block;margin-top:4px;}
 .mgrp.sent .mts{color:rgba(255,255,255,.55);text-align:right;}
@@ -275,14 +274,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .search-msg-from{font-size:11px;font-weight:600;color:var(--brand);margin-bottom:4px;}
 .search-msg-content{font-size:13px;color:var(--txt);}
 .search-msg-time{font-size:10px;color:var(--mute);margin-top:4px;}
-
+/* TOAST — system toasts (ok/err/info) */
 .tstack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
 .toast{background:var(--card);color:var(--txt);padding:10px 20px;border-radius:24px;font-size:12.5px;font-family:var(--font-b);box-shadow:0 4px 20px rgba(0,0,0,.18);border:1px solid var(--bdr);opacity:0;transform:translateY(12px) scale(.96);transition:opacity .22s ease,transform .22s ease;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateY(0) scale(1);}
 .toast.ok{border-left:3px solid #22c55e;}
 .toast.err{border-left:3px solid #ef4444;}
 .toast.info{border-left:3px solid var(--brand);}
-
+/* IN-APP NOTIFICATION BUBBLE — slides in from top */
 .notif-stack{
   position:fixed;top:12px;right:12px;
   z-index:99999;
@@ -323,11 +322,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .notif-name:hover{text-decoration:underline;}
 .notif-text{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .notif-time{font-size:10px;color:var(--mute);white-space:nowrap;margin-left:4px;align-self:flex-start;margin-top:2px;}
-
+/* Toast has no ⋮ menu — clean and simple */
 .notif-menu-btn{ display:none; }
 .notif-actions{ display:none; }
 .notif-act-btn{ display:none; }
-
+/* Persistent notification panel */
 .notif-panel-ov{
   display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.4);
   backdrop-filter:blur(2px);
@@ -392,12 +391,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .notif-pitem-act:hover{background:var(--hov);}
 .notif-pitem-act.del{color:#ef4444;}
 .np-empty{text-align:center;padding:48px 20px;color:var(--mute);font-size:14px;}
-
+/* Story emoji float animation */
 @keyframes storyEmojiFloat{
   0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
   100%{opacity:0;transform:translateX(-50%) translateY(-80px) scale(1.5);}
 }
-
+/* Undo snackbar */
 .notif-undo-bar{
   position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
   background:#1e1e2e;border:1px solid rgba(236,91,8,.4);
@@ -414,7 +413,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   border-radius:8px;padding:5px 14px;font-size:12px;
   font-weight:700;cursor:pointer;
 }
-
+/* Context Menu */
+/* ── LONG-PRESS MESSAGE SHEET ── */
 .msg-sheet-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;backdrop-filter:blur(2px);}
 .msg-sheet-ov.show{display:block;}
 .msg-sheet{
@@ -429,7 +429,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   padding-bottom:max(16px,env(safe-area-inset-bottom));
 }
 .msg-sheet.show{transform:translateX(-50%) translateY(0);}
-
+/* emoji strip at top of sheet */
 .ms-emoji-strip{
   display:flex;align-items:center;gap:0;
   padding:14px 12px 10px;
@@ -461,7 +461,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   transition:background .1s,transform .1s;
 }
 .ms-emoji-plus:active{transform:scale(.9);}
-
+/* action rows */
 .ms-actions{padding:6px 0;}
 .ms-act{
   display:flex;align-items:center;gap:14px;
@@ -473,7 +473,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .ms-act:active{background:var(--hov);}
 .ms-act.danger{color:#ef4444;}
 .ms-act-icon{font-size:19px;width:26px;text-align:center;flex-shrink:0;}
-
+/* preview bubble at top of sheet */
 .ms-preview{
   padding:10px 16px 0;
   display:flex;align-items:flex-end;gap:8px;
@@ -483,7 +483,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   background:var(--hov);padding:8px 12px;border-radius:12px;
   font-size:13px;color:var(--mute);
 }
-
+/* delete options sub-sheet */
 .del-sheet{
   position:fixed;bottom:0;left:50%;
   transform:translateX(-50%) translateY(105%);
@@ -495,11 +495,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .del-sheet.show{transform:translateX(-50%) translateY(0);}
 .del-sheet-title{padding:16px 20px 10px;font-size:13px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;}
 
+/* MOBILE */
 .mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:700;}
 .mov.show{display:block;}
 .mtog{display:none;position:fixed;top:10px;left:10px;z-index:1500;width:42px;height:42px;border-radius:11px;border:none;background:var(--brand);color:#fff;font-size:20px;cursor:pointer;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .mtog-chdr{display:none;width:38px;height:38px;border-radius:10px;border:none;background:transparent;color:var(--txt);font-size:20px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;margin-right:6px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-
+/* Image Preview Modal */
 .img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:900;display:none;}
 .img-preview-overlay.show{display:block;}
 .img-preview-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:20px;z-index:910;width:90%;max-width:700px;max-height:90vh;display:none;flex-direction:column;box-shadow:var(--shad);}
@@ -515,7 +516,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cancel-btn{padding:10px 24px;border:1px solid var(--bdr);border-radius:10px;background:var(--hov);color:var(--txt);cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .send-btn{padding:10px 24px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .send-btn:hover{background:var(--brand-dk);}
-
+/* Profile View Modal */
 .profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;}
 .profile-overlay.show{display:block;}
 .profile-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);background:var(--card);border-radius:20px;z-index:1001;width:92%;max-width:450px;display:none;flex-direction:column;box-shadow:var(--shad);max-height:92vh;overflow-y:auto;transition:transform .2s ease,opacity .2s ease;opacity:0;}
@@ -532,7 +533,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;z-index:2;
 }
-
+/* Avatar 3-dot menu */
 .av-menu{
   position:absolute;top:100%;left:50%;transform:translateX(-50%);
   background:var(--card);border:1px solid var(--bdr);
@@ -547,7 +548,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   cursor:pointer;width:100%;text-align:left;
 }
 .av-menu-item:hover{background:var(--hov);}
-
+/* Crop overlay */
 #avatarCropOverlay{
   display:none;position:fixed;inset:0;z-index:9500;
   background:#000;flex-direction:column;
@@ -581,7 +582,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   font-size:11px;color:rgba(255,255,255,.4);
   text-align:center;flex:1;
 }
-
+/* Full image viewer */
 #profileFullImg{
   display:none;position:fixed;inset:0;z-index:9600;
   background:rgba(0,0,0,.95);align-items:center;
@@ -595,7 +596,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .profile-actions{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
 .profile-action-btn{padding:12px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:background var(--trans);}
 .profile-action-btn:hover{background:var(--brand-dk);}
-
+/* ── Call UI – fullscreen renovated ── */
+/* ══ CALL SCREEN ══ */
 .call-screen{
   position:fixed;inset:0;z-index:950;
   background:#000;
@@ -606,14 +608,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 .call-screen.show{opacity:1;pointer-events:all;}
 
+/* Remote video fullscreen */
 #remoteVideo{
   position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;z-index:0;background:#111;
   will-change:transform;
-  transform:translateZ(0);   
+  transform:translateZ(0);   /* force GPU layer */
   -webkit-transform:translateZ(0);
 }
 
+/* Voice-only bg */
 #callVoiceBg{
   position:absolute;inset:0;z-index:0;display:none;
   background:linear-gradient(160deg,#120800 0%,#1a0a00 55%,#0d1f3c 100%);
@@ -625,6 +629,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #callVoiceBg::before{width:360px;height:360px;background:radial-gradient(circle,#ec5b08,transparent);top:-80px;left:-60px;}
 #callVoiceBg::after{width:300px;height:300px;background:radial-gradient(circle,#06b6d4,transparent);bottom:80px;right:-40px;}
 
+/* Top overlay — hidden by default, shown on tap */
 #callTopBar{
   position:absolute;top:0;left:0;right:0;z-index:6;
   display:flex;align-items:flex-start;justify-content:space-between;
@@ -639,6 +644,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .call-status{font-size:13px;color:rgba(255,255,255,.6);letter-spacing:.4px;margin-top:3px;}
 .call-timer{font-size:22px;font-weight:700;color:#fff;letter-spacing:3px;margin-top:4px;display:none;}
 
+/* Signal dot — top right, always visible */
 #callSignalWrap{
   position:absolute;top:clamp(44px,10vw,60px);right:18px;z-index:7;
   display:flex;align-items:center;gap:5px;
@@ -650,6 +656,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 #callSignalLabel{font-size:10px;color:rgba(255,255,255,.55);font-weight:700;}
 
+/* Voice center avatar */
 #callVoiceCenter{
   position:absolute;inset:0;z-index:2;
   display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;
@@ -672,6 +679,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   border:3px solid rgba(255,255,255,.1);
 }
 
+/* Draggable PiP */
 #localVideo{
   position:absolute;bottom:140px;right:16px;
   width:96px;height:128px;border-radius:16px;
@@ -685,6 +693,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 #localVideo.dragging{cursor:grabbing;box-shadow:0 12px 36px rgba(0,0,0,.9);border-color:rgba(255,255,255,.7);transition:none;}
 
+/* Bottom dock */
 #callDock{
   position:absolute;bottom:0;left:0;right:0;z-index:9;
   display:flex;flex-direction:column;align-items:center;
@@ -692,7 +701,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   opacity:0;
   transition:opacity .3s ease;
 }
-
+/* Controls tray — hidden until user taps chevron */
 #callCtrlTray{
   display:flex;gap:16px;align-items:center;justify-content:center;
   padding:0 20px;
@@ -705,10 +714,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   max-height:160px;opacity:1;padding:12px 20px;
   pointer-events:all;
 }
-
+/* Chevron rotates when tray is open */
 #callDockToggle{ margin-bottom:8px; }
 #callDockToggle.open #callDockChevrons{ transform:rotate(180deg); }
 
+/* Buttons */
 .ccb{
   width:62px;height:62px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
@@ -730,8 +740,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 }
 .ccb.end-btn:active{transform:scale(.85);}
 
+/* Incoming call */
+/* Outgoing screen — reuses incoming-screen styles */
 #outgoingCallModal{ z-index:975; }
 
+/* Incoming call */
 .incoming-screen{
   position:fixed;inset:0;z-index:980;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -779,7 +792,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .call-msg.answered{color:#22c55e;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.05);}
 #incomingCallModal .av{animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 16px rgba(34,197,94,0);}}
-
+/* =====================================================
+   ADDED: Mobile chat list page
+   ===================================================== */
+/* Mobile chat list page — hidden on desktop, shown on mobile */
 .chat-list-page{display:none;position:fixed;inset:0;background:var(--sb);flex-direction:column;z-index:50;overflow:hidden;}
 .clp-header{padding:14px 14px 10px;background:var(--sb2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .clp-title{font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--txt);}
@@ -789,15 +805,15 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .clp-tab{flex:1;padding:10px 0;text-align:center;font-size:13px;font-weight:600;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s;}
 .clp-tab.active{color:var(--brand);border-bottom-color:var(--brand);}
 .clp-body{flex:1;overflow-y:auto;}
-
+/* Back arrow button shown in chat header on mobile */
 .back-btn{display:none;width:36px;height:36px;border-radius:10px;border:none;background:transparent;color:var(--txt);font-size:26px;font-weight:300;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;line-height:1;padding:0;}
-
+/* 3-dot button on each crow — appears on hover (desktop) or long press (mobile) */
 .crow-menu-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:8px;border:none;background:var(--card);color:var(--sub);font-size:17px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:5;box-shadow:0 1px 6px rgba(0,0,0,.18);line-height:1;}
 .crow:hover .crow-menu-btn{display:flex;}
-
+/* Conversation 3-line menu button (inside open chat header) */
 .conv3-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--hov);color:var(--sub);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background var(--trans);letter-spacing:1px;}
 .conv3-btn:hover{background:rgba(236,91,8,.15);color:var(--brand);}
-
+/* Mute chat duration picker */
 .mute-sheet-ov{display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);}
 .mute-sheet-ov.show{display:block;}
 .mute-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(420px,100vw);
@@ -807,7 +823,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   transition:background .15s;-webkit-tap-highlight-color:transparent;}
 .mute-opt:hover,.mute-opt:active{background:var(--hov);}
 .mute-opt .mute-ico{font-size:20px;width:28px;text-align:center;}
-
+/* Shared floating dropdown menu */
 .crow-ctx{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:13px;padding:6px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:2000;display:none;animation:clpFadeIn .12s ease;}
 .crow-ctx.show{display:block;}
 @keyframes clpFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
@@ -816,7 +832,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .crow-ctx-item.danger{color:#ef4444;}
 .crow-ctx-item.danger:hover{background:rgba(239,68,68,.08);}
 .crow-ctx-sep{height:1px;background:var(--bdr);margin:4px 6px;}
-
+/* Archive page — full screen overlay */
 .archive-page{display:none;position:fixed;inset:0;background:var(--sb);flex-direction:column;z-index:100;overflow:hidden;}
 .archive-page.show{display:flex;}
 .arch-hdr{padding:14px;background:var(--sb2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;flex-shrink:0;}
@@ -832,19 +848,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .arch-unbtn{padding:7px 15px;border:none;border-radius:20px;background:var(--brand);color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background var(--trans);}
 .arch-unbtn:hover{background:var(--brand-dk);}
 .arch-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:8px;color:var(--mute);text-align:center;}
-
+/* =====================================================
+   MOBILE BREAKPOINT — add to existing
+   ===================================================== */
 @media(max-width:720px){
   .mtog-chdr{display:none !important;}
   .mov{display:none;}
   .mov.show{display:block;}
-  
+  /* Sidebar hidden — replaced by chat-list-page */
   .sidebar{display:none !important;}
-  
+  /* Chat list page shown */
   .chat-list-page{display:flex;}
-  
+  /* Main hidden until a chat is opened */
   .main{width:100%;position:relative;z-index:1;display:none;}
   .main.chat-open{display:flex;}
-  
+  /* Back button shown */
   .back-btn{display:flex;}
   .chdr{padding-left:6px;}
   .bub{max-width:80%;}
@@ -868,13 +886,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   .iarea{padding-bottom:max(24px,calc(env(safe-area-inset-bottom,0px) + 16px));}
 }
 
+/* ── VOICE MESSAGE ── */
 .voice-msg{display:flex;align-items:center;gap:10px;min-width:200px;max-width:280px;}
 .vm-play{width:36px;height:36px;border-radius:50%;background:var(--brand);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
 .vm-play:hover{background:var(--brand-dk);}
 .vm-bar{flex:1;height:4px;background:rgba(255,255,255,.25);border-radius:4px;position:relative;cursor:pointer;overflow:hidden;}
 .vm-bar-fill{height:100%;background:rgba(255,255,255,.8);border-radius:4px;width:0%;transition:width .1s linear;}
 .vm-dur{font-size:11px;color:rgba(255,255,255,.7);white-space:nowrap;min-width:32px;font-variant-numeric:tabular-nums;}
-
+/* Waveform track */
 .wv-track{flex:1;height:36px;position:relative;cursor:pointer;display:flex;align-items:center;}
 .wv-bars{display:flex;align-items:center;gap:2px;width:100%;height:28px;position:relative;z-index:1;}
 .wv-bar{flex:1;background:rgba(255,255,255,.35);border-radius:2px;min-height:3px;transition:background .15s;}
@@ -882,13 +901,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .mgrp.recv .wv-bar{background:rgba(236,91,8,.30);}
 .mgrp.recv .wv-progress{background:rgba(236,91,8,.12);}
 .mgrp.recv .vm-dur{color:var(--mute);}
-
+/* Recording pulse */
 .rec-btn{position:relative;}
 
 .rec-btn.recording{background:rgba(239,68,68,.15)!important;color:#ef4444!important;}
 .rec-btn.recording::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #ef4444;animation:recpulse 1s infinite;}
 @keyframes recpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.15);}}
-
+/* ── FORWARD MODAL ── */
 .fwd-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;}
 .fwd-modal-ov.show{display:block;}
 .fwd-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:20px;z-index:1201;max-height:70vh;display:none;flex-direction:column;}
@@ -901,8 +920,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .fwd-row .av{flex-shrink:0;}
 .fwd-chk{width:20px;height:20px;border-radius:50%;border:2px solid var(--bdr);margin-left:auto;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;}
 .fwd-row.selected .fwd-chk{background:var(--brand);border-color:var(--brand);color:#fff;}
-
+/* ── FORWARD LABEL on message ── */
 .fwd-label{font-size:10px;color:var(--mute);margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+/* ── GLOBAL SEARCH ── */
 
 .gs-result{padding:12px 14px;border-radius:12px;cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:6px;}
 .gs-result:hover{background:var(--hov);border-color:var(--bdr);}
@@ -910,13 +930,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .gs-chat{font-size:10px;color:var(--mute);margin-bottom:4px;}
 .gs-content{font-size:13px;color:var(--txt);}
 .gs-time{font-size:10px;color:var(--mute);margin-top:3px;}
-
+/* ── PINNED CHATS ── */
 .crow.pinned-chat{border-left:3px solid var(--brand);}
 .crow.pinned-chat .cuname::before{content:'📌 ';font-size:10px;}
+/* ── ENHANCED REACTIONS ── */
 
+/* ── SWIPE TO REPLY indicator ── */
 .swipe-reply-hint{position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0;transition:opacity .2s;font-size:18px;pointer-events:none;}
 .mgrp.swiping .swipe-reply-hint{opacity:1;}
 
+
+/* ── VOICE PREVIEW MODAL ── */
 .vp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;}
 .vp-overlay.show{display:block;}
 .vp-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px 32px;z-index:1201;display:none;flex-direction:column;gap:16px;}
@@ -935,7 +959,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .vp-cancel{flex:1;padding:13px;border:none;border-radius:12px;background:var(--hov);color:var(--txt);font-size:14px;font-weight:600;cursor:pointer;}
 .vp-send{flex:1;padding:13px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
 .vp-send:hover{background:var(--brand-dk);}
-
+/* Recording state indicator */
 .rec-btn.recording{background:rgba(239,68,68,.15)!important;color:#ef4444!important;position:relative;}
 .rec-btn.recording::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #ef4444;animation:recpulse 1s infinite;}
 @keyframes recpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(1.15);}}
@@ -945,6 +969,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 @keyframes heartPop{0%{opacity:1;transform:translate(-50%,-50%) scale(0);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.4);}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2);}}
 
+
+
+/* Stories slide-up panel: 1/4 of screen height from bottom-right */
 .stories-popup-ov{
   position:fixed;inset:0;
   background:rgba(0,0,0,.3);
@@ -958,7 +985,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   right:0;
   top:0;
   bottom:0;
-  width:72vw;        
+  width:72vw;        /* roughly 3/4 — leaves 1/4 of screen visible on left */
   max-width:300px;
   background:var(--card);
   border-left:1px solid var(--bdr);
@@ -990,7 +1017,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   padding:6px 0;
 }
 .stories-popup-list::-webkit-scrollbar{display:none;}
-
+/* Story row inside popup */
 .sp-add-row,.sp-story-row{
   display:flex;align-items:center;gap:10px;
   padding:7px 14px;cursor:pointer;
@@ -1010,7 +1037,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   border:2px dashed var(--brand);
   color:var(--brand);font-size:20px;
 }
-
+/* Gradient ring for unviewed, grey for viewed */
 .sp-ring{
   position:absolute;inset:-3px;border-radius:50%;
   border:2.5px solid transparent;
@@ -1026,9 +1053,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 @media(max-width:720px){
   .stories-arrow-btn{display:flex;}
-  
+  /* story viewer is now its own fullscreen div */
 }
 
+
+/* ── STORY CREATOR ── */
 #SC{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
 .sc-type-btn{
   width:100%;max-width:320px;padding:16px 20px;border-radius:16px;
@@ -1063,6 +1092,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   transition:border-color .15s;
 }
 
+/* ── Sliders ── */
 #SC_contrastPanel input[type=range]{
   -webkit-appearance:none;appearance:none;
   width:100%;height:3px;border-radius:2px;
@@ -1073,17 +1103,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   background:var(--brand);border:2px solid #fff;cursor:pointer;
   box-shadow:0 0 6px rgba(236,91,8,.6);
 }
-
+/* arrow SVG transition */
 #SC_arrowSvg{ transition:transform .25s cubic-bezier(.4,0,.2,1); display:block; }
 .sc-privacy-opt.selected .sc-privacy-radio{
   border-color:var(--brand);
   background:var(--brand);
   box-shadow:0 0 0 3px rgba(236,91,8,.30);
 }
-
+/* Slider rows */
 .sc-slider{
   flex:1;accent-color:var(--brand);
-  height:28px;          
+  height:28px;          /* tall touch target */
   cursor:pointer;
   -webkit-appearance:none;
   appearance:none;
@@ -1105,17 +1135,18 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   font-size:12px;color:rgba(255,255,255,.55);
   width:30px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;
 }
-
+/* Cut button press feedback */
 #SC_cutBtn:active{transform:scale(.93);box-shadow:0 2px 8px rgba(239,68,68,.4);}
-
+/* Pause/play button press feedback */
 #SC_trimPlayPause:active{transform:translateX(-50%) scale(.9);}
-
+/* Story ring pulse animation */
 @keyframes storyRingPulse{
   0%,100%{box-shadow:0 0 0 0 rgba(236,91,8,.5);}
   50%{box-shadow:0 0 0 6px rgba(236,91,8,0);}
 }
 .story-ring-unviewed{animation:storyRingPulse 2.5s ease-in-out infinite;}
 
+/* Inline range sliders inside the video editor (SC_p5) */
 #SC_p5 input[type=range]{
   -webkit-appearance:none;appearance:none;
   flex:1;height:20px;background:transparent;cursor:pointer;outline:none;
@@ -1136,6 +1167,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.5);
 }
 
+
+/* ── Mood Warning Sheet ─────────────────────────────────────── */
 #moodSheet{position:fixed;bottom:0;left:0;right:0;background:var(--card);
   border-radius:20px 20px 0 0;padding:22px 20px 28px;z-index:3000;
   box-shadow:0 -6px 32px rgba(0,0,0,.22);transform:translateY(100%);
@@ -1152,6 +1185,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .mood-btn.send{background:var(--brand);color:#fff;}
 .mood-btn.edit{background:var(--hov);color:var(--txt);}
 
+/* ── Time Capsule Sheet ──────────────────────────────────────── */
+/* ═══ MOOD WARNING SHEET ═══ */
 #moodWarnSheet{
   position:fixed;bottom:0;left:0;right:0;
   background:var(--card);
@@ -1167,11 +1202,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 #moodWarnSheet.show{transform:translateY(0);}
 #moodBackdrop{ z-index:3099; }
 
+/* fading banner CSS below */
+
+/* ═══ GROUP SECTION IN SIDEBAR ═══ */
 #groupSection .llabel{font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;}
 
+/* Time capsule message bubble */
 .bub.capsule-msg{border-left:3px solid var(--brand) !important;}
 .bub.capsule-msg::before{content:'⏳ ';font-size:11px;opacity:.7;}
 
+/* Capsule sheet improvements */
 #capsuleSheet{
   position:fixed;bottom:0;left:0;right:0;
   background:var(--card);
@@ -1185,6 +1225,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   overflow-y:auto;
 }
 #capsuleSheet.show{transform:translateY(0);}
+
 
 .capsule-title{font-size:18px;font-weight:700;color:var(--txt);margin-bottom:4px;}
 .capsule-sub{font-size:13px;color:var(--mute);margin-bottom:18px;}
@@ -1205,6 +1246,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   font-size:12px;color:var(--brand);font-weight:600;margin-bottom:16px;
   display:flex;align-items:center;gap:7px;}
 
+/* ── Fading Relationship Banner ────────────────────────────── */
 #fadingBanner{
   position:fixed;top:68px;left:50%;
   transform:translateX(-50%) translateY(calc(-100% - 24px));
@@ -1232,6 +1274,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   flex-shrink:0;white-space:nowrap;
 }
 
+/* ── Group Chat UI ───────────────────────────────────────────── */
 #createGroupSheet{position:fixed;inset:0;background:var(--card);z-index:3000;
   display:flex;flex-direction:column;transform:translateX(100%);
   transition:transform .28s cubic-bezier(.4,0,0,1);}
@@ -1268,13 +1311,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cg-friend-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
 .cg-friend-name{font-size:14px;font-weight:600;color:var(--txt);}
-
+/* Group crow in list */
 .crow.is-group .av{font-size:13px;}
 .group-tag{font-size:9px;background:rgba(236,91,8,.18);color:var(--brand);
   border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700;vertical-align:middle;}
 .temp-tag{font-size:9px;background:rgba(245,158,11,.18);color:#f59e0b;
   border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700;vertical-align:middle;}
-
+/* Group info panel inside chat header */
 #groupInfoSheet{position:fixed;inset:0;background:var(--card);z-index:3000;
   display:flex;flex-direction:column;transform:translateX(100%);
   transition:transform .28s cubic-bezier(.4,0,0,1);}
@@ -1303,18 +1346,20 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .gi-member-name{font-size:14px;font-weight:600;color:var(--txt);}
 .gi-role{background:rgba(236,91,8,.15);color:var(--brand);border-radius:20px;
   padding:2px 9px;font-size:11px;font-weight:700;flex-shrink:0;}
-
+/* Time capsule message bubble indicator */
 .bub.capsule-msg::before{content:'⏳ ';font-size:11px;}
 
+/* Group button in sidebar/mobile header */
 .new-group-btn{display:flex;align-items:center;justify-content:center;
   width:32px;height:32px;border-radius:50%;background:rgba(236,91,8,.12);
   border:none;color:var(--brand);font-size:18px;cursor:pointer;
   transition:background .15s;flex-shrink:0;}
 .new-group-btn:hover{background:rgba(236,91,8,.25);}
 
+/* Capsule tabs */
 .ct-tab{flex:1;padding:9px 14px;border:none;border-radius:10px;background:var(--hov);color:var(--mute);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;}
 .ct-tab.ct-active{background:var(--brand);color:#fff;}
-
+/* Capsule list item */
 .cl-item{background:var(--hov);border-radius:13px;padding:13px 15px;margin-bottom:10px;border:1px solid var(--bdr);transition:opacity .25s,transform .25s;}
 .cl-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
 .cl-date{font-size:12px;font-weight:700;color:var(--txt);}
@@ -1323,20 +1368,24 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cl-cancel{background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;}
 .cl-cancel:hover{background:rgba(239,68,68,.15);}
 
+/* Group creation: checked friend row highlight */
 .cg-friend-row.cg-checked{background:rgba(236,91,8,.10);border-color:rgba(236,91,8,.30);}
 .cg-friend-row.cg-checked .cg-friend-name{color:var(--brand);font-weight:600;}
 
+/* Group row: 👥 avatar should always show the icon clearly */
 .crow[data-gcid] .av { display:flex;align-items:center;justify-content:center;font-style:normal; }
 
+/* @mention dropdown */
 #mentionDropdown{position:absolute;bottom:70px;left:14px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:6px;z-index:500;box-shadow:var(--shad);min-width:180px;max-height:220px;overflow-y:auto;display:none;}
 #mentionDropdown.show{display:block;}
 .mention-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;cursor:pointer;font-size:14px;color:var(--txt);}
 .mention-item:hover,.mention-item.active{background:var(--hov);}
 .mention-item .mav{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
-
+/* @mention chip in messages */
 .mention{color:var(--brand);font-weight:700;background:rgba(236,91,8,.12);border-radius:5px;padding:1px 5px;}
 .mention.me{background:rgba(236,91,8,.22);}
 
+/* ── Post-call summary card ── */
 #callSummary{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;}
 #callSummary.show{display:flex;}
 .cscard{background:var(--card);border-radius:22px;padding:28px 24px;width:92%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);}
@@ -1348,27 +1397,33 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .cs-stars span.lit{opacity:1;transform:scale(1.18);}
 .cs-close{width:100%;padding:11px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
 
+/* ── Background blur panel ── */
 #callBgPanel{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(20,16,40,.92);backdrop-filter:blur(20px);border-radius:16px;padding:14px 18px;display:none;flex-direction:row;gap:10px;z-index:50;align-items:center;}
 #callBgPanel.show{display:flex;}
 .bgopt{width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:border-color .15s;}
 .bgopt.active{border-color:#fff;}
 
+/* ── DND settings ── */
 .dnd-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;}
 .dnd-inp{background:var(--inp);border:1px solid var(--ibdr);border-radius:8px;padding:6px 10px;color:var(--txt);font-size:13px;width:100px;}
 
+/* ── Contact labels ── */
 .label-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid transparent;}
 .label-work{background:rgba(59,130,246,.15);color:#3b82f6;border-color:rgba(59,130,246,.3);}
 .label-family{background:rgba(34,197,94,.15);color:#22c55e;border-color:rgba(34,197,94,.3);}
 .label-close{background:rgba(239,68,68,.15);color:#ef4444;border-color:rgba(239,68,68,.3);}
 .label-other{background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3);}
 
+/* ── Label filter bar ── */
 #labelFilterBar{display:flex;gap:6px;padding:6px 14px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
 #labelFilterBar::-webkit-scrollbar{display:none;}
 .lf-chip{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--card);color:var(--sub);white-space:nowrap;transition:background .15s,color .15s;}
 .lf-chip.active{background:var(--brand);color:#fff;border-color:var(--brand);}
 
+/* ── Status badge ── */
 .status-badge{font-size:11px;color:var(--mute);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
 
+/* ── Chat lock overlay ── */
 #chatLockOverlay{position:fixed;inset:0;z-index:1500;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
 #chatLockOverlay.show{display:flex;}
 .lock-icon{font-size:52px;}
@@ -1377,23 +1432,28 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .lock-btn{padding:11px 32px;background:var(--brand);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
 .lock-cancel{font-size:13px;color:var(--mute);cursor:pointer;margin-top:4px;}
 
+/* ── Icebreaker sheet ── */
 .ice-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;background:var(--card);border-radius:20px 20px 0 0;padding:22px 20px 32px;z-index:1201;transition:transform .28s cubic-bezier(.34,1.1,.64,1);display:flex;flex-direction:column;gap:14px;}
 .ice-sheet.show{transform:translateX(-50%) translateY(0);}
 .ice-q{font-size:16px;font-weight:600;color:var(--txt);line-height:1.4;min-height:48px;}
 .ice-actions{display:flex;gap:10px;}
 
+/* ── Mini game ── */
 .game-board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:180px;margin:0 auto;}
 .game-cell{height:54px;background:var(--inp);border-radius:10px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;transition:background .12s;}
 .game-cell:hover{background:var(--hov);}
 .game-msg-board{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;width:120px;}
 .game-msg-cell{height:36px;background:var(--inp);border-radius:6px;border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:16px;}
 
+/* ── Now Playing ── */
 .now-playing-bar{display:flex;align-items:center;gap:8px;background:var(--inp);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--sub);}
 .np-dot{width:8px;height:8px;border-radius:50%;background:#1db954;animation:nppulse 1.2s infinite;}
 @keyframes nppulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 
+/* ── Translation bubble ── */
 .translated-text{font-size:12px;color:var(--mute);margin-top:4px;padding-top:4px;border-top:1px solid var(--bdr);font-style:italic;}
 
+/* ── Smart search ── */
 .ss-modal{position:fixed;inset:0;z-index:1200;background:var(--bg);display:none;flex-direction:column;}
 .ss-modal.show{display:flex;}
 .ss-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bdr);}
@@ -1409,6 +1469,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .ss-content{font-size:13px;color:var(--txt);margin:3px 0;}
 .ss-time{font-size:10px;color:var(--mute);}
 
+/* ── Recording consent banner ── */
 .rec-consent{position:absolute;top:54px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.9);color:#fff;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;z-index:60;display:none;}
 .rec-consent.show{display:block;}
 
@@ -1416,23 +1477,24 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </head>
 <body>
 <div class="mov" id="mov" onclick="closeSB()"></div>
-
+<!-- Context Menu (message right-click) -->
+<!-- LONG-PRESS MESSAGE SHEET -->
 <div class="msg-sheet-ov" id="msgSheetOv" onclick="hideMsgSheet()"></div>
 <div class="msg-sheet" id="msgSheet">
-  
+  <!-- preview strip -->
   <div class="ms-preview" id="msPreview">
     <div class="ms-preview-bubble" id="msPreviewText"></div>
   </div>
-  
+  <!-- emoji strip -->
   <div class="ms-emoji-strip" id="msEmojiStrip">
-    
+    <!-- filled dynamically -->
   </div>
-  
+  <!-- actions -->
   <div class="ms-actions" id="msActions">
-    
+    <!-- filled dynamically -->
   </div>
 </div>
-
+<!-- DELETE OPTIONS SHEET -->
 <div class="msg-sheet-ov" id="delSheetOv" onclick="hideDelSheet()"></div>
 <div class="del-sheet" id="delSheet">
   <div class="del-sheet-title">Delete message?</div>
@@ -1440,9 +1502,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <button class="ms-act danger" onclick="doDeleteForEveryone()"><span class="ms-act-icon">🗑️</span>Delete for everyone</button>
   <button class="ms-act" onclick="hideDelSheet()" style="color:var(--mute);"><span class="ms-act-icon">✕</span>Cancel</button>
 </div>
-
+<!-- ADDED: Shared floating context menu (crow 3-dot + conv 3-line) -->
 <div class="crow-ctx" id="crowCtx"></div>
-
+<!-- ADDED: Mobile chat list page (first screen on mobile) -->
 <div class="chat-list-page" id="chatListPage">
   <div class="clp-header">
     <div class="clp-title"><a href="/" onclick="location.reload();return false;" title="Refresh" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--txt);"><img src="/logo" alt="Hepozy" style="width:32px;height:32px;object-fit:cover;border-radius:50%;cursor:pointer;" onerror="this.style.display='none'"><span>Hepozy</span></a></div>
@@ -1452,21 +1514,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <button class="ib" onclick="openSettings()" title="Settings">⚙️</button>
     </div>
   </div>
-  
+  <!-- Friend requests panel (mobile) -->
   <div class="spanel" id="rqPanelClp">
     <div class="ptitle">Friend Requests</div>
     <div id="rqListClp"><div class="lempty" style="padding:12px;">No pending requests</div></div>
   </div>
-  
+  <!-- Search -->
   <div class="clp-search">
     <div class="sinp-w">
       <span class="sinp-ic">🔍</span>
       <input class="sinp" id="sinpClp" type="text" placeholder="Search users…" oninput="handleSearch(this.value)" autocomplete="off">
     </div>
   </div>
-  
+  <!-- Search results panel (mobile) -->
   <div class="spanel" id="srPanelClp"><div id="srListClp"></div></div>
-  
+  <!-- Tabs: All / Unread + Stories arrow -->
   <div class="clp-tabs" style="position:relative;">
     <div class="clp-tab active" id="tabAll" onclick="switchTab('all')">All</div>
     <div class="clp-tab" id="tabUnread" onclick="switchTab('unread')">Unread</div>
@@ -1486,7 +1548,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       ›
     </button>
   </div>
-  
+  <!-- Label filter bar -->
   <div id="labelFilterBar">
     <div class="lf-chip active" id="lfAll" onclick="setLabelFilter('all')">All</div>
     <div class="lf-chip" id="lfWork" onclick="setLabelFilter('Work')">💼 Work</div>
@@ -1494,7 +1556,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="lf-chip" id="lfClose" onclick="setLabelFilter('Close Friends')">❤️ Close</div>
     <div class="lf-chip" id="lfOther" onclick="setLabelFilter('Other')">🏷️ Other</div>
   </div>
-  
+  <!-- Chat list body -->
   <div class="clp-body" id="clpBody">
     <div class="lempty" id="clpEmpty" style="padding:40px 20px;text-align:center;">
       <div style="font-size:40px;margin-bottom:8px;">💬</div>
@@ -1502,11 +1564,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div style="font-size:12px;">Search for friends above to start chatting</div>
     </div>
   </div>
-  
+  <!-- clpGroupSection removed — groups merged into clpBody -->
   <div id="clpGroupSection" style="display:none;"></div>
   <div id="clpGroupList" style="display:none;"></div>
 </div>
-
+<!-- ADDED: Archive page (full screen, opened from settings) -->
 <div class="archive-page" id="archivePage">
   <div class="arch-hdr">
     <button class="arch-back" onclick="closeArchivePage()">‹</button>
@@ -1520,7 +1582,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 </div>
-
+<!-- SIDEBAR (desktop only) -->
 <aside class="sidebar" id="sidebar">
   <div class="sh">
     <div class="sh-top">
@@ -1555,13 +1617,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="llabel" style="display:flex;align-items:center;justify-content:space-between;"><span>Conversations</span></div>
     <div class="lempty" id="cempty">👥<br>Search for friends to chat</div>
   </div>
-  
+  <!-- groupSection removed — groups merged into main clist -->
   <div id="groupSection" style="display:none;"></div>
 </aside>
-
+<!-- MAIN -->
 <main class="main" id="mainChat">
   <div class="chdr">
-    
+    <!-- ADDED: back arrow (mobile only) -->
     <button class="back-btn" id="backBtn" onclick="goBackToList()" aria-label="Back">‹</button>
     <div class="av lg" id="chav" onclick="showFriendProfile()" style="cursor:pointer;" title="View profile">💬</div>
     <div class="chdr-info" onclick="showFriendProfile()" style="cursor:pointer;">
@@ -1572,10 +1634,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
       <button class="chdr-btn" id="videoCallBtn" onclick="startVideoCall()" title="Video call" style="display:none;">📹</button>
       <button class="chdr-btn" id="voiceCallBtn" onclick="startVoiceCall()" title="Voice call" style="display:none;">📞</button>
-      
+      <!-- Search is accessible via ☰ menu -->
       <button class="chdr-btn" id="searchBtn" onclick="toggleSearch()" title="Search messages" style="display:none;">🔍</button>
       <button class="chdr-btn" id="pinnedBtn" onclick="showPinned()" title="Pinned messages" style="display:none;">📌</button>
-      
+      <!-- ADDED: conversation 3-line menu -->
       <button class="conv3-btn chdr-btn" id="conv3Btn" onclick="openConv3Menu(event)" title="More options" style="display:none;">☰</button>
     </div>
   </div>
@@ -1730,19 +1792,22 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div id="mentionDropdown"></div>
 </main>
 
+
+<!-- Image Preview Modal -->
+<!-- Multi-photo preview sheet -->
 <div id="multiPhotoOverlay" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);flex-direction:column;" onclick="if(event.target===this)closeMultiPreview()">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:clamp(44px,10vw,58px) 18px 12px;flex-shrink:0;">
     <button onclick="closeMultiPreview()" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;">✕</button>
     <span id="multiPhotoCount" style="color:#fff;font-weight:700;font-size:15px;"></span>
     <button onclick="addMorePhotos()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:12px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ Add</button>
   </div>
-  
+  <!-- Main preview of selected photo -->
   <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 12px;overflow:hidden;">
     <img id="multiPhotoMain" src="" style="max-width:100%;max-height:100%;border-radius:14px;object-fit:contain;">
   </div>
-  
+  <!-- Thumbnail strip -->
   <div id="multiPhotoStrip" style="display:flex;gap:8px;padding:12px 16px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
-  
+  <!-- Caption + send -->
   <div style="padding:8px 16px calc(env(safe-area-inset-bottom,0px)+16px);display:flex;flex-direction:column;gap:10px;flex-shrink:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);">
     <input id="multiPhotoCaption" type="text" placeholder="Add a caption…" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:10px 16px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;">
     <button onclick="sendMultiPhotos()" style="background:linear-gradient(135deg,#ec5b08,#d44e07);border:none;color:#fff;border-radius:16px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">Send <span id="multiSendLabel"></span></button>
@@ -1788,14 +1853,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="send-btn" onclick="sendEditedImage()">Send 📤</button>
   </div>
 </div>
-
+<!-- Full-size image viewer -->
 <div id="imgViewerOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:1100;display:none;flex-direction:column;align-items:center;justify-content:center;" onclick="closeImgViewer()">
   <button onclick="closeImgViewer();event.stopPropagation();" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:42px;height:42px;border-radius:50%;cursor:pointer;">✕</button>
   <button id="imgViewerDownload" onclick="event.stopPropagation();downloadImg();" style="position:absolute;top:18px;left:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;width:42px;height:42px;border-radius:50%;cursor:pointer;" title="Download">💾</button>
   <img id="imgViewerImg" src="" style="max-width:95vw;max-height:88vh;object-fit:contain;border-radius:8px;user-select:none;" draggable="false">
   <div id="imgViewerCaption" style="margin-top:14px;color:rgba(255,255,255,.8);font-size:14px;max-width:80vw;text-align:center;"></div>
 </div>
-
+<!-- Profile View Modal -->
 <div class="profile-overlay" id="profileOverlay" onclick="closeProfileView()"></div>
 <div class="profile-modal" id="profileModal">
   <div class="profile-header">
@@ -1804,11 +1869,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <div class="profile-body">
     <div class="profile-avatar-large" id="profileAvWrap">
-      
+      <!-- Avatar: tap to view full image -->
       <div class="av" id="profileAvLarge" style="width:130px;height:130px;font-size:52px;border-radius:65px;cursor:pointer;overflow:hidden;border:3px solid rgba(236,91,8,.4);box-shadow:0 4px 20px rgba(0,0,0,.3);" onclick="profileAvTap()">U</div>
-      
+      <!-- ✏️ edit button — only shown on own profile -->
       <div class="av-edit-dot" id="profileAvEditDot" style="display:none;" onclick="event.stopPropagation();toggleAvMenu()" title="Edit photo">⋮</div>
-      
+      <!-- 3-dot menu -->
       <div class="av-menu" id="profileAvMenu">
         <button class="av-menu-item" onclick="closeAvMenu();openAvatarCrop()">🖼️ Choose Photo</button>
         <button class="av-menu-item" onclick="closeAvMenu()">← Keep Current</button>
@@ -1836,7 +1901,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 </div>
-
+<!-- ── OUTGOING / RINGING SCREEN ── -->
 <div class="incoming-screen" id="outgoingCallModal">
   <div class="inc-top">
     <span class="inc-label">Calling…</span>
@@ -1854,6 +1919,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- ── INCOMING CALL SCREEN ── -->
 <div class="incoming-screen" id="incomingCallModal">
   <div class="inc-top">
     <span class="inc-label">Incoming call</span>
@@ -1875,21 +1941,22 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- ── ACTIVE CALL SCREEN ── -->
 <div class="call-screen" id="callModal" onclick="callScreenTap(event)">
 
-  
+  <!-- Remote video fullscreen -->
   <video id="remoteVideo" autoplay playsinline muted></video>
 
-  
+  <!-- Voice-only background -->
   <div id="callVoiceBg"></div>
 
-  
+  <!-- Signal dot — always visible top-right -->
   <div id="callSignalWrap">
     <div id="callSignalDot"></div>
     <span id="callSignalLabel"></span>
   </div>
 
-  
+  <!-- Top bar: name+timer — hidden until tap -->
   <div id="callTopBar">
     <div>
       <div class="call-name" id="callName">Username</div>
@@ -1898,7 +1965,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 
-  
+  <!-- Voice center avatar -->
   <div id="callVoiceCenter">
     <div class="call-av-ring" id="callAvRing">
       <div class="call-av-inner" id="callAvatar">U</div>
@@ -1908,10 +1975,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="call-timer" id="callTimerVoice" style="display:none;margin-top:6px;"></div>
   </div>
 
-  
+  <!-- Draggable PiP -->
   <video id="localVideo" autoplay muted playsinline></video>
 
-  
+  <!-- Remote camera-off overlay -->
   <div id="remoteCamOff" style="
     position:absolute;inset:0;z-index:1;
     background:linear-gradient(160deg,#120800 0%,#1a0a00 55%,#0d1f3c 100%);
@@ -1924,11 +1991,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div style="color:rgba(255,255,255,.7);font-size:14px;letter-spacing:.5px;" id="remoteCamLabel">Camera off</div>
   </div>
 
-  
+  <!-- Bottom dock -->
   <div id="callDock">
-    
+    <!-- Recording consent banner -->
     <div class="rec-consent" id="callRecConsent">⏺ Recording in progress — all parties notified</div>
-    
+    <!-- Background blur panel -->
     <div id="callBgPanel">
       <div class="bgopt active" id="bgNone" onclick="setCallBg('none')" title="No filter">🚫</div>
       <div class="bgopt" id="bgBlur" onclick="setCallBg('blur')" title="Blur">🔲</div>
@@ -1937,7 +2004,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div class="bgopt" id="bgColor3" onclick="setCallBg('#1f0e00')" style="background:#1f0e00;"></div>
       <div class="bgopt" id="bgColor4" onclick="setCallBg('#2d1b00')" style="background:#2d1b00;"></div>
     </div>
-    
+    <!-- Always-visible control tray -->
     <div id="callCtrlTray">
       <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
         <button class="ccb" id="muteBtn" title="Mute">🎤</button>
@@ -1988,6 +2055,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- POST-CALL SUMMARY CARD -->
 <div id="callSummary">
   <div class="cscard">
     <div style="font-size:40px;">📞</div>
@@ -2007,14 +2075,18 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- CHAT LOCK OVERLAY -->
 <div id="chatLockOverlay">
   <div class="lock-icon">🔒</div>
   <div class="lock-title" id="lockTitle">This chat is locked</div>
-  <input class="lock-inp" type="password" id="lockPinInp" maxlength="6" placeholder="••••" oninput="checkLockPin()">
+  <input class="lock-inp" type="password" id="lockPinInp" maxlength="6" placeholder="Enter PIN" oninput="checkLockPin()" onkeydown="if(event.key==='Enter')checkLockPin()" autocomplete="off" inputmode="numeric">
   <button class="lock-btn" onclick="checkLockPin()">Unlock</button>
   <div class="lock-cancel" onclick="cancelChatLock()">← Go back</div>
 </div>
 
+
+
+<!-- SMART SEARCH MODAL -->
 <div class="ss-modal" id="ssModal">
   <div class="ss-head">
     <button class="closebtn" onclick="closeSS()">✕</button>
@@ -2031,6 +2103,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- SETTINGS DRAWER -->
 <div class="sov" id="sov" onclick="closeSettings()"></div>
 <div class="sdraw" id="sdraw">
   <div class="shead">
@@ -2039,7 +2112,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button class="closebtn" onclick="closeSettings()">✕</button>
   </div>
   <div class="sbody">
-    
+    <!-- Profile -->
     <div class="ssec">
       <div class="ssec-t">My Profile</div>
       <div class="pcard">
@@ -2070,7 +2143,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="savebtn" onclick="saveProfile()">💾 Save Profile</button>
       </div>
     </div>
-    
+    <!-- Appearance -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Appearance</div>
       <div class="srow">
@@ -2078,7 +2151,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="tog on" id="tDark" onclick="toggleTheme()"></button>
       </div>
     </div>
-    
+    <!-- Notifications -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Notifications</div>
       <div class="srow">
@@ -2086,7 +2159,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="tog on" id="tSound" onclick="toggleSetting('sound','tSound')"></button>
       </div>
     </div>
-    
+    <!-- ADDED: Archive in settings -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Chats</div>
       <div class="srow" onclick="closeSettings();openArchivePage();" style="cursor:pointer;">
@@ -2097,7 +2170,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <span style="color:var(--sub);font-size:14px;">›</span>
       </div>
     </div>
-    
+    <!-- Blocklist -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Privacy</div>
       <div class="srow" onclick="openBlocklist()" style="cursor:pointer;">
@@ -2113,7 +2186,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button class="tog on" id="tReadReceipts" onclick="toggleReadReceipts()"></button>
       </div>
     </div>
-    
+    <!-- Do Not Disturb -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Do Not Disturb</div>
       <div class="srow">
@@ -2127,14 +2200,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <input class="dnd-inp" type="time" id="dndEnd" value="08:00" onchange="saveDND()">
       </div>
     </div>
-    
+    <!-- Profile extras -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Profile Extras</div>
       <div class="ef"><label>Status (24hr)</label><input class="ei" id="eStatus" placeholder="e.g. Busy 🔥" maxlength="60" oninput="saveStatusText()"></div>
       <div class="ef"><label>Birthday</label><input class="ei" type="date" id="eBirthday" onchange="saveBirthday()"></div>
       <div class="ef"><label>Now Playing 🎵</label><input class="ei" id="eNowPlaying" placeholder="e.g. Doja Cat – Paint The Town Red" oninput="saveNowPlaying()"></div>
     </div>
-    
+    <!-- Chat Features -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Chat Features</div>
       <div class="srow" onclick="openSS()" style="cursor:pointer;">
@@ -2142,7 +2215,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <span style="color:var(--sub);font-size:14px;">›</span>
       </div>
     </div>
-    
+    <!-- Account -->
     <div class="ssec" style="margin-top:6px;">
       <div class="ssec-t">Account</div>
       <button class="dangbtn" onclick="logout()">🚪 Log Out</button>
@@ -2152,6 +2225,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div class="tstack" id="tstack"></div>
 <div class="notif-stack" id="notifStack"></div>
 
+<!-- Avatar crop overlay -->
 <div id="avatarCropOverlay">
   <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.1);">
     <button onclick="closeAvatarCrop()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
@@ -2172,11 +2246,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
 <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="avatarFilePicked(this)">
 
+<!-- Full-size profile image viewer -->
 <div id="profileFullImg" onclick="closeProfileFullImg()" style="cursor:pointer;">
   <img id="profileFullImgEl" src="" alt="profile" style="border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);">
   <div style="color:rgba(255,255,255,.4);font-size:12px;margin-top:14px;letter-spacing:.3px;">Tap anywhere to close</div>
 </div>
 
+<!-- Mute Chat Duration Sheet -->
 <div class="mute-sheet-ov" id="muteSheetOv" onclick="closeMuteSheet();" style="cursor:pointer;"></div>
 <div class="mute-sheet" id="muteSheet" style="transform:translateX(-50%) translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);" onclick="event.stopPropagation();">
   <div style="width:36px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 16px;"></div>
@@ -2202,11 +2278,13 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- Undo delete snackbar -->
 <div class="notif-undo-bar" id="notifUndoBar">
   <span id="notifUndoText">Notification deleted</span>
   <button class="notif-undo-btn" onclick="notifUndoDelete()">Undo</button>
 </div>
 
+<!-- Persistent Notification Panel -->
 <div class="notif-panel-ov" id="notifPanelOv" onclick="closeNotifPanel()"></div>
 <div class="notif-panel" id="notifPanel" style="transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
   <div class="notif-panel-hdr">
@@ -2219,7 +2297,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div class="np-empty" id="notifPanelEmpty">🔔<br>No notifications yet</div>
   </div>
 </div>
-
+<!-- Blocklist Modal -->
 <div class="sov" id="blocklistOv" onclick="closeBlocklist()"></div>
 <div class="sdraw" id="blocklistDraw">
   <div class="shead">
@@ -2234,7 +2312,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
   <button class="savebtn" onclick="openAddBlockModal()" style="position:fixed;bottom:80px;right:30px;width:auto;padding:12px 20px;border-radius:50px;box-shadow:var(--shad);">➕ Block User</button>
 </div>
-
+<!-- Add Block Modal -->
 <div class="profile-overlay" id="addBlockOverlay" onclick="closeAddBlock()"></div>
 <div class="profile-modal" id="addBlockModal">
   <div class="profile-header">
@@ -2246,7 +2324,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div id="friendsToBlockList" style="max-height:300px;overflow-y:auto;"></div>
   </div>
 </div>
-
+<!-- Story Viewer Modal -->
+<!-- FULLSCREEN STORY VIEWER -->
 <div id="storyViewer" style="
   display:none;
   position:fixed;inset:0;
@@ -2255,7 +2334,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   flex-direction:column;
   touch-action:none;
 ">
-  
+  <!-- Profile picture background layer (blurred, behind content) -->
   <div id="storyBgProfile" style="
     position:absolute;inset:0;z-index:0;
     background-size:cover;background-position:center center;
@@ -2266,14 +2345,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     will-change:opacity;
   "></div>
 
-  
+  <!-- Progress bars -->
   <div id="storyProgress" style="
     display:flex;gap:3px;padding:14px 12px 6px;
     position:absolute;top:0;left:0;right:0;z-index:2;
     pointer-events:none;
   "></div>
 
-  
+  <!-- Header -->
   <div style="
     position:absolute;top:28px;left:0;right:0;z-index:2;
     display:flex;align-items:center;gap:10px;padding:0 14px;
@@ -2299,7 +2378,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div id="storyUsername" style="font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);">Username</div>
       <div id="storyTime" style="font-size:11px;color:rgba(255,255,255,.7);">2h ago</div>
     </div>
-    
+    <!-- Owner-only controls -->
     <div id="storyOwnerBtns" style="display:none;gap:6px;align-items:center;">
       <button onclick="editStoryPrivacy()" style="
         border:none;background:rgba(255,255,255,.18);color:#fff;
@@ -2318,7 +2397,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     ">✕</button>
   </div>
 
-  
+  <!-- Story content — tap left/right to navigate -->
   <div id="storyContent" style="
     position:absolute;inset:0;
     display:flex;align-items:center;justify-content:center;
@@ -2326,14 +2405,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     background:transparent;
     z-index:1;
   ">
-    
+    <!-- Profile avatar as blurred background (shown for image/text stories) -->
     <div id="storyBgLayer" style="
       position:absolute;inset:0;z-index:0;
       display:none;
       align-items:center;justify-content:center;
       overflow:hidden;
     ">
-      
+      <!-- Blurred profile image fills background -->
       <img id="storyBgAvatar" src="" alt="" style="
         position:absolute;inset:-20px;
         width:calc(100% + 40px);height:calc(100% + 40px);
@@ -2341,12 +2420,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         filter:blur(28px) brightness(.45) saturate(1.2);
         transform:scale(1.05);
       ">
-      
+      <!-- Fallback gradient if no avatar -->
       <div id="storyBgGradient" style="
         position:absolute;inset:0;
         background:radial-gradient(circle at 50% 30%,rgba(236,91,8,.35) 0%,rgba(0,0,0,.85) 70%);
       "></div>
-      
+      <!-- Profile circle in center (shown for text stories) -->
       <div id="storyBgCircle" style="
         position:relative;z-index:1;
         width:90px;height:90px;border-radius:50%;
@@ -2370,7 +2449,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     "></p>
   </div>
 
-  
+  <!-- Tap zones: left = prev, right = next, long-press = pause/fullscreen -->
   <div style="position:absolute;inset:0;display:flex;z-index:1;">
     <div style="flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;"
       onclick="prevStory()"
@@ -2384,7 +2463,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 
-  
+  <!-- Music note (bottom-left) -->
   <div id="storyMusicNote" style="
     display:none;position:absolute;bottom:80px;left:14px;z-index:2;
     background:rgba(0,0,0,.5);color:#fff;border-radius:20px;
@@ -2393,16 +2472,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   ">🎵</div>
 
-  
+  <!-- Bottom: emoji reactions + comment + viewers -->
   <div id="storyBottom" style="
     position:absolute;bottom:0;left:0;right:0;z-index:2;
     padding:8px 14px 24px;
     background:linear-gradient(transparent,rgba(0,0,0,.75));
   ">
-    
+    <!-- Viewer count (owner only) -->
     <div id="storyViewers" style="margin-bottom:8px;"></div>
 
-    
+    <!-- Emoji reactions row -->
     <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
       <div style="display:flex;gap:4px;flex-shrink:0;">
         <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
@@ -2415,7 +2494,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button onclick="sendStoryReact('😢')" class="story-react-btn">😢</button>
       </div>
     </div>
-    
+    <!-- Comment / message box -->
     <div style="display:flex;gap:8px;align-items:center;">
       <input id="storyCommentInput" type="text" placeholder="Send a message…" maxlength="200"
         onfocus="pauseStory()" onblur="resumeStory()"
@@ -2432,31 +2511,34 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     STORY CREATOR — multi-page fullscreen flow
+══════════════════════════════════════════ -->
 <div id="SC" style="display:none;position:fixed;inset:0;z-index:6000;background:#000;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 
-  
+  <!-- PAGE 0: Type chooser -->
   <div id="SC_p0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;padding:28px;">
     <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:.3px;">Create Story</div>
 
-    
+    <!-- Photo from gallery -->
     <button class="sc-type-btn" onclick="document.getElementById('SC_photoInput').click()">
       <span style="font-size:30px;">🖼️</span>
       <span>Photo</span>
     </button>
 
-    
+    <!-- Video from gallery — separate input so mobile shows video files -->
     <button class="sc-type-btn" onclick="document.getElementById('SC_videoInput').click()">
       <span style="font-size:30px;">🎬</span>
       <span>Video</span>
     </button>
 
-    
+    <!-- Take Photo with camera -->
     <button class="sc-type-btn" onclick="scChoose('camera')">
       <span style="font-size:30px;">📷</span>
       <span>Take Photo</span>
     </button>
 
-    
+    <!-- Text story -->
     <button class="sc-type-btn" onclick="scChoose('text')">
       <span style="font-size:30px;">📝</span>
       <span>Text Story</span>
@@ -2465,23 +2547,25 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <button onclick="scClose()" style="margin-top:6px;background:transparent;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.6);padding:10px 28px;border-radius:24px;font-size:14px;cursor:pointer;">Cancel</button>
   </div>
 
-  
+  <!-- PAGE 1: EDITOR (photo / video / text / camera) -->
   <div id="SC_p1" style="display:none;height:100%;flex-direction:column;position:relative;">
 
-    
+    <!-- Canvas / preview area -->
     <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
       <div id="SC_rotWrap" style="display:contents;touch-action:none;">
         <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
       </div>
       <video id="SC_vid" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000;" playsinline autoplay loop></video>
 
-      
+      <!-- Video duration badge (bottom-right of preview) -->
       <div id="SC_vidDuration" style="display:none;position:absolute;bottom:8px;right:10px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;pointer-events:none;z-index:10;letter-spacing:.3px;"></div>
 
-      
-      <div id="SC_trimBtnWrap" style="display:none;"></div>
+      <!-- ✂️ Edit & Cut button — visible for all videos -->
+      <div id="SC_trimBtnWrap" style="display:none;position:absolute;bottom:8px;left:10px;z-index:10;">
+        <button onclick="scOpenTrimmer()" style="background:rgba(239,68,68,.82);border:none;color:#fff;border-radius:12px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;backdrop-filter:blur(4px);">✂️ Edit & Cut</button>
+      </div>
 
-      
+      <!-- Text story background + text -->
       <div id="SC_textBg" style="display:none;position:absolute;inset:0;background:linear-gradient(135deg,#ec5b08,#d44e07);"></div>
       <textarea id="SC_textBox" placeholder="Tap to type…" style="
         display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -2492,7 +2576,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         caret-color:#fff;min-height:80px;
       " rows="4"></textarea>
 
-      
+      <!-- Caption overlay (photo/video) -->
       <div id="SC_caption" style="
         display:none;position:absolute;bottom:90px;left:0;right:0;
         padding:10px 18px;text-align:center;
@@ -2502,7 +2586,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       "></div>
     </div>
 
-    
+    <!-- TOP-LEFT: Back to chooser -->
     <div style="position:absolute;top:14px;left:12px;z-index:10;">
       <button onclick="scBackToChooser()" style="
         background:rgba(0,0,0,.45);border:none;color:#fff;
@@ -2511,7 +2595,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         backdrop-filter:blur(4px);">‹</button>
     </div>
 
-    
+    <!-- TOP-RIGHT: 3-dots settings -->
     <div style="position:absolute;top:14px;right:12px;z-index:10;">
       <button onclick="scToggleSettings()" style="
         background:rgba(0,0,0,.45);border:none;color:#fff;
@@ -2520,7 +2604,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         backdrop-filter:blur(4px);letter-spacing:2px;font-weight:900;">⋯</button>
     </div>
 
-    
+    <!-- Settings dropdown -->
     <div id="SC_settings" style="
       display:none;position:absolute;top:62px;right:12px;z-index:20;
       background:rgba(24,24,36,.95);border:1px solid rgba(255,255,255,.12);
@@ -2531,7 +2615,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <div onclick="scClose()" style="padding:11px 18px;color:#ef4444;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:10px;">✕ <span>Discard Story</span></div>
     </div>
 
-    
+    <!-- BOTTOM-CENTER: double-arrow toggle for edit tools -->
     <div style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);z-index:10;">
       <button id="SC_arrowBtn" onclick="scToggleTools()" style="
         background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.18);color:#fff;
@@ -2546,18 +2630,18 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </button>
     </div>
 
-    
+    <!-- Tap-outside overlay -->
     <div id="SC_toolsOv" onclick="scCloseTools()" style="
       display:none;position:absolute;inset:0;z-index:10;background:rgba(0,0,0,.18);"></div>
 
-    
+    <!-- Edit tools panel (slides up) -->
     <div id="SC_tools" style="
       position:absolute;bottom:0;left:0;right:0;z-index:11;
       background:rgba(14,14,22,.92);border-top:1px solid rgba(255,255,255,.1);
       padding:12px 16px 28px;
       transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
       backdrop-filter:blur(8px);">
-      
+      <!-- Quick action buttons row -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
         <button onclick="scShowContrast()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;padding:10px 4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;">
           <span style="font-size:20px;">🎨</span>Adjust
@@ -2573,10 +2657,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         </button>
       </div>
 
-      
+      <!-- VIDEO CONTROLS — only shown when video is loaded -->
       <div id="SC_videoControls" style="display:none;margin-bottom:14px;background:rgba(255,255,255,.04);border-radius:12px;padding:10px 12px;">
         <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🎬 Video</div>
-        
+        <!-- Play / Stop -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <button id="SC_vidPlayBtn" onclick="scEditorTogglePlay()" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
           <div style="flex:1;">
@@ -2589,7 +2673,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
             </div>
           </div>
         </div>
-        
+        <!-- Music volume (only shown when song selected) -->
         <div id="SC_musicVolRow" style="display:none;">
           <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">🎵 Music Volume</div>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -2601,7 +2685,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         </div>
       </div>
 
-      
+      <!-- Adjust sliders -->
       <div id="SC_contrastPanel" style="display:none;margin-bottom:10px;padding:10px 4px 0;">
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;align-items:center;gap:10px;">
@@ -2633,14 +2717,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         </div>
       </div>
 
-      
+      <!-- Caption input -->
       <div id="SC_captionInput" style="display:none;margin-bottom:10px;">
         <input id="SC_captionText" type="text" placeholder="Add caption…" maxlength="120"
           style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;outline:none;"
           oninput="scUpdateCaption(this.value)">
       </div>
 
-      
+      <!-- Selected song display -->
       <div id="SC_songDisplay" style="display:none;padding:8px 12px;background:rgba(236,91,8,.20);border-radius:10px;margin-bottom:10px;align-items:center;gap:8px;">
         <span style="font-size:16px;">🎵</span>
         <span id="SC_songName" style="color:#fff;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -2648,7 +2732,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
     </div>
 
-    
+    <!-- BOTTOM-RIGHT: Next → Share page -->
     <div style="position:absolute;bottom:16px;right:14px;z-index:12;">
       <button onclick="scGoShare()" style="
         background:var(--brand);border:none;color:#fff;
@@ -2658,7 +2742,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 
-  
+  <!-- PAGE 2: SHARE -->
   <div id="SC_p2" style="display:none;height:100%;flex-direction:column;background:#0d0f1a;">
     <div style="padding:16px 14px 8px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);">
       <button onclick="scBackToEditor()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
@@ -2694,10 +2778,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 
-  
+  <!-- PAGE 3: CAMERA -->
   <div id="SC_p3" style="display:none;height:100%;flex-direction:column;position:relative;background:#000;">
     <video id="SC_camVid" style="width:100%;height:100%;object-fit:cover;" autoplay playsinline muted></video>
-    
+    <!-- Shutter -->
     <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);">
       <button onclick="scSnap()" style="
         width:72px;height:72px;border-radius:50%;
@@ -2707,7 +2791,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <div style="width:56px;height:56px;border-radius:50%;background:#fff;"></div>
       </button>
     </div>
-    
+    <!-- Back from camera → page 0 -->
     <button onclick="scCloseCam();scPage(0);" style="
       position:absolute;top:16px;left:14px;
       background:rgba(0,0,0,.45);border:none;color:#fff;
@@ -2717,9 +2801,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <canvas id="SC_snapCanvas" style="display:none;"></canvas>
   </div>
 
-  
+  <!-- PAGE 4: SONG PICKER (full-screen, Instagram-style) -->
   <div id="SC_p4" style="display:none;height:100%;flex-direction:column;background:linear-gradient(180deg,#1a0a00 0%,#110700 100%);">
-    
+    <!-- Header -->
     <div style="display:flex;align-items:center;gap:12px;padding:16px 14px 10px;border-bottom:1px solid rgba(255,255,255,.08);">
       <button onclick="scCloseSongPage()" style="background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;">‹</button>
       <span style="color:#fff;font-size:16px;font-weight:800;flex:1;">🎵 Add Music</span>
@@ -2728,7 +2812,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         color:#f09060;border-radius:10px;padding:6px 13px;
         font-size:12px;font-weight:700;cursor:pointer;">+ Upload</button>
     </div>
-    
+    <!-- Search -->
     <div style="padding:12px 14px 8px;">
       <div style="position:relative;">
         <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">🔍</span>
@@ -2740,7 +2824,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
             color:#fff;font-size:14px;outline:none;">
       </div>
     </div>
-    
+    <!-- Currently selected banner -->
     <div id="SC_currentSongBanner" style="display:none;margin:0 14px 8px;padding:10px 14px;background:rgba(236,91,8,.22);border:1px solid rgba(236,91,8,.4);border-radius:12px;align-items:center;gap:10px;">
       <span style="font-size:18px;">🎵</span>
       <div style="flex:1;min-width:0;">
@@ -2749,11 +2833,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       </div>
       <button onclick="scClearSong()" style="background:transparent;border:none;color:#ef4444;font-size:18px;cursor:pointer;">✕</button>
     </div>
-    
+    <!-- Track list -->
     <div id="SC_songList" style="flex:1;overflow-y:auto;padding:0 10px 16px;display:flex;flex-direction:column;gap:4px;">
       <div style="text-align:center;color:rgba(255,255,255,.35);padding:40px;font-size:14px;">Loading songs…</div>
     </div>
-    
+    <!-- Preview bar (pinned to bottom) -->
     <div id="SC_songPreviewBar" style="display:none;margin:0 14px 14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 14px;align-items:center;gap:10px;">
       <button onclick="scStopSongPreview()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:14px;cursor:pointer;">⏹</button>
       <div style="flex:1;min-width:0;">
@@ -2763,23 +2847,23 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 
-  
+  <!-- PAGE 5: VIDEO TRIMMER -->
   <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#000;position:relative;">
-    
+    <!-- Header -->
     <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);">
       <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">‹</button>
       <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">✂️ Edit Video</span>
       <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">💾 Save Clip</button>
     </div>
 
-    
+    <!-- Video preview -->
     <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;">
       <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline autoplay></video>
-      
+      <!-- Time display -->
       <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
-      
+      <!-- Pause/Play button overlay -->
       <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.4);color:#fff;width:48px;height:48px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">⏸</button>
-      
+      <!-- Cut button — tap to mark current position as cut point -->
       <button id="SC_cutBtn" onclick="scAddCutPoint()" style="
         position:absolute;bottom:12px;right:14px;
         background:#ef4444;border:none;color:#fff;
@@ -2791,10 +2875,10 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         transition:transform .1s,box-shadow .1s;">✂️ Cut here</button>
     </div>
 
-    
+    <!-- Bottom controls panel -->
     <div style="background:#0d0f1a;padding-bottom:env(safe-area-inset-bottom,0);">
 
-      
+      <!-- Trim scrubber -->
       <div style="padding:10px 14px 4px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
           <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
@@ -2820,7 +2904,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 </div>
       </div>
 
-      
+      <!-- Music trim scrubber (shown only when song is added) -->
       <div id="SC_musicTrimWrap" style="display:none;padding:6px 14px 2px;border-top:1px solid rgba(255,255,255,.06);">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
           <span style="font-size:11px;color:#f09060;font-weight:700;">🎵 Music clip</span>
@@ -2841,11 +2925,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         </div>
       </div>
 
-      
+      <!-- Horizontally scrollable adjustments -->
       <div style="overflow-x:auto;overflow-y:hidden;padding:8px 14px 14px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;">
         <div style="display:flex;gap:10px;min-width:max-content;align-items:flex-end;">
 
-          
+          <!-- Original Video Volume -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎬 Video Vol</span>
             <input type="range" id="SC_volSlider" min="0" max="200" step="1" value="100"
@@ -2855,9 +2939,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
-          
+          <!-- Music Vol controlled in editor arrow panel -->
 
-          
+          <!-- Add/Change Song button -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:90px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Song</span>
             <button id="SC_trimSongBtn" onclick="scTrimOpenSong()" style="
@@ -2869,7 +2953,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
-          
+          <!-- Speed -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">⚡ Speed</span>
             <input type="range" id="SC_speedSlider" min="0.25" max="2" step="0.25" value="1"
@@ -2879,7 +2963,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
-          
+          <!-- Brightness -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">☀️ Bright</span>
             <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100"
@@ -2889,7 +2973,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
-          
+          <!-- Contrast -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">◑ Contrast</span>
             <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100"
@@ -2899,7 +2983,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
           <div style="width:1px;background:rgba(255,255,255,.08);align-self:stretch;margin:0 1px;"></div>
 
-          
+          <!-- Pitch -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:100px;">
             <span style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.4px;">🎵 Pitch</span>
             <input type="range" id="SC_pitchSlider" min="-6" max="6" step="0.5" value="0"
@@ -2912,7 +2996,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
   </div>
 
-  
+  <!-- DELETE MENU -->
   <div id="SC_delMenu" style="
     display:none;position:absolute;inset:0;z-index:30;
     background:rgba(0,0,0,.6);align-items:flex-end;
@@ -2925,13 +3009,16 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- Hidden inputs for story creator -->
+<!-- SC_galleryInput kept for compat (camera snap etc.) -->
 <input type="file" id="SC_galleryInput" accept="image/*,video/*,video/mp4,video/quicktime,video/x-m4v,video/webm,video/3gpp" style="display:none;" onchange="scGalleryPicked(this)">
-
+<!-- Dedicated photo picker — only images, ensures gallery opens on all phones -->
 <input type="file" id="SC_photoInput" accept="image/*" style="display:none;" onchange="scGalleryPicked(this)">
-
+<!-- Dedicated video picker — explicit video MIME types, reliable on iOS & Android -->
 <input type="file" id="SC_videoInput" accept="video/*,video/mp4,video/quicktime,video/x-m4v,video/webm,video/3gpp,video/x-matroska" style="display:none;" onchange="scGalleryPicked(this)">
 <input type="file" id="SC_audioInput"   accept="audio/*"         style="display:none;" onchange="scAudioPicked(this)">
 
+<!-- Music Upload Modal (used from song page) -->
 <div id="musicUploadOverlay" style="
   display:none;position:fixed;inset:0;z-index:7600;
   background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
@@ -2958,6 +3045,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- Privacy Sheet (story viewer) -->
 <div class="del-sheet-ov" id="privacySheetOv" onclick="closePrivacySheet()"></div>
 <div class="del-sheet" id="privacySheet">
   <div style="padding:14px 16px 8px;font-size:15px;font-weight:700;color:var(--txt);">🔒 Story Privacy</div>
@@ -2969,20 +3057,21 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 </div>
 
+<!-- Compat shims -->
 <input type="file" id="storyMediaFile" accept="image/*,video/*,video/mp4,video/quicktime,video/x-m4v,video/webm,video/3gpp" style="display:none;" onchange="scGalleryPicked(this)">
 <input type="file" id="storyAudioFile" accept="audio/*"         style="display:none;" onchange="scAudioPicked(this)">
 <input type="text" id="storyTextContent" style="display:none;">
 <select id="storyPrivacy" style="display:none;"><option value="friends">Friends</option><option value="public">Public</option><option value="custom">Custom</option></select>
 <div id="customPrivacySection" style="display:none;"><div id="customFriendsList"></div></div>
 <script>
-
+// Auto-include credentials for all /api fetch calls
 const _origFetch = window.fetch;
 window.fetch = function(url, opts={}) {
   if(typeof url === 'string' && url.startsWith('/api')) {
     opts = {...opts, credentials: 'include'};
     if(!opts.headers) opts.headers = {};
     if(!(opts.headers instanceof Headers) && !opts.headers['Content-Type'] && !(opts.body instanceof FormData)) {
-      
+      // don't override if already set
     }
   }
   return _origFetch(url, opts);
@@ -3005,16 +3094,7 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   loadFriends();
   loadRequests();
   setTimeout(requestNotifPermission,2000);
-  document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){
-      ['storyVideo','SC_vid','SC_trimVid'].forEach(id=>{
-        const v=document.getElementById(id);
-        if(v&&!v.paused) v.pause();
-      });
-      const pb=document.getElementById('SC_vidPlayBtn');
-      if(pb) pb.textContent='▶';
-    }
-  });
+  // ctx menu replaced by msg sheet
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -3085,10 +3165,6 @@ async function saveProfile(){
 function connectSocket(){
   socket=io({withCredentials:true,transports:['polling','websocket']});
   socket.on('connect',()=>{
-    friends.forEach(f=>{
-      const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
-      socket.emit('join_chat',{chat_id:cid});
-    });
     if(currentChatId){
       socket.emit('join_chat',{chat_id:currentChatId});
       socket.emit('mark_all_read',{chat_id:currentChatId});
@@ -3104,9 +3180,6 @@ function connectSocket(){
   });
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
-      if(msg.sender_id===ME_ID) return;
-      const existing=document.querySelector(`[data-msg-id="${msg.id}"]`);
-      if(existing) return;
       appendMsg(msg);
     }else{
       // Build notification preview
@@ -3156,13 +3229,13 @@ function connectSocket(){
   socket.on('error',(e)=>toast(e.message||'Socket error','err'));
   socket.on('friend_request_accepted',(data)=>{
     // Sender of the request: "{name} accepted your friend request"
-    showInAppNotif(data.username, '🎉 accepted your friend request! Say hi to your new friend '+data.username+' 👋', null, data.user_id);
+    showInAppNotif(data.username, '🎉 accepted your friend request!', null, data.user_id, 'friend_accepted');
     loadFriends();
     loadRequests();
   });
   // Acceptor: "Say hi to your new friend {name}"
   socket.on('new_friend_added',(data)=>{
-    showInAppNotif(data.username, '👋 Say hi to your new friend '+data.username+'!', null, data.user_id);
+    showInAppNotif(data.username, '👋 '+data.username+' is now your friend!', null, data.user_id, 'friend_accepted');
     loadFriends();
   });
   socket.on('friend_request_received',(data)=>{
@@ -3196,10 +3269,15 @@ function connectSocket(){
       friends.forEach(f=>{ if(f.id===data.user_id) f.avatar_url=data.avatar_url; });
       if(currentFriendId===data.user_id){
         const chav=document.getElementById('chav');
-        if(chav){ chav.style.fontSize='0'; chav.innerHTML=`<img src="${data.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`; }
+        if(chav){
+          chav.style.fontSize='0';
+          chav.innerHTML=`<img src="${data.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">`;
+        }
       }
       renderFriends();
-    } else { loadFriends(); }
+    } else {
+      loadFriends();
+    }
   });
   socket.on('friend_status_updated',(data)=>{
     // Update status display in friend list — re-render will pick it up from profileCache
@@ -3228,39 +3306,15 @@ function sendMsg(){
   const txt=inp.value.trim();
   if(!txt)return;
   if(!currentChatId){toast('Select a chat first','err');return;}
+  if(!socket){toast('Not connected','err');return;}
   if(editingMsgId){saveEdit();return;}
-  const replyId=replyToMsg?replyToMsg.id:null;
-  const chatId=currentChatId;
-  inp.value='';inp.style.height='auto';
-  closeEmoji();cancelReply();
-  const tempId='tmp_'+Date.now();
-  appendMsg({
-    id:tempId,chat_id:chatId,sender_id:ME_ID,sender_username:ME_NAME,
-    content:txt,message_type:'text',is_edited:false,is_deleted:false,
-    is_pinned:false,created_at:new Date().toISOString(),
-    reactions:{},user_reactions:[],read_by:0,reply_to:null
-  },true);
-  if(socket&&socket.connected){
-    socket.emit('send_message',{chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId});
-  }
-  fetch('/api/messages/send',{
-    method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-    body:JSON.stringify({chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId})
-  }).then(r=>r.json()).then(d=>{
-    const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(d.success){
-      if(el){
-        el.setAttribute('data-msg-id',d.message.id);
-        const dot=el.querySelector('.receipt');
-        if(dot){dot.className='receipt delivered';dot.setAttribute('data-msg-id',d.message.id);dot.title='Delivered ✓';}
-      }
-    } else {
-      if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='Failed';}}
-      toast(d.error||'Failed to send','err');
-    }
-  }).catch(()=>{
-    const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='No connection';}}
+  // Mood check — only for plain text messages
+  checkMoodBeforeSend(txt, ()=>{
+    const data={chat_id:currentChatId,content:txt,message_type:'text'};
+    if(replyToMsg)data.reply_to_id=replyToMsg.id;
+    socket.emit('send_message',data);
+    inp.value='';inp.style.height='auto';
+    closeEmoji();cancelReply();
   });
 }
 async function loadMsgs(chatId){
@@ -3312,14 +3366,9 @@ function appendMsg(msg,scroll=true){
   else{body+='<em style="opacity:.5">[Message deleted]</em>';}
   // Read receipt: 1 dot, sender-only, never on deleted msgs
   // delivered = light orange hollow, seen = bright solid orange
-  let receiptState=null;
-  if(isSent&&!msg.is_deleted){
-    const isTemp=String(msg.id).startsWith('tmp_');
-    receiptState=isTemp?'sending':(msg.read_by>0?'seen':'delivered');
-  }
-  const receiptLabel=receiptState==='seen'?'Seen ✓✓':receiptState==='sending'?'Sending…':'Delivered ✓';
+  const receiptState=isSent&&!msg.is_deleted?(msg.read_by>0?'seen':'delivered'):null;
   const receiptDot=receiptState
-    ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptLabel}"></span>`
+    ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptState==='seen'?'Seen ✓✓':'Delivered ✓'}"></span>`
     :'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
   // Reactions (max 2 emoji types shown, overlaid outside bubble)
@@ -4648,19 +4697,13 @@ async function startVoiceCall(){
   if(currentGroupId){ startGroupCall('voice'); return; }
   if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
-  if(!f) return;
-  if(cd.active){ toast('Already in a call','info'); return; }
-  let stream; try{ stream=await getMedia('voice'); }catch(e){ mediaErr(e); return; }
-  doCall(f,'voice',stream);
+  if(f) await doCall(f,'voice');
 }
 async function startVideoCall(){
   if(currentGroupId){ startGroupCall('video'); return; }
   if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
-  if(!f) return;
-  if(cd.active){ toast('Already in a call','info'); return; }
-  let stream; try{ stream=await getMedia('video'); }catch(e){ mediaErr(e); return; }
-  doCall(f,'video',stream);
+  if(f) await doCall(f,'video');
 }
 
 // ── Group call: show member picker ──
@@ -4713,18 +4756,19 @@ function closeGcallPicker() {
   document.getElementById('gcallPickerOv').style.display = 'none';
 }
 
-async function doCall(friend, type, preloadedStream){
+async function doCall(friend, type){
+  // Discover camera capabilities before starting — sets _isMobileDevice
+  await _initCameraCapabilities();
   if(cd.active){ toast('Already in a call','info'); return; }
   await unlockAudio();
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
-  _initCameraCapabilities().catch(()=>{});
 
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id;
     cd.calleeName=friend.username; cd.callerName=friend.username;
 
-    const stream=preloadedStream||await getMedia(type);
+    const stream = await getMedia(type);
     cd.localStream = stream;
     if(type==='video') _syncFacingFromStream(stream);  // sync flip state
 
@@ -4758,21 +4802,19 @@ async function doCall(friend, type, preloadedStream){
 
 // ── acceptCall: receiver answers ──
 async function acceptCall(){
-  const _inc=cd.incoming;
-  if(!_inc){ cleanupCall(); return; }
-  let _preStream;
-  try{ _preStream=await getMedia(_inc.call_type); }catch(e){ mediaErr(e); rejectCall(); return; }
   await unlockAudio();
   hideIncomingCall();
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
   const d=cd.incoming;
-  if(!d){ if(_preStream) _preStream.getTracks().forEach(t=>t.stop()); cleanupCall(); return; }
+  if(!d){ cleanupCall(); return; }
   cd.callerName=d.caller_name; cd.calleeName=d.caller_name;
+
   try{
     cd.active=true; cd.type=d.call_type;
     cd.calleeId=d.caller_id;
-    const stream=_preStream;
+
+    const stream = await getMedia(d.call_type);
     cd.localStream = stream;
     if(d.call_type==='video') _syncFacingFromStream(stream);  // sync flip state
 
@@ -4844,52 +4886,30 @@ function cleanupCall(){
 
 // ── Call socket events ──
 function setupCallListeners(){
-  socket.on('incoming_call',data=>{
-    if(cd.active){ socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,busy:true}); return; }
-    if(isDNDActive()){ socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,dnd:true}); return; }
-    cd.incoming=data;
-    const displayName=data.is_group_call?data.caller_name+' · '+data.group_name:data.caller_name;
-    showIncomingCall(displayName,data.call_type);
-    const typeEl=document.getElementById('incomingCallType');
-    if(typeEl&&data.is_group_call) typeEl.textContent='👥 Group '+(data.call_type==='video'?'Video':'Voice')+' call';
-  });
-  socket.on('call_accepted',async data=>{
-    hideOutgoingScreen();
-    if(!cd.pc||!data.answer){ cleanupCall(); return; }
-    try{
-      await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-      await flushPending();
-      showCallUI(true);
-      setStatus('Connected');
-    }catch(e){ console.error('[call_accepted]',e); toast('Call connection failed','err'); cleanupCall(); }
-  });
-  socket.on('call_rejected',data=>{
-    hideOutgoingScreen();
-    toast('📵 '+(data.callee_name||'User')+' — '+(data.busy?'Busy':'Call declined'),'info');
-    cleanupCall();
-  });
-  socket.on('call_ended',data=>{
-    if(!cd.active) return;
-    const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
-    const avgSig=cd._sigSamples&&cd._sigSamples.length?Math.round(cd._sigSamples.reduce((a,b)=>a+b,0)/cd._sigSamples.length):null;
-    cleanupCall();
-    toast('📵 Call ended','info');
-    if(typeof appendCallMsg==='function') appendCallMsg(type,dur,startT,false);
-    if(dur>0&&typeof showCallSummary==='function') showCallSummary(dur,type,avgSig);
-  });
-  socket.on('ice_candidate',async data=>{
-    if(!data.candidate) return;
-    try{
-      if(cd.pc&&cd.pc.remoteDescription&&cd.pc.remoteDescription.type){
-        await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-      } else { cd.pending=cd.pending||[]; cd.pending.push(data.candidate); }
-    }catch(e){ console.warn('[ice]',e.message); }
-  });
-  socket.on('missed_call_notify',data=>{
-    if(typeof showInAppNotif==='function') showInAppNotif(data.caller_name,'📵 Missed call',null,data.caller_id);
-    toast('📵 Missed call from '+data.caller_name,'err');
-    if(typeof appendCallMsg==='function') appendCallMsg('missed',0,null,true);
-  });
+  socket.on('incoming_call', data => {
+  if (cd.active) {
+    socket.emit('call_answer', { caller_id: data.caller_id, accepted: false, busy: true });
+    return;
+  }
+  if (isDNDActive()) {
+    socket.emit('call_answer', { caller_id: data.caller_id, accepted: false, dnd: true });
+    return;
+  }
+  cd.incoming = data;
+
+  // Show group call badge if applicable
+  const displayName = data.is_group_call
+    ? data.caller_name + ' · ' + data.group_name
+    : data.caller_name;
+
+  showIncomingCall(displayName, data.call_type);
+
+  // Update incoming screen subtitle
+  const typeEl = document.getElementById('incomingCallType');
+  if (typeEl && data.is_group_call) {
+    typeEl.textContent = '👥 Group ' + (data.call_type === 'video' ? 'Video' : 'Voice') + ' call';
+  }
+});
 }
 
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
@@ -4911,7 +4931,7 @@ async function showPinned(){
   try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();if(d.success&&d.messages.length>0){const list=d.messages.map(m=>`• ${m.content.substring(0,60)}`).join('\n');alert(`Pinned Messages:\n\n${list}`);}else toast('No pinned messages','info');}catch(e){toast('Failed','err');}
 }
 // showReactPicker: see full implementation in batch1 section
-async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
+async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
 
 const SHEET_QUICK  = ['❤️','😂','😮','😢','👍','🎉'];
 const SHEET_ALL    = [
@@ -5204,12 +5224,6 @@ async function loadFriends(){
     const d=await r.json();
     if(d.success){
       friends=d.friends;
-      if(socket&&socket.connected){
-        friends.forEach(f=>{
-          const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');
-          socket.emit('join_chat',{chat_id:cid});
-        });
-      }
       // Seed in-memory unread counts from server ONLY for chats not currently open
       friends.forEach(f=>{
         if(currentChatId!==f.chat_id){
@@ -5288,7 +5302,9 @@ function buildCrowEl(f){
   el.innerHTML=`
     <div class="av" style="position:relative;overflow:hidden;">
       ${isOnline?'<div class="online-dot"></div>':''}
-      ${f.avatar_url?`<img src="${f.avatar_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none'">`:f.username[0].toUpperCase()}
+      ${f.avatar_url
+        ?`<img src="${f.avatar_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.style.display='none'">`
+        :f.username[0].toUpperCase()}
     </div>
     <div class="cmeta">
       <div class="cnrow">
@@ -5924,24 +5940,29 @@ function requireChatLock(chatId,fid,fname,origChatId){
   document.getElementById('chatLockOverlay').classList.add('show');
 }
 function checkLockPin(){
-  const pin=document.getElementById('lockPinInp').value;
+  const inp=document.getElementById('lockPinInp');
+  const pin=inp.value.trim();
   if(!_lockPendingChatId) return;
   const stored=prefs.chatLocks[_lockPendingChatId];
+  if(!stored) return;
+  // Auto-submit when PIN length matches stored length
+  if(pin.length < stored.length) return;
   if(pin===stored){
+    inp.value='';
+    inp.placeholder='Enter PIN';
     document.getElementById('chatLockOverlay').classList.remove('show');
     if(_lockPendingFid){
-      // Was trying to open chat — proceed
       _openChatUnlocked(_lockPendingFid,_lockPendingFname,_lockPendingOrigCid);
     } else {
-      // Was unlocking from menu
       delete prefs.chatLocks[_lockPendingChatId]; savePrefs();
       toast('🔓 Chat unlocked','ok');
     }
-    _lockPendingChatId=null; _lockPendingFid=null;
+    _lockPendingChatId=null; _lockPendingFid=null; _lockPendingFname=null;
   } else {
-    document.getElementById('lockPinInp').value='';
-    document.getElementById('lockPinInp').placeholder='Wrong PIN';
-    setTimeout(()=>document.getElementById('lockPinInp').placeholder='••••',1500);
+    inp.value='';
+    inp.style.animation='shake .3s ease';
+    inp.placeholder='Wrong PIN — try again';
+    setTimeout(()=>{ inp.placeholder='Enter PIN'; inp.style.animation=''; },1500);
   }
 }
 function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
@@ -5986,6 +6007,7 @@ function playChatNotifSound(chatId){
   else if(s==='ping'){osc.frequency.value=1200;gain.gain.setValueAtTime(.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.2);osc.start();osc.stop(ctx.currentTime+.2);}
   else if(s==='pop'){osc.frequency.value=400;osc.type='sine';gain.gain.setValueAtTime(.4,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);osc.start();osc.stop(ctx.currentTime+.15);}
 }
+
 
 // ══════════════════════════════════════════════════
 // MESSAGE TRANSLATION
@@ -6097,6 +6119,7 @@ ${'─'.repeat(50)}
 // ══════════════════════════════════════════════════
 setTimeout(checkBirthdayToday, 1000);
 
+
 // ═══════════════════════════════════════════════════════
 // NOTIFICATION SYSTEM
 // - Toast bubbles slide in top-right, auto-dismiss after 5s
@@ -6121,26 +6144,30 @@ function nowNotifTime(){
 }
 
 // ── Main entry: show toast (3s) + save permanently to panel ──
-function showInAppNotif(name, text, chatId, userId){
-  // 1. Check if this chat is muted — if so, save to history but skip the toast
+function showInAppNotif(name, text, chatId, userId, notifType){
   const _muteKey = chatId || null;
   const _isMutedNow = _muteKey && _isChatMuted(_muteKey);
 
-  // Always save to persistent history
+  // Only save to history if NOT a chat message
+  // Messages have chatId + no special type — exclude them from history
+  const isMessage = chatId && !notifType;
   const notif = {
     id: Date.now()+'_'+Math.random().toString(36).slice(2,6),
     name: name||'',
     text: text||'',
     chatId: chatId||null,
     userId: userId||null,
+    type: notifType||'message',
     time: nowNotifTime(),
     ts: Date.now(),
     read: false,
   };
-  _persistNotifs.unshift(notif);
-  _saveNotifs();
-  _notifUnread++;
-  _updateNotifBadge();
+  if(!isMessage){
+    _persistNotifs.unshift(notif);
+    _saveNotifs();
+    _notifUnread++;
+    _updateNotifBadge();
+  }
   _renderNotifPanel();
 
   // 2. Toast — skip entirely if chat is muted
@@ -6281,14 +6308,23 @@ function _renderNotifPanel(){
   const body = document.getElementById('notifPanelBody');
   const empty = document.getElementById('notifPanelEmpty');
   if(!body) return;
-  // Remove all existing items (keep empty message)
   body.querySelectorAll('.notif-pitem').forEach(el=>el.remove());
-  if(!_persistNotifs.length){
+  // Only show friend requests and story notifications — NOT messages
+  const allowed = _persistNotifs.filter(n=>
+    n.type==='friend_request' ||
+    n.type==='friend_accepted' ||
+    n.type==='story' ||
+    n.type==='story_reaction' ||
+    n.type==='story_reply' ||
+    n.type==='missed_call' ||
+    n.type==='group_invite'
+  );
+  if(!allowed.length){
     if(empty) empty.style.display='block';
     return;
   }
   if(empty) empty.style.display='none';
-  _persistNotifs.forEach(n=>{
+  allowed.forEach(n=>{
     const div=document.createElement('div');
     div.className='notif-pitem'+(n.read?'':' unread');
     div.setAttribute('data-nid',n.id);
@@ -6679,7 +6715,11 @@ async function saveCroppedAvatar(){
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
-        if(socket&&socket.connected) socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        // Broadcast to all friends via socket so their list updates instantly
+        if(socket&&socket.connected){
+          socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        }
+        // Update own entry in friends array
         friends.forEach(f=>{ if(f.id===ME_ID) f.avatar_url=d.avatar_url; });
         renderFriends();
       } else toast(d.error||'Upload failed','err');
@@ -6998,8 +7038,7 @@ function openConv3Menu(e){
     <div class="crow-ctx-item" onclick="crowCtxConvDo('lock')">🔒 ${prefs.chatLocks[currentChatId]?'Unlock Chat':'Lock Chat'}</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('notif-sound')">🔔 Notification Sound</div>
     <div class="crow-ctx-item" onclick="crowCtxConvDo('mute-chat')">${isMuted?'🔔 Unmute Chat':'🔕 Mute Chat'}</div>
-    <div class="crow-ctx-item" onclick="crowCtxConvDo('export')">📤 Export Chat</div>
-    <div class="crow-ctx-sep"></div>
+
     <div class="crow-ctx-item" onclick="crowCtxConvDo('archive')">${isArchived?'📤 Unarchive Chat':'🗄️ Archive Chat'}</div>
     <div class="crow-ctx-sep"></div>
     <div class="crow-ctx-item danger" onclick="crowCtxConvDo('delete-conv')">🗑️ Delete Conversation</div>
@@ -8033,6 +8072,8 @@ function _scShowVideoUI(){
   const musicRow = $('SC_musicVolRow');
   if(musicRow) musicRow.style.display = SC.audioName ? 'block' : 'none';
 
+
+
   // Duration badge
   if(SC.videoDuration != null && durLabel){
     const totalS = SC.videoDuration;
@@ -8892,33 +8933,20 @@ function scApplyTrim(){
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
   const total=vid.duration||1;
-  const start=SC.trimStart||0;
-  const end=SC.trimEnd||total;
-  const dur=end-start;
-  if(dur<0.5){ toast('Too short — min 0.5s','err'); return; }
-  if(dur>60){ toast('Too long — max 60s','err'); return; }
-  SC.trimStart=start; SC.trimEnd=end; SC.videoDuration=total;
-  try{ vid.pause(); }catch(e){}
-  clearInterval(_trimVidRAF);
-  scPage(1);
-  _scShowVideoUI();
-  const ev=$('SC_vid');
-  if(ev&&SC.mediaURL){
-    try{ ev.pause(); }catch(e){}
-    if(ev._trimLoop){ ev.removeEventListener('timeupdate',ev._trimLoop); ev._trimLoop=null; }
-    ev.src=SC.mediaURL; ev.muted=true; ev.load();
-    ev.oncanplay=function(){
-      ev.oncanplay=null;
-      ev.currentTime=start;
-      ev.play().catch(()=>{});
-      const pb=$('SC_vidPlayBtn'); if(pb) pb.textContent='⏸';
-      ev._trimLoop=function(){ if(ev.currentTime>=end-0.05) ev.currentTime=start; };
-      ev.addEventListener('timeupdate',ev._trimLoop);
-    };
+  const dur=SC.trimEnd-SC.trimStart;
+  if(dur>30){
+    toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');
+    return;
   }
-  const db=$('SC_vidDuration');
-  if(db){ db.textContent='✂️ '+dur.toFixed(1)+'s'; db.style.color='#22c55e'; db.style.display='block'; }
-  toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
+  if(dur<0.5){
+    toast('Selection too short (min 0.5s)','err');
+    return;
+  }
+  // Store trim points — they'll be passed to the backend/post
+  // Update the duration shown
+  SC.videoDuration=total;
+  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
+  scCloseTrimmer();
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
@@ -9377,6 +9405,7 @@ async function doForward(){
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — GLOBAL SEARCH
 // ═══════════════════════════════════════════════════════════
+
 
 // ═══════════════════════════════════════════════════════════
 // BATCH 1 — PINNED CHATS
@@ -10406,7 +10435,7 @@ setInterval(() => {
 }, 60000);
 
 </script>
-
+<!-- REACTION SHEET (full emoji picker) -->
 <div class="react-sheet-ov" id="reactSheetOv" onclick="closeReactSheet()"></div>
 <div class="react-sheet" id="reactSheet">
   <div class="react-sheet-head">
@@ -10415,7 +10444,7 @@ setInterval(() => {
   </div>
   <div class="react-sheet-grid" id="reactSheetGrid"></div>
 </div>
-
+<!-- VOICE PREVIEW MODAL -->
 <div class="vp-overlay" id="vpOverlay" onclick="cancelVoicePreview()"></div>
 <div class="vp-modal" id="vpModal">
   <div class="vp-title">🎙️ Voice Message</div>
@@ -10435,9 +10464,10 @@ setInterval(() => {
     <button class="vp-send" onclick="sendVoicePreview()">Send 📤</button>
   </div>
 </div>
-
+<!-- RECORDING LIVE INDICATOR -->
 <div class="rec-live" id="recLive"><div class="rec-dot"></div><span id="recLiveTimer">0:00</span> — Tap 🎙️ to stop</div>
 
+<!-- FORWARD MODAL -->
 <div class="fwd-modal-ov" id="fwdOv" onclick="closeFwdModal()"></div>
 <div class="fwd-modal" id="fwdModal">
   <div class="fwd-head">
@@ -10447,7 +10477,10 @@ setInterval(() => {
   <div class="fwd-list" id="fwdList"></div>
   <button class="savebtn" style="margin-top:12px;" onclick="doForward()">Forward 📤</button>
 </div>
+<!-- GLOBAL SEARCH MODAL -->
 
+
+<!-- STORIES POPUP PANEL -->
 <div class="stories-popup-ov" id="storiesPopupOv" onclick="closeStoriesPanel()"></div>
 <div class="stories-popup" id="storiesPopup">
   <div class="stories-popup-hdr">
@@ -10460,8 +10493,12 @@ setInterval(() => {
   <div class="stories-popup-list" id="storiesPopupList"></div>
 </div>
 
+<!-- ═══ MOOD WARNING SHEET ═══ -->
+<!-- moodWarnSheet is the active mood warning sheet -->
+
+<!-- ═══ TIME CAPSULE SHEET ═══ -->
 <div id="capsuleSheet">
-  
+  <!-- Header -->
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
     <div style="font-size:28px;">⏳</div>
     <div style="flex:1;">
@@ -10470,12 +10507,12 @@ setInterval(() => {
     </div>
     <button onclick="closeCapsuleSheet()" style="background:none;border:none;color:var(--mute);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;">✕</button>
   </div>
-  
+  <!-- Tabs -->
   <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--bdr);padding-bottom:12px;">
     <button id="capsuleTab_compose" class="ct-tab ct-active" onclick="capsuleSwitchTab('compose')">✏️ Compose</button>
     <button id="capsuleTab_list"    class="ct-tab"            onclick="capsuleSwitchTab('list')">📋 Scheduled</button>
   </div>
-  
+  <!-- Compose pane -->
   <div id="capsulePane_compose">
     <div class="capsule-banner">📡 Stored on server · delivered on time even if you're offline</div>
     <div class="capsule-field">
@@ -10489,12 +10526,13 @@ setInterval(() => {
     <div id="capsuleCountdown" style="font-size:12px;color:var(--brand);font-weight:600;margin-bottom:14px;min-height:18px;"></div>
     <button id="capsuleSendBtn" class="capsule-send" onclick="submitCapsule()">⏳ Schedule message</button>
   </div>
-  
+  <!-- List pane -->
   <div id="capsulePane_list" style="display:none;">
     <div id="capsuleListBody"></div>
   </div>
 </div>
 
+<!-- ═══ MOOD WARNING SHEET ═══ -->
 <div id="moodWarnSheet">
   <div id="moodWarnIcon" style="font-size:44px;margin-bottom:8px;text-align:center;">😤</div>
   <div style="font-size:18px;font-weight:700;color:var(--txt);margin-bottom:5px;text-align:center;">Hold on a sec…</div>
@@ -10530,6 +10568,7 @@ setInterval(() => {
   ">Send anyway</button>
 </div>
 
+<!-- ═══ FADING RELATIONSHIP BANNER ═══ -->
 <div id="fadingBanner">
   <div class="fb-icon" id="fadingIcon">💛</div>
   <div class="fb-text" id="fadingText">
@@ -10539,6 +10578,7 @@ setInterval(() => {
   <button class="fb-close" onclick="closeFadingBanner(false)">✕</button>
 </div>
 
+<!-- ═══ CREATE GROUP SHEET (full screen) ═══ -->
 <div id="createGroupSheet">
   <div class="cg-hdr">
     <button class="cg-back" onclick="closeCreateGroup()">‹</button>
@@ -10547,20 +10587,20 @@ setInterval(() => {
   </div>
   <div class="cg-body">
 
-    
+    <!-- Group name (most important — top, prominent) -->
     <div class="cg-section">
       <div class="cg-label">Group Name <span style="color:#ef4444;">*</span></div>
       <input class="cg-input" id="cgName" type="text" placeholder="e.g. Trip to Baguio, Study Squad…"
         oninput="cgCheckName()" maxlength="60" autocomplete="off">
     </div>
 
-    
+    <!-- Description -->
     <div class="cg-section">
       <div class="cg-label">Description <span style="color:var(--mute);font-weight:400;">(optional)</span></div>
       <input class="cg-input" id="cgDesc" type="text" placeholder="What's this group about?" maxlength="200" autocomplete="off">
     </div>
 
-    
+    <!-- Color picker -->
     <div class="cg-section">
       <div class="cg-label">Color</div>
       <div class="cg-color-row" id="cgColorRow">
@@ -10575,7 +10615,7 @@ setInterval(() => {
       </div>
     </div>
 
-    
+    <!-- Group Type -->
     <div class="cg-section">
       <div class="cg-label">Type</div>
       <div class="cg-type-row">
@@ -10601,7 +10641,7 @@ setInterval(() => {
       </div>
     </div>
 
-    
+    <!-- Members with search -->
     <div class="cg-section">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div class="cg-label" style="margin:0;">Add Members</div>
@@ -10617,6 +10657,7 @@ setInterval(() => {
   </div>
 </div>
 
+<!-- ═══ GROUP INFO SHEET ═══ -->
 <div id="groupInfoSheet">
   <div class="gi-hdr">
     <button class="cg-back" onclick="closeGroupInfo()">‹</button>
@@ -10627,21 +10668,21 @@ setInterval(() => {
     <div class="gi-av" id="giAv"></div>
     <div class="gi-name" id="giName"></div>
     <div class="gi-desc" id="giDesc"></div>
-    
+    <!-- Expiry bar for event groups -->
     <div id="giExpiryBar" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:9px 13px;margin-bottom:14px;font-size:12px;color:#f59e0b;font-weight:600;"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div class="cg-label" style="margin:0;">Members (<span id="giMemberCount">0</span>)</div>
       <button id="giAddMemberBtn" onclick="openAddMember()" style="background:none;border:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer;display:none;">+ Add</button>
     </div>
     <div id="giMembers"></div>
-    
+    <!-- Danger zone divider -->
     <div style="margin-top:20px;display:flex;align-items:center;gap:10px;">
       <div style="flex:1;height:1px;background:rgba(239,68,68,.3);"></div>
       <span style="font-size:10px;font-weight:800;color:#ef4444;text-transform:uppercase;letter-spacing:.8px;">Danger Zone</span>
       <div style="flex:1;height:1px;background:rgba(239,68,68,.3);"></div>
     </div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-      
+      <!-- Leave row -->
       <div id="giLeaveRow">
         <button onclick="giShowLeaveConfirm()" style="width:100%;padding:12px;border-radius:12px;border:none;background:rgba(245,158,11,.1);color:#f59e0b;font-size:14px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">🚪 Leave Group</button>
       </div>
@@ -10652,7 +10693,7 @@ setInterval(() => {
           <button onclick="leaveGroup()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#f59e0b;color:#000;font-size:13px;font-weight:700;cursor:pointer;">🚪 Leave</button>
         </div>
       </div>
-      
+      <!-- Delete row (owner only) -->
       <div id="giDeleteRow" style="display:none;">
         <button onclick="giShowDeleteConfirm()" style="width:100%;padding:12px;border-radius:12px;border:none;background:rgba(239,68,68,.1);color:#ef4444;font-size:14px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">🗑️ Delete Group</button>
       </div>
@@ -10667,6 +10708,7 @@ setInterval(() => {
   </div>
 </div>
 
+<!-- ═══ ADD MEMBER TO GROUP SHEET ═══ -->
 <div id="addMemberSheet" style="position:fixed;inset:0;background:var(--card);z-index:3500;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,0,1);">
   <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--bdr);">
     <button onclick="closeAddMember()" style="background:none;border:none;font-size:24px;color:var(--txt);cursor:pointer;padding:0;">‹</button>
@@ -10678,6 +10720,7 @@ setInterval(() => {
   </div>
 </div>
 
+<!-- ═══ GROUP RENAME SHEET ═══ -->
 <div id="groupRenameSheet" style="position:fixed;inset:0;background:var(--card);z-index:3500;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,0,1);">
   <div style="display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--bdr);">
     <button onclick="closeGroupRename()" style="background:none;border:none;font-size:24px;color:var(--txt);cursor:pointer;padding:0;">‹</button>
@@ -10696,6 +10739,7 @@ setInterval(() => {
   </div>
 </div>
 
+<!-- ═══ GROUP CALL MEMBER PICKER ═══ -->
 <div id="gcallPickerOv" onclick="closeGcallPicker()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3600;backdrop-filter:blur(2px);"></div>
 <div id="gcallPickerSheet" style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-radius:22px 22px 0 0;z-index:3700;max-height:70vh;display:flex;flex-direction:column;transform:translateY(100%);opacity:0;pointer-events:none;transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;box-shadow:0 -8px 40px rgba(0,0,0,.3);">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px;">
@@ -10705,8 +10749,9 @@ setInterval(() => {
   <div id="gcallPickerList" style="flex:1;overflow-y:auto;padding:8px 12px 24px;"></div>
 </div>
 
+<!-- ═══ MOOD BACKDROP ═══ -->
 <div id="moodBackdrop" onclick="moodEdit()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
-
+<!-- ═══ CAPSULE BACKDROP ═══ -->
 <div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
 1
 </body>
