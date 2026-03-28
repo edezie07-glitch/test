@@ -2236,9 +2236,8 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <img id="cropImg" src="" alt="crop" style="position:absolute;transform-origin:top left;user-select:none;-webkit-user-drag:none;max-width:none;max-height:none;">
     <div class="crop-circle-mask"></div>
   </div>
-  <div class="crop-toolbar" style="flex-direction:row;gap:10px;justify-content:center;">
-    <button onclick="document.getElementById('avatarFileInput').click()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:22px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;flex:1;">Change</button>
-    <button id="cropSaveBtn2" onclick="saveCroppedAvatar()" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:22px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;flex:1;">Save</button>
+  <div class="crop-toolbar" style="flex-direction:row;gap:10px;padding:12px 16px;">
+    <button onclick="document.getElementById('avatarFileInput').click()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:22px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">Change</button>
   </div>
 </div>
 <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="avatarFilePicked(this)">
@@ -5924,23 +5923,22 @@ function requireChatLock(chatId,fid,fname,origChatId){
 }
 function checkLockPin(){
   const inp=document.getElementById('lockPinInp');
-  const pin=inp?inp.value.trim():'';
-  if(!_lockPendingChatId||!pin) return;
+  const pin=inp?inp.value:'';
+  if(!_lockPendingChatId||!pin)return;
   const stored=prefs.chatLocks[_lockPendingChatId];
-  if(!stored) return;
-  if(pin.length<stored.length) return;
+  if(!stored)return;
+  if(pin.length<stored.length)return;
   if(pin===stored){
     if(inp){inp.value='';inp.placeholder='Enter PIN';inp.style.animation='';}
     document.getElementById('chatLockOverlay').classList.remove('show');
     if(_lockPendingFid){
       _openChatUnlocked(_lockPendingFid,_lockPendingFname,_lockPendingOrigCid);
     }else{
-      delete prefs.chatLocks[_lockPendingChatId];
-      savePrefs();
+      delete prefs.chatLocks[_lockPendingChatId];savePrefs();
       toast('🔓 Chat unlocked','ok');
     }
     _lockPendingChatId=null;_lockPendingFid=null;_lockPendingFname=null;
-  }else{
+  }else if(pin.length>=stored.length){
     if(inp){
       inp.value='';
       inp.style.animation='none';
@@ -6639,12 +6637,14 @@ function _attachCropEvents(){
 
 async function saveCroppedAvatar(){
   const btn=document.getElementById('cropSaveBtn');
+  const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Save';}};
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
-  const resetBtn=()=>{if(btn){btn.disabled=false;btn.textContent='Save';}};
   try{
     const stage=document.getElementById('cropStage');
     const img=document.getElementById('cropImg');
-    if(!img||!img.complete||!img.naturalWidth){toast('Image not ready','err');resetBtn();return;}
+    if(!img||!img.complete||!img.naturalWidth){
+      toast('Image not ready yet','err');reset();return;
+    }
     const stageW=stage.offsetWidth,stageH=stage.offsetHeight;
     const circleD=Math.min(stageW,stageH)*0.8;
     const cx=(stageW-circleD)/2,cy=(stageH-circleD)/2;
@@ -6657,38 +6657,38 @@ async function saveCroppedAvatar(){
     const srcW=circleD/_cropState.scale;
     const srcH=circleD/_cropState.scale;
     ctx.drawImage(img,srcX,srcY,srcW,srcH,0,0,400,400);
-    // Convert to blob using Promise so we can properly await it
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.88));
-    if(!blob){toast('Failed to process image','err');resetBtn();return;}
+    // toBlob as Promise — so errors are properly caught
+    const blob=await new Promise((resolve,reject)=>{
+      try{canvas.toBlob(b=>{if(b)resolve(b);else reject(new Error('toBlob returned null'));}, 'image/jpeg',0.88);}
+      catch(e){reject(e);}
+    });
     const fd=new FormData();
     fd.append('avatar',blob,'avatar.jpg');
-    let resp,data;
-    try{
-      resp=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
-      data=await resp.json();
-    }catch(netErr){
-      toast('Upload failed — check connection','err');
-      resetBtn();
-      return;
-    }
-    if(data.success){
+    const r=await fetch('/api/profile/avatar',{
+      method:'POST',
+      credentials:'include',
+      body:fd
+    });
+    if(!r.ok){toast('Server error — try again','err');reset();return;}
+    const d=await r.json();
+    if(d.success){
       const av=document.getElementById('profileAvLarge');
-      if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML=`<img src="${data.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${data.avatar_url}')" onerror="this.remove()">`;}
+      if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">`;}
       const sav=document.getElementById('sav');
-      if(sav)sav.innerHTML=`<img src="${data.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
-      document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=data.avatar_url);
+      if(sav)sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
+      document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
+      if(socket&&socket.connected)socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+      friends.forEach(f=>{if(f.id===ME_ID)f.avatar_url=d.avatar_url;});
+      renderFriends();
       toast('✅ Profile picture updated!','ok');
       closeAvatarCrop();
-      if(socket&&socket.connected)socket.emit('profile_updated',{avatar_url:data.avatar_url,user_id:ME_ID});
-      friends.forEach(f=>{if(f.id===ME_ID)f.avatar_url=data.avatar_url;});
-      renderFriends();
     }else{
-      toast(data.error||'Upload failed','err');
+      toast(d.error||'Upload failed','err');
     }
-    resetBtn();
+    reset();
   }catch(e){
     toast('Failed: '+e.message,'err');
-    resetBtn();
+    reset();
   }
 }
 
@@ -8892,27 +8892,25 @@ function scCloseTrimmer(){
 function scApplyTrim(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
-  if(!vid){toast('No video','err');return;}
-  const total=vid.duration||SC.videoDuration||0;
-  if(!total||total<0.1){toast('Video not loaded yet — wait a moment','err');return;}
+  if(!vid||!vid.duration){toast('Video not ready — wait a moment','err');return;}
+  const total=vid.duration;
   const start=SC.trimStart||0;
-  const end=(SC.trimEnd!=null)?SC.trimEnd:Math.min(total,30);
+  const end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:total;
   const dur=end-start;
-  if(dur<0.5){toast('Selection too short — drag the handles wider','err');return;}
-  if(dur>60){toast('Clip too long — max 60 seconds','err');return;}
-  // Save trim points
+  if(dur<0.5){toast('Selection too short — drag handles wider','err');return;}
+  // Save trim points — these are used when posting the story
   SC.trimStart=start;
   SC.trimEnd=end;
   SC.videoDuration=total;
-  // Stop trimmer video
+  // Stop trimmer video cleanly WITHOUT clearing SC_vid
   try{vid.pause();}catch(e){}
   vid.oncanplaythrough=null;
   vid.onloadedmetadata=null;
   clearInterval(_trimVidRAF);
-  // Go to editor (page 1) — NOT scCloseTrimmer which clears src
+  // Switch to editor page
   scPage(1);
   _scShowVideoUI();
-  // Load editor video with ONLY the trimmed segment looping
+  // Load editor video showing ONLY the selected clip, looping
   const ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
@@ -8929,14 +8927,9 @@ function scApplyTrim(){
       ev.addEventListener('timeupdate',ev._trimLoop);
     };
   }
-  // Green badge
+  // Green clip badge
   const db=$('SC_vidDuration');
-  if(db){
-    db.textContent='✂️ '+dur.toFixed(1)+'s';
-    db.style.color='#22c55e';
-    db.style.background='rgba(34,197,94,.15)';
-    db.style.display='block';
-  }
+  if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
   toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
 }
 
