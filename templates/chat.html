@@ -223,14 +223,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 .photo-strip img{width:120px;height:120px;object-fit:cover;border-radius:10px;flex-shrink:0;cursor:zoom-in;scroll-snap-align:start;transition:opacity .15s,transform .15s;}
 .photo-strip img:hover{opacity:.88;transform:scale(1.02);}
 /* Read receipt circle — light orange=delivered, bright orange=seen */
-.story-react-btn{background:rgba(255,255,255,.15);border:none;border-radius:18px;padding:4px 7px;font-size:16px;cursor:pointer;flex-shrink:0;transition:transform .15s;-webkit-tap-highlight-color:transparent;}
-.story-react-btn:active{transform:scale(1.25);}
-.receipt{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px;vertical-align:middle;flex-shrink:0;transition:background .4s,box-shadow .4s;}
-.receipt.sending{background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.5);animation:rPulse .9s ease-in-out infinite;}
-.receipt.delivered{background:#ec5b08;border:2px solid #d44e06;}
-.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 6px rgba(255,136,0,.7);}
-.receipt.failed{background:#ef4444;border:2px solid #dc2626;}
-@keyframes rPulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.receipt{display:inline-block;width:11px;height:11px;border-radius:50%;margin-left:6px;vertical-align:middle;flex-shrink:0;transition:background .5s,box-shadow .5s;}
+.receipt.delivered{background:rgba(255,190,120,.35);border:2px solid rgba(255,160,80,.5);}
+.receipt.seen{background:#ff8800;border:2px solid #e07000;box-shadow:0 0 5px rgba(255,136,0,.55);}
 /* Row wrapper for time + receipt */
 .msg-foot{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:3px;}
 .mts{font-size:11px;opacity:.65;white-space:nowrap;display:block;margin-top:4px;}
@@ -1429,6 +1424,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
 /* ── Chat lock overlay ── */
 #chatLockOverlay{position:fixed;inset:0;z-index:1500;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+@keyframes lockShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 #chatLockOverlay.show{display:flex;}
 .lock-icon{font-size:52px;}
 .lock-title{font-size:18px;font-weight:700;color:var(--txt);}
@@ -2083,7 +2079,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 <div id="chatLockOverlay">
   <div class="lock-icon">🔒</div>
   <div class="lock-title" id="lockTitle">This chat is locked</div>
-  <input class="lock-inp" type="password" id="lockPinInp" maxlength="6" placeholder="••••" oninput="checkLockPin()">
+  <input class="lock-inp" type="password" id="lockPinInp" maxlength="6" placeholder="Enter PIN" autocomplete="off" inputmode="numeric" oninput="checkLockPin()" onkeydown="if(event.key==='Enter'){event.preventDefault();checkLockPin();}">
   <button class="lock-btn" onclick="checkLockPin()">Unlock</button>
   <div class="lock-cancel" onclick="cancelChatLock()">← Go back</div>
 </div>
@@ -2240,12 +2236,9 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <img id="cropImg" src="" alt="crop" style="position:absolute;transform-origin:top left;user-select:none;-webkit-user-drag:none;max-width:none;max-height:none;">
     <div class="crop-circle-mask"></div>
   </div>
-  <div class="crop-toolbar" style="flex-direction:column;gap:8px;">
-    <div style="display:flex;align-items:center;gap:10px;width:100%;">
-      <span style="font-size:12px;color:rgba(255,255,255,.45);flex:1;">Drag to move · Pinch or scroll to zoom</span>
-      <button onclick="document.getElementById('avatarFileInput').click()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">📂 Change</button>
-    </div>
-    <div style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;" id="cropSizeHint"></div>
+  <div class="crop-toolbar" style="flex-direction:row;gap:10px;justify-content:center;padding:12px 16px;">
+    <button onclick="document.getElementById('avatarFileInput').click()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:22px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;flex:1;">Change</button>
+    <button id="cropSaveBtn" onclick="saveCroppedAvatar()" style="background:linear-gradient(135deg,#ec5b08,#d44e06);border:none;color:#fff;border-radius:22px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;flex:1;box-shadow:0 4px 14px rgba(236,91,8,.35);">Save</button>
   </div>
 </div>
 <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" onchange="avatarFilePicked(this)">
@@ -2486,19 +2479,17 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <div id="storyViewers" style="margin-bottom:8px;"></div>
 
     <!-- Emoji reactions row -->
-    <div style="display:flex;align-items:center;gap:3px;margin-bottom:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;">
-      <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
-      <button onclick="sendStoryReact('😂')" class="story-react-btn">😂</button>
-      <button onclick="sendStoryReact('😮')" class="story-react-btn">😮</button>
-      <button onclick="sendStoryReact('🔥')" class="story-react-btn">🔥</button>
-      <button onclick="sendStoryReact('👏')" class="story-react-btn">👏</button>
-      <button onclick="sendStoryReact('😍')" class="story-react-btn">😍</button>
-      <button onclick="sendStoryReact('💯')" class="story-react-btn">💯</button>
-      <button onclick="sendStoryReact('😢')" class="story-react-btn">😢</button>
-      <button onclick="sendStoryReact('🙏')" class="story-react-btn">🙏</button>
-      <button onclick="sendStoryReact('💀')" class="story-react-btn">💀</button>
-      <button onclick="sendStoryReact('🥰')" class="story-react-btn">🥰</button>
-      <button onclick="sendStoryReact('😭')" class="story-react-btn">😭</button>
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px;">
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button onclick="sendStoryReact('❤️')" class="story-react-btn">❤️</button>
+        <button onclick="sendStoryReact('😂')" class="story-react-btn">😂</button>
+        <button onclick="sendStoryReact('😮')" class="story-react-btn">😮</button>
+        <button onclick="sendStoryReact('🔥')" class="story-react-btn">🔥</button>
+        <button onclick="sendStoryReact('👏')" class="story-react-btn">👏</button>
+        <button onclick="sendStoryReact('😍')" class="story-react-btn">😍</button>
+        <button onclick="sendStoryReact('💯')" class="story-react-btn">💯</button>
+        <button onclick="sendStoryReact('😢')" class="story-react-btn">😢</button>
+      </div>
     </div>
     <!-- Comment / message box -->
     <div style="display:flex;gap:8px;align-items:center;">
@@ -2557,7 +2548,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   <div id="SC_p1" style="display:none;height:100%;flex-direction:column;position:relative;">
 
     <!-- Canvas / preview area -->
-    <div id="SC_canvas" onclick="if(event.target===this||event.target.id==='SC_vid')scToggleTools()" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+    <div id="SC_canvas" style="flex:1;position:relative;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;">
       <div id="SC_rotWrap" style="display:contents;touch-action:none;">
         <img id="SC_img" style="max-width:100%;max-height:100%;object-fit:contain;display:none;filter:none;transform-origin:center center;transition:none;user-select:none;-webkit-user-drag:none;">
       </div>
@@ -2851,12 +2842,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
   </div>
 
   <!-- PAGE 5: VIDEO TRIMMER -->
-  <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#000;position:relative;">
+  <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#0a0a0f;position:relative;">
     <!-- Header -->
-    <div style="display:flex;align-items:center;gap:10px;padding:14px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1);">
-      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;">‹</button>
-      <span style="color:#fff;font-size:15px;font-weight:700;flex:1;">✂️ Edit Video</span>
-      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:var(--brand,#ec5b08);border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">💾 Save Clip</button>
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px 10px;">
+      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:20px;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">‹</button>
+      <span style="color:#fff;font-size:15px;font-weight:800;flex:1;letter-spacing:-.2px;">Trim Video</span>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:linear-gradient(135deg,#ec5b08,#d44e06);border:none;color:#fff;border-radius:22px;padding:9px 22px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(236,91,8,.4);">✓ Save</button>
     </div>
 
     <!-- Video preview -->
@@ -3097,12 +3088,7 @@ let replyToMsg=null,contextMsg=null,onlineUsers=new Set();
   loadFriends();
   loadRequests();
   setTimeout(requestNotifPermission,2000);
-  document.addEventListener('visibilitychange',()=>{
-    if(document.hidden){
-      ['storyVideo','SC_vid','SC_trimVid'].forEach(id=>{const v=document.getElementById(id);if(v&&!v.paused)v.pause();});
-      const pb=document.getElementById('SC_vidPlayBtn');if(pb)pb.textContent='▶';
-    }
-  });
+  // ctx menu replaced by msg sheet
 })();
 function loadPrefs(){
   try{const s=localStorage.getItem('hpz_prefs');if(s)prefs={...prefs,...JSON.parse(s)};}catch(e){}
@@ -3173,8 +3159,10 @@ async function saveProfile(){
 function connectSocket(){
   socket=io({withCredentials:true,transports:['polling','websocket']});
   socket.on('connect',()=>{
-    friends.forEach(f=>{const cid=f.chat_id||[Math.min(f.id,ME_ID),Math.max(f.id,ME_ID)].join('-');socket.emit('join_chat',{chat_id:cid});});
-    if(currentChatId){socket.emit('join_chat',{chat_id:currentChatId});socket.emit('mark_all_read',{chat_id:currentChatId});}
+    if(currentChatId){
+      socket.emit('join_chat',{chat_id:currentChatId});
+      socket.emit('mark_all_read',{chat_id:currentChatId});
+    }
   });
   socket.on('receipt_update',(data)=>{
     // Update ALL dots for this message (there should only be 1, but be safe)
@@ -3186,9 +3174,6 @@ function connectSocket(){
   });
   socket.on('new_message',(msg)=>{
     if(currentChatId&&msg.chat_id===currentChatId){
-      if(msg.sender_id===ME_ID)return;
-      const existing=document.querySelector(`[data-msg-id="${msg.id}"]`);
-      if(existing)return;
       appendMsg(msg);
     }else{
       // Build notification preview
@@ -3307,20 +3292,16 @@ function sendMsg(){
   const txt=inp.value.trim();
   if(!txt)return;
   if(!currentChatId){toast('Select a chat first','err');return;}
+  if(!socket){toast('Not connected','err');return;}
   if(editingMsgId){saveEdit();return;}
-  const replyId=replyToMsg?replyToMsg.id:null;
-  const chatId=currentChatId;
-  inp.value='';inp.style.height='auto';
-  closeEmoji();cancelReply();
-  const tempId='tmp_'+Date.now();
-  appendMsg({id:tempId,chat_id:chatId,sender_id:ME_ID,sender_username:ME_NAME,content:txt,message_type:'text',is_edited:false,is_deleted:false,is_pinned:false,created_at:new Date().toISOString(),reactions:{},user_reactions:[],read_by:0,reply_to:null},true);
-  if(socket&&socket.connected)socket.emit('send_message',{chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId});
-  fetch('/api/messages/send',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({chat_id:chatId,content:txt,message_type:'text',reply_to_id:replyId})
-  }).then(r=>r.json()).then(d=>{
-    const el=document.querySelector(`[data-msg-id="${tempId}"]`);
-    if(d.success){if(el){el.setAttribute('data-msg-id',d.message.id);const dot=el.querySelector('.receipt');if(dot){dot.className='receipt delivered';dot.setAttribute('data-msg-id',d.message.id);dot.title='Delivered ✓';}}}
-    else{if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='Failed';}}toast(d.error||'Failed','err');}
-  }).catch(()=>{const el=document.querySelector(`[data-msg-id="${tempId}"]`);if(el){const dot=el.querySelector('.receipt');if(dot){dot.className='receipt failed';dot.title='No connection';}}});
+  // Mood check — only for plain text messages
+  checkMoodBeforeSend(txt, ()=>{
+    const data={chat_id:currentChatId,content:txt,message_type:'text'};
+    if(replyToMsg)data.reply_to_id=replyToMsg.id;
+    socket.emit('send_message',data);
+    inp.value='';inp.style.height='auto';
+    closeEmoji();cancelReply();
+  });
 }
 async function loadMsgs(chatId){
   const area=document.getElementById('marea');
@@ -3371,10 +3352,10 @@ function appendMsg(msg,scroll=true){
   else{body+='<em style="opacity:.5">[Message deleted]</em>';}
   // Read receipt: 1 dot, sender-only, never on deleted msgs
   // delivered = light orange hollow, seen = bright solid orange
-  let receiptState=null;
-  if(isSent&&!msg.is_deleted){const isTemp=String(msg.id).startsWith('tmp_');receiptState=isTemp?'sending':(msg.read_by>0?'seen':'delivered');}
-  const receiptLabel=receiptState==='seen'?'Seen ✓✓':receiptState==='sending'?'Sending…':'Delivered ✓';
-  const receiptDot=receiptState?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptLabel}"></span>`:'';
+  const receiptState=isSent&&!msg.is_deleted?(msg.read_by>0?'seen':'delivered'):null;
+  const receiptDot=receiptState
+    ?`<span class="receipt ${receiptState}" data-msg-id="${msg.id}" title="${receiptState==='seen'?'Seen ✓✓':'Delivered ✓'}"></span>`
+    :'';
   const bubClass=`bub${msg.is_pinned?' pinned':''}${msg.is_edited?' edited':''}`;
   // Reactions (max 2 emoji types shown, overlaid outside bubble)
   const reactEntries=msg.reactions?Object.entries(msg.reactions).slice(0,2):[];
@@ -4699,22 +4680,16 @@ async function toggleVideo(){
 
 // ── doCall: caller initiates ──
 async function startVoiceCall(){
-  if(currentGroupId){startGroupCall('voice');return;}
-  if(!currentFriendId){toast('Open a chat first','err');return;}
+  if(currentGroupId){ startGroupCall('voice'); return; }
+  if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
-  if(!f)return;
-  if(cd.active){toast('Already in a call','info');return;}
-  let stream;try{stream=await getMedia('voice');}catch(e){mediaErr(e);return;}
-  doCall(f,'voice',stream);
+  if(f) await doCall(f,'voice');
 }
 async function startVideoCall(){
-  if(currentGroupId){startGroupCall('video');return;}
-  if(!currentFriendId){toast('Open a chat first','err');return;}
+  if(currentGroupId){ startGroupCall('video'); return; }
+  if(!currentFriendId){ toast('Open a chat first','err'); return; }
   const f=friends.find(x=>x.id===currentFriendId);
-  if(!f)return;
-  if(cd.active){toast('Already in a call','info');return;}
-  let stream;try{stream=await getMedia('video');}catch(e){mediaErr(e);return;}
-  doCall(f,'video',stream);
+  if(f) await doCall(f,'video');
 }
 
 // ── Group call: show member picker ──
@@ -4767,16 +4742,19 @@ function closeGcallPicker() {
   document.getElementById('gcallPickerOv').style.display = 'none';
 }
 
-async function doCall(friend, type, preloadedStream){
-  if(cd.active){toast('Already in a call','info');return;}
+async function doCall(friend, type){
+  // Discover camera capabilities before starting — sets _isMobileDevice
+  await _initCameraCapabilities();
+  if(cd.active){ toast('Already in a call','info'); return; }
   await unlockAudio();
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
-  _initCameraCapabilities().catch(()=>{});
+
   try{
     cd.active=true; cd.type=type; cd.calleeId=friend.id;
     cd.calleeName=friend.username; cd.callerName=friend.username;
-    const stream=preloadedStream||await getMedia(type);
+
+    const stream = await getMedia(type);
     cd.localStream = stream;
     if(type==='video') _syncFacingFromStream(stream);  // sync flip state
 
@@ -4810,21 +4788,19 @@ async function doCall(friend, type, preloadedStream){
 
 // ── acceptCall: receiver answers ──
 async function acceptCall(){
-  const _inc=cd.incoming;
-  if(!_inc){cleanupCall();return;}
-  let _preStream;
-  try{_preStream=await getMedia(_inc.call_type);}catch(e){mediaErr(e);rejectCall();return;}
   await unlockAudio();
   hideIncomingCall();
   _currentFacing='user'; _speakerOn=true;
   const _fBtn=document.getElementById('flipBtn'); if(_fBtn) _fBtn.style.display='none';
   const d=cd.incoming;
-  if(!d){if(_preStream)_preStream.getTracks().forEach(t=>t.stop());cleanupCall();return;}
+  if(!d){ cleanupCall(); return; }
   cd.callerName=d.caller_name; cd.calleeName=d.caller_name;
+
   try{
     cd.active=true; cd.type=d.call_type;
     cd.calleeId=d.caller_id;
-    const stream=_preStream;
+
+    const stream = await getMedia(d.call_type);
     cd.localStream = stream;
     if(d.call_type==='video') _syncFacingFromStream(stream);  // sync flip state
 
@@ -4896,40 +4872,30 @@ function cleanupCall(){
 
 // ── Call socket events ──
 function setupCallListeners(){
-  socket.on('incoming_call',data=>{
-    if(cd.active){socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,busy:true});return;}
-    if(isDNDActive()){socket.emit('call_answer',{caller_id:data.caller_id,accepted:false,dnd:true});return;}
-    cd.incoming=data;
-    const displayName=data.is_group_call?data.caller_name+' · '+data.group_name:data.caller_name;
-    showIncomingCall(displayName,data.call_type);
-    const typeEl=document.getElementById('incomingCallType');
-    if(typeEl&&data.is_group_call)typeEl.textContent='👥 Group '+(data.call_type==='video'?'Video':'Voice')+' call';
-  });
-  socket.on('call_accepted',async data=>{
-    hideOutgoingScreen();
-    if(!cd.pc||!data.answer){cleanupCall();return;}
-    try{await cd.pc.setRemoteDescription(new RTCSessionDescription(data.answer));await flushPending();showCallUI(true);setStatus('Connected');}
-    catch(e){console.error('[call_accepted]',e);toast('Call connection failed','err');cleanupCall();}
-  });
-  socket.on('call_rejected',data=>{hideOutgoingScreen();toast('📵 '+(data.callee_name||'User')+' — '+(data.busy?'Busy':'Call declined'),'info');cleanupCall();});
-  socket.on('call_ended',data=>{
-    if(!cd.active)return;
-    const dur=cd.duration||0,type=cd.type||'voice',startT=cd.startTimeStr;
-    const avgSig=cd._sigSamples&&cd._sigSamples.length?Math.round(cd._sigSamples.reduce((a,b)=>a+b,0)/cd._sigSamples.length):null;
-    cleanupCall();toast('📵 Call ended','info');
-    if(typeof appendCallMsg==='function')appendCallMsg(type,dur,startT,false);
-    if(dur>0&&typeof showCallSummary==='function')showCallSummary(dur,type,avgSig);
-  });
-  socket.on('ice_candidate',async data=>{
-    if(!data.candidate)return;
-    try{if(cd.pc&&cd.pc.remoteDescription&&cd.pc.remoteDescription.type){await cd.pc.addIceCandidate(new RTCIceCandidate(data.candidate));}else{cd.pending=cd.pending||[];cd.pending.push(data.candidate);}}
-    catch(e){console.warn('[ice]',e.message);}
-  });
-  socket.on('missed_call_notify',data=>{
-    if(typeof showInAppNotif==='function')showInAppNotif(data.caller_name,'📵 Missed call',null,data.caller_id);
-    toast('📵 Missed call from '+data.caller_name,'err');
-    if(typeof appendCallMsg==='function')appendCallMsg('missed',0,null,true);
-  });
+  socket.on('incoming_call', data => {
+  if (cd.active) {
+    socket.emit('call_answer', { caller_id: data.caller_id, accepted: false, busy: true });
+    return;
+  }
+  if (isDNDActive()) {
+    socket.emit('call_answer', { caller_id: data.caller_id, accepted: false, dnd: true });
+    return;
+  }
+  cd.incoming = data;
+
+  // Show group call badge if applicable
+  const displayName = data.is_group_call
+    ? data.caller_name + ' · ' + data.group_name
+    : data.caller_name;
+
+  showIncomingCall(displayName, data.call_type);
+
+  // Update incoming screen subtitle
+  const typeEl = document.getElementById('incomingCallType');
+  if (typeEl && data.is_group_call) {
+    typeEl.textContent = '👥 Group ' + (data.call_type === 'video' ? 'Video' : 'Voice') + ' call';
+  }
+});
 }
 
 function setReply(id,from,content){replyToMsg={id,from,content};document.getElementById('replyFrom').textContent=from;document.getElementById('replyText').textContent=content;document.getElementById('replyBar').classList.add('show');document.getElementById('msgInput').focus();}
@@ -4951,11 +4917,7 @@ async function showPinned(){
   try{const r=await fetch(`/api/messages/pinned/${currentChatId}`);const d=await r.json();if(d.success&&d.messages.length>0){const list=d.messages.map(m=>`• ${m.content.substring(0,60)}`).join('\n');alert(`Pinned Messages:\n\n${list}`);}else toast('No pinned messages','info');}catch(e){toast('Failed','err');}
 }
 // showReactPicker: see full implementation in batch1 section
-function reactTo(msgId,emoji){
-  const msgEl=document.querySelector(`[data-msg-id="${msgId}"]`);
-  if(msgEl){let rxWrap=msgEl.querySelector('.rx-wrap');if(!rxWrap){rxWrap=document.createElement('div');rxWrap.className='rx-wrap';const bub=msgEl.querySelector('.bub');if(bub)bub.appendChild(rxWrap);}let ex=rxWrap.querySelector(`[data-emoji="${CSS.escape(emoji)}"]`);if(ex){const c=ex.querySelector('.rx-cnt');if(c)c.textContent=parseInt(c.textContent||0)+1;}else{const s=document.createElement('span');s.className='reaction user-reacted';s.dataset.emoji=emoji;s.innerHTML=`${emoji}<span class="rx-cnt">1</span>`;s.onclick=()=>reactTo(msgId,emoji);rxWrap.appendChild(s);}}
-  fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({emoji})}).then(r=>r.json()).then(d=>{if(!d.success)toast(d.error||'Failed','err');}).catch(()=>{});
-}
+async function reactTo(msgId,emoji){try{const r=await fetch(`/api/messages/${msgId}/react`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({emoji})});const d=await r.json();if(!d.success)toast(d.error,'err');}catch(e){toast('Failed','err');}}
 
 const SHEET_QUICK  = ['❤️','😂','😮','😢','👍','🎉'];
 const SHEET_ALL    = [
@@ -5962,24 +5924,30 @@ function requireChatLock(chatId,fid,fname,origChatId){
   document.getElementById('chatLockOverlay').classList.add('show');
 }
 function checkLockPin(){
-  const pin=document.getElementById('lockPinInp').value;
-  if(!_lockPendingChatId) return;
+  const inp=document.getElementById('lockPinInp');
+  const pin=inp.value.trim();
+  if(!_lockPendingChatId||!pin) return;
   const stored=prefs.chatLocks[_lockPendingChatId];
+  if(!stored) return;
+  if(pin.length<stored.length) return;
   if(pin===stored){
+    inp.value='';
+    inp.placeholder='Enter PIN';
+    inp.style.animation='';
     document.getElementById('chatLockOverlay').classList.remove('show');
     if(_lockPendingFid){
-      // Was trying to open chat — proceed
       _openChatUnlocked(_lockPendingFid,_lockPendingFname,_lockPendingOrigCid);
-    } else {
-      // Was unlocking from menu
-      delete prefs.chatLocks[_lockPendingChatId]; savePrefs();
+    }else{
+      delete prefs.chatLocks[_lockPendingChatId];
+      savePrefs();
       toast('🔓 Chat unlocked','ok');
     }
-    _lockPendingChatId=null; _lockPendingFid=null;
-  } else {
-    document.getElementById('lockPinInp').value='';
-    document.getElementById('lockPinInp').placeholder='Wrong PIN';
-    setTimeout(()=>document.getElementById('lockPinInp').placeholder='••••',1500);
+    _lockPendingChatId=null;_lockPendingFid=null;_lockPendingFname=null;
+  }else{
+    inp.value='';
+    inp.style.animation='lockShake .35s ease';
+    inp.placeholder='Wrong PIN — try again';
+    setTimeout(()=>{inp.placeholder='Enter PIN';inp.style.animation='';},1500);
   }
 }
 function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
@@ -6321,11 +6289,14 @@ function _renderNotifPanel(){
   const body = document.getElementById('notifPanelBody');
   const empty = document.getElementById('notifPanelEmpty');
   if(!body) return;
+  // Remove all existing items (keep empty message)
   body.querySelectorAll('.notif-pitem').forEach(el=>el.remove());
-  const allowed=_persistNotifs.filter(n=>n.type==='friend_request'||n.type==='friend_accepted'||n.type==='story'||n.type==='story_reaction'||n.type==='missed_call'||n.type==='group_invite'||!n.type);
-  if(!allowed.length){if(empty)empty.style.display='block';return;}
-  if(empty)empty.style.display='none';
-  allowed.forEach(n=>{
+  if(!_persistNotifs.length){
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  _persistNotifs.forEach(n=>{
     const div=document.createElement('div');
     div.className='notif-pitem'+(n.read?'':' unread');
     div.setAttribute('data-nid',n.id);
@@ -6694,27 +6665,29 @@ async function saveCroppedAvatar(){
     fullCanvas.height = _cropState.naturalH;
     fullCanvas.getContext('2d').drawImage(img, 0,0);
 
-    // Convert to blob and upload
     canvas.toBlob(async blob=>{
-      if(!blob){toast('Image processing failed','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
+      if(!blob){
+        toast('Failed to process image','err');
+        if(btn){btn.disabled=false;btn.textContent='Save';}
+        return;
+      }
       const fd=new FormData();
       fd.append('avatar',blob,'avatar.jpg');
       let r,d;
-      try{r=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});d=await r.json();}
-      catch(fe){toast('Upload failed','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
+      try{
+        r=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
+        if(!r.ok)throw new Error('Server error '+r.status);
+        d=await r.json();
+      }catch(fe){
+        toast('Upload failed — '+fe.message,'err');
+        if(btn){btn.disabled=false;btn.textContent='Save';}
+        return;
+      }
       if(d.success){
-        // Update profile sheet avatar immediately
         const av=document.getElementById('profileAvLarge');
-        if(av){
-          av.innerHTML='';
-          av.style.fontSize='0';
-          av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" data-fullsrc="${d.avatar_url}" onerror="this.remove();this.closest('.av').style.fontSize='52px'">`;
-        }
-        // Update settings sidebar avatar
+        if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">`;};
         const sav=document.getElementById('sav');
-        if(sav) sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar">
-          <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
-        // Update all avatars across the app
+        if(sav)sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
         document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
         toast('✅ Profile picture updated!','ok');
         closeAvatarCrop();
@@ -6723,7 +6696,7 @@ async function saveCroppedAvatar(){
         renderFriends();
       }else toast(d.error||'Upload failed','err');
       if(btn){btn.disabled=false;btn.textContent='Save';}
-    },'image/jpeg',0.92);
+    },'image/jpeg',0.88);
   }catch(e){
     toast('Failed: '+e.message,'err');
     if(btn){ btn.disabled=false; btn.textContent='Save'; }
@@ -8043,6 +8016,7 @@ function _scShowVideoUI(){
   const trimToolBtn = $('SC_trimToolBtn');
   const vidCtrls    = $('SC_videoControls');
 
+  // Always show cut/edit + video controls for video
   if(trimBtnWrap) trimBtnWrap.style.display = 'none';
   if(trimToolBtn){
     trimToolBtn.style.display       = 'flex';
@@ -8932,21 +8906,28 @@ function scApplyTrim(){
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration){toast('No video loaded','err');return;}
   const total=vid.duration||1;
-  const start=SC.trimStart||0;
-  const end=SC.trimEnd||total;
+  const start=parseFloat(SC.trimStart)||0;
+  const end=parseFloat(SC.trimEnd)||total;
   const dur=end-start;
-  if(dur<0.5){toast('Too short — min 0.5s','err');return;}
+  if(dur<0.5){toast('Too short — select at least 0.5s','err');return;}
   if(dur>60){toast('Too long — max 60s','err');return;}
-  SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
+  // Save trim points
+  SC.trimStart=start;
+  SC.trimEnd=end;
+  SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   clearInterval(_trimVidRAF);
+  // Go back to editor
   scPage(1);
   _scShowVideoUI();
+  // Reload editor with ONLY trimmed segment looping
   const ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
     if(ev._trimLoop){ev.removeEventListener('timeupdate',ev._trimLoop);ev._trimLoop=null;}
-    ev.src=SC.mediaURL;ev.muted=true;ev.load();
+    ev.src=SC.mediaURL;
+    ev.muted=true;
+    ev.load();
     ev.oncanplay=function(){
       ev.oncanplay=null;
       ev.currentTime=start;
@@ -8956,9 +8937,15 @@ function scApplyTrim(){
       ev.addEventListener('timeupdate',ev._trimLoop);
     };
   }
+  // Show green clip badge
   const db=$('SC_vidDuration');
-  if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.display='block';}
-  toast('✅ Clip: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
+  if(db){
+    db.textContent='✂️ '+dur.toFixed(1)+'s';
+    db.style.color='#22c55e';
+    db.style.background='rgba(34,197,94,.15)';
+    db.style.display='block';
+  }
+  toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
