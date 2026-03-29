@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hepozy</title>
-<meta name="hpz-v" content="v6-TRIM-FIX">
+<meta name="hpz-v" content="v7-TRIM">
 <meta name="hepozy-version" content="v4.0-20260314-1115">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
@@ -7915,34 +7915,13 @@ function _scShowVideoUI(){
   const vidCtrls    = $('SC_videoControls');
 
   // Always show cut/edit + video controls for video
-  if(trimBtnWrap) trimBtnWrap.style.display = 'none';
+  if(trimBtnWrap) trimBtnWrap.style.display = 'block';
   if(trimToolBtn){
     trimToolBtn.style.display       = 'flex';
     trimToolBtn.style.flexDirection = 'column';
     trimToolBtn.style.alignItems    = 'center';
   }
   if(vidCtrls) vidCtrls.style.display = 'block';
-  if(SC._savedTrimFilter!==undefined&&SC.mediaURL&&SC.mediaType==='video'){
-    var evr=$('SC_vid');
-    if(evr){
-      try{evr.pause();}catch(e){}
-      if(evr._trimLoop){evr.removeEventListener('timeupdate',evr._trimLoop);evr._trimLoop=null;}
-      var _ts=SC.trimStart||0,_te=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:null;
-      evr.src=SC.mediaURL;evr.muted=true;evr.load();
-      evr.oncanplay=function(){
-        evr.oncanplay=null;
-        evr.currentTime=_ts;
-        if(SC._savedTrimFilter)evr.style.filter=SC._savedTrimFilter;
-        evr.play().catch(function(){});
-        var pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
-        if(_te!=null){
-          evr._trimLoop=function(){if(evr.currentTime>=_te-0.05)evr.currentTime=_ts;};
-          evr.addEventListener('timeupdate',evr._trimLoop);
-        }
-      };
-    }
-    SC._savedTrimFilter=undefined;
-  }
 
   // Reset play button to ▶ (video not yet playing when tools open)
   const playBtn = $('SC_vidPlayBtn');
@@ -8827,14 +8806,33 @@ function scApplyTrim(){
   if(dur>30){toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');return;}
   if(dur<0.5){toast('Selection too short (min 0.5s)','err');return;}
   SC.videoDuration=total;
-  SC._savedTrimFilter=SC.trimFilter||'';
-  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
-  clearInterval(_trimVidRAF);_trimVidRAF=null;
+  SC._trimApplied=true;
+  SC._appliedFilter=SC.trimFilter||'';
   _cutPoints=[];
-  const ppBtn=$('SC_trimPlayPause');if(ppBtn)ppBtn.textContent='⏸';
   try{vid.pause();}catch(e){}
+  const ppBtn=$('SC_trimPlayPause');if(ppBtn)ppBtn.textContent='⏸';
+  toast('✅ Clip: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
   scPage(1);
   _scShowVideoUI();
+  const ev=$('SC_vid');
+  if(ev&&SC.mediaURL){
+    try{ev.pause();}catch(e){}
+    if(ev._trimLoop){ev.removeEventListener('timeupdate',ev._trimLoop);ev._trimLoop=null;}
+    ev.src=SC.mediaURL;ev.muted=true;ev.load();
+    ev.oncanplay=(function(s,e,f){
+      return function(){
+        ev.oncanplay=null;
+        ev.currentTime=s;
+        if(f)ev.style.filter=f;
+        ev.play().catch(function(){});
+        const pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
+        ev._trimLoop=function(){if(ev.currentTime>=e-0.05)ev.currentTime=s;};
+        ev.addEventListener('timeupdate',ev._trimLoop);
+      };
+    }(SC.trimStart,SC.trimEnd,SC._appliedFilter));
+  }
+  const db=$('SC_vidDuration');
+  if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
