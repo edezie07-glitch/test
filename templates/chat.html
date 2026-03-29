@@ -2782,19 +2782,12 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
       </div>
       <div style="padding:0 14px 8px;">
-        <div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;overflow:hidden;"
-          onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
+        <div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;overflow:hidden;" onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
           <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.9);z-index:5;pointer-events:none;left:0%;"></div>
           <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-top:2px solid #ec5b08;border-bottom:2px solid #ec5b08;z-index:2;pointer-events:none;"></div>
           <div id="SC_cutPoints"></div>
-          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:10px 0 0 10px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
-            onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
-            <div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-          </div>
-          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:0 10px 10px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
-            onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
-            <div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
-          </div>
+          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:10px 0 0 10px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;" onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')"><div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div>
+          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:0 10px 10px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;" onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')"><div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;padding:4px 14px 14px;">
@@ -2821,9 +2814,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <input id="SC_speedSlider" type="range" value="1"><span id="SC_speedVal"></span>
         <input id="SC_pitchSlider" type="range" value="0"><span id="SC_pitchVal"></span>
         <span id="SC_trimSongName"></span><button id="SC_trimSongBtn"></button>
-        <div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span>
-          <div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div>
-        </div>
+        <div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span><div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div></div>
         <div id="SC_trimHint"></div>
       </div>
     </div>
@@ -3380,13 +3371,12 @@ async function sendMultiPhotos(){
   try{
     // Upload all in parallel for speed
     const uploads=await Promise.all(_multiFiles.map(async f=>{
-      try{
-        const fd=new FormData(); fd.append('image',f);
-        const r=await fetch('/api/upload/image',{method:'POST',credentials:'include',body:fd});
-        if(!r.ok)return null;
-        const d=await r.json();
-        return d.success?d.url:null;
-      }catch(e){return null;}
+      const fd=new FormData(); fd.append('image',f);
+      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+      if(!r.ok)return null;
+      const txt=await r.text();
+      let d;try{d=JSON.parse(txt);}catch(e){return null;}
+      return d.success?d.url:null;
     }));
     const urls=uploads.filter(Boolean);
     if(!urls.length){toast('All uploads failed','err');return;}
@@ -3570,25 +3560,21 @@ async function sendEditedImage(){
   const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
-    const blob=await new Promise((resolve,reject)=>{
-      canvas.toBlob(b=>{b?resolve(b):reject(new Error('toBlob returned null'));}, 'image/jpeg', q);
-    });
-    const fd=new FormData();
-    fd.append('image',blob,'photo.jpg');
-    const r=await fetch('/api/upload/image',{method:'POST',credentials:'include',body:fd});
+    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));},'image/jpeg',q);});
+    const fd=new FormData();fd.append('image',blob,'photo.jpg');
+    const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+    if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
+    const txt=await r.text();
     let d;
-    try{d=await r.json();}
-    catch(je){toast('Server error (not JSON) — check login session','err');reset();return;}
+    try{d=JSON.parse(txt);}catch(e){toast('Upload error — try again','err');reset();return;}
     if(d.success){
       socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
       closeImagePreview();
       toast('Photo sent 📸','ok');
-    }else{
-      toast(d.error||'Upload failed','err');
-      reset();
-    }
+    }else{toast(d.error||'Upload failed','err');}
+    reset();
   }catch(e){
-    toast('Send failed: '+e.message,'err');
+    toast('Failed: '+e.message,'err');
     reset();
   }
 }
@@ -6478,26 +6464,17 @@ async function saveCroppedAvatar(){
     canvas.width=400;canvas.height=400;
     const ctx=canvas.getContext('2d');
     ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.clip();
-    const srcX=(cx-_cropState.x)/_cropState.scale;
-    const srcY=(cy-_cropState.y)/_cropState.scale;
-    const srcW=circleD/_cropState.scale;
-    const srcH=circleD/_cropState.scale;
-    ctx.drawImage(img,srcX,srcY,srcW,srcH,0,0,400,400);
-    const blob=await new Promise((resolve,reject)=>{
-      canvas.toBlob(b=>{b?resolve(b):reject(new Error('toBlob returned null'));}, 'image/jpeg',0.85);
-    });
-    const fd=new FormData();
-    fd.append('avatar',blob,'avatar.jpg');
-    const r=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
+    ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
+    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));}, 'image/jpeg',0.85);});
+    const fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
+    const r=await fetch('/api/profile/avatar',{method:'POST',body:fd});
+    if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
+    const txt=await r.text();
     let d;
-    try{d=await r.json();}
-    catch(je){toast('Server error — try again','err');reset();return;}
+    try{d=JSON.parse(txt);}catch(e){toast('Server error — not JSON','err');reset();return;}
     if(d.success){
       const av=document.getElementById('profileAvLarge');
-      if(av){
-        av.innerHTML='';av.style.fontSize='0';
-        av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">`;
-      }
+      if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">` ;}
       const sav=document.getElementById('sav');
       if(sav)sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
       document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
@@ -6506,14 +6483,9 @@ async function saveCroppedAvatar(){
       renderFriends();
       toast('✅ Profile picture updated!','ok');
       closeAvatarCrop();
-    }else{
-      toast(d.error||'Upload failed','err');
-    }
+    }else{toast(d.error||'Upload failed','err');}
     reset();
-  }catch(e){
-    toast('Failed: '+e.message,'err');
-    reset();
-  }
+  }catch(e){toast('Failed: '+e.message,'err');reset();}
 }
 
 function openProfileFullImg(url){
@@ -8745,7 +8717,6 @@ function scApplyTrim(){
   if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
   toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
 }
-
 // ─── Share page (page 2) ─────────────────────────────────
 function scGoShare(){
   $('SC_tools').style.transform='translateY(100%)';
