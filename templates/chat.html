@@ -2163,7 +2163,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     <img id="cropImg" src="" alt="crop" style="position:absolute;transform-origin:top left;user-select:none;-webkit-user-drag:none;max-width:none;max-height:none;">
     <div class="crop-circle-mask"></div>
   </div>
-  <div class="crop-toolbar" style="flex-direction:row;gap:10px;padding:12px 16px;">
+  <div class="crop-toolbar" style="flex-direction:row;padding:12px 16px;">
     <button onclick="document.getElementById('avatarFileInput').click()" style="flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:22px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">Change</button>
   </div>
 </div>
@@ -2764,64 +2764,64 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
   
   <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#0a0a0f;">
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);">
-      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">‹</button>
-      <span style="color:#fff;font-size:15px;font-weight:800;flex:1;letter-spacing:.2px;">Trim Video</span>
-      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:#ec5b08;border:none;color:#fff;border-radius:22px;padding:9px 22px;font-size:14px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;">✓ Done</button>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;flex-shrink:0;">
+      <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.08);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+      <span style="color:#fff;font-size:15px;font-weight:800;flex:1;">Trim Video</span>
+      <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:#ec5b08;border:none;color:#fff;border-radius:22px;padding:9px 22px;font-size:14px;font-weight:800;cursor:pointer;">✓ Done</button>
     </div>
     <div style="flex:1;min-height:0;position:relative;background:#000;">
       <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;" playsinline autoplay></video>
-      <div id="SC_trimTimeLabel" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;pointer-events:none;white-space:nowrap;">0.0s – 0.0s</div>
+      <div id="SC_trimTimeLabel" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;pointer-events:none;">0.0s – 0.0s</div>
     </div>
-    <div style="background:#0d0f1a;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom),8px);">
-      <div style="display:flex;justify-content:space-between;padding:10px 16px 4px;">
-        <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.4);">0.0s</span>
+    <div style="background:#111320;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom),8px);">
+      <div style="display:flex;justify-content:space-between;padding:10px 14px 4px;">
+        <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;">0.0s</span>
         <span id="SC_trimDurLbl" style="font-size:11px;color:#ec5b08;font-weight:700;">0.0s selected</span>
-        <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.4);">0.0s</span>
+        <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.4);font-weight:600;">0.0s</span>
       </div>
-      <div style="padding:0 12px 10px;">
-        <div id="SC_trimBar" style="position:relative;height:48px;background:rgba(255,255,255,.07);border-radius:12px;cursor:pointer;overflow:hidden;"
+      <div style="padding:0 14px 12px;">
+        <div id="SC_trimBar" style="position:relative;height:52px;background:rgba(255,255,255,.07);border-radius:10px;cursor:pointer;overflow:hidden;"
           onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
-          <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2.5px;background:#fff;border-radius:2px;z-index:5;pointer-events:none;left:0%;"></div>
-          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.2);border-top:2.5px solid #ec5b08;border-bottom:2.5px solid #ec5b08;z-index:2;pointer-events:none;"></div>
+          <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:5;pointer-events:none;left:0%;"></div>
+          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.18);border-top:2px solid #ec5b08;border-bottom:2px solid #ec5b08;z-index:2;pointer-events:none;"></div>
           <div id="SC_cutPoints"></div>
-          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:24px;background:#ec5b08;border-radius:12px 0 0 12px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
+          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:10px 0 0 10px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
             onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
-            <div style="width:3px;height:20px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+            <div style="width:3px;height:22px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
           </div>
-          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:24px;background:#ec5b08;border-radius:0 12px 12px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
+          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:0 10px 10px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
             onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
-            <div style="width:3px;height:20px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
+            <div style="width:3px;height:22px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
           </div>
         </div>
       </div>
-      <div style="display:flex;align-items:flex-end;gap:6px;padding:2px 12px 12px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:0 12px 14px;">
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
-          <span style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">① Bright</span>
-          <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;height:20px;accent-color:#fbbf24;cursor:pointer;">
+          <span style="font-size:9px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.6px;">Bright ①</span>
+          <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;height:22px;accent-color:#fbbf24;cursor:pointer;">
           <span id="SC_vidBrightnessVal" style="font-size:9px;color:#fbbf24;font-weight:700;">100</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
-          <span style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">② Clarity</span>
-          <input type="range" id="SC_vidSaturate" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;height:20px;accent-color:#22c55e;cursor:pointer;">
+          <span style="font-size:9px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.6px;">Clarity ②</span>
+          <input type="range" id="SC_vidSaturate" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;height:22px;accent-color:#22c55e;cursor:pointer;">
           <span id="SC_vidSaturateVal" style="font-size:9px;color:#22c55e;font-weight:700;">100</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
-          <span style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">③ Contrast</span>
-          <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;height:20px;accent-color:#38bdf8;cursor:pointer;">
+          <span style="font-size:9px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.6px;">Contrast ③</span>
+          <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;height:22px;accent-color:#38bdf8;cursor:pointer;">
           <span id="SC_vidContrastVal" style="font-size:9px;color:#38bdf8;font-weight:700;">100</span>
         </div>
-        <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;">⏸</button>
-        <button id="SC_cutBtn" onclick="scApplyTrim()" style="height:48px;padding:0 18px;border-radius:24px;background:#ec5b08;border:none;color:#fff;font-size:14px;font-weight:800;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 14px rgba(236,91,8,.4);">✂️ Cut</button>
+        <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" title="Pause / Play"
+          style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">⏸</button>
+        <button id="SC_cutBtn" onclick="scApplyTrim()"
+          style="height:50px;padding:0 20px;border-radius:25px;background:#ec5b08;border:none;color:#fff;font-size:15px;font-weight:900;cursor:pointer;flex-shrink:0;letter-spacing:.5px;box-shadow:0 4px 16px rgba(236,91,8,.45);">CUT</button>
       </div>
       <div style="display:none;">
         <input id="SC_volSlider" type="range" value="100"><span id="SC_volVal"></span>
         <input id="SC_speedSlider" type="range" value="1"><span id="SC_speedVal"></span>
         <input id="SC_pitchSlider" type="range" value="0"><span id="SC_pitchVal"></span>
         <span id="SC_trimSongName"></span><button id="SC_trimSongBtn"></button>
-        <div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span>
-          <div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div>
-        </div>
+        <div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span><div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div></div>
         <div id="SC_trimHint"></div>
       </div>
     </div>
@@ -3167,22 +3167,18 @@ function appendMsg(msg,scroll=true){
     if(urls.length===0&&msg.content)urls=[msg.content];
     const cap=msg.caption?`<div style="font-size:12px;color:var(--mute);margin-top:5px;padding:0 2px;">${esc(msg.caption)}</div>`:'';
     if(urls.length===1){
-      body+=`<div style="position:relative;display:inline-block;line-height:0;border-radius:12px;overflow:hidden;max-width:220px;width:220px;">
+      body+=`<div style="position:relative;display:inline-block;line-height:0;border-radius:12px;overflow:visible;max-width:220px;">
         <img src="${urls[0]}" alt="photo"
           onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')"
-          style="width:220px;height:280px;object-fit:cover;display:block;cursor:zoom-in;border-radius:12px;"
+          style="width:220px;height:220px;object-fit:cover;display:block;cursor:zoom-in;border-radius:12px;"
           loading="lazy">
-        <div style="position:absolute;bottom:0;left:0;right:0;height:48px;background:linear-gradient(transparent,rgba(0,0,0,.55));border-radius:0 0 12px 12px;pointer-events:none;"></div>
-        <div style="position:absolute;bottom:6px;right:8px;display:flex;align-items:center;gap:4px;pointer-events:none;">
-          <span style="font-size:10px;color:rgba(255,255,255,.95);font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.8);">${fmtTime(msg.created_at)}</span>
+        <div style="position:absolute;bottom:-10px;right:6px;background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:2px 8px;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,.2);z-index:2;">
+          <span style="font-size:10px;color:var(--mute);font-weight:600;white-space:nowrap;">${fmtTime(msg.created_at)}</span>
           ${receiptDot}
         </div>
       </div>${cap}`;
     } else {
-      const thumbs=urls.map((u,idx)=>`<div style="position:relative;flex-shrink:0;scroll-snap-align:start;">
-        <img src="${u}" alt="photo" onclick="openImgViewer('${u}','')"
-          style="width:120px;height:120px;object-fit:cover;border-radius:10px;display:block;cursor:zoom-in;" loading="lazy">
-      </div>`).join('');
+      const thumbs=urls.map((u,idx)=>`<img src="${u}" alt="photo" onclick="openImgViewer('${u}','')" style="width:120px;height:120px;object-fit:cover;border-radius:10px;flex-shrink:0;scroll-snap-align:start;cursor:zoom-in;display:block;" loading="lazy">`).join('');
       body+=`<div class="photo-strip">${thumbs}</div>${cap}`;
     }
   }
@@ -3390,14 +3386,14 @@ async function sendMultiPhotos(){
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
     // Upload all in parallel for speed
-    const uploads=await Promise.all(_multiFiles.map(f=>new Promise(function(resolve){
-      var fd=new FormData();fd.append('image',f);
-      var xhr=new XMLHttpRequest();xhr.open('POST','/api/upload/image',true);
-      xhr.withCredentials=true;xhr.timeout=30000;
-      xhr.onload=function(){try{var d=JSON.parse(xhr.responseText);resolve(d.success?d.url:null);}catch(e){resolve(null);}};
-      xhr.onerror=function(){resolve(null);};xhr.ontimeout=function(){resolve(null);};
-      xhr.send(fd);
-    })));
+    const uploads=await Promise.all(_multiFiles.map(async f=>{
+      const fd=new FormData(); fd.append('image',f);
+      return await new Promise(function(resolve){
+        var xhr=new XMLHttpRequest();xhr.open('POST','/api/upload/image',true);xhr.withCredentials=true;xhr.timeout=30000;
+        xhr.onload=function(){try{var d=JSON.parse(xhr.responseText);resolve(d.success?d.url:null);}catch(e){resolve(null);}};
+        xhr.onerror=function(){resolve(null);};xhr.ontimeout=function(){resolve(null);};xhr.send(fd);
+      });
+    }));
     const urls=uploads.filter(Boolean);
     if(!urls.length){toast('All uploads failed','err');return;}
     // Send as JSON array — single message, multiple photos
@@ -3579,21 +3575,18 @@ async function sendEditedImage(){
   var btn=document.querySelector('.img-preview-footer .send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   canvas.toBlob(function(blob){
-    if(!blob){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
+    if(!blob){toast('Failed','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
     var fd=new FormData();fd.append('image',blob,'photo.jpg');
     var xhr=new XMLHttpRequest();
-    xhr.open('POST','/api/upload/image',true);
-    xhr.withCredentials=true;xhr.timeout=30000;
+    xhr.open('POST','/api/upload/image',true);xhr.withCredentials=true;xhr.timeout=30000;
     xhr.onload=function(){
       var d;try{d=JSON.parse(xhr.responseText);}catch(e){toast('Server error','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
-      if(d.success){
-        socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
-        closeImagePreview();toast('Photo sent 📸','ok');
-      }else{toast(d.error||'Upload failed','err');}
+      if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});closeImagePreview();toast('Photo sent 📸','ok');}
+      else toast(d.error||'Failed','err');
       if(btn){btn.disabled=false;btn.textContent='Send 📤';}
     };
     xhr.onerror=function(){toast('Network error','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
-    xhr.ontimeout=function(){toast('Timed out — try again','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
+    xhr.ontimeout=function(){toast('Timed out','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
     xhr.send(fd);
   },'image/jpeg',q);
 }
@@ -5767,11 +5760,9 @@ function requireChatLock(chatId,fid,fname,origChatId){
   document.getElementById('chatLockOverlay').classList.add('show');
 }
 function checkLockPin(){
-  var inp=document.getElementById('lockPinInp');
-  var pin=inp?inp.value:'';
+  var inp=document.getElementById('lockPinInp');var pin=inp?inp.value:'';
   if(!_lockPendingChatId||!pin)return;
-  var stored=prefs.chatLocks[_lockPendingChatId];
-  if(!stored)return;
+  var stored=prefs.chatLocks[_lockPendingChatId];if(!stored)return;
   if(pin.length<stored.length)return;
   if(pin===stored){
     if(inp){inp.value='';inp.placeholder='Enter PIN';inp.style.animation='';}
@@ -5780,12 +5771,7 @@ function checkLockPin(){
     else{delete prefs.chatLocks[_lockPendingChatId];savePrefs();toast('🔓 Chat unlocked','ok');}
     _lockPendingChatId=null;_lockPendingFid=null;_lockPendingFname=null;
   }else if(pin.length>=stored.length){
-    if(inp){
-      inp.value='';inp.style.animation='none';
-      requestAnimationFrame(function(){inp.style.animation='lockShake .35s ease';});
-      inp.placeholder='Wrong PIN';
-      setTimeout(function(){if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);
-    }
+    if(inp){inp.value='';inp.style.animation='none';requestAnimationFrame(function(){inp.style.animation='lockShake .35s ease';});inp.placeholder='Wrong PIN';setTimeout(function(){if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);}
   }
 }
 function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
@@ -6478,49 +6464,34 @@ async function saveCroppedAvatar(){
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
   var stage=document.getElementById('cropStage');
   var img=document.getElementById('cropImg');
-  if(!img||!img.complete||!img.naturalWidth){
-    toast('Image not ready','err');
-    if(btn){btn.disabled=false;btn.textContent='Save';}
-    return;
-  }
+  if(!img||!img.complete||!img.naturalWidth){toast('Image not ready','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
   var stageW=stage.offsetWidth,stageH=stage.offsetHeight;
   var circleD=Math.min(stageW,stageH)*0.8;
   var cx=(stageW-circleD)/2,cy=(stageH-circleD)/2;
-  var canvas=document.createElement('canvas');
-  canvas.width=400;canvas.height=400;
-  var ctx=canvas.getContext('2d');
+  var cv=document.createElement('canvas');cv.width=400;cv.height=400;
+  var ctx=cv.getContext('2d');
   ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.clip();
-  ctx.drawImage(img,
-    (cx-_cropState.x)/_cropState.scale,
-    (cy-_cropState.y)/_cropState.scale,
-    circleD/_cropState.scale,
-    circleD/_cropState.scale,
-    0,0,400,400);
-  canvas.toBlob(function(blob){
-    if(!blob){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
+  ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
+  cv.toBlob(function(blob){
+    if(!blob){toast('Failed','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
     var fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
     var xhr=new XMLHttpRequest();
-    xhr.open('POST','/api/profile/avatar',true);
-    xhr.withCredentials=true;xhr.timeout=30000;
+    xhr.open('POST','/api/profile/avatar',true);xhr.withCredentials=true;xhr.timeout=30000;
     xhr.onload=function(){
       var d;try{d=JSON.parse(xhr.responseText);}catch(e){toast('Server error','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
       if(d.success){
         var ts=Date.now();
         var av=document.getElementById('profileAvLarge');
-        if(av){av.innerHTML='';av.style.fontSize='0';
-          av.innerHTML='<img src="'+d.avatar_url+'?t='+ts+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onerror="this.remove()">';}
+        if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML='<img src="'+d.avatar_url+'?t='+ts+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onerror="this.remove()">';}
         var sav=document.getElementById('sav');
         if(sav)sav.innerHTML='<img src="'+d.avatar_url+'?t='+ts+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>';
         document.querySelectorAll('[data-my-avatar]').forEach(function(el){el.src=d.avatar_url+'?t='+ts;});
-        if(typeof socket!=='undefined'&&socket&&socket.connected)
-          socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
-        friends.forEach(function(f){if(f.id===ME_ID)f.avatar_url=d.avatar_url;});
-        renderFriends();
+        if(typeof socket!=='undefined'&&socket&&socket.connected)socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        friends.forEach(function(f){if(f.id===ME_ID)f.avatar_url=d.avatar_url;});renderFriends();
         toast('✅ Profile updated!','ok');
-        closeAvatarCrop();
-        closeProfileView();
+        closeAvatarCrop();closeProfileView();
         if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();
-      }else{toast(d.error||'Upload failed','err');}
+      }else toast(d.error||'Failed','err');
       if(btn){btn.disabled=false;btn.textContent='Save';}
     };
     xhr.onerror=function(){toast('Network error','err');if(btn){btn.disabled=false;btn.textContent='Save';}};
@@ -8712,9 +8683,9 @@ function scUpdateVidFilter(){
   var k=parseInt(($('SC_vidContrast')||{value:100}).value)||100;
   var bv=$('SC_vidBrightnessVal'),sv=$('SC_vidSaturateVal'),kv=$('SC_vidContrastVal');
   if(bv)bv.textContent=b;if(sv)sv.textContent=s;if(kv)kv.textContent=k;
-  var filter='brightness('+b+'%) saturate('+s+'%) contrast('+k+'%)';
-  var vid=$('SC_trimVid');if(vid)vid.style.filter=filter;
-  SC.trimFilter=filter;
+  var f='brightness('+b+'%) saturate('+s+'%) contrast('+k+'%)';
+  var vid=$('SC_trimVid');if(vid)vid.style.filter=f;
+  SC.trimFilter=f;
 }
 function scCloseTrimmer(){
   clearInterval(_trimVidRAF); _trimVidRAF=null;
@@ -8730,13 +8701,11 @@ function scApplyTrim(){
   if(!vid||!vid.duration){toast('Video not ready','err');return;}
   var total=vid.duration,start=SC.trimStart||0;
   var end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
-  var dur=end-start;
-  if(dur<0.5){toast('Too short — drag handles wider','err');return;}
+  if(end-start<0.5){toast('Too short','err');return;}
   SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   vid.oncanplaythrough=null;vid.onloadedmetadata=null;
-  clearInterval(_trimVidRAF);
-  scPage(1);_scShowVideoUI();
+  clearInterval(_trimVidRAF);scPage(1);_scShowVideoUI();
   var ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
@@ -8750,8 +8719,8 @@ function scApplyTrim(){
     };
   }
   var db=$('SC_vidDuration');
-  if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
-  toast('✅ Clip: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
+  if(db){db.textContent='✂️ '+(end-start).toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
+  toast('✅ Clip: '+start.toFixed(1)+'s–'+end.toFixed(1)+'s','ok');
 }
 // ─── Share page (page 2) ─────────────────────────────────
 function scGoShare(){
@@ -8837,15 +8806,12 @@ function showStoryProgress(label,pct){
   var el=document.getElementById('storyUploadLabel');if(el)el.textContent=label||'Sharing story…';
   var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width=(pct||0)+'%';
   var p=document.getElementById('storyUploadPct');if(p)p.textContent=Math.round(pct||0)+'%';
-  if(pct>=100){
-    var ico=document.getElementById('storyUploadIcon');
-    if(ico){ico.textContent='✅';ico.style.animation='none';}
-  }
+  if(pct>=100){var ico=document.getElementById('storyUploadIcon');if(ico)ico.textContent='✅';}
 }
 function hideStoryProgress(){
   var ov=document.getElementById('storyUploadOverlay');if(ov)ov.style.display='none';
   var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width='0%';
-  var ico=document.getElementById('storyUploadIcon');if(ico){ico.textContent='📤';ico.style.animation='suPulse 1.4s ease-in-out infinite';}
+  var ico=document.getElementById('storyUploadIcon');if(ico)ico.textContent='📤';
 }
 
 async function scPost(){
@@ -8891,21 +8857,15 @@ async function scPost(){
       const ud=await new Promise(function(resolve,reject){
         var xhr=new XMLHttpRequest();
         xhr.open('POST','/api/upload/media',true);xhr.withCredentials=true;xhr.timeout=120000;
-        xhr.upload.onprogress=function(ev){
-          if(ev.lengthComputable)showStoryProgress('Uploading…',Math.round(ev.loaded/ev.total*80)+5);
-        };
+        xhr.upload.onprogress=function(ev){if(ev.lengthComputable)showStoryProgress('Uploading…',Math.round(ev.loaded/ev.total*80)+5);};
         xhr.onload=function(){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Server error'));}};
         xhr.onerror=function(){reject(new Error('Network error'));};
-        xhr.ontimeout=function(){reject(new Error('Upload timed out (120s)'));};
+        xhr.ontimeout=function(){reject(new Error('Timed out'));};
         xhr.send(fd);
       });
-      if(!ud.success){
-        hideStoryProgress();
-        toast('Upload failed: '+(ud.error||''),'err');
-        btn.disabled=false; btn.textContent='✨ Share Story'; return;
-      }
+      if(!ud.success){hideStoryProgress();toast('Upload failed: '+(ud.error||''),'err');btn.disabled=false;btn.textContent='✨ Share Story';return;}
       showStoryProgress('Almost done…',90);
-      mediaUrl=ud.url; mediaType=ud.media_type;
+      mediaUrl=ud.url;mediaType=ud.media_type;
     }catch(e){
       hideStoryProgress();
       toast('Upload error: '+(e.message||''),'err');
@@ -8958,13 +8918,7 @@ async function scPost(){
     const d=await r.json();
     if(d.success){
       showStoryProgress('Story shared!',100);
-      setTimeout(function(){
-        hideStoryProgress();
-        scClose();
-        loadStories();
-        if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();
-        toast('✅ Story shared!','ok');
-      },900);
+      setTimeout(function(){hideStoryProgress();scClose();loadStories();if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();toast('✅ Story shared!','ok');},900);
     }else{hideStoryProgress();toast(d.error||'Failed','err');}
   }catch(e){ toast('Network error','err'); }
   btn.disabled=false; btn.textContent='✨ Share Story';
@@ -10580,19 +10534,15 @@ setInterval(() => {
 <div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
 1
 
-<div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;">
-  <div style="background:#1c1c2e;border-radius:24px;padding:36px 32px;width:min(320px,88vw);display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:0 24px 80px rgba(0,0,0,.7);">
-    <div id="storyUploadIcon" style="font-size:36px;animation:suPulse 1.4s ease-in-out infinite;">📤</div>
-    <div id="storyUploadLabel" style="color:#fff;font-size:16px;font-weight:700;text-align:center;letter-spacing:.2px;">Sharing story…</div>
+<div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;">
+  <div style="background:#1c1c2e;border-radius:24px;padding:36px 32px;width:min(300px,88vw);display:flex;flex-direction:column;align-items:center;gap:18px;">
+    <div id="storyUploadIcon" style="font-size:36px;">📤</div>
+    <div id="storyUploadLabel" style="color:#fff;font-size:16px;font-weight:700;text-align:center;">Sharing story…</div>
     <div style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;">
-      <div id="storyUploadBar" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#ec5b08,#f59e0b,#ec5b08);background-size:200%;animation:suShimmer 1.5s linear infinite;transition:width .35s ease;"></div>
+      <div id="storyUploadBar" style="height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#ec5b08,#f59e0b);transition:width .35s ease;"></div>
     </div>
-    <div id="storyUploadPct" style="color:rgba(255,255,255,.4);font-size:12px;font-weight:700;letter-spacing:.5px;">0%</div>
+    <div id="storyUploadPct" style="color:rgba(255,255,255,.4);font-size:12px;font-weight:700;">0%</div>
   </div>
 </div>
-<style>
-@keyframes suPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
-@keyframes suShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-</style>
 </body>
 </html>
