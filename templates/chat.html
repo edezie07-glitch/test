@@ -3,12 +3,9 @@
 <head>
 <meta charset="UTF-8">
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="manifest" href="/static/site.webmanifest"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hepozy</title>
-<meta name="hepozy-fixed" content="v-FIXED-2026">
+<meta name="hpz-v" content="v5-XHR-STORY">
 <meta name="hepozy-version" content="v4.0-20260314-1115">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
@@ -3154,9 +3151,14 @@ function appendMsg(msg,scroll=true){
     if(urls.length===0&&msg.content)urls=[msg.content];
     const cap=msg.caption?`<div style="font-size:12px;color:var(--mute);margin-top:5px;padding:0 2px;">${esc(msg.caption)}</div>`:'';
     if(urls.length===1){
-      body+=`<img src="${urls[0]}" alt="photo" onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')" style="cursor:zoom-in;border-radius:10px;max-width:100%;display:block;" loading="lazy">${cap}`;
+      body+=`<div style="position:relative;display:inline-block;line-height:0;border-radius:12px;overflow:hidden;max-width:220px;">
+        <img src="${urls[0]}" alt="photo" onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')" style="cursor:zoom-in;width:100%;max-width:220px;max-height:300px;object-fit:cover;display:block;" loading="lazy">
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:18px 8px 5px;background:linear-gradient(transparent,rgba(0,0,0,.55));display:flex;justify-content:flex-end;align-items:flex-end;">
+          <span style="font-size:10px;color:rgba(255,255,255,.9);font-weight:600;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:8px;backdrop-filter:blur(4px);">${fmtTime(msg.created_at)}</span>
+        </div>
+      </div>${cap}`;
     } else {
-      const thumbs=urls.map((u,i)=>`<img src="${u}" alt="photo ${i+1}" onclick="openImgViewer('${u}','')" loading="lazy">`).join('');
+      const thumbs=urls.map((u,idx)=>`<div style="position:relative;flex-shrink:0;"><img src="${u}" alt="photo" onclick="openImgViewer('${u}','')" style="width:110px;height:110px;object-fit:cover;border-radius:10px;display:block;cursor:zoom-in;" loading="lazy"></div>`).join('');
       body+=`<div class="photo-strip">${thumbs}</div>${cap}`;
     }
   }
@@ -3364,13 +3366,13 @@ async function sendMultiPhotos(){
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
     // Upload all in parallel for speed
-    const uploads=await Promise.all(_multiFiles.map(async f=>{
-      const fd=new FormData(); fd.append('image',f);
-      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
-      if(!r.ok)return null;
-      const txt=await r.text();let d;try{d=JSON.parse(txt);}catch(e){return null;}
-      return d.success?d.url:null;
-    }));
+    const uploads=await Promise.all(_multiFiles.map(f=>new Promise(function(resolve){
+      var fd=new FormData();fd.append('image',f);
+      var xhr=new XMLHttpRequest();xhr.open('POST','/api/upload/image',true);xhr.withCredentials=true;xhr.timeout=30000;
+      xhr.onload=function(){try{var d=JSON.parse(xhr.responseText);resolve(d.success?d.url:null);}catch(e){resolve(null);}};
+      xhr.onerror=function(){resolve(null);};xhr.ontimeout=function(){resolve(null);};
+      xhr.send(fd);
+    })));
     const urls=uploads.filter(Boolean);
     if(!urls.length){toast('All uploads failed','err');return;}
     // Send as JSON array — single message, multiple photos
@@ -3546,23 +3548,30 @@ function closeImagePreview(){
   imgPreviewData={file:null,canvas:null,ctx:null,img:null,rotation:0,flipH:1,flipV:1,filter:'none',cropping:false,cropStart:null,cropRect:null};
 }
 async function sendEditedImage(){
-  const{canvas}=imgPreviewData;if(!canvas)return;
-  const q=parseFloat(document.getElementById('imgQuality').value)||0.75;
-  const caption=document.getElementById('imgCaption').value.trim();
-  const btn=document.querySelector('.img-preview-footer .send-btn');
-  const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
+  var canvas=imgPreviewData.canvas;if(!canvas)return;
+  var q=parseFloat(document.getElementById('imgQuality').value)||0.75;
+  var caption=document.getElementById('imgCaption').value.trim();
+  var btn=document.querySelector('.img-preview-footer .send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
-  try{
-    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob'));}, 'image/jpeg', q);});
-    const fd=new FormData();fd.append('image',blob,'photo.jpg');
-    const r=await fetch('/api/upload/image',{method:'POST',body:fd});
-    if(!r.ok){toast('Upload error '+r.status,'err');reset();return;}
-    const txt=await r.text();let d;
-    try{d=JSON.parse(txt);}catch(e){toast('Server error — not JSON','err');reset();return;}
-    if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});closeImagePreview();toast('Photo sent 📸','ok');}
-    else{toast(d.error||'Upload failed','err');}
-    reset();
-  }catch(e){toast('Failed: '+e.message,'err');reset();}
+  canvas.toBlob(function(blob){
+    if(!blob){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
+    var fd=new FormData();fd.append('image',blob,'photo.jpg');
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','/api/upload/image',true);
+    xhr.withCredentials=true;xhr.timeout=30000;
+    xhr.onload=function(){
+      var d;try{d=JSON.parse(xhr.responseText);}catch(e){toast('Server error','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
+      if(d.success){
+        socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
+        closeImagePreview();
+        toast('Photo sent 📸','ok');
+      }else{toast(d.error||'Upload failed','err');}
+      if(btn){btn.disabled=false;btn.textContent='Send 📤';}
+    };
+    xhr.onerror=function(){toast('Network error','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
+    xhr.ontimeout=function(){toast('Timed out','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
+    xhr.send(fd);
+  },'image/jpeg',q);
 }
 let viewerCurrentUrl='';
 function openImgViewer(url,caption){
@@ -5734,10 +5743,10 @@ function requireChatLock(chatId,fid,fname,origChatId){
   document.getElementById('chatLockOverlay').classList.add('show');
 }
 function checkLockPin(){
-  const inp=document.getElementById('lockPinInp');
-  const pin=inp?inp.value:'';
+  var inp=document.getElementById('lockPinInp');
+  var pin=inp?inp.value:'';
   if(!_lockPendingChatId||!pin)return;
-  const stored=prefs.chatLocks[_lockPendingChatId];
+  var stored=prefs.chatLocks[_lockPendingChatId];
   if(!stored)return;
   if(pin.length<stored.length)return;
   if(pin===stored){
@@ -5747,7 +5756,7 @@ function checkLockPin(){
     else{delete prefs.chatLocks[_lockPendingChatId];savePrefs();toast('🔓 Chat unlocked','ok');}
     _lockPendingChatId=null;_lockPendingFid=null;_lockPendingFname=null;
   }else if(pin.length>=stored.length){
-    if(inp){inp.value='';inp.style.animation='none';requestAnimationFrame(()=>{inp.style.animation='lockShake .35s ease';});inp.placeholder='Wrong PIN';setTimeout(()=>{if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);}
+    if(inp){inp.value='';inp.style.animation='none';requestAnimationFrame(function(){inp.style.animation='lockShake .35s ease';});inp.placeholder='Wrong PIN';setTimeout(function(){if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);}
   }
 }
 function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
@@ -6436,39 +6445,53 @@ function _attachCropEvents(){
 }
 
 async function saveCroppedAvatar(){
-  const btn=document.getElementById('cropSaveBtn');
-  const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Save';}};
+  var btn=document.getElementById('cropSaveBtn');
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
-  try{
-    const stage=document.getElementById('cropStage');
-    const img=document.getElementById('cropImg');
-    if(!img||!img.complete||!img.naturalWidth){toast('Image not ready','err');reset();return;}
-    const stageW=stage.offsetWidth,stageH=stage.offsetHeight;
-    const circleD=Math.min(stageW,stageH)*0.8;
-    const cx=(stageW-circleD)/2,cy=(stageH-circleD)/2;
-    const canvas=document.createElement('canvas');
-    canvas.width=400;canvas.height=400;
-    const ctx=canvas.getContext('2d');
-    ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.clip();
-    ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
-    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob'));}, 'image/jpeg',0.85);});
-    const fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
-    const r=await fetch('/api/profile/avatar',{method:'POST',body:fd});
-    if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
-    const txt=await r.text();let d;
-    try{d=JSON.parse(txt);}catch(e){toast('Server error — not JSON','err');reset();return;}
-    if(d.success){
-      const av=document.getElementById('profileAvLarge');
-      if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">` ;}
-      const sav=document.getElementById('sav');
-      if(sav)sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
-      document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
-      if(socket&&socket.connected)socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
-      friends.forEach(f=>{if(f.id===ME_ID)f.avatar_url=d.avatar_url;});renderFriends();
-      toast('✅ Profile picture updated!','ok');closeAvatarCrop();
-    }else{toast(d.error||'Upload failed','err');}
-    reset();
-  }catch(e){toast('Failed: '+e.message,'err');reset();}
+  var stage=document.getElementById('cropStage');
+  var img=document.getElementById('cropImg');
+  if(!img||!img.complete||!img.naturalWidth){
+    toast('Image not ready','err');
+    if(btn){btn.disabled=false;btn.textContent='Save';}
+    return;
+  }
+  var stageW=stage.offsetWidth,stageH=stage.offsetHeight;
+  var circleD=Math.min(stageW,stageH)*0.8;
+  var cx=(stageW-circleD)/2,cy=(stageH-circleD)/2;
+  var canvas=document.createElement('canvas');
+  canvas.width=400;canvas.height=400;
+  var ctx=canvas.getContext('2d');
+  ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.clip();
+  ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,
+    circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
+  canvas.toBlob(function(blob){
+    if(!blob){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
+    var fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','/api/profile/avatar',true);
+    xhr.withCredentials=true;
+    xhr.timeout=30000;
+    xhr.onload=function(){
+      var d;try{d=JSON.parse(xhr.responseText);}catch(e){toast('Server error','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
+      if(d.success){
+        var av=document.getElementById('profileAvLarge');
+        if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML='<img src="'+d.avatar_url+'?t='+Date.now()+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onerror="this.remove()">';}
+        var sav=document.getElementById('sav');
+        if(sav)sav.innerHTML='<img src="'+d.avatar_url+'?t='+Date.now()+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>';
+        document.querySelectorAll('[data-my-avatar]').forEach(function(el){el.src=d.avatar_url;});
+        if(typeof socket!=='undefined'&&socket&&socket.connected)socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
+        friends.forEach(function(f){if(f.id===ME_ID)f.avatar_url=d.avatar_url;});
+        renderFriends();
+        toast('✅ Profile updated!','ok');
+        closeAvatarCrop();
+        closeProfileView();
+        if(typeof goBackToList==='function'&&window.innerWidth<=720)goBackToList();
+      }else{toast(d.error||'Upload failed','err');}
+      if(btn){btn.disabled=false;btn.textContent='Save';}
+    };
+    xhr.onerror=function(){toast('Network error','err');if(btn){btn.disabled=false;btn.textContent='Save';}};
+    xhr.ontimeout=function(){toast('Upload timed out','err');if(btn){btn.disabled=false;btn.textContent='Save';}};
+    xhr.send(fd);
+  },'image/jpeg',0.85);
 }
 
 function openProfileFullImg(url){
@@ -8649,13 +8672,13 @@ function scUpdateSpeed(v){
 
 // ── Video brightness/contrast filter ───────────────────
 function scUpdateVidFilter(){
-  const b=parseInt($('SC_vidBrightness')?.value||100);
-  const s=parseInt($('SC_vidSaturate')?.value||100);
-  const k=parseInt($('SC_vidContrast')?.value||100);
-  const bv=$('SC_vidBrightnessVal'),sv=$('SC_vidSaturateVal'),kv=$('SC_vidContrastVal');
+  var b=parseInt(($('SC_vidBrightness')||{value:100}).value||100);
+  var s=parseInt(($('SC_vidSaturate')||{value:100}).value||100);
+  var k=parseInt(($('SC_vidContrast')||{value:100}).value||100);
+  var bv=$('SC_vidBrightnessVal'),sv=$('SC_vidSaturateVal'),kv=$('SC_vidContrastVal');
   if(bv)bv.textContent=b;if(sv)sv.textContent=s;if(kv)kv.textContent=k;
-  const filter=`brightness(${b}%) saturate(${s}%) contrast(${k}%)`;
-  const vid=$('SC_trimVid');if(vid)vid.style.filter=filter;
+  var filter='brightness('+b+'%) saturate('+s+'%) contrast('+k+'%)';
+  var vid=$('SC_trimVid');if(vid)vid.style.filter=filter;
   SC.trimFilter=filter;
 }
 function scCloseTrimmer(){
@@ -8668,31 +8691,31 @@ function scCloseTrimmer(){
 }
 function scApplyTrim(){
   clearInterval(_trimVidRAF);_trimVidRAF=null;
-  const vid=$('SC_trimVid');
+  var vid=$('SC_trimVid');
   if(!vid||!vid.duration){toast('Video not ready','err');return;}
-  const total=vid.duration;
-  const start=SC.trimStart||0;
-  const end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
-  const dur=end-start;
-  if(dur<0.5){toast('Too short','err');return;}
+  var total=vid.duration;
+  var start=SC.trimStart||0;
+  var end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
+  var dur=end-start;
+  if(dur<0.5){toast('Too short — drag handles wider','err');return;}
   SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   vid.oncanplaythrough=null;vid.onloadedmetadata=null;
   clearInterval(_trimVidRAF);
   scPage(1);_scShowVideoUI();
-  const ev=$('SC_vid');
+  var ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
     if(ev._trimLoop){ev.removeEventListener('timeupdate',ev._trimLoop);ev._trimLoop=null;}
     ev.src=SC.mediaURL;ev.muted=true;ev.load();
     ev.oncanplay=function(){
-      ev.oncanplay=null;ev.currentTime=start;ev.play().catch(()=>{});
-      const pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
+      ev.oncanplay=null;ev.currentTime=start;ev.play().catch(function(){});
+      var pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
       ev._trimLoop=function(){if(ev.currentTime>=end-0.05)ev.currentTime=start;};
       ev.addEventListener('timeupdate',ev._trimLoop);
     };
   }
-  const db=$('SC_vidDuration');
+  var db=$('SC_vidDuration');
   if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
   toast('✅ Clip: '+start.toFixed(1)+'s–'+end.toFixed(1)+'s','ok');
 }
@@ -8774,6 +8797,24 @@ async function scBakeImage(){
 }
 
 // ─── POST ────────────────────────────────────────────────
+function showStoryProgress(label,pct){
+  var ov=document.getElementById('storyUploadOverlay');
+  var lbl=document.getElementById('storyUploadLabel');
+  var bar=document.getElementById('storyUploadBar');
+  var pctEl=document.getElementById('storyUploadPct');
+  if(!ov)return;
+  if(lbl)lbl.textContent=label||'Sharing story…';
+  if(bar)bar.style.width=(pct||0)+'%';
+  if(pctEl)pctEl.textContent=(pct||0)+'%';
+  ov.style.display='flex';
+}
+function hideStoryProgress(){
+  var ov=document.getElementById('storyUploadOverlay');
+  if(ov)ov.style.display='none';
+  var bar=document.getElementById('storyUploadBar');
+  if(bar)bar.style.width='0%';
+}
+
 async function scPost(){
   const btn=$('SC_shareBtn');
   btn.disabled=true; btn.textContent='Posting…';
@@ -8813,14 +8854,25 @@ async function scPost(){
         uploadFile=await scBakeImage();
       }
       const fd=new FormData(); fd.append('media',uploadFile);
-      const up=await fetch('/api/upload/media',{method:'POST',body:fd});
-      const ud=await up.json();
+      showStoryProgress('Uploading media…',10);
+      const ud=await new Promise(function(resolve,reject){
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','/api/upload/media',true);xhr.withCredentials=true;xhr.timeout=120000;
+        xhr.upload.onprogress=function(e){if(e.lengthComputable){var p=Math.round(e.loaded/e.total*70)+10;showStoryProgress('Uploading media…',p);}};
+        xhr.onload=function(){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Server error'));}};
+        xhr.onerror=function(){reject(new Error('Network error'));};
+        xhr.ontimeout=function(){reject(new Error('Upload timed out'));};
+        xhr.send(fd);
+      });
       if(!ud.success){
+        hideStoryProgress();
         toast('Upload failed: '+(ud.error||''),'err');
         btn.disabled=false; btn.textContent='✨ Share Story'; return;
       }
+      showStoryProgress('Processing…',85);
       mediaUrl=ud.url; mediaType=ud.media_type;
     }catch(e){
+      hideStoryProgress();
       toast('Upload error: '+(e.message||''),'err');
       btn.disabled=false; btn.textContent='✨ Share Story'; return;
     }
@@ -8869,8 +8921,16 @@ async function scPost(){
       })
     });
     const d=await r.json();
-    if(d.success){ toast('✅ Story shared!','ok'); scClose(); loadStories(); }
-    else toast(d.error||'Failed','err');
+    if(d.success){
+      showStoryProgress('Story shared! ✅',100);
+      setTimeout(function(){
+        hideStoryProgress();
+        scClose();
+        loadStories();
+        if(typeof goBackToList==='function'&&window.innerWidth<=720)goBackToList();
+        toast('✅ Story shared!','ok');
+      },800);
+    }else{hideStoryProgress();toast(d.error||'Failed','err');}
   }catch(e){ toast('Network error','err'); }
   btn.disabled=false; btn.textContent='✨ Share Story';
 }
@@ -10484,5 +10544,16 @@ setInterval(() => {
 
 <div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
 1
+
+<div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="background:#1a1a2e;border-radius:20px;padding:28px 32px;width:min(320px,85vw);display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="font-size:28px;" id="storyUploadIcon">📤</div>
+    <div id="storyUploadLabel" style="color:#fff;font-size:15px;font-weight:700;text-align:center;">Sharing story…</div>
+    <div style="width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;">
+      <div id="storyUploadBar" style="height:100%;background:linear-gradient(90deg,#ec5b08,#f59e0b);border-radius:4px;width:0%;transition:width .3s ease;"></div>
+    </div>
+    <div id="storyUploadPct" style="color:rgba(255,255,255,.5);font-size:12px;">0%</div>
+  </div>
+</div>
 </body>
 </html>
