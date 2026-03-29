@@ -2766,92 +2766,65 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
 
   
   <div id="SC_p5" style="display:none;height:100%;flex-direction:column;background:#0a0a0f;position:relative;">
-    
     <div style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;flex-shrink:0;">
       <button onclick="scCloseTrimmer()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
       <span style="color:#fff;font-size:15px;font-weight:800;flex:1;">Trim Video</span>
       <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:#ec5b08;border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:800;cursor:pointer;">✓ Done</button>
     </div>
-
-    
     <div style="flex:1;min-height:0;position:relative;background:#000;display:flex;align-items:center;justify-content:center;">
       <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;" playsinline autoplay></video>
       <div id="SC_trimTimeLabel" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:16px;pointer-events:none;">0.0s – 0.0s</div>
     </div>
-
-    
     <div style="background:#0d0f1a;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom),12px);">
-
-      
       <div style="display:flex;justify-content:space-between;padding:8px 16px 4px;">
         <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
         <span id="SC_trimDurLbl" style="font-size:11px;color:#ec5b08;font-weight:700;">0.0s selected</span>
         <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
       </div>
-
-      
       <div style="padding:0 14px 8px;">
         <div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;overflow:hidden;"
           onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
           <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.9);z-index:5;pointer-events:none;left:0%;"></div>
           <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-top:2px solid #ec5b08;border-bottom:2px solid #ec5b08;z-index:2;pointer-events:none;"></div>
           <div id="SC_cutPoints"></div>
-          
           <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:10px 0 0 10px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;"
             onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')">
             <div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
           </div>
-          
           <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:0 10px 10px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;"
             onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')">
             <div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div>
           </div>
         </div>
       </div>
-
-      
       <div style="display:flex;align-items:center;gap:8px;padding:4px 14px 14px;">
-        
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
           <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Bright</span>
-          <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100"
-            oninput="scUpdateVidFilter()" style="width:100%;accent-color:#fbbf24;">
+          <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#fbbf24;">
           <span id="SC_vidBrightnessVal" style="font-size:9px;color:#fbbf24;font-weight:700;">100</span>
         </div>
-        
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
           <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Clarity</span>
-          <input type="range" id="SC_vidSaturate" min="0" max="200" step="1" value="100"
-            oninput="scUpdateVidFilter()" style="width:100%;accent-color:#22c55e;">
+          <input type="range" id="SC_vidSaturate" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#22c55e;">
           <span id="SC_vidSaturateVal" style="font-size:9px;color:#22c55e;font-weight:700;">100</span>
         </div>
-        
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
           <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Contrast</span>
-          <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100"
-            oninput="scUpdateVidFilter()" style="width:100%;accent-color:#38bdf8;">
+          <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#38bdf8;">
           <span id="SC_vidContrastVal" style="font-size:9px;color:#38bdf8;font-weight:700;">100</span>
         </div>
-        
         <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">⏸</button>
-        
         <button id="SC_cutBtn" onclick="scApplyTrim()" style="height:44px;padding:0 16px;border-radius:14px;background:#ec5b08;border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 10px rgba(236,91,8,.4);">✂️ Cut</button>
       </div>
-
-      
       <div style="display:none;">
         <input id="SC_volSlider" type="range" value="100"><span id="SC_volVal"></span>
         <input id="SC_speedSlider" type="range" value="1"><span id="SC_speedVal"></span>
         <input id="SC_pitchSlider" type="range" value="0"><span id="SC_pitchVal"></span>
         <span id="SC_trimSongName"></span><button id="SC_trimSongBtn"></button>
-        <div id="SC_musicTrimWrap">
-          <span id="SC_musicTrimLbl"></span>
-          <div id="SC_musicTrimBar">
-            <div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div>
-            <div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div>
-          </div>
+        <div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span>
+          <div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div>
         </div>
-        <div style="display:none;" id="SC_trimHint"></div>
+        <div id="SC_trimHint"></div>
       </div>
     </div>
   </div>
@@ -3593,16 +3566,18 @@ async function sendEditedImage(){
   const caption=document.getElementById('imgCaption').value.trim();
   const btn=document.querySelector('.img-preview-footer .send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
-  let _blob;
+  const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
+  let blob;
   try{
-    _blob=await new Promise((res,rej)=>{
+    blob=await new Promise((res,rej)=>{
       canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));}, 'image/jpeg',q);
     });
-  }catch(e){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
+  }catch(e){toast('Failed to process image','err');reset();return;}
   try{
-    const fd=new FormData();fd.append('image',_blob,'photo.jpg');
+    const fd=new FormData();
+    fd.append('image',blob,'photo.jpg');
     const r=await fetch('/api/upload/image',{method:'POST',credentials:'include',body:fd});
-    if(!r.ok){toast('Upload error '+r.status,'err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
+    if(!r.ok){toast('Upload error '+r.status,'err');reset();return;}
     const d=await r.json();
     if(d.success){
       socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
@@ -3610,7 +3585,7 @@ async function sendEditedImage(){
       toast('Photo sent 📸','ok');
     }else toast(d.error||'Upload failed','err');
   }catch(e){toast('Send failed','err');}
-  if(btn){btn.disabled=false;btn.textContent='Send 📤';}
+  reset();
 }
 let viewerCurrentUrl='';
 function openImgViewer(url,caption){
@@ -5795,7 +5770,13 @@ function checkLockPin(){
     else{delete prefs.chatLocks[_lockPendingChatId];savePrefs();toast('🔓 Chat unlocked','ok');}
     _lockPendingChatId=null;_lockPendingFid=null;_lockPendingFname=null;
   }else if(pin.length>=stored.length){
-    if(inp){inp.value='';inp.style.animation='none';requestAnimationFrame(()=>{inp.style.animation='lockShake .35s ease';});inp.placeholder='Wrong PIN';setTimeout(()=>{if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);}
+    if(inp){
+      inp.value='';
+      inp.style.animation='none';
+      requestAnimationFrame(()=>{inp.style.animation='lockShake .35s ease';});
+      inp.placeholder='Wrong PIN';
+      setTimeout(()=>{if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);
+    }
   }
 }
 function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
@@ -6506,13 +6487,17 @@ async function saveCroppedAvatar(){
     const blob=await new Promise((res,rej)=>{
       canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));}, 'image/jpeg',0.85);
     });
-    const fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
+    const fd=new FormData();
+    fd.append('avatar',blob,'avatar.jpg');
     const r=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
     if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
     const d=await r.json();
     if(d.success){
       const av=document.getElementById('profileAvLarge');
-      if(av){av.innerHTML='';av.style.fontSize='0';av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">`;}
+      if(av){
+        av.innerHTML='';av.style.fontSize='0';
+        av.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:62px;" onclick="openProfileFullImg('${d.avatar_url}')" onerror="this.remove()">`;
+      }
       const sav=document.getElementById('sav');
       if(sav)sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
       document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
@@ -8707,13 +8692,13 @@ function scUpdateVidFilter(){
   const b=parseInt($('SC_vidBrightness')?.value||100);
   const s=parseInt($('SC_vidSaturate')?.value||100);
   const k=parseInt($('SC_vidContrast')?.value||100);
-  const bv=$('SC_vidBrightnessVal'), sv=$('SC_vidSaturateVal'), kv=$('SC_vidContrastVal');
-  if(bv) bv.textContent=b;
-  if(sv) sv.textContent=s;
-  if(kv) kv.textContent=k;
+  const bv=$('SC_vidBrightnessVal'),sv=$('SC_vidSaturateVal'),kv=$('SC_vidContrastVal');
+  if(bv)bv.textContent=b;
+  if(sv)sv.textContent=s;
+  if(kv)kv.textContent=k;
   const filter=`brightness(${b}%) saturate(${s}%) contrast(${k}%)`;
   const vid=$('SC_trimVid');
-  if(vid) vid.style.filter=filter;
+  if(vid)vid.style.filter=filter;
   SC.trimFilter=filter;
 }
 function scCloseTrimmer(){
@@ -8725,23 +8710,20 @@ function scCloseTrimmer(){
   _scShowVideoUI();
 }
 function scApplyTrim(){
-  clearInterval(_trimVidRAF); _trimVidRAF=null;
+  clearInterval(_trimVidRAF);_trimVidRAF=null;
   const vid=$('SC_trimVid');
-  if(!vid||!vid.duration){toast('Video not ready — wait a moment','err');return;}
+  if(!vid||!vid.duration){toast('Video not ready','err');return;}
   const total=vid.duration;
   const start=SC.trimStart||0;
   const end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
   const dur=end-start;
   if(dur<0.5){toast('Too short — drag handles wider','err');return;}
-  // Save trim points
   SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   vid.oncanplaythrough=null;vid.onloadedmetadata=null;
   clearInterval(_trimVidRAF);
-  // Go to editor WITHOUT calling scCloseTrimmer (it wipes SC_vid src)
   scPage(1);
   _scShowVideoUI();
-  // Reload editor video looping ONLY the trimmed segment
   const ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
@@ -8754,7 +8736,6 @@ function scApplyTrim(){
       ev.addEventListener('timeupdate',ev._trimLoop);
     };
   }
-  // Show green clip badge
   const db=$('SC_vidDuration');
   if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
   toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
