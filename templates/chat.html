@@ -7844,21 +7844,19 @@ function scLoadEditor(){
   $('SC_tools').style.transform='translateY(100%)';
   $('SC_toolsOv').style.display='none';
   const asv=$('SC_arrowSvg'); if(asv) asv.style.transform='rotate(0deg)';
-  if(!SC._fromTrimmer){
-    ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{
-      const el=$(id); if(el)el.value=100;
-    });
-    const sb=$('SC_slBlur'); if(sb)sb.value=0;
-    const sw=$('SC_slWarm'); if(sw)sw.value=0;
-    ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{
-      const el=$(id); if(el)el.textContent='100';
-    });
-    const sbv=$('SC_slBlurVal'); if(sbv)sbv.textContent='0.0';
-    const swv=$('SC_slWarmVal'); if(swv)swv.textContent='0';
-    SC.rotation=0; SC.rotStartAngle=0;
-    img.style.filter='none'; img.style.transform='rotate(0deg)';
-  }
-  SC._fromTrimmer=false;
+  // Reset sliders
+  ['SC_slBrightness','SC_slContrast','SC_slSaturate'].forEach(id=>{
+    const el=$(id); if(el)el.value=100;
+  });
+  const sb=$('SC_slBlur'); if(sb)sb.value=0;
+  const sw=$('SC_slWarm'); if(sw)sw.value=0;
+  ['SC_slBrightnessVal','SC_slContrastVal','SC_slSaturateVal'].forEach(id=>{
+    const el=$(id); if(el)el.textContent='100';
+  });
+  const sbv=$('SC_slBlurVal'); if(sbv)sbv.textContent='0.0';
+  const swv=$('SC_slWarmVal'); if(swv)swv.textContent='0';
+  SC.rotation=0; SC.rotStartAngle=0;
+  img.style.filter='none'; img.style.transform='rotate(0deg)';
 
   // Mount content
   if(SC.type==='text'){
@@ -7917,13 +7915,34 @@ function _scShowVideoUI(){
   const vidCtrls    = $('SC_videoControls');
 
   // Always show cut/edit + video controls for video
-  if(trimBtnWrap) trimBtnWrap.style.display = 'block';
+  if(trimBtnWrap) trimBtnWrap.style.display = 'none';
   if(trimToolBtn){
     trimToolBtn.style.display       = 'flex';
     trimToolBtn.style.flexDirection = 'column';
     trimToolBtn.style.alignItems    = 'center';
   }
   if(vidCtrls) vidCtrls.style.display = 'block';
+  if(SC._savedTrimFilter!==undefined&&SC.mediaURL&&SC.mediaType==='video'){
+    var evr=$('SC_vid');
+    if(evr){
+      try{evr.pause();}catch(e){}
+      if(evr._trimLoop){evr.removeEventListener('timeupdate',evr._trimLoop);evr._trimLoop=null;}
+      var _ts=SC.trimStart||0,_te=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:null;
+      evr.src=SC.mediaURL;evr.muted=true;evr.load();
+      evr.oncanplay=function(){
+        evr.oncanplay=null;
+        evr.currentTime=_ts;
+        if(SC._savedTrimFilter)evr.style.filter=SC._savedTrimFilter;
+        evr.play().catch(function(){});
+        var pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
+        if(_te!=null){
+          evr._trimLoop=function(){if(evr.currentTime>=_te-0.05)evr.currentTime=_ts;};
+          evr.addEventListener('timeupdate',evr._trimLoop);
+        }
+      };
+    }
+    SC._savedTrimFilter=undefined;
+  }
 
   // Reset play button to ▶ (video not yet playing when tools open)
   const playBtn = $('SC_vidPlayBtn');
@@ -8801,40 +8820,21 @@ function scCloseTrimmer(){
 }
 function scApplyTrim(){
   clearInterval(_trimVidRAF);_trimVidRAF=null;
-  var vid=$('SC_trimVid');
+  const vid=$('SC_trimVid');
   if(!vid||!vid.duration){toast('No video loaded','err');return;}
-  var total=vid.duration;
-  var start=SC.trimStart||0;
-  var end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
-  var dur=end-start;
-  if(dur>30){toast('Selection '+dur.toFixed(1)+'s — max 30s','err');return;}
-  if(dur<0.5){toast('Too short — drag handles wider','err');return;}
-  SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
-  var savedFilter=SC.trimFilter||'';
+  const total=vid.duration||1;
+  const dur=SC.trimEnd-SC.trimStart;
+  if(dur>30){toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');return;}
+  if(dur<0.5){toast('Selection too short (min 0.5s)','err');return;}
+  SC.videoDuration=total;
+  SC._savedTrimFilter=SC.trimFilter||'';
+  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
+  clearInterval(_trimVidRAF);_trimVidRAF=null;
+  _cutPoints=[];
+  const ppBtn=$('SC_trimPlayPause');if(ppBtn)ppBtn.textContent='⏸';
   try{vid.pause();}catch(e){}
-  vid.oncanplaythrough=null;vid.onloadedmetadata=null;
-  clearInterval(_trimVidRAF);
-  SC._fromTrimmer=true;
   scPage(1);
   _scShowVideoUI();
-  var ev=$('SC_vid');
-  if(ev&&SC.mediaURL){
-    try{ev.pause();}catch(e){}
-    if(ev._trimLoop){ev.removeEventListener('timeupdate',ev._trimLoop);ev._trimLoop=null;}
-    ev.src=SC.mediaURL;ev.muted=true;ev.load();
-    ev.oncanplay=function(){
-      ev.oncanplay=null;
-      ev.currentTime=start;
-      if(savedFilter)ev.style.filter=savedFilter;
-      ev.play().catch(function(){});
-      var pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
-      ev._trimLoop=function(){if(ev.currentTime>=end-0.05)ev.currentTime=start;};
-      ev.addEventListener('timeupdate',ev._trimLoop);
-    };
-  }
-  var db=$('SC_vidDuration');
-  if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
-  toast('✅ Clip saved — tap Next → to share','ok');
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
@@ -8922,10 +8922,8 @@ function showStoryProgress(label,pct){
   var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width=(pct||0)+'%';
   var p=document.getElementById('storyUploadPct');if(p)p.textContent=Math.round(pct||0)+'%';
   if(pct>=100){
-    var ico=document.getElementById('storyUploadIcon');
-    if(ico){ico.textContent='✅';}
-    var lbl=document.getElementById('storyUploadLabel');
-    if(lbl)lbl.textContent='Story shared!';
+    var ico=document.getElementById('storyUploadIcon');if(ico)ico.textContent='✅';
+    var lbl=document.getElementById('storyUploadLabel');if(lbl)lbl.textContent='Story shared!';
   }
 }
 function hideStoryProgress(){
@@ -8979,21 +8977,13 @@ async function scPost(){
       const ud=await new Promise(function(resolve,reject){
         var xhr=new XMLHttpRequest();
         xhr.open('POST','/api/upload/media',true);xhr.withCredentials=true;xhr.timeout=120000;
-        xhr.upload.onprogress=function(ev){
-          if(ev.lengthComputable)showStoryProgress('Sharing story…',Math.round(ev.loaded/ev.total*80)+5);
-        };
-        xhr.onload=function(){
-          try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Server error'));}
-        };
+        xhr.upload.onprogress=function(ev){if(ev.lengthComputable)showStoryProgress('Sharing story…',Math.round(ev.loaded/ev.total*80)+5);};
+        xhr.onload=function(){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Server error'));}};
         xhr.onerror=function(){reject(new Error('Network error'));};
         xhr.ontimeout=function(){reject(new Error('Timed out'));};
         xhr.send(fd);
       });
-      if(!ud.success){
-        hideStoryProgress();
-        toast('Upload failed: '+(ud.error||''),'err');
-        btn.disabled=false;btn.textContent='✨ Share Story';return;
-      }
+      if(!ud.success){hideStoryProgress();toast('Upload failed: '+(ud.error||''),'err');btn.disabled=false;btn.textContent='✨ Share Story';return;}
       showStoryProgress('Almost done…',90);
       mediaUrl=ud.url;mediaType=ud.media_type;
     }catch(e){
@@ -9048,17 +9038,8 @@ async function scPost(){
     const d=await r.json();
     if(d.success){
       showStoryProgress('Story shared!',100);
-      setTimeout(function(){
-        hideStoryProgress();
-        scClose();
-        loadStories();
-        if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();
-        toast('✅ Story shared!','ok');
-      },900);
-    }else{
-      hideStoryProgress();
-      toast(d.error||'Failed','err');
-    }
+      setTimeout(function(){hideStoryProgress();scClose();loadStories();if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();toast('✅ Story shared!','ok');},900);
+    }else{hideStoryProgress();toast(d.error||'Failed','err');}
   }catch(e){hideStoryProgress();toast('Network error','err');}
   btn.disabled=false;btn.textContent='✨ Share Story';
 }
@@ -10676,7 +10657,7 @@ setInterval(() => {
 <div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;">
   <div style="background:#1c1c2e;border-radius:24px;padding:40px 36px;width:min(300px,88vw);display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 32px 80px rgba(0,0,0,.7);">
     <div id="storyUploadIcon" style="font-size:40px;line-height:1;">📤</div>
-    <div id="storyUploadLabel" style="color:#fff;font-size:16px;font-weight:700;text-align:center;line-height:1.4;">Sharing story…</div>
+    <div id="storyUploadLabel" style="color:#fff;font-size:16px;font-weight:700;text-align:center;">Sharing story…</div>
     <div style="width:100%;height:5px;background:rgba(255,255,255,.1);border-radius:5px;overflow:hidden;">
       <div id="storyUploadBar" style="height:100%;width:0%;border-radius:5px;background:linear-gradient(90deg,#ec5b08,#f59e0b);transition:width .4s ease;"></div>
     </div>
