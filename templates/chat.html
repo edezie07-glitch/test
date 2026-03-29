@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hepozy</title>
-<meta name="hpz-v" content="v7-TRIM">
+<meta name="hpz-v" content="v8-TRIM">
 <meta name="hepozy-version" content="v4.0-20260314-1115">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2773,12 +2773,11 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
     </div>
 
     
-    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;">
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#0a0a0a;min-height:0;cursor:pointer;" onclick="scTrimTapToggle(event)">
       <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;background:#000;" playsinline autoplay></video>
       
       <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;" id="SC_trimTimeLabel">0.0s – 30.0s</div>
-      
-      <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.4);color:#fff;width:48px;height:48px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">⏸</button>
+      <span id="SC_trimPlayPause" style="display:none;"></span>
       
       <button id="SC_cutBtn" onclick="scAddCutPoint()" style="
         position:absolute;bottom:12px;right:14px;
@@ -8537,16 +8536,23 @@ function scTrimStop(){
 
 // ── Pause/Play toggle ──────────────────────────────────
 function scTrimTogglePlay(){
-  const vid=$('SC_trimVid'), btn=$('SC_trimPlayPause');
-  if(!vid||!vid.src) return;
-  if(vid.paused){
-    vid.play().catch(()=>{});
-    if(btn) btn.textContent='⏸';
-    _startPlayheadLoop(vid);  // restart loop
-  } else {
-    vid.pause();
-    if(btn) btn.textContent='▶';
-  }
+  var vid=$('SC_trimVid');
+  if(!vid||!vid.src)return;
+  if(vid.paused){vid.play().catch(function(){});_startPlayheadLoop(vid);}
+  else{vid.pause();}
+}
+function scTrimTapToggle(e){
+  if(e.target.closest('#SC_cutBtn')||e.target.closest('button'))return;
+  var vid=$('SC_trimVid');if(!vid)return;
+  var wasPaused=vid.paused;
+  scTrimTogglePlay();
+  var wrap=e.currentTarget;
+  var ind=document.createElement('div');
+  ind.textContent=wasPaused?'▶':'⏸';
+  ind.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(1);font-size:48px;pointer-events:none;z-index:10;transition:opacity .35s,transform .35s;';
+  wrap.appendChild(ind);
+  setTimeout(function(){ind.style.opacity='0';ind.style.transform='translate(-50%,-50%) scale(1.4)';},50);
+  setTimeout(function(){if(ind.parentNode)ind.parentNode.removeChild(ind);},400);
 }
 
 // ── Cut points ─────────────────────────────────────────
@@ -8554,51 +8560,26 @@ let _cutPoints = [];
 function scAddCutPoint(){
   const vid=$('SC_trimVid');
   if(!vid||!vid.duration) return;
-
-  // Pause at the cut point so user sees exactly what was cut
-  vid.pause();
-  const ppBtn=$('SC_trimPlayPause'); if(ppBtn) ppBtn.textContent='▶';
-
-  const t = vid.currentTime;
-  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){ toast('Already cut here','info'); return; }
-
-  // Snap to nearest 0.1s for precision
-  const snapped = Math.round(t*10)/10;
-
-  // The cut splits the video at this point — set trim region to the segment
-  // containing the current playhead. By default, keep the FIRST segment (0 → cut).
-  // User can drag handles to choose which segment they want.
-  const prevCuts = [0, ..._cutPoints, vid.duration];
-  let segStart=0, segEnd=vid.duration;
+  const t=vid.currentTime;
+  if(_cutPoints.some(p=>Math.abs(p-t)<0.2)){toast('Already cut here','info');return;}
+  const snapped=Math.round(t*10)/10;
+  const prevCuts=[0,..._cutPoints,vid.duration];
+  let segStart=0,segEnd=vid.duration;
   for(let i=0;i<prevCuts.length-1;i++){
-    if(snapped > prevCuts[i] && snapped <= prevCuts[i+1]){
-      segStart=prevCuts[i]; segEnd=snapped;
-      break;
-    }
+    if(snapped>prevCuts[i]&&snapped<=prevCuts[i+1]){segStart=prevCuts[i];segEnd=snapped;break;}
   }
-
   _cutPoints.push(snapped);
   _cutPoints.sort((a,b)=>a-b);
   _renderCutPoints(vid.duration);
-
-  // Update trim region to show the cut segment instantly
-  SC.trimStart = segStart;
-  SC.trimEnd   = Math.min(snapped, segStart + 30);
+  SC.trimStart=segStart;
+  SC.trimEnd=Math.min(snapped,segStart+30);
   _trimUpdate(vid.duration);
-
-  // Seek to start of the cut segment so user sees it immediately
-  vid.currentTime = segStart;
-
-  // Flash the cut line red
-  const pct = (snapped/vid.duration)*100;
   const cp=$('SC_cutPoints');
-  const flash = cp?cp.querySelector(`div[data-t="${snapped}"]`)||cp.lastElementChild:null;
+  const flash=cp?cp.querySelector('div[data-t="'+snapped+'"]')||cp.lastElementChild:null;
   if(flash){
-    flash.style.background='#fff';
-    flash.style.width='3px';
-    setTimeout(()=>{ flash.style.background='#ef4444'; flash.style.width='2px'; },300);
+    flash.style.background='#fff';flash.style.width='3px';
+    setTimeout(function(){flash.style.background='#ef4444';flash.style.width='2px';},300);
   }
-
   toast('✂️ Cut at '+snapped.toFixed(1)+'s — drag handles to choose segment','ok');
 }
 
@@ -8798,41 +8779,24 @@ function scCloseTrimmer(){
   _scShowVideoUI();
 }
 function scApplyTrim(){
-  clearInterval(_trimVidRAF);_trimVidRAF=null;
+  clearInterval(_trimVidRAF); _trimVidRAF=null;
   const vid=$('SC_trimVid');
-  if(!vid||!vid.duration){toast('No video loaded','err');return;}
+  if(!vid||!vid.duration){ toast('No video loaded','err'); return; }
   const total=vid.duration||1;
   const dur=SC.trimEnd-SC.trimStart;
-  if(dur>30){toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');return;}
-  if(dur<0.5){toast('Selection too short (min 0.5s)','err');return;}
-  SC.videoDuration=total;
-  SC._trimApplied=true;
-  SC._appliedFilter=SC.trimFilter||'';
-  _cutPoints=[];
-  try{vid.pause();}catch(e){}
-  const ppBtn=$('SC_trimPlayPause');if(ppBtn)ppBtn.textContent='⏸';
-  toast('✅ Clip: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
-  scPage(1);
-  _scShowVideoUI();
-  const ev=$('SC_vid');
-  if(ev&&SC.mediaURL){
-    try{ev.pause();}catch(e){}
-    if(ev._trimLoop){ev.removeEventListener('timeupdate',ev._trimLoop);ev._trimLoop=null;}
-    ev.src=SC.mediaURL;ev.muted=true;ev.load();
-    ev.oncanplay=(function(s,e,f){
-      return function(){
-        ev.oncanplay=null;
-        ev.currentTime=s;
-        if(f)ev.style.filter=f;
-        ev.play().catch(function(){});
-        const pb=$('SC_vidPlayBtn');if(pb)pb.textContent='⏸';
-        ev._trimLoop=function(){if(ev.currentTime>=e-0.05)ev.currentTime=s;};
-        ev.addEventListener('timeupdate',ev._trimLoop);
-      };
-    }(SC.trimStart,SC.trimEnd,SC._appliedFilter));
+  if(dur>30){
+    toast('Selection is '+dur.toFixed(1)+'s — trim to max 30s','err');
+    return;
   }
-  const db=$('SC_vidDuration');
-  if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
+  if(dur<0.5){
+    toast('Selection too short (min 0.5s)','err');
+    return;
+  }
+  // Store trim points — they'll be passed to the backend/post
+  // Update the duration shown
+  SC.videoDuration=total;
+  toast('💾 Clip saved: '+SC.trimStart.toFixed(1)+'s – '+SC.trimEnd.toFixed(1)+'s','ok');
+  scCloseTrimmer();
 }
 
 // ─── Share page (page 2) ─────────────────────────────────
@@ -8913,25 +8877,6 @@ async function scBakeImage(){
 }
 
 // ─── POST ────────────────────────────────────────────────
-function showStoryProgress(label,pct){
-  var ov=document.getElementById('storyUploadOverlay');if(!ov)return;
-  ov.style.display='flex';
-  var el=document.getElementById('storyUploadLabel');if(el)el.textContent=label||'Sharing story…';
-  var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width=(pct||0)+'%';
-  var p=document.getElementById('storyUploadPct');if(p)p.textContent=Math.round(pct||0)+'%';
-  if(pct>=100){
-    var ico=document.getElementById('storyUploadIcon');if(ico)ico.textContent='✅';
-    var lbl=document.getElementById('storyUploadLabel');if(lbl)lbl.textContent='Story shared!';
-  }
-}
-function hideStoryProgress(){
-  var ov=document.getElementById('storyUploadOverlay');if(ov)ov.style.display='none';
-  var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width='0%';
-  var ico=document.getElementById('storyUploadIcon');if(ico)ico.textContent='📤';
-  var lbl=document.getElementById('storyUploadLabel');if(lbl)lbl.textContent='Sharing story…';
-  var pct=document.getElementById('storyUploadPct');if(pct)pct.textContent='0%';
-}
-
 async function scPost(){
   const btn=$('SC_shareBtn');
   btn.disabled=true; btn.textContent='Posting…';
@@ -8971,23 +8916,16 @@ async function scPost(){
         uploadFile=await scBakeImage();
       }
       const fd=new FormData(); fd.append('media',uploadFile);
-      showStoryProgress('Sharing story…',5);
-      const ud=await new Promise(function(resolve,reject){
-        var xhr=new XMLHttpRequest();
-        xhr.open('POST','/api/upload/media',true);xhr.withCredentials=true;xhr.timeout=120000;
-        xhr.upload.onprogress=function(ev){if(ev.lengthComputable)showStoryProgress('Sharing story…',Math.round(ev.loaded/ev.total*80)+5);};
-        xhr.onload=function(){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Server error'));}};
-        xhr.onerror=function(){reject(new Error('Network error'));};
-        xhr.ontimeout=function(){reject(new Error('Timed out'));};
-        xhr.send(fd);
-      });
-      if(!ud.success){hideStoryProgress();toast('Upload failed: '+(ud.error||''),'err');btn.disabled=false;btn.textContent='✨ Share Story';return;}
-      showStoryProgress('Almost done…',90);
-      mediaUrl=ud.url;mediaType=ud.media_type;
+      const up=await fetch('/api/upload/media',{method:'POST',body:fd});
+      const ud=await up.json();
+      if(!ud.success){
+        toast('Upload failed: '+(ud.error||''),'err');
+        btn.disabled=false; btn.textContent='✨ Share Story'; return;
+      }
+      mediaUrl=ud.url; mediaType=ud.media_type;
     }catch(e){
-      hideStoryProgress();
       toast('Upload error: '+(e.message||''),'err');
-      btn.disabled=false;btn.textContent='✨ Share Story';return;
+      btn.disabled=false; btn.textContent='✨ Share Story'; return;
     }
   } else {
     content=($('SC_textBox').value||'').trim();
@@ -9034,12 +8972,10 @@ async function scPost(){
       })
     });
     const d=await r.json();
-    if(d.success){
-      showStoryProgress('Story shared!',100);
-      setTimeout(function(){hideStoryProgress();scClose();loadStories();if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();toast('✅ Story shared!','ok');},900);
-    }else{hideStoryProgress();toast(d.error||'Failed','err');}
-  }catch(e){hideStoryProgress();toast('Network error','err');}
-  btn.disabled=false;btn.textContent='✨ Share Story';
+    if(d.success){ toast('✅ Story shared!','ok'); scClose(); loadStories(); }
+    else toast(d.error||'Failed','err');
+  }catch(e){ toast('Network error','err'); }
+  btn.disabled=false; btn.textContent='✨ Share Story';
 }
 
 // ─── Single createStory alias ────────────────────────────
@@ -10651,16 +10587,5 @@ setInterval(() => {
 
 <div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
 1
-
-<div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;">
-  <div style="background:#1c1c2e;border-radius:24px;padding:40px 36px;width:min(300px,88vw);display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 32px 80px rgba(0,0,0,.7);">
-    <div id="storyUploadIcon" style="font-size:40px;line-height:1;">📤</div>
-    <div id="storyUploadLabel" style="color:#fff;font-size:16px;font-weight:700;text-align:center;">Sharing story…</div>
-    <div style="width:100%;height:5px;background:rgba(255,255,255,.1);border-radius:5px;overflow:hidden;">
-      <div id="storyUploadBar" style="height:100%;width:0%;border-radius:5px;background:linear-gradient(90deg,#ec5b08,#f59e0b);transition:width .4s ease;"></div>
-    </div>
-    <div id="storyUploadPct" style="color:rgba(255,255,255,.4);font-size:12px;font-weight:700;letter-spacing:.5px;">0%</div>
-  </div>
-</div>
 </body>
 </html>
