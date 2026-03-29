@@ -8,6 +8,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link rel="manifest" href="/static/site.webmanifest"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hepozy</title>
+<meta name="hepozy-fixed" content="v-FIXED-2026">
 <meta name="hepozy-version" content="v4.0-20260314-1115">
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2809,14 +2810,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
         <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">⏸</button>
         <button id="SC_cutBtn" onclick="scApplyTrim()" style="height:44px;padding:0 16px;border-radius:14px;background:#ec5b08;border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;">✂️ Cut</button>
       </div>
-      <div style="display:none;">
-        <input id="SC_volSlider" type="range" value="100"><span id="SC_volVal"></span>
-        <input id="SC_speedSlider" type="range" value="1"><span id="SC_speedVal"></span>
-        <input id="SC_pitchSlider" type="range" value="0"><span id="SC_pitchVal"></span>
-        <span id="SC_trimSongName"></span><button id="SC_trimSongBtn"></button>
-        <div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span><div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div></div>
-        <div id="SC_trimHint"></div>
-      </div>
+      <div style="display:none;"><input id="SC_volSlider" type="range" value="100"><span id="SC_volVal"></span><input id="SC_speedSlider" type="range" value="1"><span id="SC_speedVal"></span><input id="SC_pitchSlider" type="range" value="0"><span id="SC_pitchVal"></span><span id="SC_trimSongName"></span><button id="SC_trimSongBtn"></button><div id="SC_musicTrimWrap"><span id="SC_musicTrimLbl"></span><div id="SC_musicTrimBar"><div id="SC_musicPlayhead"></div><div id="SC_musicRegion"></div><div id="SC_musicTrimL"></div><div id="SC_musicTrimR"></div></div></div><div id="SC_trimHint"></div></div>
     </div>
   </div>
 
@@ -3374,8 +3368,7 @@ async function sendMultiPhotos(){
       const fd=new FormData(); fd.append('image',f);
       const r=await fetch('/api/upload/image',{method:'POST',body:fd});
       if(!r.ok)return null;
-      const txt=await r.text();
-      let d;try{d=JSON.parse(txt);}catch(e){return null;}
+      const txt=await r.text();let d;try{d=JSON.parse(txt);}catch(e){return null;}
       return d.success?d.url:null;
     }));
     const urls=uploads.filter(Boolean);
@@ -3560,23 +3553,16 @@ async function sendEditedImage(){
   const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
-    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));},'image/jpeg',q);});
+    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob'));}, 'image/jpeg', q);});
     const fd=new FormData();fd.append('image',blob,'photo.jpg');
     const r=await fetch('/api/upload/image',{method:'POST',body:fd});
-    if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
-    const txt=await r.text();
-    let d;
-    try{d=JSON.parse(txt);}catch(e){toast('Upload error — try again','err');reset();return;}
-    if(d.success){
-      socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
-      closeImagePreview();
-      toast('Photo sent 📸','ok');
-    }else{toast(d.error||'Upload failed','err');}
+    if(!r.ok){toast('Upload error '+r.status,'err');reset();return;}
+    const txt=await r.text();let d;
+    try{d=JSON.parse(txt);}catch(e){toast('Server error — not JSON','err');reset();return;}
+    if(d.success){socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});closeImagePreview();toast('Photo sent 📸','ok');}
+    else{toast(d.error||'Upload failed','err');}
     reset();
-  }catch(e){
-    toast('Failed: '+e.message,'err');
-    reset();
-  }
+  }catch(e){toast('Failed: '+e.message,'err');reset();}
 }
 let viewerCurrentUrl='';
 function openImgViewer(url,caption){
@@ -6465,12 +6451,11 @@ async function saveCroppedAvatar(){
     const ctx=canvas.getContext('2d');
     ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.clip();
     ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
-    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));}, 'image/jpeg',0.85);});
+    const blob=await new Promise((res,rej)=>{canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob'));}, 'image/jpeg',0.85);});
     const fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
     const r=await fetch('/api/profile/avatar',{method:'POST',body:fd});
     if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
-    const txt=await r.text();
-    let d;
+    const txt=await r.text();let d;
     try{d=JSON.parse(txt);}catch(e){toast('Server error — not JSON','err');reset();return;}
     if(d.success){
       const av=document.getElementById('profileAvLarge');
@@ -6479,10 +6464,8 @@ async function saveCroppedAvatar(){
       if(sav)sav.innerHTML=`<img src="${d.avatar_url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="avatar"><div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:900;">⋮</div>`;
       document.querySelectorAll('[data-my-avatar]').forEach(el=>el.src=d.avatar_url);
       if(socket&&socket.connected)socket.emit('profile_updated',{avatar_url:d.avatar_url,user_id:ME_ID});
-      friends.forEach(f=>{if(f.id===ME_ID)f.avatar_url=d.avatar_url;});
-      renderFriends();
-      toast('✅ Profile picture updated!','ok');
-      closeAvatarCrop();
+      friends.forEach(f=>{if(f.id===ME_ID)f.avatar_url=d.avatar_url;});renderFriends();
+      toast('✅ Profile picture updated!','ok');closeAvatarCrop();
     }else{toast(d.error||'Upload failed','err');}
     reset();
   }catch(e){toast('Failed: '+e.message,'err');reset();}
@@ -8670,12 +8653,9 @@ function scUpdateVidFilter(){
   const s=parseInt($('SC_vidSaturate')?.value||100);
   const k=parseInt($('SC_vidContrast')?.value||100);
   const bv=$('SC_vidBrightnessVal'),sv=$('SC_vidSaturateVal'),kv=$('SC_vidContrastVal');
-  if(bv)bv.textContent=b;
-  if(sv)sv.textContent=s;
-  if(kv)kv.textContent=k;
+  if(bv)bv.textContent=b;if(sv)sv.textContent=s;if(kv)kv.textContent=k;
   const filter=`brightness(${b}%) saturate(${s}%) contrast(${k}%)`;
-  const vid=$('SC_trimVid');
-  if(vid)vid.style.filter=filter;
+  const vid=$('SC_trimVid');if(vid)vid.style.filter=filter;
   SC.trimFilter=filter;
 }
 function scCloseTrimmer(){
@@ -8694,13 +8674,12 @@ function scApplyTrim(){
   const start=SC.trimStart||0;
   const end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
   const dur=end-start;
-  if(dur<0.5){toast('Too short — drag handles wider','err');return;}
+  if(dur<0.5){toast('Too short','err');return;}
   SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   vid.oncanplaythrough=null;vid.onloadedmetadata=null;
   clearInterval(_trimVidRAF);
-  scPage(1);
-  _scShowVideoUI();
+  scPage(1);_scShowVideoUI();
   const ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
@@ -8715,7 +8694,7 @@ function scApplyTrim(){
   }
   const db=$('SC_vidDuration');
   if(db){db.textContent='✂️ '+dur.toFixed(1)+'s';db.style.color='#22c55e';db.style.background='rgba(34,197,94,.15)';db.style.display='block';}
-  toast('✅ Clip saved: '+start.toFixed(1)+'s – '+end.toFixed(1)+'s','ok');
+  toast('✅ Clip: '+start.toFixed(1)+'s–'+end.toFixed(1)+'s','ok');
 }
 // ─── Share page (page 2) ─────────────────────────────────
 function scGoShare(){
