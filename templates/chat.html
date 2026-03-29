@@ -2769,41 +2769,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <span style="color:#fff;font-size:15px;font-weight:800;flex:1;">Trim Video</span>
       <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:#ec5b08;border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:800;cursor:pointer;">✓ Done</button>
     </div>
-    <div style="flex:1;min-height:0;position:relative;background:#000;">
-      <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;" playsinline autoplay></video>
-      <div id="SC_trimTimeLabel" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:16px;pointer-events:none;">0.0s – 0.0s</div>
-    </div>
+    <div style="flex:1;min-height:0;position:relative;background:#000;"><video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;" playsinline autoplay></video><div id="SC_trimTimeLabel" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:16px;pointer-events:none;">0.0s – 0.0s</div></div>
     <div style="background:#0d0f1a;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom),12px);">
-      <div style="display:flex;justify-content:space-between;padding:8px 16px 4px;">
-        <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
-        <span id="SC_trimDurLbl" style="font-size:11px;color:#ec5b08;font-weight:700;">0.0s</span>
-        <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
-      </div>
-      <div style="padding:0 14px 8px;">
-        <div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;overflow:hidden;" onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)">
-          <div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.9);z-index:5;pointer-events:none;left:0%;"></div>
-          <div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-top:2px solid #ec5b08;border-bottom:2px solid #ec5b08;z-index:2;pointer-events:none;"></div>
-          <div id="SC_cutPoints"></div>
-          <div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:10px 0 0 10px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;" onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')"><div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div>
-          <div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:0 10px 10px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;" onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')"><div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div>
-        </div>
-      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 16px 4px;"><span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span><span id="SC_trimDurLbl" style="font-size:11px;color:#ec5b08;font-weight:700;">0.0s</span><span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span></div>
+      <div style="padding:0 14px 8px;"><div id="SC_trimBar" style="position:relative;height:44px;background:rgba(255,255,255,.08);border-radius:10px;cursor:pointer;overflow:hidden;" onmousedown="scTrimBarClick(event)" ontouchstart="scTrimBarTouch(event)"><div id="SC_trimPlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.9);z-index:5;pointer-events:none;left:0%;"></div><div id="SC_trimRegion" style="position:absolute;top:0;bottom:0;background:rgba(236,91,8,.25);border-top:2px solid #ec5b08;border-bottom:2px solid #ec5b08;z-index:2;pointer-events:none;"></div><div id="SC_cutPoints"></div><div id="SC_trimL" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:10px 0 0 10px;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;left:0%;" onmousedown="scTrimDragStart(event,'L')" ontouchstart="scTrimDragStart(event,'L')"><div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div><div id="SC_trimR" style="position:absolute;top:0;bottom:0;width:22px;background:#ec5b08;border-radius:0 10px 10px 0;cursor:ew-resize;z-index:6;display:flex;align-items:center;justify-content:center;touch-action:none;right:0%;" onmousedown="scTrimDragStart(event,'R')" ontouchstart="scTrimDragStart(event,'R')"><div style="width:3px;height:18px;background:rgba(255,255,255,.9);border-radius:2px;"></div></div></div></div>
       <div style="display:flex;align-items:center;gap:8px;padding:4px 14px 14px;">
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Bright</span>
-          <input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#fbbf24;">
-          <span id="SC_vidBrightnessVal" style="font-size:9px;color:#fbbf24;font-weight:700;">100</span>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Clarity</span>
-          <input type="range" id="SC_vidSaturate" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#22c55e;">
-          <span id="SC_vidSaturateVal" style="font-size:9px;color:#22c55e;font-weight:700;">100</span>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Contrast</span>
-          <input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#38bdf8;">
-          <span id="SC_vidContrastVal" style="font-size:9px;color:#38bdf8;font-weight:700;">100</span>
-        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Bright</span><input type="range" id="SC_vidBrightness" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#fbbf24;"><span id="SC_vidBrightnessVal" style="font-size:9px;color:#fbbf24;font-weight:700;">100</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Clarity</span><input type="range" id="SC_vidSaturate" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#22c55e;"><span id="SC_vidSaturateVal" style="font-size:9px;color:#22c55e;font-weight:700;">100</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:700;">Contrast</span><input type="range" id="SC_vidContrast" min="0" max="200" step="1" value="100" oninput="scUpdateVidFilter()" style="width:100%;accent-color:#38bdf8;"><span id="SC_vidContrastVal" style="font-size:9px;color:#38bdf8;font-weight:700;">100</span></div>
         <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">⏸</button>
         <button id="SC_cutBtn" onclick="scApplyTrim()" style="height:44px;padding:0 16px;border-radius:14px;background:#ec5b08;border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;">✂️ Cut</button>
       </div>
@@ -3151,10 +3124,10 @@ function appendMsg(msg,scroll=true){
     if(urls.length===0&&msg.content)urls=[msg.content];
     const cap=msg.caption?`<div style="font-size:12px;color:var(--mute);margin-top:5px;padding:0 2px;">${esc(msg.caption)}</div>`:'';
     if(urls.length===1){
-      body+=`<div style="position:relative;display:inline-block;line-height:0;border-radius:12px;overflow:hidden;max-width:220px;">
-        <img src="${urls[0]}" alt="photo" onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')" style="cursor:zoom-in;width:100%;max-width:220px;max-height:300px;object-fit:cover;display:block;" loading="lazy">
-        <div style="position:absolute;bottom:0;left:0;right:0;padding:18px 8px 5px;background:linear-gradient(transparent,rgba(0,0,0,.55));display:flex;justify-content:flex-end;align-items:flex-end;">
-          <span style="font-size:10px;color:rgba(255,255,255,.9);font-weight:600;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:8px;backdrop-filter:blur(4px);">${fmtTime(msg.created_at)}</span>
+      body+=`<div style="position:relative;display:inline-block;line-height:0;border-radius:12px;overflow:hidden;max-width:220px;width:100%;">
+        <img src="${urls[0]}" alt="photo" onclick="openImgViewer('${urls[0]}','${esc(msg.caption||'')}')" style="cursor:zoom-in;width:100%;max-width:220px;max-height:300px;object-fit:cover;display:block;border-radius:12px;" loading="lazy">
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:20px 8px 6px;background:linear-gradient(transparent,rgba(0,0,0,.6));display:flex;justify-content:flex-end;align-items:flex-end;pointer-events:none;">
+          <span style="font-size:10px;color:rgba(255,255,255,.95);font-weight:600;">${fmtTime(msg.created_at)}</span>
         </div>
       </div>${cap}`;
     } else {
@@ -3366,13 +3339,13 @@ async function sendMultiPhotos(){
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
     // Upload all in parallel for speed
-    const uploads=await Promise.all(_multiFiles.map(f=>new Promise(function(resolve){
-      var fd=new FormData();fd.append('image',f);
-      var xhr=new XMLHttpRequest();xhr.open('POST','/api/upload/image',true);xhr.withCredentials=true;xhr.timeout=30000;
-      xhr.onload=function(){try{var d=JSON.parse(xhr.responseText);resolve(d.success?d.url:null);}catch(e){resolve(null);}};
-      xhr.onerror=function(){resolve(null);};xhr.ontimeout=function(){resolve(null);};
-      xhr.send(fd);
-    })));
+    const uploads=await Promise.all(_multiFiles.map(async f=>{
+      const fd=new FormData(); fd.append('image',f);
+      const r=await fetch('/api/upload/image',{method:'POST',body:fd});
+      if(!r.ok)return null;
+      var _t=await r.text();var d;try{d=JSON.parse(_t);}catch(e){return null;}
+      return d.success?d.url:null;
+    }));
     const urls=uploads.filter(Boolean);
     if(!urls.length){toast('All uploads failed','err');return;}
     // Send as JSON array — single message, multiple photos
@@ -3554,7 +3527,7 @@ async function sendEditedImage(){
   var btn=document.querySelector('.img-preview-footer .send-btn');
   if(btn){btn.disabled=true;btn.textContent='Sending…';}
   canvas.toBlob(function(blob){
-    if(!blob){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
+    if(!blob){toast('Failed','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
     var fd=new FormData();fd.append('image',blob,'photo.jpg');
     var xhr=new XMLHttpRequest();
     xhr.open('POST','/api/upload/image',true);
@@ -3563,9 +3536,8 @@ async function sendEditedImage(){
       var d;try{d=JSON.parse(xhr.responseText);}catch(e){toast('Server error','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}return;}
       if(d.success){
         socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
-        closeImagePreview();
-        toast('Photo sent 📸','ok');
-      }else{toast(d.error||'Upload failed','err');}
+        closeImagePreview();toast('Photo sent 📸','ok');
+      }else{toast(d.error||'Failed','err');}
       if(btn){btn.disabled=false;btn.textContent='Send 📤';}
     };
     xhr.onerror=function(){toast('Network error','err');if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
@@ -6449,11 +6421,7 @@ async function saveCroppedAvatar(){
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
   var stage=document.getElementById('cropStage');
   var img=document.getElementById('cropImg');
-  if(!img||!img.complete||!img.naturalWidth){
-    toast('Image not ready','err');
-    if(btn){btn.disabled=false;btn.textContent='Save';}
-    return;
-  }
+  if(!img||!img.complete||!img.naturalWidth){toast('Image not ready','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
   var stageW=stage.offsetWidth,stageH=stage.offsetHeight;
   var circleD=Math.min(stageW,stageH)*0.8;
   var cx=(stageW-circleD)/2,cy=(stageH-circleD)/2;
@@ -6461,15 +6429,13 @@ async function saveCroppedAvatar(){
   canvas.width=400;canvas.height=400;
   var ctx=canvas.getContext('2d');
   ctx.beginPath();ctx.arc(200,200,200,0,Math.PI*2);ctx.clip();
-  ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,
-    circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
+  ctx.drawImage(img,(cx-_cropState.x)/_cropState.scale,(cy-_cropState.y)/_cropState.scale,circleD/_cropState.scale,circleD/_cropState.scale,0,0,400,400);
   canvas.toBlob(function(blob){
-    if(!blob){toast('Failed to process image','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
+    if(!blob){toast('Failed','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
     var fd=new FormData();fd.append('avatar',blob,'avatar.jpg');
     var xhr=new XMLHttpRequest();
     xhr.open('POST','/api/profile/avatar',true);
-    xhr.withCredentials=true;
-    xhr.timeout=30000;
+    xhr.withCredentials=true;xhr.timeout=30000;
     xhr.onload=function(){
       var d;try{d=JSON.parse(xhr.responseText);}catch(e){toast('Server error','err');if(btn){btn.disabled=false;btn.textContent='Save';}return;}
       if(d.success){
@@ -6484,12 +6450,12 @@ async function saveCroppedAvatar(){
         toast('✅ Profile updated!','ok');
         closeAvatarCrop();
         closeProfileView();
-        if(typeof goBackToList==='function'&&window.innerWidth<=720)goBackToList();
+        if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();
       }else{toast(d.error||'Upload failed','err');}
       if(btn){btn.disabled=false;btn.textContent='Save';}
     };
     xhr.onerror=function(){toast('Network error','err');if(btn){btn.disabled=false;btn.textContent='Save';}};
-    xhr.ontimeout=function(){toast('Upload timed out','err');if(btn){btn.disabled=false;btn.textContent='Save';}};
+    xhr.ontimeout=function(){toast('Timed out','err');if(btn){btn.disabled=false;btn.textContent='Save';}};
     xhr.send(fd);
   },'image/jpeg',0.85);
 }
@@ -8672,9 +8638,9 @@ function scUpdateSpeed(v){
 
 // ── Video brightness/contrast filter ───────────────────
 function scUpdateVidFilter(){
-  var b=parseInt(($('SC_vidBrightness')||{value:100}).value||100);
-  var s=parseInt(($('SC_vidSaturate')||{value:100}).value||100);
-  var k=parseInt(($('SC_vidContrast')||{value:100}).value||100);
+  var b=parseInt(($('SC_vidBrightness')||{value:100}).value);
+  var s=parseInt(($('SC_vidSaturate')||{value:100}).value);
+  var k=parseInt(($('SC_vidContrast')||{value:100}).value);
   var bv=$('SC_vidBrightnessVal'),sv=$('SC_vidSaturateVal'),kv=$('SC_vidContrastVal');
   if(bv)bv.textContent=b;if(sv)sv.textContent=s;if(kv)kv.textContent=k;
   var filter='brightness('+b+'%) saturate('+s+'%) contrast('+k+'%)';
@@ -8693,16 +8659,14 @@ function scApplyTrim(){
   clearInterval(_trimVidRAF);_trimVidRAF=null;
   var vid=$('SC_trimVid');
   if(!vid||!vid.duration){toast('Video not ready','err');return;}
-  var total=vid.duration;
-  var start=SC.trimStart||0;
+  var total=vid.duration,start=SC.trimStart||0;
   var end=(SC.trimEnd!=null&&SC.trimEnd>0)?SC.trimEnd:Math.min(total,18);
   var dur=end-start;
-  if(dur<0.5){toast('Too short — drag handles wider','err');return;}
+  if(dur<0.5){toast('Too short','err');return;}
   SC.trimStart=start;SC.trimEnd=end;SC.videoDuration=total;
   try{vid.pause();}catch(e){}
   vid.oncanplaythrough=null;vid.onloadedmetadata=null;
-  clearInterval(_trimVidRAF);
-  scPage(1);_scShowVideoUI();
+  clearInterval(_trimVidRAF);scPage(1);_scShowVideoUI();
   var ev=$('SC_vid');
   if(ev&&SC.mediaURL){
     try{ev.pause();}catch(e){}
@@ -8799,20 +8763,15 @@ async function scBakeImage(){
 // ─── POST ────────────────────────────────────────────────
 function showStoryProgress(label,pct){
   var ov=document.getElementById('storyUploadOverlay');
-  var lbl=document.getElementById('storyUploadLabel');
-  var bar=document.getElementById('storyUploadBar');
-  var pctEl=document.getElementById('storyUploadPct');
   if(!ov)return;
-  if(lbl)lbl.textContent=label||'Sharing story…';
-  if(bar)bar.style.width=(pct||0)+'%';
-  if(pctEl)pctEl.textContent=(pct||0)+'%';
   ov.style.display='flex';
+  var el=document.getElementById('storyUploadLabel');if(el)el.textContent=label||'Sharing…';
+  var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width=(pct||0)+'%';
+  var p=document.getElementById('storyUploadPct');if(p)p.textContent=(pct||0)+'%';
 }
 function hideStoryProgress(){
-  var ov=document.getElementById('storyUploadOverlay');
-  if(ov)ov.style.display='none';
-  var bar=document.getElementById('storyUploadBar');
-  if(bar)bar.style.width='0%';
+  var ov=document.getElementById('storyUploadOverlay');if(ov)ov.style.display='none';
+  var bar=document.getElementById('storyUploadBar');if(bar)bar.style.width='0%';
 }
 
 async function scPost(){
@@ -8854,14 +8813,14 @@ async function scPost(){
         uploadFile=await scBakeImage();
       }
       const fd=new FormData(); fd.append('media',uploadFile);
-      showStoryProgress('Uploading media…',10);
+      showStoryProgress('Uploading…',5);
       const ud=await new Promise(function(resolve,reject){
         var xhr=new XMLHttpRequest();
         xhr.open('POST','/api/upload/media',true);xhr.withCredentials=true;xhr.timeout=120000;
-        xhr.upload.onprogress=function(e){if(e.lengthComputable){var p=Math.round(e.loaded/e.total*70)+10;showStoryProgress('Uploading media…',p);}};
+        xhr.upload.onprogress=function(ev){if(ev.lengthComputable){showStoryProgress('Uploading…',Math.round(ev.loaded/ev.total*80)+5);}};
         xhr.onload=function(){try{resolve(JSON.parse(xhr.responseText));}catch(e){reject(new Error('Server error'));}};
         xhr.onerror=function(){reject(new Error('Network error'));};
-        xhr.ontimeout=function(){reject(new Error('Upload timed out'));};
+        xhr.ontimeout=function(){reject(new Error('Timed out'));};
         xhr.send(fd);
       });
       if(!ud.success){
@@ -8869,7 +8828,7 @@ async function scPost(){
         toast('Upload failed: '+(ud.error||''),'err');
         btn.disabled=false; btn.textContent='✨ Share Story'; return;
       }
-      showStoryProgress('Processing…',85);
+      showStoryProgress('Processing…',88);
       mediaUrl=ud.url; mediaType=ud.media_type;
     }catch(e){
       hideStoryProgress();
@@ -8924,10 +8883,8 @@ async function scPost(){
     if(d.success){
       showStoryProgress('Story shared! ✅',100);
       setTimeout(function(){
-        hideStoryProgress();
-        scClose();
-        loadStories();
-        if(typeof goBackToList==='function'&&window.innerWidth<=720)goBackToList();
+        hideStoryProgress();scClose();loadStories();
+        if(window.innerWidth<=720&&typeof goBackToList==='function')goBackToList();
         toast('✅ Story shared!','ok');
       },800);
     }else{hideStoryProgress();toast(d.error||'Failed','err');}
@@ -10545,14 +10502,14 @@ setInterval(() => {
 <div id="capsuleBackdrop" onclick="closeCapsuleSheet()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2999;"></div>
 1
 
-<div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-  <div style="background:#1a1a2e;border-radius:20px;padding:28px 32px;width:min(320px,85vw);display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);">
-    <div style="font-size:28px;" id="storyUploadIcon">📤</div>
-    <div id="storyUploadLabel" style="color:#fff;font-size:15px;font-weight:700;text-align:center;">Sharing story…</div>
-    <div style="width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;">
-      <div id="storyUploadBar" style="height:100%;background:linear-gradient(90deg,#ec5b08,#f59e0b);border-radius:4px;width:0%;transition:width .3s ease;"></div>
+<div id="storyUploadOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;">
+  <div style="background:#1c1c2e;border-radius:20px;padding:32px;width:min(300px,85vw);display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+    <div style="font-size:32px;" id="storyUploadIcon">📤</div>
+    <div id="storyUploadLabel" style="color:#fff;font-size:15px;font-weight:700;text-align:center;letter-spacing:.3px;">Sharing story…</div>
+    <div style="width:100%;height:5px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden;">
+      <div id="storyUploadBar" style="height:100%;background:linear-gradient(90deg,#ec5b08,#f59e0b);border-radius:5px;width:0%;transition:width .4s ease;"></div>
     </div>
-    <div id="storyUploadPct" style="color:rgba(255,255,255,.5);font-size:12px;">0%</div>
+    <div id="storyUploadPct" style="color:rgba(255,255,255,.45);font-size:12px;font-weight:600;">0%</div>
   </div>
 </div>
 </body>
