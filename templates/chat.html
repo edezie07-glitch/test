@@ -2771,14 +2771,14 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
       <span style="color:#fff;font-size:15px;font-weight:800;flex:1;">Trim Video</span>
       <button onclick="scApplyTrim()" id="SC_trimApplyBtn" style="background:#ec5b08;border:none;color:#fff;border-radius:20px;padding:8px 20px;font-size:14px;font-weight:800;cursor:pointer;">✓ Done</button>
     </div>
-    <div style="flex:1;min-height:0;position:relative;background:#000;display:flex;align-items:center;justify-content:center;">
+    <div style="flex:1;min-height:0;position:relative;background:#000;">
       <video id="SC_trimVid" style="width:100%;height:100%;object-fit:contain;position:absolute;inset:0;" playsinline autoplay></video>
       <div id="SC_trimTimeLabel" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:16px;pointer-events:none;">0.0s – 0.0s</div>
     </div>
     <div style="background:#0d0f1a;flex-shrink:0;padding-bottom:max(env(safe-area-inset-bottom),12px);">
       <div style="display:flex;justify-content:space-between;padding:8px 16px 4px;">
         <span id="SC_trimStartLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
-        <span id="SC_trimDurLbl" style="font-size:11px;color:#ec5b08;font-weight:700;">0.0s selected</span>
+        <span id="SC_trimDurLbl" style="font-size:11px;color:#ec5b08;font-weight:700;">0.0s</span>
         <span id="SC_trimEndLbl" style="font-size:11px;color:rgba(255,255,255,.5);">0.0s</span>
       </div>
       <div style="padding:0 14px 8px;">
@@ -2814,7 +2814,7 @@ body{font-family:var(--font-b);background:var(--bg);display:flex;height:100vh;co
           <span id="SC_vidContrastVal" style="font-size:9px;color:#38bdf8;font-weight:700;">100</span>
         </div>
         <button id="SC_trimPlayPause" onclick="scTrimTogglePlay()" style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">⏸</button>
-        <button id="SC_cutBtn" onclick="scApplyTrim()" style="height:44px;padding:0 16px;border-radius:14px;background:#ec5b08;border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;box-shadow:0 3px 10px rgba(236,91,8,.4);">✂️ Cut</button>
+        <button id="SC_cutBtn" onclick="scApplyTrim()" style="height:44px;padding:0 16px;border-radius:14px;background:#ec5b08;border:none;color:#fff;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0;">✂️ Cut</button>
       </div>
       <div style="display:none;">
         <input id="SC_volSlider" type="range" value="100"><span id="SC_volVal"></span>
@@ -3380,11 +3380,13 @@ async function sendMultiPhotos(){
   try{
     // Upload all in parallel for speed
     const uploads=await Promise.all(_multiFiles.map(async f=>{
-      const fd=new FormData(); fd.append('image',f);
-      const r=await fetch('/api/upload/image',{method:'POST',credentials:'include',body:fd});
-      if(!r.ok)return null;
-      const d=await r.json();
-      return d.success?d.url:null;
+      try{
+        const fd=new FormData(); fd.append('image',f);
+        const r=await fetch('/api/upload/image',{method:'POST',credentials:'include',body:fd});
+        if(!r.ok)return null;
+        const d=await r.json();
+        return d.success?d.url:null;
+      }catch(e){return null;}
     }));
     const urls=uploads.filter(Boolean);
     if(!urls.length){toast('All uploads failed','err');return;}
@@ -3565,27 +3567,30 @@ async function sendEditedImage(){
   const q=parseFloat(document.getElementById('imgQuality').value)||0.75;
   const caption=document.getElementById('imgCaption').value.trim();
   const btn=document.querySelector('.img-preview-footer .send-btn');
-  if(btn){btn.disabled=true;btn.textContent='Sending…';}
   const reset=()=>{if(btn){btn.disabled=false;btn.textContent='Send 📤';}};
-  let blob;
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{
-    blob=await new Promise((res,rej)=>{
-      canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));}, 'image/jpeg',q);
+    const blob=await new Promise((resolve,reject)=>{
+      canvas.toBlob(b=>{b?resolve(b):reject(new Error('toBlob returned null'));}, 'image/jpeg', q);
     });
-  }catch(e){toast('Failed to process image','err');reset();return;}
-  try{
     const fd=new FormData();
     fd.append('image',blob,'photo.jpg');
     const r=await fetch('/api/upload/image',{method:'POST',credentials:'include',body:fd});
-    if(!r.ok){toast('Upload error '+r.status,'err');reset();return;}
-    const d=await r.json();
+    let d;
+    try{d=await r.json();}
+    catch(je){toast('Server error (not JSON) — check login session','err');reset();return;}
     if(d.success){
       socket.emit('send_message',{chat_id:currentChatId,content:d.url,message_type:'image',caption:caption||undefined});
       closeImagePreview();
       toast('Photo sent 📸','ok');
-    }else toast(d.error||'Upload failed','err');
-  }catch(e){toast('Send failed','err');}
-  reset();
+    }else{
+      toast(d.error||'Upload failed','err');
+      reset();
+    }
+  }catch(e){
+    toast('Send failed: '+e.message,'err');
+    reset();
+  }
 }
 let viewerCurrentUrl='';
 function openImgViewer(url,caption){
@@ -5770,13 +5775,7 @@ function checkLockPin(){
     else{delete prefs.chatLocks[_lockPendingChatId];savePrefs();toast('🔓 Chat unlocked','ok');}
     _lockPendingChatId=null;_lockPendingFid=null;_lockPendingFname=null;
   }else if(pin.length>=stored.length){
-    if(inp){
-      inp.value='';
-      inp.style.animation='none';
-      requestAnimationFrame(()=>{inp.style.animation='lockShake .35s ease';});
-      inp.placeholder='Wrong PIN';
-      setTimeout(()=>{if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);
-    }
+    if(inp){inp.value='';inp.style.animation='none';requestAnimationFrame(()=>{inp.style.animation='lockShake .35s ease';});inp.placeholder='Wrong PIN';setTimeout(()=>{if(inp){inp.placeholder='Enter PIN';inp.style.animation='';}},1500);}
   }
 }
 function cancelChatLock(){ document.getElementById('chatLockOverlay').classList.remove('show'); _lockPendingChatId=null; }
@@ -6484,14 +6483,15 @@ async function saveCroppedAvatar(){
     const srcW=circleD/_cropState.scale;
     const srcH=circleD/_cropState.scale;
     ctx.drawImage(img,srcX,srcY,srcW,srcH,0,0,400,400);
-    const blob=await new Promise((res,rej)=>{
-      canvas.toBlob(b=>{b?res(b):rej(new Error('toBlob failed'));}, 'image/jpeg',0.85);
+    const blob=await new Promise((resolve,reject)=>{
+      canvas.toBlob(b=>{b?resolve(b):reject(new Error('toBlob returned null'));}, 'image/jpeg',0.85);
     });
     const fd=new FormData();
     fd.append('avatar',blob,'avatar.jpg');
     const r=await fetch('/api/profile/avatar',{method:'POST',credentials:'include',body:fd});
-    if(!r.ok){toast('Server error '+r.status,'err');reset();return;}
-    const d=await r.json();
+    let d;
+    try{d=await r.json();}
+    catch(je){toast('Server error — try again','err');reset();return;}
     if(d.success){
       const av=document.getElementById('profileAvLarge');
       if(av){
@@ -6506,9 +6506,14 @@ async function saveCroppedAvatar(){
       renderFriends();
       toast('✅ Profile picture updated!','ok');
       closeAvatarCrop();
-    }else{toast(d.error||'Upload failed','err');}
+    }else{
+      toast(d.error||'Upload failed','err');
+    }
     reset();
-  }catch(e){toast('Failed: '+e.message,'err');reset();}
+  }catch(e){
+    toast('Failed: '+e.message,'err');
+    reset();
+  }
 }
 
 function openProfileFullImg(url){
